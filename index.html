@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sapphire - Uma Nova Linguagem de Programação</title>
+    <title>Sapphire - A New Programming Language</title>
     
     <link rel="icon" href="data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='gemGradient' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%233b82f6;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%231e40af;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M50 0 L100 25 L85 90 L15 90 L0 25 Z' fill='%231e3a8a'/%3E%3Cpath d='M50 0 L15 90 L0 25 Z' fill='%232563eb'/%3E%3Cpath d='M50 0 L100 25 L85 90 Z' fill='%233b82f6'/%3E%3Cpath d='M50 15 L75 30 L65 80 L35 80 L25 30 Z' fill='url(%23gemGradient)'/%3E%3Cpath d='M15 90 L50 100 L85 90 L50 80 Z' fill='%231d4ed8' opacity='0.6'/%3E%3C/svg%3E">
 
@@ -48,7 +48,7 @@
             padding: 0 20px;
         }
 
-        /* --- Barra de Navegação --- */
+        /* --- Navbar --- */
         .navbar {
             background-color: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(10px);
@@ -99,7 +99,7 @@
             color: var(--primary-color);
         }
 
-        /* --- Seção Hero --- */
+        /* --- Hero Section --- */
         .hero {
             text-align: center;
             padding: 6rem 0;
@@ -140,7 +140,7 @@
             transform: translateY(-2px);
         }
 
-        /* --- Seções Padrão --- */
+        /* --- Standard Sections --- */
         .section {
             padding: 6rem 0;
         }
@@ -162,7 +162,7 @@
             margin: 0 auto 4rem auto;
         }
 
-        /* --- Grid de Features --- */
+        /* --- Features Grid --- */
         .features-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -182,7 +182,7 @@
             margin-bottom: 1rem;
         }
 
-        /* --- Código --- */
+        /* --- Code --- */
         .code-container {
             max-width: 800px;
             margin: 0 auto;
@@ -233,7 +233,7 @@
             font-size: 1rem;
         }
 
-        /* Cores para Syntax Highlighting */
+        /* Syntax Highlighting Colors */
         .token-keyword { color: #c678dd; }
         .token-function { color: #61afef; }
         .token-string { color: #98c379; }
@@ -243,7 +243,7 @@
         .token-variable { color: #e06c75; }
         .token-punctuation { color: #abb2bf; }
 
-        /* --- Seção da Licença --- */
+        /* --- License Section --- */
         .license-box {
             max-width: 800px;
             margin: 0 auto;
@@ -267,7 +267,7 @@
             color: var(--primary-color);
         }
 
-        /* --- Rodapé --- */
+        /* --- Footer --- */
         .footer {
             text-align: center;
             padding: 3rem 0;
@@ -289,7 +289,7 @@
             text-decoration: underline;
         }
         
-        /* --- Animação de Scroll --- */
+        /* --- Scroll Animation --- */
         .reveal {
             opacity: 0;
             transform: translateY(30px);
@@ -310,9 +310,9 @@
                 <span class="logo-text">Sapphire</span>
             </a>
             <nav class="main-nav">
-                <a href="#features">Recursos</a>
-                <a href="#syntax">Sintaxe</a>
-                <a href="#license">Licença</a>
+                <a href="#features">Features</a>
+                <a href="#syntax">Syntax</a>
+                <a href="#license">License</a>
                 <a href="https://github.com/foxzyt/Sapphire" target="_blank">GitHub</a>
             </nav>
         </div>
@@ -322,29 +322,29 @@
         <section class="hero">
             <div class="container hero-container">
                 <div class="hero-text">
-                    <h1>Uma linguagem de programação com foco em <span class="highlight">performance</span> e <span class="highlight">simplicidade</span>.</h1>
-                    <p class="subtitle">Sapphire está em seu processo inicial de criação, com seu núcleo sendo desenvolvido em C++ para máxima velocidade e ferramentas em C# para uma experiência moderna.</p>
-                    <a href="#syntax" class="cta-button">Veja a Sintaxe</a>
+                    <h1>A programming language focused on <span class="highlight">performance</span> and <span class="highlight">simplicity</span>.</h1>
+                    <p class="subtitle">Sapphire is in its early stages of creation, with its core being developed in C++ for maximum speed and tools in C# for a modern experience.</p>
+                    <a href="#syntax" class="cta-button">See the Syntax</a>
                 </div>
             </div>
         </section>
 
         <section id="features" class="section section-gray">
             <div class="container">
-                <h2 class="section-title">Uma Fundação Promissora</h2>
-                <p class="section-subtitle">Combinando o poder de linguagens de baixo nível com a facilidade de scripts de alto nível.</p>
+                <h2 class="section-title">A Promising Foundation</h2>
+                <p class="section-subtitle">Combining the power of low-level languages with the ease of high-level scripting.</p>
                 <div class="features-grid">
                     <div class="feature-card reveal">
-                        <h3>Núcleo de Alta Performance</h3>
-                        <p>O interpretador principal de Sapphire é construído em C++, garantindo que seu código seja executado com eficiência e velocidade.</p>
+                        <h3>High-Performance Core</h3>
+                        <p>Sapphire's main interpreter is built in C++, ensuring that your code runs with impressive efficiency and speed.</p>
                     </div>
                     <div class="feature-card reveal">
-                        <h3>Arquitetura Híbrida</h3>
-                        <p>Sapphire é projetada com uma base dupla: o núcleo em C++ busca a performance, enquanto a interface e futuras ferramentas se beneficiarão da versatilidade do C#.</p>
+                        <h3>Hybrid Architecture</h3>
+                        <p>Sapphire is designed with a dual foundation: the C++ core aims for performance, while future interfaces and tools will benefit from C#'s versatility.</p>
                     </div>
                     <div class="feature-card reveal">
-                        <h3>Sintaxe Clara e Expressiva</h3>
-                        <p>Projetada para ser fácil de ler e escrever. Nosso objetivo é ter menos código boilerplate e mais foco na sua lógica.</p>
+                        <h3>Clear and Expressive Syntax</h3>
+                        <p>Designed to be easy to read and write. Our goal is to have less boilerplate code and more focus on your logic.</p>
                     </div>
                 </div>
             </div>
@@ -352,19 +352,19 @@
 
         <section id="syntax" class="section">
             <div class="container">
-                <h2 class="section-title">Conheça a Sintaxe</h2>
-                <p class="section-subtitle">Veja um exemplo de como Sapphire lida com variáveis e operações matemáticas.</p>
+                <h2 class="section-title">Get to Know the Syntax</h2>
+                <p class="section-subtitle">See an example of how Sapphire handles variables and mathematical operations.</p>
                 <div class="code-container reveal">
                     <div class="code-header">
                         <span class="filename">Sapphire Script</span>
-                        <button class="copy-button" data-target="code-snippet-1">Copiar</button>
+                        <button class="copy-button" data-target="code-snippet-1">Copy</button>
                     </div>
-                    <pre><code id="code-snippet-1"><span class="token-comment">// Declaração de variáveis</span>
+                    <pre><code id="code-snippet-1"><span class="token-comment">// Variable declaration</span>
 <span class="token-keyword">var</span> <span class="token-variable">a</span> <span class="token-operator">=</span> <span class="token-number">20</span>
 <span class="token-keyword">var</span> <span class="token-variable">b</span> <span class="token-operator">=</span> <span class="token-number">10</span>
 <span class="token-keyword">var</span> <span class="token-variable">c</span> <span class="token-operator">=</span> <span class="token-number">25</span>
 
-<span class="token-comment">// Imprime o resultado da operação. O resultado esperado é -230 (20 - (10 * 25))</span>
+<span class="token-comment">// Prints the result of the operation. The expected result is -230 (20 - (10 * 25))</span>
 <span class="token-function">print</span> <span class="token-variable">a</span> <span class="token-operator">-</span> <span class="token-variable">b</span> <span class="token-operator">*</span> <span class="token-variable">c</span>
 </code></pre>
                 </div>
@@ -373,17 +373,17 @@
 
         <section id="license" class="section section-gray">
             <div class="container">
-                <h2 class="section-title">Licença de Uso</h2>
+                <h2 class="section-title">License</h2>
                 <div class="license-box reveal">
-                    <h3>Licença Pública Geral GNU v3.0</h3>
-                    <p>Sapphire é um software livre. Isso significa que você tem a liberdade de usar, estudar, compartilhar e modificar o software. Essas liberdades são protegidas pela <strong>Licença Pública Geral GNU (versão 3.0)</strong>.</p>
-                    <p>Em resumo, a licença garante que:</p>
+                    <h3>GNU General Public License v3.0</h3>
+                    <p>Sapphire is free software. This means you have the freedom to use, study, share, and modify the software. These freedoms are protected by the <strong>GNU General Public License (version 3.0)</strong>.</p>
+                    <p>In summary, the license guarantees that:</p>
                     <ul>
-                        <li>Qualquer pessoa pode usar o Sapphire para qualquer finalidade.</li>
-                        <li>Qualquer pessoa pode modificar o código-fonte para atender às suas necessidades.</li>
-                        <li>Se você distribuir versões modificadas do Sapphire, elas também devem ser licenciadas sob a GNU GPL v3.0, garantindo que a liberdade seja repassada.</li>
+                        <li>Anyone can use Sapphire for any purpose.</li>
+                        <li>Anyone can modify the source code to suit their needs.</li>
+                        <li>If you distribute modified versions of Sapphire, they must also be licensed under the GNU GPL v3.0, ensuring that freedom is passed on.</li>
                     </ul>
-                    <p>Para mais detalhes, leia a <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">licença completa no site oficial do GNU</a>.</p>
+                    <p>For more details, please read the <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">full license on the official GNU website</a>.</p>
                 </div>
             </div>
         </section>
@@ -392,8 +392,8 @@
 
     <footer class="footer">
         <div class="container">
-            <p>Projeto Sapphire &copy; 2025. Mantido por <a href="https://github.com/foxzyt" target="_blank">@foxzyt</a>.</p>
-            <p>Lançado sob a Licença GNU GPL v3.0.</p>
+            <p>Sapphire Project &copy; 2025. Maintained by <a href="https://github.com/foxzyt" target="_blank">@foxzyt</a>.</p>
+            <p>Released under the GNU GPL v3.0 License.</p>
         </div>
     </footer>
 
@@ -401,7 +401,8 @@
         document.addEventListener('DOMContentLoaded', function() {
 
             /**
-             * Lógica para os botões de copiar código.
+             * Logic for the code copy buttons.
+             * Now works for multiple buttons.
              */
             const allCopyButtons = document.querySelectorAll('.copy-button');
 
@@ -413,23 +414,23 @@
                     if (codeSnippet) {
                         navigator.clipboard.writeText(codeSnippet.innerText).then(() => {
                             const originalText = button.innerHTML;
-                            button.innerHTML = 'Copiado!';
+                            button.innerHTML = 'Copied!';
                             button.style.backgroundColor = '#28a745';
 
                             setTimeout(() => {
-                                button.innerHTML = 'Copiar';
+                                button.innerHTML = 'Copy';
                                 button.style.backgroundColor = '';
                             }, 2000);
                         }).catch(err => {
-                            console.error('Falha ao copiar o código: ', err);
-                            button.innerHTML = 'Erro!';
+                            console.error('Failed to copy code: ', err);
+                            button.innerHTML = 'Error!';
                         });
                     }
                 });
             });
 
             /**
-             * Lógica para revelar elementos ao rolar a página.
+             * Logic to reveal elements on page scroll.
              */
             const revealElements = document.querySelectorAll('.reveal');
 
@@ -451,4 +452,4 @@
     </script>
 
 </body>
-</html>
+    </html>
