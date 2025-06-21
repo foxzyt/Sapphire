@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sapphire - Uma Nova Linguagem de Programação</title>
+    
+    <link rel="icon" href="data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='gemGradient' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%233b82f6;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%231e40af;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M50 0 L100 25 L85 90 L15 90 L0 25 Z' fill='%231e3a8a'/%3E%3Cpath d='M50 0 L15 90 L0 25 Z' fill='%232563eb'/%3E%3Cpath d='M50 0 L100 25 L85 90 Z' fill='%233b82f6'/%3E%3Cpath d='M50 15 L75 30 L65 80 L35 80 L25 30 Z' fill='url(%23gemGradient)'/%3E%3Cpath d='M15 90 L50 100 L85 90 L50 80 Z' fill='%231d4ed8' opacity='0.6'/%3E%3C/svg%3E">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --primary-hover: #0b5ed7;
+            --bg-color: #ffffff;
+            --bg-light-gray: #f8f9fa;
+            --text-dark: #212529;
+            --text-light: #6c757d;
+            --border-color: #dee2e6;
+            --card-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+            --font-primary: 'Poppins', sans-serif;
+            --font-code: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-primary);
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            line-height: 1.7;
+        }
+
+        .container {
+            max-width: 1140px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* --- Barra de Navegação --- */
+        .navbar {
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .logo-img {
+            height: 40px;
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .main-nav {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .main-nav a {
+            text-decoration: none;
+            color: var(--text-light);
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .main-nav a:hover {
+            color: var(--primary-color);
+        }
+
+        /* --- Seção Hero --- */
+        .hero {
+            text-align: center;
+            padding: 6rem 0;
+        }
+
+        .hero-text h1 {
+            font-size: 3.2rem;
+            font-weight: 700;
+            line-height: 1.3;
+            max-width: 800px;
+            margin: 0 auto 1rem auto;
+        }
+
+        .hero-text .highlight {
+            color: var(--primary-color);
+        }
+
+        .hero-text .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-light);
+            max-width: 700px;
+            margin: 0 auto 2.5rem auto;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px 28px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        
+        .cta-button:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        /* --- Seções Padrão --- */
+        .section {
+            padding: 6rem 0;
+        }
+
+        .section-gray {
+            background-color: var(--bg-light-gray);
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        .section-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-light);
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 4rem auto;
+        }
+
+        /* --- Grid de Features --- */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .feature-card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+        }
+
+        /* --- Código --- */
+        .code-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #282c34;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            text-align: left;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 1.5rem;
+            background-color: #21252b;
+            border-bottom: 1px solid #3c4049;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+
+        .code-header .filename {
+            font-family: var(--font-code);
+            color: #abb2bf;
+        }
+
+        .copy-button {
+            background: #3c4049;
+            border: 1px solid #4d535e;
+            color: #abb2bf;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: var(--font-primary);
+            transition: background-color 0.2s;
+        }
+        .copy-button:hover {
+            background-color: #4d535e;
+        }
+
+        pre {
+            padding: 1.5rem;
+            overflow-x: auto;
+            line-height: 1.5;
+        }
+        
+        code {
+            font-family: var(--font-code);
+            font-size: 1rem;
+        }
+
+        /* Cores para Syntax Highlighting */
+        .token-keyword { color: #c678dd; }
+        .token-function { color: #61afef; }
+        .token-string { color: #98c379; }
+        .token-number { color: #d19a66; }
+        .token-comment { color: #7f848e; font-style: italic; }
+        .token-operator { color: #56b6c2; }
+        .token-variable { color: #e06c75; }
+        .token-punctuation { color: #abb2bf; }
+
+        /* --- Seção da Licença --- */
+        .license-box {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--bg-color);
+        }
+
+        .license-box h3 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .license-box p {
+            margin-bottom: 1rem;
+        }
+
+        .license-box a {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        /* --- Rodapé --- */
+        .footer {
+            text-align: center;
+            padding: 3rem 0;
+            background-color: var(--bg-color);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .footer p {
+            color: var(--text-light);
+            margin-bottom: 0.5rem;
+        }
+
+        .footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
+        /* --- Animação de Scroll --- */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="container">
+            <a href="#" class="logo-link">
+                <img src="data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='gemGradient' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%233b82f6;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%231e40af;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M50 0 L100 25 L85 90 L15 90 L0 25 Z' fill='%231e3a8a'/%3E%3Cpath d='M50 0 L15 90 L0 25 Z' fill='%232563eb'/%3E%3Cpath d='M50 0 L100 25 L85 90 Z' fill='%233b82f6'/%3E%3Cpath d='M50 15 L75 30 L65 80 L35 80 L25 30 Z' fill='url(%23gemGradient)'/%3E%3Cpath d='M15 90 L50 100 L85 90 L50 80 Z' fill='%231d4ed8' opacity='0.6'/%3E%3C/svg%3E" alt="Sapphire Logo" class="logo-img">
+                <span class="logo-text">Sapphire</span>
+            </a>
+            <nav class="main-nav">
+                <a href="#features">Recursos</a>
+                <a href="#syntax">Sintaxe</a>
+                <a href="#license">Licença</a>
+                <a href="https://github.com/foxzyt/Sapphire" target="_blank">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container hero-container">
+                <div class="hero-text">
+                    <h1>Uma linguagem de programação com foco em <span class="highlight">performance</span> e <span class="highlight">simplicidade</span>.</h1>
+                    <p class="subtitle">Sapphire está em seu processo inicial de criação, com seu núcleo sendo desenvolvido em C++ para máxima velocidade e ferramentas em C# para uma experiência moderna.</p>
+                    <a href="#syntax" class="cta-button">Veja a Sintaxe</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="features" class="section section-gray">
+            <div class="container">
+                <h2 class="section-title">Uma Fundação Promissora</h2>
+                <p class="section-subtitle">Combinando o poder de linguagens de baixo nível com a facilidade de scripts de alto nível.</p>
+                <div class="features-grid">
+                    <div class="feature-card reveal">
+                        <h3>Núcleo de Alta Performance</h3>
+                        <p>O interpretador principal de Sapphire é construído em C++, garantindo que seu código seja executado com eficiência e velocidade.</p>
+                    </div>
+                    <div class="feature-card reveal">
+                        <h3>Arquitetura Híbrida</h3>
+                        <p>Sapphire é projetada com uma base dupla: o núcleo em C++ busca a performance, enquanto a interface e futuras ferramentas se beneficiarão da versatilidade do C#.</p>
+                    </div>
+                    <div class="feature-card reveal">
+                        <h3>Sintaxe Clara e Expressiva</h3>
+                        <p>Projetada para ser fácil de ler e escrever. Nosso objetivo é ter menos código boilerplate e mais foco na sua lógica.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="syntax" class="section">
+            <div class="container">
+                <h2 class="section-title">Conheça a Sintaxe</h2>
+                <p class="section-subtitle">Veja um exemplo de como Sapphire lida com variáveis e operações matemáticas.</p>
+                <div class="code-container reveal">
+                    <div class="code-header">
+                        <span class="filename">Sapphire Script</span>
+                        <button class="copy-button" data-target="code-snippet-1">Copiar</button>
+                    </div>
+                    <pre><code id="code-snippet-1"><span class="token-comment">// Declaração de variáveis</span>
+<span class="token-keyword">var</span> <span class="token-variable">a</span> <span class="token-operator">=</span> <span class="token-number">20</span>
+<span class="token-keyword">var</span> <span class="token-variable">b</span> <span class="token-operator">=</span> <span class="token-number">10</span>
+<span class="token-keyword">var</span> <span class="token-variable">c</span> <span class="token-operator">=</span> <span class="token-number">25</span>
+
+<span class="token-comment">// Imprime o resultado da operação. O resultado esperado é -230 (20 - (10 * 25))</span>
+<span class="token-function">print</span> <span class="token-variable">a</span> <span class="token-operator">-</span> <span class="token-variable">b</span> <span class="token-operator">*</span> <span class="token-variable">c</span>
+</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="license" class="section section-gray">
+            <div class="container">
+                <h2 class="section-title">Licença de Uso</h2>
+                <div class="license-box reveal">
+                    <h3>Licença Pública Geral GNU v3.0</h3>
+                    <p>Sapphire é um software livre. Isso significa que você tem a liberdade de usar, estudar, compartilhar e modificar o software. Essas liberdades são protegidas pela <strong>Licença Pública Geral GNU (versão 3.0)</strong>.</p>
+                    <p>Em resumo, a licença garante que:</p>
+                    <ul>
+                        <li>Qualquer pessoa pode usar o Sapphire para qualquer finalidade.</li>
+                        <li>Qualquer pessoa pode modificar o código-fonte para atender às suas necessidades.</li>
+                        <li>Se você distribuir versões modificadas do Sapphire, elas também devem ser licenciadas sob a GNU GPL v3.0, garantindo que a liberdade seja repassada.</li>
+                    </ul>
+                    <p>Para mais detalhes, leia a <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">licença completa no site oficial do GNU</a>.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>Projeto Sapphire &copy; 2025. Mantido por <a href="https://github.com/foxzyt" target="_blank">@foxzyt</a>.</p>
+            <p>Lançado sob a Licença GNU GPL v3.0.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            /**
+             * Lógica para os botões de copiar código.
+             */
+            const allCopyButtons = document.querySelectorAll('.copy-button');
+
+            allCopyButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetId = button.getAttribute('data-target');
+                    const codeSnippet = document.getElementById(targetId);
+
+                    if (codeSnippet) {
+                        navigator.clipboard.writeText(codeSnippet.innerText).then(() => {
+                            const originalText = button.innerHTML;
+                            button.innerHTML = 'Copiado!';
+                            button.style.backgroundColor = '#28a745';
+
+                            setTimeout(() => {
+                                button.innerHTML = 'Copiar';
+                                button.style.backgroundColor = '';
+                            }, 2000);
+                        }).catch(err => {
+                            console.error('Falha ao copiar o código: ', err);
+                            button.innerHTML = 'Erro!';
+                        });
+                    }
+                });
+            });
+
+            /**
+             * Lógica para revelar elementos ao rolar a página.
+             */
+            const revealElements = document.querySelectorAll('.reveal');
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, {
+                threshold: 0.1
+            });
+
+            revealElements.forEach(element => {
+                observer.observe(element);
+            });
+        });
+    </script>
+
+</body>
+</html>
