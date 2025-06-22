@@ -162,14 +162,14 @@
             margin: 0 auto 4rem auto;
         }
 
-        /* --- Features Grid --- */
-        .features-grid {
+        /* --- Grids --- */
+        .features-grid, .roadmap-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 2rem;
         }
 
-        .feature-card {
+        .feature-card, .roadmap-card {
             background-color: var(--bg-color);
             border: 1px solid var(--border-color);
             border-radius: 8px;
@@ -177,10 +177,17 @@
             text-align: center;
         }
         
-        .feature-card h3 {
+        .feature-card h3, .roadmap-card h3 {
             font-size: 1.4rem;
             margin-bottom: 1rem;
         }
+        
+        .roadmap-card .icon {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
 
         /* --- Code --- */
         .code-container {
@@ -312,7 +319,7 @@
             <nav class="main-nav">
                 <a href="#features">Features</a>
                 <a href="#syntax">Syntax</a>
-                <a href="#license">License</a>
+                <a href="#roadmap">Roadmap</a>
                 <a href="https://github.com/foxzyt/Sapphire" target="_blank">GitHub</a>
             </nav>
         </div>
@@ -323,7 +330,7 @@
             <div class="container hero-container">
                 <div class="hero-text">
                     <h1>A programming language focused on <span class="highlight">performance</span> and <span class="highlight">simplicity</span>.</h1>
-                    <p class="subtitle">Sapphire is in its early stages of creation, with its core being developed in C++ for maximum speed and tools in C# for a modern experience.</p>
+                    <p class="subtitle">Sapphire is in its early stages of creation, with its core developed in C++ for maximum speed and its standard library in C for portability and control.</p>
                     <a href="#syntax" class="cta-button">See the Syntax</a>
                 </div>
             </div>
@@ -331,16 +338,16 @@
 
         <section id="features" class="section section-gray">
             <div class="container">
-                <h2 class="section-title">A Promising Foundation</h2>
+                <h2 class="section-title">A Solid Foundation</h2>
                 <p class="section-subtitle">Combining the power of low-level languages with the ease of high-level scripting.</p>
                 <div class="features-grid">
                     <div class="feature-card reveal">
                         <h3>High-Performance Core</h3>
-                        <p>Sapphire's main interpreter is built in C++, ensuring that your code runs with impressive efficiency and speed.</p>
+                        <p>Sapphire's main interpreter is built in C++, ensuring that your code runs with efficiency and speed.</p>
                     </div>
                     <div class="feature-card reveal">
-                        <h3>Hybrid Architecture</h3>
-                        <p>Sapphire is designed with a dual foundation: the C++ core aims for performance, while future interfaces and tools will benefit from C#'s versatility.</p>
+                        <h3>C/C++ Foundation</h3>
+                        <p>The synergy of C++ with a standard library in C offers low-level control, performance, and high portability across systems.</p>
                     </div>
                     <div class="feature-card reveal">
                         <h3>Clear and Expressive Syntax</h3>
@@ -370,20 +377,33 @@
                 </div>
             </div>
         </section>
+        
+        <section id="roadmap" class="section section-gray">
+            <div class="container">
+                <h2 class="section-title">The Future of Sapphire</h2>
+                <p class="section-subtitle">The language is just getting started. Here are some of our major goals for the future.</p>
+                <div class="roadmap-grid">
+                    <div class="roadmap-card reveal">
+                        <div class="icon">📦</div>
+                        <h3>Mine: The Plugin Repository</h3>
+                        <p>We plan to create "Mine," a centralized and easy-to-use repository where the community can discover, share, and manage packages and plugins that expand Sapphire's functionality.</p>
+                    </div>
+                    <div class="roadmap-card reveal">
+                        <div class="icon">🖼️</div>
+                        <h3>SapphireUI: Native GUI</h3>
+                        <p>One of the biggest dreams for the project is "SapphireUI," an official extension that will allow developers to build desktop graphical user interfaces (GUIs) in a simple and declarative way, directly in the Sapphire language.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-        <section id="license" class="section section-gray">
+        <section id="license" class="section">
             <div class="container">
                 <h2 class="section-title">License</h2>
                 <div class="license-box reveal">
                     <h3>GNU General Public License v3.0</h3>
                     <p>Sapphire is free software. This means you have the freedom to use, study, share, and modify the software. These freedoms are protected by the <strong>GNU General Public License (version 3.0)</strong>.</p>
-                    <p>In summary, the license guarantees that:</p>
-                    <ul>
-                        <li>Anyone can use Sapphire for any purpose.</li>
-                        <li>Anyone can modify the source code to suit their needs.</li>
-                        <li>If you distribute modified versions of Sapphire, they must also be licensed under the GNU GPL v3.0, ensuring that freedom is passed on.</li>
-                    </ul>
-                    <p>For more details, please read the <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">full license on the official GNU website</a>.</p>
+                     <p>For more details, please read the <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">full license on the official GNU website</a>.</p>
                 </div>
             </div>
         </section>
@@ -402,7 +422,6 @@
 
             /**
              * Logic for the code copy buttons.
-             * Now works for multiple buttons.
              */
             const allCopyButtons = document.querySelectorAll('.copy-button');
 
@@ -452,4 +471,4 @@
     </script>
 
 </body>
-    </html>
+</html>
