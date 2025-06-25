@@ -4,70 +4,70 @@
 
 # **Sapphire 💎**
 
-###About the Project
-Sapphire is an interpreted programming language, developed with a focus on simplicity and clarity. Currently in its interpretation phase, the project is evolving to become a compiled language, aiming for higher performance and optimization.
+## About the Project ##
+### Sapphire is an interpreted programming language, developed with a focus on simplicity and clarity. Currently in its interpretation phase, the project is evolving to become a compiled language, aiming for higher performance and optimization. ###
 
-With Sapphire, you can:
+## With Sapphire, you can: ##
 
-Calculate Expressions: Perform complex mathematical and logical operations.
+### Calculate Expressions: Perform complex mathematical and logical operations. ###
 
-Declare Variables: Manage data flexibly with static typing.
+### Declare Variables: Manage data flexibly with static typing. ###
 
-Our goal is to provide an intuitive and robust development experience.
+### Our goal is to provide an intuitive and robust development experience. ###
 
-Technologies Used
-C++: The base language for the development of Sapphire's interpreter/compiler.
+## Technologies Used ##
+### C++: The base language for the development of Sapphire's interpreter/compiler. ###
 
-CMake: Used to manage the project's build process.
+### CMake: Used to manage the project's build process. ###
 
-How to Install and Set Up
-To start using Sapphire, follow the steps below:
+## How to Install and Set Up ##
+### To start using Sapphire, follow the steps below: ###
 
-Prerequisites
-Make sure you have the following software installed on your system:
+## Prerequisites ##
+### Make sure you have the following software installed on your system: ###
 
-Git: To clone the repository.
+### Git: To clone the repository. ###
 
-CMake: To configure the build environment.
+### CMake: To configure the build environment. ###
 
-A C++ compiler: (e.g., GCC, Clang, MSVC) Compatible with C++17 or newer.
+### A C++ compiler: (e.g., GCC, Clang, MSVC) Compatible with C++17 or newer. ###
 
-Installation
-Clone the repository:
-Open your terminal or command prompt and execute the following command:
+## Installation ##
+### Clone the repository: ###
+### Open your terminal or command prompt and execute the following command: ###
 
-git clone https://github.com/foxzyt/Sapphire.git
+### git clone https://github.com/foxzyt/Sapphire.git ###
 
-Navigate to the project directory:
+### Navigate to the project directory: ###
 
-cd Sapphire
+### cd Sapphire ###
 
-Create the build directory and compile the project:
+### Create the build directory and compile the project: ###
 
-mkdir build
-cd build
-cmake ..
-cmake --build .
+### mkdir build ###
+### cd build ###
+### cmake .. ###
+### cmake --build . ###
 
-This will compile the sapphire.exe (or sapphire on Unix-like systems) executable inside the build folder.
+### This will compile the sapphire.exe (or sapphire on Unix-like systems) executable inside the build folder. ###
 
-How to Use
-After installation, you can execute your Sapphire scripts:
+## How to Use ##
+### After installation, you can execute your Sapphire scripts: ###
 
-Navigate to the root folder of the Sapphire project (where you cloned the repository).
+### Navigate to the root folder of the Sapphire project (where you cloned the repository). ###
 
-Execute a Sapphire script:
+### Execute a Sapphire script: ###
 
-.\build\sapphire.exe [your_sapphire_script_name.sapphire]
+### .\build\sapphire.exe [your_sapphire_script_name.sapphire] ###
 
-Replace [your_sapphire_script_name.sapphire] with the path and name of your Sapphire script file.
+### Replace [your_sapphire_script_name.sapphire] with the path and name of your Sapphire script file. ###
 
-Example:
+### Example: ###
 
-.\build\sapphire.exe examples/my_first_script.sapphire
+### .\build\sapphire.exe examples/my_first_script.sapphire ###
 
-Syntax and Examples
-Sapphire supports static types and basic operations. Below is an example script demonstrating the core functionalities:
+## Syntax and Examples ##
+### Sapphire supports static types and basic operations. Below is an example script demonstrating the core functionalities: ###
 
 // ===============================================
 //  Sapphire Test Script with Static Types
@@ -163,22 +163,22 @@ print "--- Testing Type Errors at Compile Time ---";
 // Uncomment the line below to test another invalid operation
 // string error_operation_2 = my_text - my_integer;
 
-How to Contribute
-We appreciate your interest in contributing to the Sapphire project! Currently, the primary way to contribute is by reporting issues.
+## How to Contribute ##
+### We appreciate your interest in contributing to the Sapphire project! Currently, the primary way to contribute is by reporting issues. ###
 
-Reporting Issues
-If you find a bug, have a feature suggestion, or any other question, please open a new Issue in our repository. When opening an issue, please provide as much detail as possible, including:
+## Reporting Issues ##
+### If you find a bug, have a feature suggestion, or any other question, please open a new Issue in our repository. When opening an issue, please provide as much detail as possible, including: ###
 
-Clear description of the problem/suggestion.
+### Clear description of the problem/suggestion. ###
 
-Steps to reproduce (if it's a bug).
+### Steps to reproduce (if it's a bug). ###
 
-Expected behavior vs. observed behavior.
+### Expected behavior vs. observed behavior. ###
 
-Information about your environment (OS, compiler version, etc.).
+### Information about your environment (OS, compiler version, etc.). ###
 
-Author
-foxzyt
+## Author ##
+### foxzyt ###
 
-License
-This project is licensed under the MIT License - see the LICENSE file for details.###
+## License ##
+### This project is licensed under the MIT License - see the LICENSE file for details. ###
