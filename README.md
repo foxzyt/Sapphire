@@ -74,64 +74,99 @@
 // ===============================================
 
 print "--- Starting Static Type Test ---";
+
 print "";
 
 // --- 1. Valid Declarations ---
+
 print "--- 1. Testing Valid Declarations ---";
 
 int    my_integer = 100;
+
 double my_double  = 50.5;
+
 string my_text    = "Hello, Sapphire!";
+
 bool   is_true    = true;
+
 bool   is_false   = false;
 
 print "Static variables declared successfully!";
+
 print my_integer;
+
 print my_double;
+
 print my_text;
+
 print is_true;
+
 print "";
 
 
 // --- 2. Valid Operations ---
+
 print "--- 2. Testing Valid Operations ---";
 
 int    a = 20;
+
 int    b = 10;
+
 double c = 2.5;
 
 print "a - b =";
+
 print a - b; // Should be 10
 
 print "a * c =";
+
 print a * c; // Should be 50.0
 
 string s1 = "Sapphire ";
+
 string s2 = "is awesome!";
+
 print s1 + s2; // Should be "Sapphire is awesome!"
 
+
 bool result_comp = (a > b);
+
 print "Result of a > b:";
+
 print result_comp; // Should be true
+
 print "";
 
 
 // --- 3. Flow Control with Static Types ---
+
 print "--- 3. Testing Flow Control ---";
+
 int counter = 3;
+
 print "While loop with static variable:";
+
 while (counter > 0) {
+
     print counter;
     counter = counter - 1;
+    
 }
+
 print "End of loop.";
+
 print "";
 
 // --- 4. Final Stack Sanity Test ---
+
 print "--- 4. Final Test with Native Function ---";
+
 print "If this call works, the stack is clean and correct.";
+
 print "Time since start (s):";
+
 print clock();
+
 print "";
 
 print "----------------------------------------------------";
@@ -152,15 +187,19 @@ print "";
 print "--- Testing Type Errors at Compile Time ---";
 
 // Uncomment the line below to test string to int assignment
+
 // int error_assignment_1 = "not a number";
 
 // Uncomment the line below to test number to string assignment
+
 // string error_assignment_2 = 12345;
 
 // Uncomment the line below to test invalid operation
+
 // int error_operation = my_integer + my_text;
 
 // Uncomment the line below to test another invalid operation
+
 // string error_operation_2 = my_text - my_integer;
 
 ## How to Contribute ##
