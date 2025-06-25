@@ -70,7 +70,7 @@
 
 ### .\build\sapphire.exe examples/my_first_script.sapphire ###
 
-## Syntax and Examples ✏️##
+## Syntax and Examples ✏️ ##
 ### Sapphire supports static types and basic operations. Below is an example script demonstrating the core functionalities: ###
 
 // ===============================================
