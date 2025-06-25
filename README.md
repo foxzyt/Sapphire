@@ -70,7 +70,9 @@
 ### Sapphire supports static types and basic operations. Below is an example script demonstrating the core functionalities: ###
 
 // ===============================================
+
 //  Sapphire Test Script with Static Types
+
 // ===============================================
 
 print "--- Starting Static Type Test ---";
@@ -148,8 +150,8 @@ print "While loop with static variable:";
 
 while (counter > 0) {
 
-    print counter;
-    counter = counter - 1;
+print counter;
+counter = counter - 1;
     
 }
 
@@ -170,18 +172,27 @@ print clock();
 print "";
 
 print "----------------------------------------------------";
+
 print "--- SUCCESS! All valid tests passed. ---";
+
 print "----------------------------------------------------";
+
 print "";
 
 
 // ==========================================================
+
 //  ERROR TEST: The lines below MUST cause errors
+
 //  at COMPILE time.
+
 //
 //  Instructions: Uncomment ONE line at a time, save,
+
 //  and try to compile with 'cmake --build build'.
+
 //  You should see your compiler complaining!
+
 // ==========================================================
 
 print "--- Testing Type Errors at Compile Time ---";
