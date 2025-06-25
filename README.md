@@ -55,7 +55,7 @@
 
 ### This will compile the sapphire.exe (or sapphire on Unix-like systems) executable inside the build folder. ###
 
-## How to Use 📖##
+## How to Use 📖 ##
 ### After installation, you can execute your Sapphire scripts: ###
 
 ### Navigate to the root folder of the Sapphire project (where you cloned the repository). ###
