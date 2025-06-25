@@ -27,7 +27,7 @@
 ## How to Install and Set Up ##
 ### To start using Sapphire, follow the steps below: ###
 
-## Prerequisites ##
+## Prerequisites ✅ ##
 ### Make sure you have the following software installed on your system: ###
 
 ### Git: To clone the repository. ###
@@ -55,7 +55,7 @@
 
 ### This will compile the sapphire.exe (or sapphire on Unix-like systems) executable inside the build folder. ###
 
-## How to Use ##
+## How to Use 📖##
 ### After installation, you can execute your Sapphire scripts: ###
 
 ### Navigate to the root folder of the Sapphire project (where you cloned the repository). ###
@@ -70,7 +70,7 @@
 
 ### .\build\sapphire.exe examples/my_first_script.sapphire ###
 
-## Syntax and Examples ##
+## Syntax and Examples ✏️##
 ### Sapphire supports static types and basic operations. Below is an example script demonstrating the core functionalities: ###
 
 // ===============================================
