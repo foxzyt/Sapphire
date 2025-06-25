@@ -1,9 +1,10 @@
-Sapphire 💎
-[![GitHub Stars](https://img.shields.io/github/stars/foxzyt/Sapphire?style=social)](https://github.com/foxzyt/Sapphire/stargazers)
+
 [![Repo Size](https://img.shields.io/github/repo-size/foxzyt/Sapphire)](https://github.com/foxzyt/Sapphire)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-About the Project
+# **Sapphire 💎**
+
+###About the Project
 Sapphire is an interpreted programming language, developed with a focus on simplicity and clarity. Currently in its interpretation phase, the project is evolving to become a compiled language, aiming for higher performance and optimization.
 
 With Sapphire, you can:
