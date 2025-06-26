@@ -37,16 +37,16 @@
 ### A C++ compiler: (e.g., GCC, Clang, MSVC) Compatible with C++17 or newer. ###
 
 ## Installation ##
-### Clone the repository: ###
+## Clone the repository: ##
 ### Open your terminal or command prompt and execute the following command: ###
 
 ### git clone https://github.com/foxzyt/Sapphire.git ###
 
-### Navigate to the project directory: ###
+## Navigate to the project directory: ##
 
 ### cd Sapphire ###
 
-### Create the build directory and compile the project: ###
+## Create the build directory and compile the project: ##
 
 ### mkdir build ###
 ### cd build ###
