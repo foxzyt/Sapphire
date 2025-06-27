@@ -1,0 +1,50 @@
+[
+{
+  "directory": "C:/Users/berna/Downloads/Sapphire/build",
+  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -DDEBUG_PRINT_CODE @CMakeFiles/sapphire.dir/includes_CXX.rsp -g -std=gnu++17 -g -o CMakeFiles\\sapphire.dir\\src\\main.cpp.obj -c C:\\Users\\berna\\Downloads\\Sapphire\\src\\main.cpp",
+  "file": "C:/Users/berna/Downloads/Sapphire/src/main.cpp",
+  "output": "CMakeFiles/sapphire.dir/src/main.cpp.obj"
+},
+{
+  "directory": "C:/Users/berna/Downloads/Sapphire/build",
+  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -DDEBUG_PRINT_CODE @CMakeFiles/sapphire.dir/includes_CXX.rsp -g -std=gnu++17 -g -o CMakeFiles\\sapphire.dir\\src\\lexer.cpp.obj -c C:\\Users\\berna\\Downloads\\Sapphire\\src\\lexer.cpp",
+  "file": "C:/Users/berna/Downloads/Sapphire/src/lexer.cpp",
+  "output": "CMakeFiles/sapphire.dir/src/lexer.cpp.obj"
+},
+{
+  "directory": "C:/Users/berna/Downloads/Sapphire/build",
+  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -DDEBUG_PRINT_CODE @CMakeFiles/sapphire.dir/includes_CXX.rsp -g -std=gnu++17 -g -o CMakeFiles\\sapphire.dir\\src\\compiler.cpp.obj -c C:\\Users\\berna\\Downloads\\Sapphire\\src\\compiler.cpp",
+  "file": "C:/Users/berna/Downloads/Sapphire/src/compiler.cpp",
+  "output": "CMakeFiles/sapphire.dir/src/compiler.cpp.obj"
+},
+{
+  "directory": "C:/Users/berna/Downloads/Sapphire/build",
+  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -DDEBUG_PRINT_CODE @CMakeFiles/sapphire.dir/includes_CXX.rsp -g -std=gnu++17 -g -o CMakeFiles\\sapphire.dir\\src\\parser.cpp.obj -c C:\\Users\\berna\\Downloads\\Sapphire\\src\\parser.cpp",
+  "file": "C:/Users/berna/Downloads/Sapphire/src/parser.cpp",
+  "output": "CMakeFiles/sapphire.dir/src/parser.cpp.obj"
+},
+{
+  "directory": "C:/Users/berna/Downloads/Sapphire/build",
+  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -DDEBUG_PRINT_CODE @CMakeFiles/sapphire.dir/includes_CXX.rsp -g -std=gnu++17 -g -o CMakeFiles\\sapphire.dir\\src\\object.cpp.obj -c C:\\Users\\berna\\Downloads\\Sapphire\\src\\object.cpp",
+  "file": "C:/Users/berna/Downloads/Sapphire/src/object.cpp",
+  "output": "CMakeFiles/sapphire.dir/src/object.cpp.obj"
+},
+{
+  "directory": "C:/Users/berna/Downloads/Sapphire/build",
+  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -DDEBUG_PRINT_CODE @CMakeFiles/sapphire.dir/includes_CXX.rsp -g -std=gnu++17 -g -o CMakeFiles\\sapphire.dir\\src\\vm.cpp.obj -c C:\\Users\\berna\\Downloads\\Sapphire\\src\\vm.cpp",
+  "file": "C:/Users/berna/Downloads/Sapphire/src/vm.cpp",
+  "output": "CMakeFiles/sapphire.dir/src/vm.cpp.obj"
+},
+{
+  "directory": "C:/Users/berna/Downloads/Sapphire/build",
+  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -DDEBUG_PRINT_CODE @CMakeFiles/sapphire.dir/includes_CXX.rsp -g -std=gnu++17 -g -o CMakeFiles\\sapphire.dir\\src\\value.cpp.obj -c C:\\Users\\berna\\Downloads\\Sapphire\\src\\value.cpp",
+  "file": "C:/Users/berna/Downloads/Sapphire/src/value.cpp",
+  "output": "CMakeFiles/sapphire.dir/src/value.cpp.obj"
+},
+{
+  "directory": "C:/Users/berna/Downloads/Sapphire/build",
+  "command": "C:\\msys64\\mingw64\\bin\\g++.exe -DDEBUG_PRINT_CODE @CMakeFiles/sapphire.dir/includes_CXX.rsp -g -std=gnu++17 -g -o CMakeFiles\\sapphire.dir\\src\\debug.cpp.obj -c C:\\Users\\berna\\Downloads\\Sapphire\\src\\debug.cpp",
+  "file": "C:/Users/berna/Downloads/Sapphire/src/debug.cpp",
+  "output": "CMakeFiles/sapphire.dir/src/debug.cpp.obj"
+}
+]
