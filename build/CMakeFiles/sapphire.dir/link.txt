@@ -1,3 +1,0 @@
-"C:\Program Files\CMake\bin\cmake.exe" -E rm -f CMakeFiles\sapphire.dir/objects.a
-C:\msys64\mingw64\bin\ar.exe qc CMakeFiles\sapphire.dir/objects.a @CMakeFiles\sapphire.dir\objects1.rsp
-C:\msys64\mingw64\bin\g++.exe -g -Wl,--whole-archive CMakeFiles\sapphire.dir/objects.a -Wl,--no-whole-archive -o sapphire.exe -Wl,--out-implib,libsapphire.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\sapphire.dir\linkLibs.rsp
