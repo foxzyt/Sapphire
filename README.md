@@ -9,7 +9,7 @@
 # **Sapphire 💎**
 
 ## About the Project ##
-### Sapphire is an interpreted programming language, developed with a focus on simplicity and clarity. Currently in its interpretation phase, the project is evolving to become a compiled language, aiming for higher performance and optimization. ###
+### Sapphire is an compiled programming language, developed with a focus on simplicity and clarity. Currently in its interpretation phase, the project is evolving to become a compiled language, aiming for higher performance and optimization. ###
 
 ## With Sapphire, you can: ##
 
