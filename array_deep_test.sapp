@@ -1,0 +1,30 @@
+// === Array Initialization ===
+double[] test = [100, 200, "ok", true, nil];
+print "== Testing valid indices ==";
+print test[0];
+print test[1];
+print test[2];
+print test[3];
+print test[4];
+
+print "== Testing out-of-bounds ==";
+print test[10];
+
+print "== Testing wrong types ==";
+print test[nil];      // should throw type error
+print test["1"];      // should throw type error
+print test[2.5];      // should throw type error
+
+print "== Testing negative index ==";
+print test[-1];       // undefined behavior unless handled
+
+// === Math Tests ===
+print "== Math.sqrt edge cases ==";
+print Math.sqrt(0);
+print Math.sqrt(1);
+print Math.sqrt(2);
+print Math.sqrt(10000);
+print Math.sqrt(-4);       // should error
+print Math.sqrt(nil);      // should error
+print Math.sqrt("64");     // should error
+print Math.sqrt(test);     // should error

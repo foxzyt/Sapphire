@@ -8,6 +8,18 @@
 #include <vector>
 #include <cmath>
 
+#define BINARY_OP(value_type, op) \
+    do { \
+        if (!std::holds_alternative<double>(peek(0)._value) || !std::holds_alternative<double>(peek(1)._value)) { \
+            std::cerr << "\n[Runtime Error] Binary operator expected two numbers but got: " \
+                      << get_value_type_name(peek(1)) << " and " << get_value_type_name(peek(0)) << "\n"; \
+            return false; \
+        } \
+        double b = std::get<double>(pop()._value); \
+        double a = std::get<double>(pop()._value); \
+        push(value_type(a op b)); \
+    } while (false)
+
 // --- Função Nativa ---
 static const auto clock_start_time = std::chrono::high_resolution_clock::now();
 static SapphireValue clock_native(int arg_count, SapphireValue* args) {
@@ -159,24 +171,14 @@ bool VM::call_value(SapphireValue callee, int arg_count) {
                 break;
         }
     }
-    std::cerr << "Runtime Error: Can only call functions and classes." << std::endl;
-    return false;
+
+      std::cerr << "\n[Runtime Error] Value is not callable (must be function, class, or bound method).\n";
+      return false;
+
 }
 
 // --- MACRO PARA OPERAÇÕES BINÁRIAS ---
-#define BINARY_OP(value_type, op) \
-    do { \
-        if (!std::holds_alternative<double>(peek(0)._value) || !std::holds_alternative<double>(peek(1)._value)) { \
-            std::cerr << "Runtime Error : Operators must be numbers. " \
-                      << "Received " << get_value_type_name(peek(1)) \
-                      << " and " << get_value_type_name(peek(0)) \
-                      << "." << std::endl; \
-            return false; \
-        } \
-        double b = std::get<double>(pop()._value); \
-        double a = std::get<double>(pop()._value); \
-        push(value_type(a op b)); \
-    } while (false)
+  
 
 
 // --- O CORAÇÃO DA VM: O LOOP DE EXECUÇÃO ---
@@ -205,8 +207,8 @@ bool VM::run() {
     ObjString* name = static_cast<ObjString*>(std::get<Obj*>(frame->function->chunk.constants[*frame->ip++]._value));
     auto it = globals.find(name->chars);
     if (it == globals.end()) {
-        std::cerr << "Runtime Error: Undefined global variable '" << name->chars << "'." << std::endl;
-        return false;
+      std::cerr << "\n[Runtime Error] Undefined global variable: '" << name->chars << "'\n";
+      return false;
     }
     push(it->second);
     break;
@@ -219,8 +221,9 @@ bool VM::run() {
 }
             case OP_GET_PROPERTY: {
     if (!is_obj_type(peek(0), OBJ_INSTANCE)) {
-        std::cerr << "Runtime Error: Only instances have properties." << std::endl;
-        return false;
+      std::cerr << "\n[Runtime Error] Attempted property access on non-instance object.\n";
+      return false;
+    
     }
     ObjInstance* instance = static_cast<ObjInstance*>(std::get<Obj*>(peek(0)._value));
     ObjString* name = static_cast<ObjString*>(std::get<Obj*>(frame->function->chunk.constants[*frame->ip++]._value));
@@ -252,8 +255,10 @@ bool VM::run() {
 }
 case OP_SET_PROPERTY: {
     if (std::get_if<Obj*>(&peek(1)._value) == nullptr || std::get<Obj*>(peek(1)._value)->type != OBJ_INSTANCE) {
-        std::cerr << "Runtime Error: Only instances have fields." << std::endl;
-        return false;
+
+      std::cerr << "\n[Runtime Error] Only instance objects can have fields assigned.\n";
+      return false;
+
     }
     ObjInstance* instance = static_cast<ObjInstance*>(std::get<Obj*>(peek(1)._value));
     ObjString* name = static_cast<ObjString*>(std::get<Obj*>(frame->function->chunk.constants[*frame->ip++]._value));
@@ -304,8 +309,10 @@ case OP_SET_PROPERTY: {
         push(a + b);
     } else {
         // Se os tipos não corresponderem, gera um erro.
-        std::cerr << "Runtime Error: Operands for '+' must be two numbers or two strings." << std::endl;
-        return false;
+        
+      std::cerr << "\n[Runtime Error] '+' operator requires two numbers or two strings.\n";
+      return false;
+    
     }
     break;
 }
@@ -316,8 +323,9 @@ case OP_SET_PROPERTY: {
             case OP_NOT:      push(is_falsey(pop())); break;
             case OP_NEGATE:
                 if (!std::holds_alternative<double>(peek(0)._value)) {
-                    std::cerr << "Erro de Runtime: Operando para '-' deve ser um numero." << std::endl;
-                    return false;
+                   
+                  std::cerr << "\n[Runtime Error] Operand for unary '-' must be a number.\n";
+                  return false;
                 }
                 push(-std::get<double>(pop()._value));
                 break;
@@ -396,14 +404,16 @@ case OP_SET_PROPERTY: {
                 // 1. Verifica se estamos mesmo tentando acessar um array.
                 if (!std::holds_alternative<std::shared_ptr<SapphireArray>>(array_val._value)) {
                     std::cerr << "Runtime Error: Subscript target must be an array." << std::endl;
-                    return false;
+                    push(SapphireValue());
+                    return true;
                 }
                 auto array_obj = std::get<std::shared_ptr<SapphireArray>>(array_val._value);
                 
                 // 2. Verifica se o índice é um número.
                 if (!std::holds_alternative<double>(index_val._value)) {
                     std::cerr << "Runtime Error: Array index must be a number." << std::endl;
-                    return false;
+                    push(SapphireValue()); // push nil onto the stack
+                    return true;
                 }
                 double index_double = std::get<double>(index_val._value);
                 int index = static_cast<int>(index_double);
@@ -411,7 +421,8 @@ case OP_SET_PROPERTY: {
                 // 3. Verifica se o índice está dentro dos limites do array (bounds checking).
                 if (index < 0 || index >= array_obj->elements.size()) {
                     std::cerr << "Runtime Error: Array index out of bounds." << std::endl;
-                    return false;
+                    push(SapphireValue()); // push nil onto the stack
+                    return true;
                 }
                 
                 // 4. Se tudo estiver certo, pega o elemento e o coloca na pilha.
