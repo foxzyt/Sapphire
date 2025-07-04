@@ -20,7 +20,7 @@
 ### Our goal is to provide an intuitive and robust development experience. ###
 
 ## Technologies Used ##
-### C++: The base language for the development of Sapphire's interpreter/compiler. ###
+### C++: The base language for the development of Sapphire's compiler. ###
 
 ### CMake: Used to manage the project's build process. ###
 
