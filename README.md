@@ -223,7 +223,7 @@ print "--- Testing Type Errors at Compile Time ---";
 ## Reporting Issues ##
 ### If you find a bug, have a feature suggestion, or any other question, please open a new Issue in our repository. When opening an issue, please provide as much detail as possible, including: ###
 
-### Clear description of the problem/suggestion. ###
+### Clear description of the problem /suggestion. ###
 
 ### Steps to reproduce (if it's a bug). ###
 
