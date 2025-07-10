@@ -30,7 +30,7 @@
 ## Prerequisites ✅ ##
 ### Make sure you have the following software installed on your system: ###
 
-### 7zip pra WinRar (opcional) : To extracto Sapphire's files. ###
+### 7zip or WinRar (opcional) : To extracto Sapphire's files. ###
 
 ## Installation ##
 
