@@ -1,4 +1,4 @@
-
+⁰
 [![Repo Size](https://img.shields.io/github/repo-size/foxzyt/Sapphire)](https://github.com/foxzyt/Sapphire)
 [![GitHub issues](https://img.shields.io/github/issues/foxzyt/Sapphire)](https://github.com/foxzyt/Sapphire/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/foxzyt/Sapphire?style=social)](https://github.com/foxzyt/Sapphire/stargazers)
@@ -57,7 +57,7 @@
 ## Reporting Issues ##
 ### If you find a bug, have a feature suggestion, or any other question, please open a new Issue in our repository. When opening an issue, please provide as much detail as possible, including: ###
 
-### Clear description of the problem /suggestion. ###
+### Clear description of the problem / suggestion. ###
 
 ### Steps to reproduce (if it's a bug). ###
 
