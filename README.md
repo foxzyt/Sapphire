@@ -2,7 +2,7 @@
 [![GitHub issues](https://img.shields.io/github/issues/foxzyt/Sapphire)](https://github.com/foxzyt/Sapphire/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/foxzyt/Sapphire?style=social)](https://github.com/foxzyt/Sapphire/stargazers)
 [![Last Commit](https://img.shields.io/github/last-commit/foxzyt/Sapphire)](https://github.com/foxzyt/Sapphire/commits/main)
-[![Sapphire Version](https://img.shields.io/badge/Sapphire-v1.0.3a-blue)](https://github.com/foxzyt/Sapphire/releases)
+[![Sapphire Version](https://img.shields.io/badge/Sapphire-v1.0.4-blue)](https://github.com/foxzyt/Sapphire/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 # **Sapphire 💎**
