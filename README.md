@@ -8,13 +8,15 @@
 # **Sapphire 💎**
 
 ## About the Project ##
-### Sapphire is an compiled programming language, developed with a focus on simplicity and clarity. Currently in its interpretation phase, the project is evolving to become a compiled language, aiming for higher performance and optimization. ###
+### Sapphire is an compiled programming language, developed with a focus on simplicity and clarity. The project is a compiled language, focused in high speeds and high control. ###
 
 ## With Sapphire, you can: ##
 
 ### Calculate Expressions: Perform complex mathematical and logical operations. ###
 
 ### Declare Variables: Manage data flexibly with static typing. ###
+
+### Declare functions, classes, methods, make a UI system easily, do a lot more of math operations using MathUtils, pack a script in a executable and more! ###
 
 ### Our goal is to provide an intuitive and robust development experience. ###
 
