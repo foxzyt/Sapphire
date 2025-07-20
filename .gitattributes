@@ -1,1 +1,2 @@
 build/** linguist-vendored
+*.mk linguist-vendored
