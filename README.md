@@ -10,7 +10,7 @@
 
 
 ## About the Project ##
-Sapphire is an compiled programming language, developed with a focus on simplicity and clarity. The project is a compiled language, focused in high speeds and high control. ###
+Sapphire is an compiled programming language, developed with a focus on simplicity and clarity. The project is a compiled language, focused in high speeds and high control.
 
 ## With Sapphire, you can: ##
 
