@@ -30,12 +30,12 @@ Sapphire is an compiled programming language, developed with a focus on simplici
 ## How to Install and Set Up ##
 To start using Sapphire, follow the steps below:
 
-## Prerequisites ##
+### Prerequisites ###
 Make sure you have the following software installed on your system:
 
 7zip or WinRar (opcional) : To extracto Sapphire's files.
 
-## Installation ##
+### Installation ###
 
 **- Download** the **latest** release from the repository.
 
