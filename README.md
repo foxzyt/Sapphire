@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## NOTICE : ##
-###  Next release will take A LONG time, because i am building a JIT compiler for Sapphire's 2.0 version, so, it might take another 2 weeks, AsmJit is complicated.. ###
+###  I'm temporarily stepping away from active Sapphire development to dedicate time to other exciting projects. Rest assured, I remain committed to Sapphire and will return to it! ###
 ![logo](assets/download.svg)  
 # **S a p p h i r e**
 
