@@ -35,13 +35,13 @@ To start using Sapphire, follow the steps below:
 ### Prerequisites ###
 Make sure you have the following software installed on your system:
 
-7zip or WinRar (opcional) : To extracto Sapphire's files.
+7zip or WinRar (opcional) : To extract Sapphire's files.
 
 ### Installation ###
 
 **- Download** the **latest** release from the repository.
 
-**- Extract the files** using your Windows Explorer, 7zip or WinRar.
+**- Extract the files** using Windows Explorer, 7zip or WinRar.
 
 **- Navigate inside Sapphire's** root folder using your Windows Explorer.
 
