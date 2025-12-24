@@ -5,7 +5,6 @@
 [![Sapphire Version](https://img.shields.io/badge/Sapphire-v1.0.4-blue)](https://github.com/foxzyt/Sapphire/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## NOTICE : ##
 ![logo](assets/download.svg)  
 # **S a p p h i r e**
 
