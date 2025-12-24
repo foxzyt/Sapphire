@@ -27,10 +27,13 @@ Sapphire is an compiled programming language, developed with a focus on simplici
 
 **CMake:** Used to **manage the project's** build process.
 
+**SFML** Used to render the windows.
+
 ## How to Install and Set Up ##
 To start using Sapphire, follow the steps below:
 
 ### Prerequisites ###
+Since the installer is being worked on, installation is manual.
 Make sure you have the following software installed on your system:
 
 7zip or WinRar (opcional) : To extract Sapphire's files.
