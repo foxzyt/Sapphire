@@ -22,6 +22,8 @@ Sapphire is an compiled programming language, developed with a focus on simplici
 
 **Our goal is to provide an intuitive and robust development experience.**
 
+** Version Currently in Development: Sapphire v1.0.5**
+
 ## Technologies Used ##
 **C++:** The **base language** for the development of Sapphire's compiler.
 
