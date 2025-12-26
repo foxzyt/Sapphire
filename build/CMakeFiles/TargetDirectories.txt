@@ -1,3 +1,0 @@
-C:/Users/berna/Downloads/Sapphire/build/CMakeFiles/sapphire.dir
-C:/Users/berna/Downloads/Sapphire/build/CMakeFiles/edit_cache.dir
-C:/Users/berna/Downloads/Sapphire/build/CMakeFiles/rebuild_cache.dir
