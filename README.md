@@ -6,11 +6,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ![logo](assets/download.svg)  
-# **S a p p h i r e**
+# **Sapphire**
 
 
 ## About the Project ##
-Sapphire is an compiled programming language, developed with a focus on simplicity and clarity. The project is a compiled language, focused in high speeds and high control.
+Sapphire is an hybrid programming language, developed with a focus on simplicity and clarity. The project is a hybrid language, focused in high speeds and ease of use.
 
 ## With Sapphire, you can: ##
 
@@ -18,18 +18,18 @@ Sapphire is an compiled programming language, developed with a focus on simplici
 
 **Declare Variables:** Manage data flexibly with static typing.
 
-**Declare functions, classes, methods, make a UI system easily, do a lot more of math operations using MathUtils, pack a script in a executable and more!**
+**Declare functions, classes, methods, make a UI system easily, make complex arithmetic operations, communicate with the system and much more!**
 
 **Our goal is to provide an intuitive and robust development experience.**
 
-**Version Currently in Development: Sapphire v1.0.5**
+**Version Currently in Development: Sapphire v1.0.6**
 
 ## Technologies Used ##
 **C++:** The **base language** for the development of Sapphire's compiler.
 
 **CMake:** Used to **manage the project's** build process.
 
-**SFML** Used to render the windows.
+**SFML** Used to **render** the windows.
 
 ## How to Install and Set Up ##
 To start using Sapphire, follow the steps below:
@@ -38,7 +38,7 @@ To start using Sapphire, follow the steps below:
 Since the installer is being worked on, installation is manual.
 Make sure you have the following software installed on your system:
 
-7zip or WinRar (opcional) : To extract Sapphire's files.
+7zip or WinRar (optional) : To extract Sapphire's files.
 
 ### Installation ###
 
@@ -50,17 +50,17 @@ Make sure you have the following software installed on your system:
 
 **- Add the 'build'** directory in your PATH
 
-**- Open a new terminal** in Sapphire's root directory
+**- Open a new terminal** in Sapphire's root directory or your project's directory.
 
 Now you can do : **Sapphire <your_script.sp>**
 
-This will execute your script using Sapphire's compiler.
+This will execute your script using Sapphire's hybrid interpreter.
 
 ## Syntax and Examples ##
-Sapphire supports static types and basic operations. **You can see a detailed explanaition of The language in the Sapphire Documentation.pdf file.**
+Sapphire supports static types and basic operations. **You can see the test scripts included in the latest release of Sapphire (v1.0.5) **
 
 ## How to Contribute ##
-We appreciate your interest in contributing to the Sapphire project! Currently, the primary way to contribute is by reporting issues.
+We appreciate your interest in contributing to the Sapphire project! Currently, the primary way to contribute is by reporting issues or by make pull requests.
 
 ## Reporting Issues ##
 If you find a bug, have a feature suggestion, or any other question, please open a new Issue in our repository. When opening an issue, please provide as much detail as possible, including:
