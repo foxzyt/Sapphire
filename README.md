@@ -22,7 +22,7 @@ Sapphire is an hybrid programming language, developed with a focus on simplicity
 
 **Our goal is to provide an intuitive and robust development experience.**
 
-**Version Currently in Development: Sapphire v1.0.6**
+**Version Currently in Development: Sapphire v1.0.5a and v1.0.6**
 
 ## Technologies Used ##
 **C++:** The **base language** for the development of Sapphire's compiler.
@@ -57,7 +57,7 @@ Now you can do : **Sapphire <your_script.sp>**
 This will execute your script using Sapphire's hybrid interpreter.
 
 ## Syntax and Examples ##
-Sapphire supports static types and basic operations. **You can see the test scripts included in the latest release of Sapphire (v1.0.5) **
+Sapphire supports static types, complex operations and even making an UI! **You can see the test scripts included in the latest release of Sapphire (v1.0.5)**
 
 ## How to Contribute ##
 We appreciate your interest in contributing to the Sapphire project! Currently, the primary way to contribute is by reporting issues or by make pull requests.
