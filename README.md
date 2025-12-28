@@ -57,7 +57,7 @@ Now you can do : **Sapphire <your_script.sp>**
 This will execute your script using Sapphire's hybrid interpreter.
 
 ## Syntax and Examples ##
-Sapphire supports static types, complex operations and even making an UI! **You can see the test scripts included in the latest release of Sapphire (v1.0.5)**
+Sapphire supports static types, complex operations and even making an UI! **You can see the test scripts included in the latest release of Sapphire (v1.0.6)**
 
 ## How to Contribute ##
 We appreciate your interest in contributing to the Sapphire project! Currently, the primary way to contribute is by reporting issues or by make pull requests.
