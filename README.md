@@ -58,6 +58,75 @@ This will execute your script using Sapphire's hybrid interpreter.
 
 ## Syntax and Examples ##
 Sapphire supports static types, complex operations and even making an UI! **You can see the test scripts included in the latest release of Sapphire (v1.0.6)**
+UI Scripts:
+
+```
+string btnLabel = "Clique Aqui";
+UI.CreateStyle("BlueTheme", "#1a1a2e", "#e94560", "#0f3460", 2.0, "#16213e", 10.0, "Arial", 18);
+
+function updateUI() void {
+    UI.Begin();
+    UI.PushStyle("BlueTheme");
+
+    UI.SetBGColor("#16213e");
+    UI.Text("UI Nativa!");
+    UI.Spacing();
+
+    if (UI.Button(btnLabel, 200.0, 50.0)) {
+        print "Botão foi clickado!";
+    }
+
+    UI.PopStyle();
+    UI.End();
+}
+
+while (true) {
+    updateUI();
+}
+```
+
+HTTP, I/O and JSON script:        (Run with Windows Terminals so it shows the colors, CMD dosen't supports ANSI characters)
+
+```
+function main() void {
+    IO.printColor("cyan", "--- Starting Integration Test ---");
+
+    IO.printColor("yellow", "Fetching API data...");
+    string url = "http://jsonplaceholder.typicode.com/todos/1";
+    string response = HTTP.get(url);
+
+    if (len(response) > 0) {
+        IO.printColor("green", "HTTP Response received successfully!");
+
+        class data = JSON.parse(response);
+
+        IO.printColor("cyan", "Data ID: ");
+        print data.id;
+        IO.printColor("cyan", "Title: ");
+        print data.title;
+
+        string path = "backup_api.json";
+        IO.printColor("yellow", "Saving backup to disk...");
+
+        if (IO.writeFile(path, response)) {
+            IO.printColor("green", "File saved: " + path);
+        }
+
+        if (IO.exists(path)) {
+            IO.printColor("green", "Verification: File exists on disk.");
+            string localContent = IO.readFile(path);
+            IO.printColor("cyan", "Content read from file:");
+            print localContent;
+        }
+    } else {
+        IO.printColor("red", "Error: Could not connect to the API.");
+    }
+
+    IO.printColor("green", "--- Test Finished ---");
+}
+
+main();
+```
 
 ## How to Contribute ##
 We appreciate your interest in contributing to the Sapphire project! Currently, the primary way to contribute is by reporting issues or by make pull requests.
