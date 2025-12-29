@@ -22,7 +22,7 @@ Sapphire is an hybrid programming language, developed with a focus on simplicity
 
 **Our goal is to provide an intuitive and robust development experience.**
 
-**Version Currently in Development: Sapphire v1.0.5a and v1.0.6**
+**Version Currently in Development: Sapphire v1.0.8 (will have a lot of UI syntax changes and prob a layout engine :D )**
 
 ## Technologies Used ##
 **C++:** The **base language** for the development of Sapphire's compiler.
