@@ -61,7 +61,7 @@ Sapphire supports static types, complex operations and even making an UI! **You 
 UI Scripts:
 
 ```
-string btnLabel = "Clique Aqui";
+string btnLabel = "Click here!";
 UI.CreateStyle("BlueTheme", "#1a1a2e", "#e94560", "#0f3460", 2.0, "#16213e", 10.0, "Arial", 18);
 
 function updateUI() void {
@@ -69,11 +69,11 @@ function updateUI() void {
     UI.PushStyle("BlueTheme");
 
     UI.SetBGColor("#16213e");
-    UI.Text("UI Nativa!");
+    UI.Text("Native UI!");
     UI.Spacing();
 
     if (UI.Button(btnLabel, 200.0, 50.0)) {
-        print "Botão foi clickado!";
+        print "Button was clicked!";
     }
 
     UI.PopStyle();
