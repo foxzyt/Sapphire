@@ -31,6 +31,22 @@ Sapphire is an hybrid programming language, developed with a focus on simplicity
 
 **SFML** Used to **render** the windows.
 
+## Features ##
+
+**SapphireUI:** The native Immediate Mode GUI that comes bundled with Sapphire's executable.
+**Basic and Complex arithmetic operations:** You can add, subtract, divide, multiply and also do complex arithmetic operations with the Math native functions.
+**Garbage Collector:** Sapphire comes with an Mark-and-Sweep garbage collector made effeciently with C++
+**JSON parsing:** Sapphire has a native function for JSON parsing also bundled within the main executable.
+**HTTP library:** There is a complete HTTP library (ping, download and etc) that comes within Sapphire's executable.
+**A lot of other native functions:** Sapphire also has system-related native functions, color printing, debug functions and a lot more.
+**Declare functions, classes and arrays easily:** Use function, class and ListUtil (for arrays)
+**No steep learning curve:** With Sapphire, you can make an UI window in just 5 minutes!
+**Built-in layout engine (being worked on):** Sapphire will have a built-in layout engine with flexbox and grids so you can organize your elements inside your UI!
+**Static Typing:** In Sapphire, so you can achieve the best performance, you have to declare the variable type!
+**Virtual Machine (SVM):** Sapphire has it's built in fast Virtual Machine called SVM (Sapphire Virtual Machine)
+**Bytecode:** Sapphire can also compile to bytecode (.sbc)!
+**Lightweight and no dependencies:** Sapphire's executable has everything static linked, so you don't have to have any DLLs in your folder! It's only 12MB!
+
 ## How to Install and Set Up ##
 To start using Sapphire, follow the steps below:
 
