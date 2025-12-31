@@ -55,6 +55,8 @@ Sapphire is an hybrid programming language, developed with a focus on simplicity
 
 **Virtual Machine (SVM):** Sapphire has it's built in fast Virtual Machine called SVM (Sapphire Virtual Machine)
 
+**Mine: Plugin Repository:** Sapphire has Mine, an plugin Repository which you can download plugins directly from Sapphire's CLI.
+
 **Bytecode:** Sapphire can also compile to bytecode (.sbc)!
 
 **Lightweight and no dependencies:** Sapphire's executable has everything static linked, so you don't have to have any DLLs in your folder! It's only 12MB!
