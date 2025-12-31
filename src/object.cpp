@@ -58,7 +58,7 @@ void print_object(const SapphireValue& value) {
 
 // Template para registrar um novo objeto no GC
 template <typename T>
-static void register_object(VM* vm, T* object) {
+void register_object(VM* vm, T* object) {
     object->is_marked = false;
     object->next = vm->objects;
     vm->objects = object;
