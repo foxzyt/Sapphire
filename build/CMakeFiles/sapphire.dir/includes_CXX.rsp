@@ -1,0 +1,1 @@
+-I"E:/Sapphire/Sapphire-v1.0.7/Sapphire-1.0.7-EXPERIMENTAL/src" -I"E:/Sapphire/Sapphire-v1.0.7/Sapphire-1.0.7-EXPERIMENTAL/libs" -I"E:/Sapphire/Sapphire-v1.0.7/Sapphire-1.0.7-EXPERIMENTAL/libs/openssl/include" -isystem "E:/Sapphire/Sapphire-v1.0.7/Sapphire-1.0.7-EXPERIMENTAL/libs/SFML-3.0.2-MinGW/include"

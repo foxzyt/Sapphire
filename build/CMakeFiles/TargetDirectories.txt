@@ -1,0 +1,4 @@
+E:/Sapphire/Sapphire-v1.0.7/Sapphire-1.0.7-EXPERIMENTAL/build/CMakeFiles/sapphire_core.dir
+E:/Sapphire/Sapphire-v1.0.7/Sapphire-1.0.7-EXPERIMENTAL/build/CMakeFiles/sapphire.dir
+E:/Sapphire/Sapphire-v1.0.7/Sapphire-1.0.7-EXPERIMENTAL/build/CMakeFiles/edit_cache.dir
+E:/Sapphire/Sapphire-v1.0.7/Sapphire-1.0.7-EXPERIMENTAL/build/CMakeFiles/rebuild_cache.dir
