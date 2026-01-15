@@ -8,6 +8,10 @@
 ![logo](assets/download.svg)  
 # **Sapphire**
 
+Status about the development: I've decided that Sapphire will only have grids, and I've got a spreadsheet like system to work, but I'm focusing on solving rendering problems regarding
+the grid system. I am also working on making the language's syntax less strict, such as making so you don't need to put semicolons after variables and other things, don't needing to
+declare the variable type, converting a number to string automatically and a lot of other stuff, and also general improvements such as for loops, enums and etc.
+
 
 ## About the Project ##
 Sapphire is an hybrid programming language, developed with a focus on simplicity and clarity. The project is a hybrid language, focused in high speeds and ease of use.
@@ -22,7 +26,7 @@ Sapphire is an hybrid programming language, developed with a focus on simplicity
 
 **Our goal is to provide an intuitive and robust development experience.**
 
-**Version Currently in Development: Sapphire v1.0.7 (will have a lot of UI syntax changes and prob a layout engine :D. Status: struggling with the layout engine )**
+**Version Currently in Development: Sapphire v1.0.7**
 
 ## Technologies Used ##
 **C++:** The **base language** for the development of Sapphire's compiler.
