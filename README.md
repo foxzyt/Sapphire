@@ -1,100 +1,154 @@
+<div align="center">
+
+<img src="assets/download.svg" alt="Sapphire Logo" width="180"/>
+
+# **Sapphire**
+
+### A fast, lightweight and expressive hybrid programming language
+
 [![Repo Size](https://img.shields.io/github/repo-size/foxzyt/Sapphire)](https://github.com/foxzyt/Sapphire)
-[![GitHub issues](https://img.shields.io/github/issues/foxzyt/Sapphire)](https://github.com/foxzyt/Sapphire/issues)
+[![GitHub Issues](https://img.shields.io/github/issues/foxzyt/Sapphire)](https://github.com/foxzyt/Sapphire/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/foxzyt/Sapphire?style=social)](https://github.com/foxzyt/Sapphire/stargazers)
 [![Last Commit](https://img.shields.io/github/last-commit/foxzyt/Sapphire)](https://github.com/foxzyt/Sapphire/commits/main)
 [![Sapphire Version](https://img.shields.io/badge/Sapphire-v1.0.6-blue)](https://github.com/foxzyt/Sapphire/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-![logo](assets/download.svg)  
-# **Sapphire**
+</div>
 
-Status about the development: I've decided that Sapphire will only have grids, and I've got a spreadsheet like system to work, but I'm focusing on solving rendering problems regarding
-the grid system. I am also working on making the language's syntax less strict, such as making so you don't need to put semicolons after variables and other things, don't needing to
-declare the variable type, converting a number to string automatically and a lot of other stuff, and also general improvements such as for loops, enums and etc.
+## 🚧 Development Status
 
+Sapphire is currently under **active development**.
 
-## About the Project ##
-Sapphire is an hybrid programming language, developed with a focus on simplicity and clarity. The project is a hybrid language, focused in high speeds and ease of use.
+The language is now focused on a **grid-based rendering system**, with a spreadsheet-like architecture already functional. Current work includes:
 
-## With Sapphire, you can: ##
+* Solving **rendering and performance issues** related to grids
+* Making the **syntax more flexible**, including:
 
-**Calculate Expressions:** Perform complex mathematical and logical operations. 
+  * Optional semicolons
+  * Automatic type inference
+  * Automatic number-to-string conversion
+* Language improvements and new features:
 
-**Declare Variables:** Manage data flexibly with static typing.
+  * `for` loops
+  * `enums`
+  * `const`
+  * Better error treatment
+  * General syntax and usability enhancements
 
-**Declare functions, classes, methods, make a UI system easily, make complex arithmetic operations, communicate with the system and much more!**
+**Current Development Version:** `Sapphire v1.0.7`
 
-**Our goal is to provide an intuitive and robust development experience.**
+---
 
-**Version Currently in Development: Sapphire v1.0.7**
+## 📘 About the Project
 
-## Technologies Used ##
-**C++:** The **base language** for the development of Sapphire's compiler.
+**Sapphire** is a **hybrid programming language** designed with a strong focus on:
 
-**CMake:** Used to **manage the project's** build process.
+* ⚡ Performance
+* 🧠 Simplicity
+* ✨ Clarity
 
-**SFML** Used to **render** the windows.
+It aims to combine the speed of compiled languages with the ease of use of high-level scripting, making it suitable for tools, UI-driven applications, and system-level tasks.
 
-## Features ##
+---
 
-**SapphireUI:** The native Immediate Mode GUI that comes bundled with Sapphire's executable.
+## ✨ What You Can Do with Sapphire
 
-**Basic and Complex arithmetic operations:** You can add, subtract, divide, multiply and also do complex arithmetic operations with the Math native functions.
+* Perform **complex mathematical and logical expressions**
+* Declare **variables, functions, classes, and arrays**
+* Build **native UI systems** easily
+* Communicate with the **operating system**
+* Handle **HTTP, JSON, file I/O**, and more
+* Write clean, readable, and efficient code with minimal boilerplate
 
-**Garbage Collector:** Sapphire comes with an Mark-and-Sweep garbage collector made effeciently with C++
+---
 
-**JSON parsing:** Sapphire has a native function for JSON parsing also bundled within the main executable.
+## 🛠️ Technologies Used
 
-**HTTP library:** There is a complete HTTP library (ping, download and etc) that comes within Sapphire's executable.
+* **C++** — Core language used to build the compiler and runtime
+* **CMake** — Project build system
+* **SFML** — Window creation and rendering
 
-**A lot of other native functions:** Sapphire also has system-related native functions, color printing, debug functions and a lot more.
+---
 
-**Declare functions, classes and arrays easily:** Use function, class and ListUtil (for arrays)
+## 🚀 Features
 
-**No steep learning curve:** With Sapphire, you can make an UI window in just 5 minutes!
+* **SapphireUI**
+  Native Immediate Mode GUI bundled directly with the executable
 
-**Built-in layout engine (being worked on):** Sapphire will have a built-in layout engine with flexbox and grids so you can organize your elements inside your UI!
+* **Arithmetic Operations**
+  From basic math to advanced operations via built-in Math functions
 
-**Static Typing:** In Sapphire, so you can achieve the best performance, you have to declare the variable type!
+* **Garbage Collector**
+  Efficient **Mark-and-Sweep GC** implemented in C++
 
-**Virtual Machine (SVM):** Sapphire has it's built in fast Virtual Machine called SVM (Sapphire Virtual Machine)
+* **JSON Parsing**
+  Native JSON parsing support
 
-**Mine: Plugin Repository:** Sapphire has Mine, an plugin Repository which you can download plugins directly from Sapphire's CLI.
+* **HTTP Library**
+  Built-in HTTP features (ping, download, requests, etc.)
 
-**Bytecode:** Sapphire can also compile to bytecode (.sbc)!
+* **System Utilities**
+  File I/O, colored terminal output, debug tools, and more
 
-**Lightweight and no dependencies:** Sapphire's executable has everything static linked, so you don't have to have any DLLs in your folder! It's only 30MB!
+* **Simple Declarations**
+  Easily declare functions, classes, and arrays (`ListUtil`)
 
-## How to Install and Set Up ##
-To start using Sapphire, follow the steps below:
+* **Low Learning Curve**
+  Create a UI window in minutes
 
-### Prerequisites ###
-Since the installer is being worked on, installation is manual.
-Make sure you have the following software installed on your system:
+* **Built-in Layout Engine (WIP)**
+  Flexbox and grid-based layout system
 
-7zip or WinRar (optional) : To extract Sapphire's files.
+* **Static Typing**
+  Designed for maximum performance
 
-### Installation ###
+* **SVM (Sapphire Virtual Machine)**
+  Fast, custom-built virtual machine
 
-**- Download** the **latest** release from the repository.
+* **Mine: Plugin Repository**
+  Download plugins directly from the Sapphire CLI
 
-**- Extract the files** using Windows Explorer, 7zip or WinRar.
+* **Bytecode Compilation**
+  Compile scripts into `.sbc` bytecode
 
-**- Navigate inside Sapphire's** root folder using your Windows Explorer.
+* **Lightweight & Standalone**
+  Fully statically linked executable (~30 MB, no DLLs required)
 
-**- Add the 'build'** directory in your PATH
+---
 
-**- Open a new terminal** in Sapphire's root directory or your project's directory.
+## 📦 Installation & Setup
 
-Now you can do : **Sapphire <your_script.sp>**
+### Prerequisites
 
-This will execute your script using Sapphire's hybrid interpreter.
+Since the installer is still in development, installation is **manual**.
 
-## Syntax and Examples ##
-Sapphire supports static types, complex operations and even making an UI! **You can see the test scripts included in the latest release of Sapphire (v1.0.6)**
-UI Scripts:
+You may need:
 
+* **7-Zip or WinRAR** (optional, for extraction)
+
+### Installation Steps
+
+1. **Download** the latest release from the repository
+2. **Extract** the archive
+3. Open the **Sapphire root folder**
+4. Add the `build` directory to your system **PATH**
+5. Open a new terminal
+
+Run a script with:
+
+```bash
+Sapphire your_script.sp
 ```
+
+This executes the script using Sapphire’s hybrid interpreter.
+
+---
+
+## 🧩 Syntax & Examples
+
+### UI Example
+
+```sapphire
 string btnLabel = "Click here!";
 UI.CreateStyle("BlueTheme", "#1a1a2e", "#e94560", "#0f3460", 2.0, "#16213e", 10.0, "Arial", 18);
 
@@ -119,9 +173,13 @@ while (true) {
 }
 ```
 
-HTTP, I/O and JSON script:        (Run with Windows Terminals so it shows the colors, CMD dosen't supports ANSI characters)
+---
 
-```
+### HTTP, I/O & JSON Example
+
+*(Use Windows Terminal for ANSI color support)*
+
+```sapphire
 function main() void {
     IO.printColor("cyan", "--- Starting Integration Test ---");
 
@@ -134,9 +192,10 @@ function main() void {
 
         class data = JSON.parse(response);
 
-        IO.printColor("cyan", "Data ID: ");
+        IO.printColor("cyan", "Data ID:");
         print data.id;
-        IO.printColor("cyan", "Title: ");
+
+        IO.printColor("cyan", "Title:");
         print data.title;
 
         string path = "backup_api.json";
@@ -162,22 +221,36 @@ function main() void {
 main();
 ```
 
-## How to Contribute ##
-We appreciate your interest in contributing to the Sapphire project! Currently, the primary way to contribute is by reporting issues or by make pull requests.
+---
 
-## Reporting Issues ##
-If you find a bug, have a feature suggestion, or any other question, please open a new Issue in our repository. When opening an issue, please provide as much detail as possible, including:
+## 🤝 Contributing
 
-**- Clear description of the problem / suggestion.**
+Contributions are welcome!
 
-**- Steps to reproduce (if it's a bug).**
+You can help by:
 
-**- Expected behavior vs. observed behavior.**
+* Reporting bugs
+* Suggesting features
+* Submitting pull requests
 
-**- Information about your environment (OS, compiler version, etc.).**
+### Reporting Issues
 
-## Author ##
+When opening an issue, please include:
+
+* Clear description of the problem or suggestion
+* Steps to reproduce (if applicable)
+* Expected vs actual behavior
+* Environment details (OS, compiler, etc.)
+
+---
+
+## 👤 Author
+
 **foxzyt**
 
-## License ##
-This project is licensed under the **MIT License** - see the LICENSE file for details.
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License**.
+See the `LICENSE` file for more information.
