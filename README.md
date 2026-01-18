@@ -63,7 +63,7 @@ Sapphire is an hybrid programming language, developed with a focus on simplicity
 
 **Bytecode:** Sapphire can also compile to bytecode (.sbc)!
 
-**Lightweight and no dependencies:** Sapphire's executable has everything static linked, so you don't have to have any DLLs in your folder! It's only 12MB!
+**Lightweight and no dependencies:** Sapphire's executable has everything static linked, so you don't have to have any DLLs in your folder! It's only 30MB!
 
 ## How to Install and Set Up ##
 To start using Sapphire, follow the steps below:
