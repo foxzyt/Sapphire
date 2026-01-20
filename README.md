@@ -15,7 +15,7 @@
 
 </div>
 
-## 🚧 Development Status
+## Development Status
 
 Sapphire is currently under **active development**.
 
@@ -39,19 +39,19 @@ The language is now focused on a **grid-based rendering system**, with a spreads
 
 ---
 
-## 📘 About the Project
+## About the Project
 
 **Sapphire** is a **hybrid programming language** designed with a strong focus on:
 
-* ⚡ Performance
-* 🧠 Simplicity
-* ✨ Clarity
+* Performance
+* Simplicity
+* Clarity
 
 It aims to combine the speed of compiled languages with the ease of use of high-level scripting, making it suitable for tools, UI-driven applications, and system-level tasks.
 
 ---
 
-## ✨ What You Can Do with Sapphire
+## What You Can Do with Sapphire
 
 * Perform **complex mathematical and logical expressions**
 * Declare **variables, functions, classes, and arrays**
@@ -62,7 +62,7 @@ It aims to combine the speed of compiled languages with the ease of use of high-
 
 ---
 
-## 🛠️ Technologies Used
+## Technologies Used
 
 * **C++** — Core language used to build the compiler and runtime
 * **CMake** — Project build system
@@ -70,7 +70,7 @@ It aims to combine the speed of compiled languages with the ease of use of high-
 
 ---
 
-## 🚀 Features
+## Features
 
 * **SapphireUI**
   Native Immediate Mode GUI bundled directly with the executable
@@ -116,7 +116,7 @@ It aims to combine the speed of compiled languages with the ease of use of high-
 
 ---
 
-## 📦 Installation & Setup
+## Installation & Setup
 
 ### Prerequisites
 
@@ -144,7 +144,7 @@ This executes the script using Sapphire’s hybrid interpreter.
 
 ---
 
-## 🧩 Syntax & Examples
+## Syntax & Examples
 
 ### UI Example
 
@@ -223,7 +223,7 @@ main();
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome!
 
@@ -244,13 +244,13 @@ When opening an issue, please include:
 
 ---
 
-## 👤 Author
+## Author
 
 **foxzyt**
 
 ---
 
-## 📄 License
+## License
 
-This project is licensed under the **MIT License**.
+This project is licensed under the **MIT License**. Please steal my code.
 See the `LICENSE` file for more information.
