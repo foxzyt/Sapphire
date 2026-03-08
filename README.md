@@ -32,9 +32,13 @@ The language is now focused on a **grid-based rendering system**, with a spreads
   * `for` loops
   * `enums`
   * `const`
-  * Vector2D Functions
+  * Vector2D related things
   * Better error treatment
   * General syntax and usability enhancements
+
+* What is already accomplished?
+
+  * Vector2D
 
 **Current Development Version:** `Sapphire v1.0.7`
 
