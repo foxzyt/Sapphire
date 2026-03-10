@@ -21,7 +21,6 @@ Sapphire is currently under **active development**.
 
 The language is now focused on a **grid-based rendering system**, with a spreadsheet-like architecture already functional. Current work includes:
 
-* Solving **rendering and performance issues** related to grids
 * Making the **syntax more flexible**, including:
 
   * Optional semicolons
@@ -32,15 +31,16 @@ The language is now focused on a **grid-based rendering system**, with a spreads
   * `for` loops
   * `enums`
   * `const`
-  * Vector2D related things
+  * Vector2D and Vector3D
   * Better error treatment
   * General syntax and usability enhancements
 
 * What is already accomplished?
 
-  * Vector2D
+  * Vector2D and Vector2d
+  * Solved the grid problem, it is working flawlessly.
 
-**Current Development Version:** `Sapphire v1.0.7`
+*Current Development Version:** `Sapphire v1.0.7` Check out the preview of 1.0.7! It is bundled with a simple raycaster made solely with Sapphire!
 
 ---
 
