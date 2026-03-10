@@ -39,6 +39,7 @@ The language is now focused on a **grid-based rendering system**, with a spreads
 
   * Vector2D and Vector2d
   * Solved the grid problem, it is working flawlessly.
+  * Automatic type inference, now just do: x = 10; 
 
 *Current Development Version:** `Sapphire v1.0.7` Check out the preview of 1.0.7! It is bundled with a simple raycaster made solely with Sapphire!
 
