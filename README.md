@@ -10,7 +10,7 @@
 [![GitHub Issues](https://img.shields.io/github/issues/foxzyt/Sapphire)](https://github.com/foxzyt/Sapphire/issues)
 [![GitHub Stars](https://img.shields.io/github/stars/foxzyt/Sapphire?style=social)](https://github.com/foxzyt/Sapphire/stargazers)
 [![Last Commit](https://img.shields.io/github/last-commit/foxzyt/Sapphire)](https://github.com/foxzyt/Sapphire/commits/main)
-[![Sapphire Version](https://img.shields.io/badge/Sapphire-v1.0.6-blue)](https://github.com/foxzyt/Sapphire/releases)
+[![Sapphire Version](https://img.shields.io/badge/Sapphire-v1.0.7-blue)](https://github.com/foxzyt/Sapphire/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 </div>
@@ -19,7 +19,7 @@
 
 Sapphire is currently under **active development**.
 
-*Current Development Version:** `Sapphire v1.0.8`.
+**Current Version:** `Sapphire v1.0.7`.
 
 ---
 
@@ -39,10 +39,10 @@ It aims to combine the speed of compiled languages with the ease of use of high-
 
 * Perform **complex mathematical and logical expressions**
 * Declare **variables, functions, classes, and arrays**
-* Build **native UI systems** easily
-* Communicate with the **operating system**
+* Build **native UI systems** easily using Flexbox and Grid layout systems
+* Communicate with the **operating system** and run parallel workloads
 * Handle **HTTP, JSON, file I/O**, and more
-* Write clean, readable, and efficient code with minimal boilerplate
+* Write clean, readable, and efficient code with optional semicolons, auto type inference, and minimal boilerplate
 
 ---
 
@@ -57,46 +57,46 @@ It aims to combine the speed of compiled languages with the ease of use of high-
 ## Features
 
 * **SapphireUI**
-  Native Immediate Mode GUI bundled directly with the executable
+  Modern, completely namespace-free declarative UI engine featuring Flexbox, Grids, Buttons, and Displays out-of-the-box.
 
-* **Arithmetic Operations**
-  From basic math to advanced operations via built-in Math functions
+* **Arithmetic Operations & Math Types**
+  From basic math to advanced operations via built-in Math functions and native `Vec2D` and `Vec3D` structures.
 
 * **Garbage Collector**
-  Efficient **Mark-and-Sweep GC** implemented in C++
+  Highly optimized, lightning-fast **Incremental Mark-and-Sweep GC** with automatic 500MB thread fail-safe memory ceiling.
 
 * **JSON Parsing**
-  Native JSON parsing support
+  Native, global JSON parsing (`jsonParse`) support.
 
 * **HTTP Library**
-  Built-in HTTP features (ping, download, requests, etc.)
+  Built-in global HTTP features (`httpGet`, `httpPost`, `httpPing`, `httpDownload`).
 
-* **System Utilities**
-  File I/O, colored terminal output, debug tools, and more
+* **System & File Utilities**
+  Namespace-free file I/O (`readFile`, `writeFile`, `exists`), colored terminal outputs (`printColor`), and OS command execution.
 
-* **Simple Declarations**
-  Easily declare functions, classes, and arrays (`ListUtil`)
+* **Flexible Syntax**
+  Implicit variable declaration (Python-style `x = 10`), variable shadowing (`var`), enums, consts, macros, and optional semicolons.
 
 * **Low Learning Curve**
-  Create a UI window in minutes
+  Create fully-fledged UI windows and applications in minutes.
 
-* **Built-in Layout Engine (WIP)**
-  Flexbox and grid-based layout system
-
-* **Static Typing**
-  Designed for maximum performance
+* **Built-in Layout Engine**
+  Robust Flexbox and Grid layout system running natively on the UI engine.
 
 * **SVM (Sapphire Virtual Machine)**
-  Fast, custom-built virtual machine
+  Fast, custom-built virtual machine featuring native multi-threading and parallelism.
 
-* **Mine: Plugin Repository**
-  Download plugins directly from the Sapphire CLI
+* **Mine GUI**
+  A completely redesigned, visually stunning graphical CLI interface for package management.
+
+* **Spack Package Manager**
+  Re-added `spack.exe` powered by the `SpackConfig.txt` standard.
 
 * **Bytecode Compilation**
-  Compile scripts into `.sbc` bytecode
+  Compile scripts into `.sbc` bytecode.
 
 * **Lightweight & Standalone**
-  Fully statically linked executable (~30 MB, no DLLs required)
+  Fully statically linked executable (~30 MB, no DLLs required).
 
 ---
 
@@ -112,97 +112,99 @@ You may need:
 
 ### Installation Steps
 
-1. **Download** the latest release from the repository
-2. **Extract** the archive
-3. Open the **Sapphire root folder**
-4. Add the `build` directory to your system **PATH**
-5. Open a new terminal
+1. **Download** the latest release from the repository.
+2. **Extract** the archive.
+3. Open the **Sapphire root folder**.
+4. Add the `build` directory to your system **PATH**.
+5. Open a new terminal.
 
-Run a script with:
+Initialize a new project:
+
+```bash
+sapphire init my_project
+```
+
+Or run a script directly with:
 
 ```bash
 Sapphire your_script.sp
 ```
 
-This executes the script using Sapphire’s hybrid interpreter.
-
 ---
 
 ## Syntax & Examples
 
-### UI Example
+### UI Example (Namespace-free syntax with Flexbox)
 
-```sapphire
-string btnLabel = "Click here!";
-UI.CreateStyle("BlueTheme", "#1a1a2e", "#e94560", "#0f3460", 2.0, "#16213e", 10.0, "Arial", 18);
+```javascript
+Style("BlueTheme", bgColor="#1a1a2e", textColor="#e94560", hoverColor="#0f3460", borderThickness=2.0, borderColor="#16213e", borderRadius=10.0, fontAlias="Arial", fontSize=18)
 
-function updateUI() void {
-    UI.Begin();
-    UI.PushStyle("BlueTheme");
+btnLabel = "Click here!"
+counter = 0
 
-    UI.SetBGColor("#16213e");
-    UI.Text("Native UI!");
-    UI.Spacing();
-
-    if (UI.Button(btnLabel, 200.0, 50.0)) {
-        print "Button was clicked!";
+function updateUI() bool {
+    var layout = Flex(direction="column", gap=10.0, style="BlueTheme", children=[
+        Text(text="Native UI!", width=200.0, height=40.0),
+        Button(label=btnLabel + " (Clicks: " + counter + ")", width=200.0, height=50.0, onClick=function() {
+            counter = counter + 1
+            print("Button was clicked!")
+        })
+    ])
+    
+    var event = Render(layout)
+    if (event != nil) { 
+        event() 
     }
-
-    UI.PopStyle();
-    UI.End();
-}
-
-while (true) {
-    updateUI();
+    return true
 }
 ```
 
 ---
 
-### HTTP, I/O & JSON Example
+### HTTP, I/O & JSON Example (Optional semicolons & global APIs)
 
 *(Use Windows Terminal for ANSI color support)*
 
-```sapphire
+```javascript
 function main() void {
-    IO.printColor("cyan", "--- Starting Integration Test ---");
+    printColor("cyan", "--- Starting Integration Test ---")
 
-    IO.printColor("yellow", "Fetching API data...");
-    string url = "http://jsonplaceholder.typicode.com/todos/1";
-    string response = HTTP.get(url);
+    printColor("yellow", "Fetching API data...")
+    url = "http://jsonplaceholder.typicode.com/todos/1"
+    response = httpGet(url)
 
     if (len(response) > 0) {
-        IO.printColor("green", "HTTP Response received successfully!");
+        printColor("green", "HTTP Response received successfully!")
 
-        class data = JSON.parse(response);
+        data = jsonParse(response)
 
-        IO.printColor("cyan", "Data ID:");
-        print data.id;
+        printColor("cyan", "Data ID:")
+        print data.id
 
-        IO.printColor("cyan", "Title:");
-        print data.title;
+        printColor("cyan", "Title:")
+        print data.title
 
-        string path = "backup_api.json";
-        IO.printColor("yellow", "Saving backup to disk...");
+        path = "backup_api.json"
+        printColor("yellow", "Saving backup to disk...")
 
-        if (IO.writeFile(path, response)) {
-            IO.printColor("green", "File saved: " + path);
+        if (writeFile(path, response)) {
+            printColor("green", "File saved: " + path)
         }
 
-        if (IO.exists(path)) {
-            IO.printColor("green", "Verification: File exists on disk.");
-            string localContent = IO.readFile(path);
-            IO.printColor("cyan", "Content read from file:");
-            print localContent;
+        if (exists(path)) {
+            printColor("green", "Verification: File exists on disk.")
+            localContent = readFile(path)
+            printColor("cyan", "Content read from file:")
+            print localContent
         }
     } else {
-        IO.printColor("red", "Error: Could not connect to the API.");
+        printColor("red", "Error: Could not connect to the API.")
     }
 
-    IO.printColor("green", "--- Test Finished ---");
+    printColor("green", "--- Test Finished ---")
 }
 
-main();
+main()
 ```
 
 ---
