@@ -1,0 +1,3 @@
+"C:\Program Files\CMake\bin\cmake.exe" -E rm -f CMakeFiles\runner.dir/objects.a
+C:\mingw64\bin\ar.exe qc CMakeFiles\runner.dir/objects.a @CMakeFiles\runner.dir\objects1.rsp
+C:\mingw64\bin\c++.exe -O3 -DNDEBUG  -static -static-libgcc -static-libstdc++ -Wl,--whole-archive CMakeFiles\runner.dir/objects.a -Wl,--no-whole-archive -o runner.exe -Wl,--out-implib,librunner.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\runner.dir\linkLibs.rsp

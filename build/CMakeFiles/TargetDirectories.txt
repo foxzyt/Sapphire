@@ -1,0 +1,7 @@
+C:/Users/berna/Downloads/Sapphire-v1.0.6/Sapphire-v1.0.5/build/CMakeFiles/sapphire_core.dir
+C:/Users/berna/Downloads/Sapphire-v1.0.6/Sapphire-v1.0.5/build/CMakeFiles/sapphire.dir
+C:/Users/berna/Downloads/Sapphire-v1.0.6/Sapphire-v1.0.5/build/CMakeFiles/runner.dir
+C:/Users/berna/Downloads/Sapphire-v1.0.6/Sapphire-v1.0.5/build/CMakeFiles/mine.dir
+C:/Users/berna/Downloads/Sapphire-v1.0.6/Sapphire-v1.0.5/build/CMakeFiles/spack.dir
+C:/Users/berna/Downloads/Sapphire-v1.0.6/Sapphire-v1.0.5/build/CMakeFiles/edit_cache.dir
+C:/Users/berna/Downloads/Sapphire-v1.0.6/Sapphire-v1.0.5/build/CMakeFiles/rebuild_cache.dir
