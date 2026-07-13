@@ -23,6 +23,8 @@ static std::map<std::string, TokenType> keywords = {
     {"const",    TokenType::TOKEN_CONST},
     {"var",      TokenType::TOKEN_VAR},
     {"enum",     TokenType::TOKEN_ENUM},
+    {"break",    TokenType::TOKEN_BREAK},
+    {"continue", TokenType::TOKEN_CONTINUE},
     {"for",      TokenType::TOKEN_FOR},
     {"int",      TokenType::TOKEN_INT},
     {"bool",     TokenType::TOKEN_BOOL},

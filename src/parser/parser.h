@@ -99,6 +99,8 @@ private:
     void if_statement();
     void while_statement();
     void for_statement();
+    void break_statement();
+    void continue_statement();
     void enum_declaration();
 
     // Variáveis

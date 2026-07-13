@@ -378,6 +378,13 @@ void Parser::if_statement() {
 
 void Parser::while_statement() {
     int loop_start = current_chunk()->code.size();
+    
+    Loop loop;
+    loop.start = loop_start;
+    loop.scope_depth = current_compiler->scope_depth;
+    loop.enclosing = current_compiler->current_loop;
+    current_compiler->current_loop = &loop;
+    
     consume(TokenType::TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
     expression();
     consume(TokenType::TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
@@ -387,6 +394,11 @@ void Parser::while_statement() {
     emit_loop(loop_start);
     patch_jump(exit_jump);
     emit_byte(OP_POP);
+    
+    for (int jump : current_compiler->current_loop->break_jumps) {
+        patch_jump(jump);
+    }
+    current_compiler->current_loop = current_compiler->current_loop->enclosing;
 }
 
 void Parser::for_statement() {
@@ -427,6 +439,12 @@ void Parser::for_statement() {
         patch_jump(body_jump);
     }
     
+    Loop loop;
+    loop.start = loop_start;
+    loop.scope_depth = current_compiler->scope_depth;
+    loop.enclosing = current_compiler->current_loop;
+    current_compiler->current_loop = &loop;
+    
     statement();
     emit_loop(loop_start);
     
@@ -435,7 +453,49 @@ void Parser::for_statement() {
         emit_byte(OP_POP);
     }
     
+    for (int jump : current_compiler->current_loop->break_jumps) {
+        patch_jump(jump);
+    }
+    current_compiler->current_loop = current_compiler->current_loop->enclosing;
+    
     end_scope();
+}
+
+void Parser::break_statement() {
+    if (current_compiler->current_loop == nullptr) {
+        error("Cannot use 'break' outside of a loop.");
+        return;
+    }
+    
+    for (int i = current_compiler->local_count - 1; i >= 0; i--) {
+        if (current_compiler->locals[i].depth > current_compiler->current_loop->scope_depth) {
+            emit_byte(OP_POP);
+        } else {
+            break;
+        }
+    }
+
+    consume(TokenType::TOKEN_SEMICOLON, "Expect ';' after 'break'.");
+    int jump = emit_jump(OP_JUMP);
+    current_compiler->current_loop->break_jumps.push_back(jump);
+}
+
+void Parser::continue_statement() {
+    if (current_compiler->current_loop == nullptr) {
+        error("Cannot use 'continue' outside of a loop.");
+        return;
+    }
+
+    for (int i = current_compiler->local_count - 1; i >= 0; i--) {
+        if (current_compiler->locals[i].depth > current_compiler->current_loop->scope_depth) {
+            emit_byte(OP_POP);
+        } else {
+            break;
+        }
+    }
+
+    consume(TokenType::TOKEN_SEMICOLON, "Expect ';' after 'continue'.");
+    emit_loop(current_compiler->current_loop->start);
 }
 
 void Parser::enum_declaration() {
@@ -575,6 +635,10 @@ void Parser::statement() {
         while_statement();
     } else if (match(TokenType::TOKEN_FOR)) {
         for_statement();
+    } else if (match(TokenType::TOKEN_BREAK)) {
+        break_statement();
+    } else if (match(TokenType::TOKEN_CONTINUE)) {
+        continue_statement();
     } else {
         expression_statement();
     }
