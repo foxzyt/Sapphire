@@ -91,11 +91,12 @@ private:
     // Declarações
     void declaration_statement();
     void class_declaration();
-    void function_declaration();
-    ObjFunction* function(TokenType kind, TokenType return_type);
+    void function_declaration(bool is_async = false);
+    ObjFunction* function(TokenType kind, TokenType return_type, ObjClass* owner_class = nullptr, bool is_async = false);
     void return_statement();
     void field_declaration();
     void import_statement();
+    void spawn_statement();
 
     // Escopo
     void begin_scope();
@@ -137,6 +138,7 @@ private:
     TokenType map_literal(bool can_assign);
     TokenType subscript(TokenType left_type, bool can_assign);
     TokenType this_expression(bool can_assign);
+    TokenType super_expression(bool can_assign);
     uint8_t argument_list();
 };
 

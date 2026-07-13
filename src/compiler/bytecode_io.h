@@ -15,6 +15,7 @@ void write_u32(std::ostream& out, uint32_t value);
 void write_double(std::ostream& out, double value);
 void write_string(std::ostream& out, const std::string& str);
 void serialize_sapphire_value(std::ostream& out, VM* vm, const SapphireValue& value);
+void serialize_function_to_stream(ObjFunction* function, VM* vm, std::ostream& out);
 void serialize_function(ObjFunction* function, VM* vm, const std::string& output_path);
 
 uint8_t read_u8(std::istream& in);

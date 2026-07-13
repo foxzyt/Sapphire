@@ -1,6 +1,8 @@
 #include <stdexcept>
 #include <mutex>
 #include <condition_variable>
+#include <thread>
+#include <sstream>
 #include "vm.h"
 #include "compiler.h"
 #include "object.h"
@@ -14,6 +16,7 @@
 #include "nlohmann/json.hpp"
 #include "opencl_api.h"
 #include "preprocessor/preprocessor.h"
+#include "bytecode_io.h"
 #include <iostream>
 #include <fstream>
 #include <chrono>
@@ -2089,6 +2092,18 @@ bool VM::call(ObjFunction* function, int arg_count) {
         arg_count = function->arity;
     }
 
+    if (function->is_async) {
+        ObjPromise* promise = new_promise(this);
+        promise->function = function;
+        for (int i = 0; i < arg_count; i++) {
+            promise->args.push_back(stack_top[-arg_count + i]);
+        }
+        stack_top -= arg_count + 1; // pop args and function
+        push(SapphireValue((Obj*)promise));
+        event_loop_queue.push_back(promise);
+        return true;
+    }
+
     if (frame_count == FRAMES_MAX) {
         if (!this->soft_mode) std::cerr << "Runtime Error: Stack overflow." << std::endl;
         return false;
@@ -2243,6 +2258,11 @@ bool VM::run() {
         dispatch_table[OP_TRY_START] = &&op_OP_TRY_START;
         dispatch_table[OP_TRY_END] = &&op_OP_TRY_END;
         dispatch_table[OP_THROW] = &&op_OP_THROW;
+        dispatch_table[OP_INHERIT] = &&op_OP_INHERIT;
+        dispatch_table[OP_GET_SUPER] = &&op_OP_GET_SUPER;
+        dispatch_table[OP_SPAWN] = &&op_OP_SPAWN;
+        dispatch_table[OP_AWAIT] = &&op_OP_AWAIT;
+        dispatch_table[OP_ASYNC_CALL] = &&op_OP_ASYNC_CALL;
         table_initialized = true;
     }
 #endif
@@ -2296,9 +2316,11 @@ TARGET(OP_DUP)
     PUSH(top[-1]);
     NEXT_CODE();
 
-TARGET(OP_GET_LOCAL)
-    PUSH(slots[READ_BYTE()]);
+TARGET(OP_GET_LOCAL) {
+    uint8_t slot = READ_BYTE();
+    PUSH(slots[slot]);
     NEXT_CODE();
+}
 
 TARGET(OP_SET_LOCAL)
     slots[READ_BYTE()] = top[-1];
@@ -2340,10 +2362,18 @@ TARGET(OP_GET_PROPERTY) {
         if (it_f != instance->fields.end()) {
             top[-1] = it_f->second;
         } else {
-            auto it_m = instance->klass->methods.find(name_tmp->chars);
-            if (it_m != instance->klass->methods.end()) {
-                top[-1] = new_bound_method(this, top[-1], it_m->second);
-            } else {
+            ObjClass* klass = instance->klass;
+            bool found_method = false;
+            while (klass != nullptr) {
+                auto it_m = klass->methods.find(name_tmp->chars);
+                if (it_m != klass->methods.end()) {
+                    top[-1] = new_bound_method(this, top[-1], it_m->second, klass);
+                    found_method = true;
+                    break;
+                }
+                klass = klass->superclass;
+            }
+            if (!found_method) {
                 top[-1] = SapphireValue();
             }
         }
@@ -2441,12 +2471,11 @@ TARGET(OP_NEGATE)
     if (top[-1]._value.index() == 2) std::get<double>(top[-1]._value) *= -1;
     NEXT_CODE();
 
-TARGET(OP_PRINT)
-    stack_top = top;
+TARGET(OP_PRINT) {
     print_value(POP());
     std::cout << std::endl;
-    top = stack_top;
     NEXT_CODE();
+}
 
 TARGET(OP_JUMP)
     ip += READ_SHORT();
@@ -2483,7 +2512,18 @@ TARGET(OP_CLOSURE) {
 TARGET(OP_RETURN) {
     val_tmp = POP();
     frame_count--;
-    if (frame_count == 0) { stack_top = top; return true; }
+    if (frame_count == 0) { 
+        stack_top = top; 
+        if (this->current_promise != nullptr) {
+            this->current_promise->state = PromiseState::FULFILLED;
+            this->current_promise->value = val_tmp;
+            for (auto* awaiter : this->current_promise->awaiters) {
+                this->event_loop_queue.push_back(awaiter);
+            }
+            this->current_promise->awaiters.clear();
+        }
+        return true; 
+    }
     top = frame->slots;
     PUSH(val_tmp);
     frame = &frames[frame_count - 1];
@@ -2615,6 +2655,141 @@ TARGET(OP_MAKE_NAMED_ARG) {
         SapphireValue name = POP();
         ObjNamedArg* arg = new_named_arg(this, static_cast<ObjString*>(std::get<Obj*>(name._value)), value);
         PUSH(arg);
+    }
+    NEXT_CODE();
+}
+
+TARGET(OP_AWAIT) {
+    SapphireValue promise_val = top[-1]; // Peek at it
+    if (!std::holds_alternative<Obj*>(promise_val._value) || std::get<Obj*>(promise_val._value)->type != OBJ_PROMISE) {
+        if (!this->soft_mode) std::cerr << "Runtime Error: Can only await promises." << std::endl;
+        return false;
+    }
+    
+    ObjPromise* promise = (ObjPromise*)std::get<Obj*>(promise_val._value);
+    
+    if (promise->state == PromiseState::FULFILLED) {
+        POP(); // Remove promise
+        PUSH(promise->value); // Push result
+        NEXT_CODE();
+    } else if (promise->state == PromiseState::REJECTED) {
+        if (!this->soft_mode) std::cerr << "Runtime Error: Unhandled promise rejection." << std::endl;
+        return false;
+    } else {
+        // Promise is PENDING. We must suspend the current coroutine.
+        if (this->current_promise == nullptr) {
+            // If we are awaiting in the main thread (not inside an async function), we have to block or fail.
+            // For now, let's create a dummy main promise to suspend the main thread.
+            this->current_promise = new_promise(this);
+            this->current_promise->function = nullptr; // Main script
+        }
+        
+        // Save state to current_promise
+        this->current_promise->saved_stack.clear();
+        for (SapphireValue* s = stack; s < top; s++) this->current_promise->saved_stack.push_back(*s);
+        
+        this->current_promise->saved_frames.clear();
+        for (int i = 0; i < frame_count; i++) this->current_promise->saved_frames.push_back(frames[i]);
+        
+        // Register as an awaiter
+        promise->awaiters.push_back(this->current_promise);
+        
+        // Yield execution back to event loop!
+        frame->ip = ip - 1; // Point back to OP_AWAIT
+        event_loop_queue.push_back(this->current_promise);
+        return true; // Exits run() cleanly. The event loop will resume later.
+    }
+}TARGET(OP_ASYNC_CALL) {
+    // TODO: implement OP_ASYNC_CALL
+    NEXT_CODE();
+}
+
+TARGET(OP_INHERIT) {
+    // Stack has: [superclass, subclass]
+    SapphireValue subclass_val = POP();
+    SapphireValue superclass_val = top[-1];
+    
+    if (superclass_val._value.index() != 3 || std::get<Obj*>(superclass_val._value)->type != OBJ_CLASS) {
+        std::cerr << "Runtime Error: Superclass must be a class." << std::endl;
+        return false;
+    }
+    ObjClass* superclass = static_cast<ObjClass*>(std::get<Obj*>(superclass_val._value));
+    ObjClass* subclass = static_cast<ObjClass*>(std::get<Obj*>(subclass_val._value));
+    
+    subclass->superclass = superclass;
+    
+    // Replace the superclass on the stack with the subclass so define_variable binds the subclass
+    top[-1] = subclass_val;
+    
+    NEXT_CODE();
+}
+
+TARGET(OP_SPAWN) {
+    SapphireValue func_val = POP();
+    
+    if (func_val._value.index() != 3 || (std::get<Obj*>(func_val._value)->type != OBJ_CLOSURE && std::get<Obj*>(func_val._value)->type != OBJ_FUNCTION)) {
+        std::cerr << "Runtime Error: Can only spawn functions or closures." << std::endl;
+        return false;
+    }
+    
+    ObjFunction* function = nullptr;
+    Obj* obj = std::get<Obj*>(func_val._value);
+    if (obj->type == OBJ_CLOSURE) {
+        function = static_cast<ObjClosure*>(obj)->function;
+    } else {
+        function = static_cast<ObjFunction*>(obj);
+    }
+    
+    // Serialize function
+    std::stringstream ss;
+    serialize_function_to_stream(function, this, ss);
+    std::string bytecode = ss.str();
+    
+    // Spawn a C++ thread
+    std::thread worker([bytecode, config = this->config]() {
+        VM* thread_vm = new VM(config);
+        std::stringstream in_ss(bytecode);
+        
+        ObjFunction* thread_function = deserialize_function_from_stream(thread_vm, in_ss);
+        if (thread_function) {
+            thread_vm->push(SapphireValue(thread_function));
+            thread_vm->call_and_run(thread_function);
+        }
+        
+        delete thread_vm;
+    });
+    
+    worker.detach();
+    
+    // Do NOT push since spawn is a statement!
+    NEXT_CODE();
+}
+
+TARGET(OP_GET_SUPER) {
+    name_tmp = (ObjString*)std::get<Obj*>(frame->function->chunk.constants[READ_SHORT()]._value);
+    ObjClass* superclass = frame->function->owner_class->superclass;
+    if (superclass == nullptr) {
+        std::cerr << "Runtime Error: Cannot use 'super' in a class with no superclass." << std::endl;
+        return false;
+    }
+    
+    SapphireValue instance_val = top[-1];
+    ObjClass* current_class = superclass;
+    bool found_method = false;
+    
+    while (current_class != nullptr) {
+        auto it_m = current_class->methods.find(name_tmp->chars);
+        if (it_m != current_class->methods.end()) {
+            top[-1] = new_bound_method(this, instance_val, it_m->second, current_class);
+            found_method = true;
+            break;
+        }
+        current_class = current_class->superclass;
+    }
+    
+    if (!found_method) {
+        std::cerr << "Runtime Error: Undefined property '" << name_tmp->chars << "'." << std::endl;
+        return false;
     }
     NEXT_CODE();
 }
@@ -2801,6 +2976,41 @@ SapphireValue VM::interpret(const std::string& source) {
     if (!call(function, 0)) return {};
 
     bool result = run();
+
+    // Event Loop
+    while (!event_loop_queue.empty()) {
+        ObjPromise* next_promise = event_loop_queue.front();
+        event_loop_queue.erase(event_loop_queue.begin());
+        
+        if (next_promise->state != PromiseState::PENDING) continue;
+        
+        this->current_promise = next_promise;
+        
+        if (next_promise->saved_frames.empty() && next_promise->function != nullptr) {
+            // First time running this coroutine!
+            resetStack();
+            push(SapphireValue(next_promise->function));
+            for (const auto& arg : next_promise->args) push(arg);
+            
+            CallFrame* frame = &frames[frame_count++];
+            frame->function = next_promise->function;
+            frame->ip = &next_promise->function->chunk.code[0];
+            frame->slots = stack;
+        } else if (!next_promise->saved_frames.empty()) {
+            // Resuming!
+            stack_top = stack;
+            for (auto v : next_promise->saved_stack) *stack_top++ = v;
+            frame_count = 0;
+            for (auto f : next_promise->saved_frames) frames[frame_count++] = f;
+        } else {
+            // Dummy main promise
+            continue;
+        }
+        
+        run();
+    }
+    
+    this->current_promise = nullptr;
 
     if (result && stack_top > stack) {
         return pop();

@@ -62,6 +62,11 @@ enum OpCode : uint8_t {
     OP_RETURN,
     OP_IMPORT,
     OP_MAKE_NAMED_ARG,
+    OP_INHERIT,
+    OP_GET_SUPER,
+    OP_SPAWN,
+    OP_AWAIT,
+    OP_ASYNC_CALL,
     
     // Exceptions
     OP_TRY_START,

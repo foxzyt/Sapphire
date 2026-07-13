@@ -20,6 +20,7 @@ void free_object(Obj* object) {
         case OBJ_BOUND_METHOD: delete static_cast<ObjBoundMethod*>(object); break;
         case OBJ_NAMED_ARG: delete static_cast<ObjNamedArg*>(object); break;
         case OBJ_MAP: delete static_cast<ObjMap*>(object); break;
+        case OBJ_PROMISE: delete static_cast<ObjPromise*>(object); break;
     }
 }
 
@@ -109,11 +110,12 @@ static void register_object(VM* vm, T* object) {
 }
 
 // Implementações das funções "fábrica"
-ObjBoundMethod* new_bound_method(VM* vm, SapphireValue receiver, SapphireValue method) {
+ObjBoundMethod* new_bound_method(VM* vm, SapphireValue receiver, SapphireValue method, ObjClass* defined_in_class) {
     auto* bound = new ObjBoundMethod();
     bound->type = OBJ_BOUND_METHOD;
     bound->receiver = receiver;
     bound->method = method;
+    bound->defined_in_class = defined_in_class;
     register_object(vm, bound);
     return bound;
 }
@@ -122,6 +124,7 @@ ObjClass* new_class(VM* vm, ObjString* name) {
     auto* klass = new ObjClass();
     klass->type = OBJ_CLASS;
     klass->name = name;
+    klass->superclass = nullptr;
     register_object(vm, klass);
     return klass;
 }
@@ -180,5 +183,14 @@ ObjMap* new_map(VM* vm) {
     map_obj->type = OBJ_MAP;
     register_object(vm, map_obj);
     return map_obj;
+}
+
+ObjPromise* new_promise(VM* vm) {
+    auto* promise_obj = new ObjPromise();
+    promise_obj->type = OBJ_PROMISE;
+    promise_obj->state = PromiseState::PENDING;
+    promise_obj->value = SapphireValue();
+    register_object(vm, promise_obj);
+    return promise_obj;
 }
 

@@ -105,6 +105,22 @@ struct CatchBlock {
   uint8_t* catch_ip;
 };
 
+enum class PromiseState { PENDING, FULFILLED, REJECTED };
+
+struct ObjPromise : Obj {
+  PromiseState state;
+  SapphireValue value;
+
+  ObjFunction* function = nullptr;
+  std::vector<SapphireValue> args;
+
+  std::vector<SapphireValue> saved_stack;
+  std::vector<CallFrame> saved_frames;
+  std::vector<CatchBlock> saved_catch_blocks;
+  
+  std::vector<ObjPromise*> awaiters;
+};
+
 class VM {
 public:
   VM();
@@ -137,6 +153,9 @@ public:
   SapphireValue stack[STACK_MAX];
   Obj *objects = nullptr;
   SapphireValue *stack_top;
+  
+  ObjPromise* current_promise = nullptr;
+  std::vector<ObjPromise*> event_loop_queue;
 
   size_t bytes_allocated = 0;
   size_t next_gc_threshold = 1024 * 1024; // 1MB threshold inicial

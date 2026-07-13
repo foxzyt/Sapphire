@@ -14,6 +14,7 @@ struct ObjBoundMethod;
 struct ObjFunction;
 struct ObjString;
 struct ObjClosure;
+struct ObjPromise;
 class VM; // Forward declaration, fancy nomination HAHAHAHAHHA
 
 // Forward declaration para o tipo de função nativa, que usa SapphireValue
@@ -31,6 +32,7 @@ enum ObjType {
     OBJ_STRING,
     OBJ_NAMED_ARG,
     OBJ_MAP,
+    OBJ_PROMISE,
 };
 
 // A struct base para todos os objetos gerenciados no "heap" pela VM
@@ -45,6 +47,7 @@ struct Obj {
 
 struct ObjClass : Obj {
     ObjString* name;
+    ObjClass* superclass; // Added for inheritance
     std::unordered_map<std::string, SapphireValue> methods;
 };
 
@@ -63,16 +66,18 @@ struct ObjString : Obj {
     std::string chars;
 };
 
-// Struct para representar nossas funções compiladas
 struct ObjFunction : Obj {
     int arity = 0;
     Chunk chunk;
     ObjString* name = nullptr;
+    ObjClass* owner_class = nullptr; // The class that owns this method (if any)
+    bool is_async = false;
 };
 
 struct ObjBoundMethod : Obj {
     SapphireValue receiver; // A instância ('this')
     SapphireValue method;   // A closure ou native do método
+    ObjClass* defined_in_class; // The class where this method was defined
 };
 
 // Struct para "embrulhar" nossas funções C++ nativas
@@ -92,7 +97,7 @@ struct ObjMap : Obj {
 };
 
 // Funções "fábrica" para criar novos objetos (agora recebem VM*)
-ObjBoundMethod* new_bound_method(VM* vm, SapphireValue receiver, SapphireValue method);
+ObjBoundMethod* new_bound_method(VM* vm, SapphireValue receiver, SapphireValue method, ObjClass* defined_in_class);
 ObjFunction* new_function(VM* vm);
 ObjNative* new_native(VM* vm, NativeFn function);
 ObjString* new_string(VM* vm, const std::string& chars);
@@ -101,6 +106,7 @@ ObjInstance* new_instance(VM* vm, ObjClass* klass);
 ObjClosure* new_closure(VM* vm, ObjFunction* function);
 ObjNamedArg* new_named_arg(VM* vm, ObjString* name, SapphireValue value);
 ObjMap* new_map(VM* vm);
+ObjPromise* new_promise(VM* vm);
 
 // Declaração da função que imprime objetos (será implementada em object.cpp)
 void print_object(const SapphireValue& value);

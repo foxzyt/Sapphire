@@ -128,21 +128,29 @@ void serialize_sapphire_value(std::ostream& out, VM* vm, const SapphireValue& va
     }
 }
 
-void serialize_function(ObjFunction* function, VM* vm, const std::string& output_path) {
-    std::ofstream out(output_path, std::ios::binary);
-    if (!out) {
-        std::cerr << "Error: Could not open output file: " << output_path << std::endl;
-        return;
-    }
-
+void serialize_function_to_stream(ObjFunction* function, VM* vm, std::ostream& out) {
     out.write("SBC2", 4);
     write_u8(out, 1);
     write_u8(out, vm->soft_mode ? 1 : 0);
 
     std::vector<std::pair<std::string, SapphireValue>> serializable_globals;
     for (const auto& pair : vm->globals) {
-        if (std::holds_alternative<Obj*>(pair.second._value) && std::get<Obj*>(pair.second._value)->type == OBJ_NATIVE) {
-            continue;
+        if (std::holds_alternative<Obj*>(pair.second._value)) {
+            Obj* obj = std::get<Obj*>(pair.second._value);
+            if (obj->type == OBJ_NATIVE) {
+                continue;
+            }
+            if (obj->type == OBJ_CLASS) {
+                ObjClass* klass = static_cast<ObjClass*>(obj);
+                bool is_native = false;
+                for (const auto& method_pair : klass->methods) {
+                    if (std::holds_alternative<Obj*>(method_pair.second._value) && std::get<Obj*>(method_pair.second._value)->type == OBJ_NATIVE) {
+                        is_native = true;
+                        break;
+                    }
+                }
+                if (is_native) continue;
+            }
         }
         serializable_globals.push_back(pair);
     }
@@ -154,6 +162,15 @@ void serialize_function(ObjFunction* function, VM* vm, const std::string& output
     }
 
     serialize_sapphire_value(out, vm, SapphireValue(function));
+}
+
+void serialize_function(ObjFunction* function, VM* vm, const std::string& output_path) {
+    std::ofstream out(output_path, std::ios::binary);
+    if (!out) {
+        std::cerr << "Error: Could not open output file: " << output_path << std::endl;
+        return;
+    }
+    serialize_function_to_stream(function, vm, out);
 }
 
 // Fun��es de leitura (agora aceitam std::istream&)
