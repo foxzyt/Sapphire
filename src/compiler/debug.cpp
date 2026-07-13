@@ -67,6 +67,7 @@ int disassemble_instruction(const Chunk& chunk, int offset) {
         case OP_SUBTRACT:      return simple_instruction("OP_SUBTRACT", offset);
         case OP_MULTIPLY:      return simple_instruction("OP_MULTIPLY", offset);
         case OP_DIVIDE:        return simple_instruction("OP_DIVIDE", offset);
+        case OP_MODULO:        return simple_instruction("OP_MODULO", offset);
         case OP_NOT:           return simple_instruction("OP_NOT", offset);
         case OP_NEGATE:        return simple_instruction("OP_NEGATE", offset);
         case OP_PRINT:         return simple_instruction("OP_PRINT", offset);
@@ -76,6 +77,7 @@ int disassemble_instruction(const Chunk& chunk, int offset) {
         case OP_CALL:          return byte_instruction("OP_CALL", chunk, offset);
         case OP_CLOSURE:       return constant_instruction("OP_CLOSURE", chunk, offset);
         case OP_BUILD_ARRAY:   return byte_instruction("OP_BUILD_ARRAY", chunk, offset);
+        case OP_BUILD_MAP:     return byte_instruction("OP_BUILD_MAP", chunk, offset);
         case OP_RETURN:        return simple_instruction("OP_RETURN", offset);
         case OP_IMPORT:        return constant_instruction("OP_IMPORT", chunk, offset);
         default:

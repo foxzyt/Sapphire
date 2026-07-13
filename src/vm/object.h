@@ -30,6 +30,7 @@ enum ObjType {
     OBJ_NATIVE,
     OBJ_STRING,
     OBJ_NAMED_ARG,
+    OBJ_MAP,
 };
 
 // A struct base para todos os objetos gerenciados no "heap" pela VM
@@ -86,6 +87,10 @@ struct ObjNamedArg : Obj {
     SapphireValue value;
 };
 
+struct ObjMap : Obj {
+    std::unordered_map<std::string, SapphireValue> items;
+};
+
 // Funções "fábrica" para criar novos objetos (agora recebem VM*)
 ObjBoundMethod* new_bound_method(VM* vm, SapphireValue receiver, SapphireValue method);
 ObjFunction* new_function(VM* vm);
@@ -95,6 +100,7 @@ ObjClass* new_class(VM* vm, ObjString* name);
 ObjInstance* new_instance(VM* vm, ObjClass* klass);
 ObjClosure* new_closure(VM* vm, ObjFunction* function);
 ObjNamedArg* new_named_arg(VM* vm, ObjString* name, SapphireValue value);
+ObjMap* new_map(VM* vm);
 
 // Declaração da função que imprime objetos (será implementada em object.cpp)
 void print_object(const SapphireValue& value);

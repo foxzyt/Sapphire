@@ -12,6 +12,7 @@
 #include "httplib.h"
 #include "tokens.h"
 #include "nlohmann/json.hpp"
+#include "opencl_api.h"
 #include "preprocessor/preprocessor.h"
 #include <iostream>
 #include <fstream>
@@ -61,6 +62,43 @@ static SapphireValue native_spawn(int arg_count, SapphireValue* args) {
         });
     }
     return SapphireValue((double)tid);
+}
+
+static std::mutex global_mutexes_lock;
+static std::map<int, std::shared_ptr<std::mutex>> global_mutexes;
+static int next_mutex_id = 1;
+
+static SapphireValue native_mutex_new(int arg_count, SapphireValue* args) {
+    std::lock_guard<std::mutex> lock(global_mutexes_lock);
+    int id = next_mutex_id++;
+    global_mutexes[id] = std::make_shared<std::mutex>();
+    return SapphireValue((double)id);
+}
+
+static SapphireValue native_mutex_lock(int arg_count, SapphireValue* args) {
+    if(arg_count != 1 || !std::holds_alternative<double>(args[0]._value)) return SapphireValue(false);
+    int id = (int)std::get<double>(args[0]._value);
+    std::shared_ptr<std::mutex> m;
+    {
+        std::lock_guard<std::mutex> lock(global_mutexes_lock);
+        if(!global_mutexes.count(id)) return SapphireValue(false);
+        m = global_mutexes[id];
+    }
+    m->lock();
+    return SapphireValue(true);
+}
+
+static SapphireValue native_mutex_unlock(int arg_count, SapphireValue* args) {
+    if(arg_count != 1 || !std::holds_alternative<double>(args[0]._value)) return SapphireValue(false);
+    int id = (int)std::get<double>(args[0]._value);
+    std::shared_ptr<std::mutex> m;
+    {
+        std::lock_guard<std::mutex> lock(global_mutexes_lock);
+        if(!global_mutexes.count(id)) return SapphireValue(false);
+        m = global_mutexes[id];
+    }
+    m->unlock();
+    return SapphireValue(true);
 }
 
 static SapphireValue native_join(int arg_count, SapphireValue* args) {
@@ -296,6 +334,62 @@ static SapphireValue native_string_char_at(int arg_count, SapphireValue* args) {
     }
 
     return new_string(g_current_vm, std::string(1, str_obj->chars[index]));
+}
+
+static SapphireValue native_string_length(int arg_count, SapphireValue* args) {
+    if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) {
+        return SapphireValue(0.0);
+    }
+    ObjString* str_obj = static_cast<ObjString*>(std::get<Obj*>(args[0]._value));
+    return SapphireValue((double)str_obj->chars.length());
+}
+
+static SapphireValue native_string_substring(int arg_count, SapphireValue* args) {
+    if (arg_count != 3 || !is_obj_type(args[0], OBJ_STRING) || 
+        !std::holds_alternative<double>(args[1]._value) || 
+        !std::holds_alternative<double>(args[2]._value)) {
+        return new_string(g_current_vm, "");
+    }
+    ObjString* str_obj = static_cast<ObjString*>(std::get<Obj*>(args[0]._value));
+    int start = static_cast<int>(std::get<double>(args[1]._value));
+    int len = static_cast<int>(std::get<double>(args[2]._value));
+    
+    if (start < 0) start = 0;
+    if (start >= str_obj->chars.length()) return new_string(g_current_vm, "");
+    if (len < 0) len = 0;
+    
+    return new_string(g_current_vm, str_obj->chars.substr(start, len));
+}
+
+static SapphireValue native_string_split(int arg_count, SapphireValue* args) {
+    if (arg_count != 2 || !is_obj_type(args[0], OBJ_STRING) || !is_obj_type(args[1], OBJ_STRING)) {
+        auto arr = std::make_shared<SapphireArray>();
+        return SapphireValue(arr);
+    }
+    ObjString* str_obj = static_cast<ObjString*>(std::get<Obj*>(args[0]._value));
+    ObjString* delim_obj = static_cast<ObjString*>(std::get<Obj*>(args[1]._value));
+    
+    auto arr = std::make_shared<SapphireArray>();
+    std::string s = str_obj->chars;
+    std::string delim = delim_obj->chars;
+    
+    if (delim.empty()) {
+        for (char c : s) {
+            arr->elements.push_back(new_string(g_current_vm, std::string(1, c)));
+        }
+        return SapphireValue(arr);
+    }
+    
+    size_t pos = 0;
+    std::string token;
+    while ((pos = s.find(delim)) != std::string::npos) {
+        token = s.substr(0, pos);
+        arr->elements.push_back(new_string(g_current_vm, token));
+        s.erase(0, pos + delim.length());
+    }
+    arr->elements.push_back(new_string(g_current_vm, s));
+    
+    return SapphireValue(arr);
 }
 
 static std::string valueToStringC(const SapphireValue& val) {
@@ -1693,6 +1787,15 @@ static SapphireValue native_math_cos(int arg_count, SapphireValue* args) {
     return std::cos(std::get<double>(args[0]._value));
 }
 
+static SapphireValue native_math_log(int arg_count, SapphireValue* args) {
+    if (arg_count < 1 || !std::holds_alternative<double>(args[0]._value)) return 0.0;
+    return std::log(std::get<double>(args[0]._value));
+}
+
+static SapphireValue native_get_quote(int arg_count, SapphireValue* args) {
+    return new_string(g_current_vm, "\"");
+}
+
 static SapphireValue native_math_pow(int arg_count, SapphireValue* args) {
     if (arg_count < 2) return 0.0;
     return std::pow(std::get<double>(args[0]._value), std::get<double>(args[1]._value));
@@ -1777,6 +1880,10 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     define_native("evaluate", native_evaluate);
     define_native("len", native_len);
     define_native("stringCharAt", native_string_char_at);
+    define_native("stringLength", native_string_length);
+    define_native("stringSubstring", native_string_substring);
+    define_native("stringSplit", native_string_split);
+    define_native("getQuote", native_get_quote);
 
     const char* appdata_path = getenv("APPDATA");
     if (appdata_path) {
@@ -1802,6 +1909,7 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     define_native("ceil", native_math_ceil);
     define_native("sin", native_math_sin);
     define_native("cos", native_math_cos);
+    define_native("log", native_math_log);
     define_native("pow", native_math_pow);
     define_native("min", native_math_min);
     define_native("max", native_math_max);
@@ -1832,6 +1940,17 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     define_native("spawn", native_spawn);
     define_native("join", native_join);
     define_native("getCoreCount", native_system_core_count);
+
+    // --- Threading / Mutex ---
+    ObjString* mutex_name = new_string(this, "Mutex");
+    ObjClass* mutex_class = new_class(this, mutex_name);
+    mutex_class->methods["new"] = SapphireValue(new_native(this, native_mutex_new));
+    mutex_class->methods["lock"] = SapphireValue(new_native(this, native_mutex_lock));
+    mutex_class->methods["unlock"] = SapphireValue(new_native(this, native_mutex_unlock));
+    globals["Mutex"] = SapphireValue(mutex_class);
+
+    // --- OpenCL ---
+    define_opencl_natives(this);
 
     // --- HTTP ---
     define_native("httpGet", native_http_get);
@@ -2034,6 +2153,22 @@ bool VM::call_value(SapphireValue callee, int arg_count) {
 
     if (!this->soft_mode) {
         std::cerr << "Runtime Error: Can only call functions and classes." << std::endl;
+        try {
+            std::cerr << "  Callee type: " << get_value_type_name(callee) << "  Value: ";
+            print_value(callee);
+            std::cerr << std::endl;
+        } catch (...) {}
+
+        // Dump a small window of the stack around the call site for diagnosis
+        std::cerr << "  Stack (top-most last):\n";
+        int max_dump = 12;
+        int available = static_cast<int>(stack_top - stack);
+        int start = std::max(0, available - max_dump);
+        for (int i = start; i < available; ++i) {
+            std::cerr << "    [" << i << "] ";
+            try { print_value(stack[i]); } catch (...) { std::cerr << "<err>"; }
+            std::cerr << std::endl;
+        }
     }
     return false;
 }
@@ -2047,8 +2182,10 @@ bool VM::run() {
     SapphireValue* slots = frame->slots;
     #define top stack_top
 
+#ifndef _MSC_VER
     static const void* dispatch_table[255];
     static bool table_initialized = false;
+#endif
 
     // Variáveis auxiliares declaradas fora para evitar erro de inicialização cruzada
     ObjString* name_tmp;
@@ -2056,82 +2193,102 @@ bool VM::run() {
     ObjFunction* func_tmp;
     SapphireValue val_tmp;
 
+#ifndef _MSC_VER
     if (!table_initialized) {
-        for (int i = 0; i < 255; i++) dispatch_table[i] = &&op_unknown;
-        dispatch_table[OP_CONSTANT] = &&op_constant;
-        dispatch_table[OP_NIL] = &&op_nil;
-        dispatch_table[OP_TRUE] = &&op_true;
-        dispatch_table[OP_FALSE] = &&op_false;
-        dispatch_table[OP_POP] = &&op_pop;
-        dispatch_table[OP_GET_LOCAL] = &&op_get_local;
-        dispatch_table[OP_SET_LOCAL] = &&op_set_local;
-        dispatch_table[OP_GET_GLOBAL] = &&op_get_global;
-        dispatch_table[OP_DEFINE_GLOBAL] = &&op_define_global;
-        dispatch_table[OP_SET_GLOBAL] = &&op_set_global;
-        dispatch_table[OP_GET_PROPERTY] = &&op_get_property;
-        dispatch_table[OP_SET_PROPERTY] = &&op_set_property;
-        dispatch_table[OP_EQUAL] = &&op_equal;
-        dispatch_table[OP_GREATER] = &&op_greater;
-        dispatch_table[OP_LESS] = &&op_less;
-        dispatch_table[OP_ADD] = &&op_add;
-        dispatch_table[OP_SUBTRACT] = &&op_subtract;
-        dispatch_table[OP_MULTIPLY] = &&op_multiply;
-        dispatch_table[OP_DIVIDE] = &&op_divide;
-        dispatch_table[OP_NOT] = &&op_not;
-        dispatch_table[OP_NEGATE] = &&op_negate;
-        dispatch_table[OP_PRINT] = &&op_print;
-        dispatch_table[OP_JUMP] = &&op_jump;
-        dispatch_table[OP_JUMP_IF_FALSE] = &&op_jump_if_false;
-        dispatch_table[OP_LOOP] = &&op_loop;
-        dispatch_table[OP_CALL] = &&op_call;
-        dispatch_table[OP_CLOSURE] = &&op_closure;
-        dispatch_table[OP_RETURN] = &&op_return;
-        dispatch_table[OP_BUILD_ARRAY] = &&op_build_array;
-        dispatch_table[OP_IMPORT] = &&op_import;
-        dispatch_table[OP_MAKE_NAMED_ARG] = &&op_make_named_arg;
+        for (int i = 0; i < 255; i++) dispatch_table[i] = &&op_OP_UNKNOWN;
+        dispatch_table[OP_CONSTANT] = &&op_OP_CONSTANT;
+        dispatch_table[OP_NIL] = &&op_OP_NIL;
+        dispatch_table[OP_TRUE] = &&op_OP_TRUE;
+        dispatch_table[OP_FALSE] = &&op_OP_FALSE;
+        dispatch_table[OP_POP] = &&op_OP_POP;
+        dispatch_table[OP_GET_LOCAL] = &&op_OP_GET_LOCAL;
+        dispatch_table[OP_SET_LOCAL] = &&op_OP_SET_LOCAL;
+        dispatch_table[OP_GET_GLOBAL] = &&op_OP_GET_GLOBAL;
+        dispatch_table[OP_DEFINE_GLOBAL] = &&op_OP_DEFINE_GLOBAL;
+        dispatch_table[OP_SET_GLOBAL] = &&op_OP_SET_GLOBAL;
+        dispatch_table[OP_GET_PROPERTY] = &&op_OP_GET_PROPERTY;
+        dispatch_table[OP_SET_PROPERTY] = &&op_OP_SET_PROPERTY;
+        dispatch_table[OP_EQUAL] = &&op_OP_EQUAL;
+        dispatch_table[OP_GREATER] = &&op_OP_GREATER;
+        dispatch_table[OP_LESS] = &&op_OP_LESS;
+        dispatch_table[OP_ADD] = &&op_OP_ADD;
+        dispatch_table[OP_SUBTRACT] = &&op_OP_SUBTRACT;
+        dispatch_table[OP_MULTIPLY] = &&op_OP_MULTIPLY;
+        dispatch_table[OP_DIVIDE] = &&op_OP_DIVIDE;
+        dispatch_table[OP_MODULO] = &&op_OP_MODULO;
+        dispatch_table[OP_NOT] = &&op_OP_NOT;
+        dispatch_table[OP_NEGATE] = &&op_OP_NEGATE;
+        dispatch_table[OP_PRINT] = &&op_OP_PRINT;
+        dispatch_table[OP_JUMP] = &&op_OP_JUMP;
+        dispatch_table[OP_JUMP_IF_FALSE] = &&op_OP_JUMP_IF_FALSE;
+        dispatch_table[OP_LOOP] = &&op_OP_LOOP;
+        dispatch_table[OP_CALL] = &&op_OP_CALL;
+        dispatch_table[OP_CLOSURE] = &&op_OP_CLOSURE;
+        dispatch_table[OP_RETURN] = &&op_OP_RETURN;
+        dispatch_table[OP_BUILD_ARRAY] = &&op_OP_BUILD_ARRAY;
+        dispatch_table[OP_BUILD_MAP] = &&op_OP_BUILD_MAP;
+        dispatch_table[OP_GET_SUBSCRIPT] = &&op_OP_GET_SUBSCRIPT;
+        dispatch_table[OP_SET_SUBSCRIPT] = &&op_OP_SET_SUBSCRIPT;
+        dispatch_table[OP_IMPORT] = &&op_OP_IMPORT;
+        dispatch_table[OP_MAKE_NAMED_ARG] = &&op_OP_MAKE_NAMED_ARG;
         table_initialized = true;
     }
+#endif
 
 #define READ_BYTE() (*ip++)
 #define READ_SHORT() (ip += 2, (uint16_t)((ip[-2] << 8) | ip[-1]))
 #define PUSH(val) (*(top++) = val)
 #define POP() (*(--top))
-#define NEXT_CODE() goto *dispatch_table[READ_BYTE()]
 
+#ifdef _MSC_VER
+    #define TARGET(op) case op:
+    #define NEXT_CODE() goto loop_start
+#else
+    #define TARGET(op) op_##op:
+    #define NEXT_CODE() goto *dispatch_table[READ_BYTE()]
+#endif
+
+#ifdef _MSC_VER
+loop_start:
+    switch (READ_BYTE()) {
+#else
     NEXT_CODE();
+#endif
 
-op_unknown:
+#ifndef _MSC_VER
+op_OP_UNKNOWN:
     return false;
+#endif
 
-op_constant:
+TARGET(OP_CONSTANT)
     PUSH(frame->function->chunk.constants[READ_SHORT()]);
     NEXT_CODE();
 
-op_nil:
+TARGET(OP_NIL)
     PUSH(SapphireValue());
     NEXT_CODE();
 
-op_true:
+TARGET(OP_TRUE)
     PUSH(SapphireValue(true));
     NEXT_CODE();
 
-op_false:
+TARGET(OP_FALSE)
     PUSH(SapphireValue(false));
     NEXT_CODE();
 
-op_pop:
+TARGET(OP_POP)
     top--;
     NEXT_CODE();
 
-op_get_local:
+TARGET(OP_GET_LOCAL)
     PUSH(slots[READ_BYTE()]);
     NEXT_CODE();
 
-op_set_local:
+TARGET(OP_SET_LOCAL)
     slots[READ_BYTE()] = top[-1];
     NEXT_CODE();
 
-op_get_global: {
+TARGET(OP_GET_GLOBAL) {
     name_tmp = (ObjString*)std::get<Obj*>(frame->function->chunk.constants[READ_SHORT()]._value);
     auto it = globals.find(name_tmp->chars);
     if (it == globals.end()) {
@@ -2144,19 +2301,19 @@ op_get_global: {
     NEXT_CODE();
 }
 
-op_define_global: {
+TARGET(OP_DEFINE_GLOBAL) {
     name_tmp = (ObjString*)std::get<Obj*>(frame->function->chunk.constants[READ_SHORT()]._value);
     globals[name_tmp->chars] = POP();
     NEXT_CODE();
 }
 
-op_set_global: {
+TARGET(OP_SET_GLOBAL) {
     name_tmp = (ObjString*)std::get<Obj*>(frame->function->chunk.constants[READ_SHORT()]._value);
     globals[name_tmp->chars] = top[-1];
     NEXT_CODE();
 }
 
-op_get_property: {
+TARGET(OP_GET_PROPERTY) {
     if (top[-1]._value.index() != 3) {
         if (!this->soft_mode) return false;
         top[-1] = SapphireValue();
@@ -2178,7 +2335,7 @@ op_get_property: {
     NEXT_CODE();
 }
 
-op_set_property: {
+TARGET(OP_SET_PROPERTY) {
     ObjInstance* instance = (ObjInstance*)std::get<Obj*>(top[-2]._value);
     name_tmp = (ObjString*)std::get<Obj*>(frame->function->chunk.constants[READ_SHORT()]._value);
     instance->fields[name_tmp->chars] = top[-1];
@@ -2187,7 +2344,7 @@ op_set_property: {
     NEXT_CODE();
 }
 
-op_equal: {
+TARGET(OP_EQUAL) {
     {
         SapphireValue b = POP(); SapphireValue a = POP();
         bool isEqual = false;
@@ -2209,21 +2366,21 @@ op_equal: {
     NEXT_CODE();
 }
 
-op_greater: {
+TARGET(OP_GREATER) {
     double b = std::get<double>(POP()._value);
     double a = std::get<double>(POP()._value);
     PUSH(SapphireValue(a > b));
     NEXT_CODE();
 }
 
-op_less: {
+TARGET(OP_LESS) {
     double b = std::get<double>(POP()._value);
     double a = std::get<double>(POP()._value);
     PUSH(SapphireValue(a < b));
     NEXT_CODE();
 }
 
-op_add: {
+TARGET(OP_ADD) {
     auto& v1 = top[-1]._value; auto& v2 = top[-2]._value;
     if (v1.index() == 2 && v2.index() == 2) {
         double res = std::get<double>(v2) + std::get<double>(v1);
@@ -2248,41 +2405,42 @@ op_add: {
     NEXT_CODE();
 }
 
-op_subtract: { double b = valueToDoubleC(POP()); double a = valueToDoubleC(POP()); PUSH(SapphireValue(a - b)); NEXT_CODE(); }
-op_multiply: { double b = valueToDoubleC(POP()); double a = valueToDoubleC(POP()); PUSH(SapphireValue(a * b)); NEXT_CODE(); }
-op_divide:   { double b = valueToDoubleC(POP()); double a = valueToDoubleC(POP()); PUSH(SapphireValue(a / b)); NEXT_CODE(); }
+TARGET(OP_SUBTRACT) { double b = valueToDoubleC(POP()); double a = valueToDoubleC(POP()); PUSH(SapphireValue(a - b)); NEXT_CODE(); }
+TARGET(OP_MULTIPLY) { double b = valueToDoubleC(POP()); double a = valueToDoubleC(POP()); PUSH(SapphireValue(a * b)); NEXT_CODE(); }
+TARGET(OP_DIVIDE)   { double b = valueToDoubleC(POP()); double a = valueToDoubleC(POP()); PUSH(SapphireValue(a / b)); NEXT_CODE(); }
+TARGET(OP_MODULO)   { double b = valueToDoubleC(POP()); double a = valueToDoubleC(POP()); PUSH(SapphireValue(std::fmod(a, b))); NEXT_CODE(); }
 
-op_not:
+TARGET(OP_NOT)
     top[-1] = SapphireValue(is_falsey(top[-1]));
     NEXT_CODE();
 
-op_negate:
+TARGET(OP_NEGATE)
     if (top[-1]._value.index() == 2) std::get<double>(top[-1]._value) *= -1;
     NEXT_CODE();
 
-op_print:
+TARGET(OP_PRINT)
     stack_top = top;
     print_value(POP());
     std::cout << std::endl;
     top = stack_top;
     NEXT_CODE();
 
-op_jump:
+TARGET(OP_JUMP)
     ip += READ_SHORT();
     NEXT_CODE();
 
-op_jump_if_false: {
+TARGET(OP_JUMP_IF_FALSE) {
     uint16_t offset = READ_SHORT();
     if (is_falsey(top[-1])) ip += offset;
     NEXT_CODE();
 }
 
-op_loop:
+TARGET(OP_LOOP)
     step_gc();
     ip -= READ_SHORT();
     NEXT_CODE();
 
-op_call: {
+TARGET(OP_CALL) {
     step_gc();
     int arg_count = READ_BYTE();
     frame->ip = ip;
@@ -2293,13 +2451,13 @@ op_call: {
     NEXT_CODE();
 }
 
-op_closure: {
+TARGET(OP_CLOSURE) {
     func_tmp = (ObjFunction*)std::get<Obj*>(frame->function->chunk.constants[READ_SHORT()]._value);
     PUSH(new_closure(this, func_tmp));
     NEXT_CODE();
 }
 
-op_return: {
+TARGET(OP_RETURN) {
     val_tmp = POP();
     frame_count--;
     if (frame_count == 0) { stack_top = top; return true; }
@@ -2310,7 +2468,7 @@ op_return: {
     NEXT_CODE();
 }
 
-op_build_array: {
+TARGET(OP_BUILD_ARRAY) {
     {
         uint8_t count = READ_BYTE();
         auto arr = std::make_shared<SapphireArray>();
@@ -2320,7 +2478,98 @@ op_build_array: {
     NEXT_CODE();
 }
 
-op_import: {
+TARGET(OP_BUILD_MAP) {
+    {
+        uint8_t count = READ_BYTE();
+        ObjMap* map_obj = new_map(this);
+        for (int i = 0; i < count; i++) {
+            SapphireValue val = POP();
+            SapphireValue key = POP();
+            std::string key_str = static_cast<ObjString*>(std::get<Obj*>(key._value))->chars;
+            map_obj->items[key_str] = val;
+        }
+        PUSH(map_obj);
+    }
+    NEXT_CODE();
+}
+
+TARGET(OP_GET_SUBSCRIPT) {
+    {
+        SapphireValue index = POP();
+        SapphireValue collection = POP();
+        
+        if (std::holds_alternative<std::shared_ptr<SapphireArray>>(collection._value)) {
+            auto arr = std::get<std::shared_ptr<SapphireArray>>(collection._value);
+            if (index._value.index() == 2) { 
+                int idx = (int)std::get<double>(index._value);
+                if (idx >= 0 && idx < arr->elements.size()) {
+                    PUSH(arr->elements[idx]);
+                } else {
+                    if (!this->soft_mode) { std::cerr << "Runtime Error: Array index out of bounds." << std::endl; return false; }
+                    PUSH(SapphireValue());
+                }
+            } else {
+                if (!this->soft_mode) { std::cerr << "Runtime Error: Array index must be a number." << std::endl; return false; }
+                PUSH(SapphireValue());
+            }
+        } else if (std::holds_alternative<Obj*>(collection._value) && std::get<Obj*>(collection._value)->type == OBJ_MAP) {
+            ObjMap* map_obj = static_cast<ObjMap*>(std::get<Obj*>(collection._value));
+            if (std::holds_alternative<Obj*>(index._value) && std::get<Obj*>(index._value)->type == OBJ_STRING) {
+                std::string key_str = static_cast<ObjString*>(std::get<Obj*>(index._value))->chars;
+                auto it = map_obj->items.find(key_str);
+                if (it != map_obj->items.end()) {
+                    PUSH(it->second);
+                } else {
+                    PUSH(SapphireValue());
+                }
+            } else {
+                if (!this->soft_mode) { std::cerr << "Runtime Error: Map key must be a string." << std::endl; return false; }
+                PUSH(SapphireValue());
+            }
+        } else {
+            if (!this->soft_mode) { std::cerr << "Runtime Error: Cannot subscript this type." << std::endl; return false; }
+            PUSH(SapphireValue());
+        }
+    }
+    NEXT_CODE();
+}
+
+TARGET(OP_SET_SUBSCRIPT) {
+    {
+        SapphireValue value = POP();
+        SapphireValue index = POP();
+        SapphireValue collection = POP();
+        
+        if (std::holds_alternative<std::shared_ptr<SapphireArray>>(collection._value)) {
+            auto arr = std::get<std::shared_ptr<SapphireArray>>(collection._value);
+            if (index._value.index() == 2) {
+                int idx = (int)std::get<double>(index._value);
+                if (idx >= 0 && idx < arr->elements.size()) {
+                    arr->elements[idx] = value;
+                } else {
+                    if (!this->soft_mode) { std::cerr << "Runtime Error: Array index out of bounds." << std::endl; return false; }
+                }
+            } else {
+                if (!this->soft_mode) { std::cerr << "Runtime Error: Array index must be a number." << std::endl; return false; }
+            }
+        } else if (std::holds_alternative<Obj*>(collection._value) && std::get<Obj*>(collection._value)->type == OBJ_MAP) {
+            ObjMap* map_obj = static_cast<ObjMap*>(std::get<Obj*>(collection._value));
+            if (std::holds_alternative<Obj*>(index._value) && std::get<Obj*>(index._value)->type == OBJ_STRING) {
+                std::string key_str = static_cast<ObjString*>(std::get<Obj*>(index._value))->chars;
+                map_obj->items[key_str] = value;
+                write_barrier((Obj*)map_obj, value);
+            } else {
+                if (!this->soft_mode) { std::cerr << "Runtime Error: Map key must be a string." << std::endl; return false; }
+            }
+        } else {
+            if (!this->soft_mode) { std::cerr << "Runtime Error: Cannot subscript this type." << std::endl; return false; }
+        }
+        PUSH(value);
+    }
+    NEXT_CODE();
+}
+
+TARGET(OP_IMPORT) {
     name_tmp = (ObjString*)std::get<Obj*>(frame->function->chunk.constants[READ_SHORT()]._value);
     frame->ip = ip; stack_top = top;
     src_tmp = find_and_load_module(name_tmp->chars);
@@ -2337,7 +2586,7 @@ op_import: {
     NEXT_CODE();
 }
 
-op_make_named_arg: {
+TARGET(OP_MAKE_NAMED_ARG) {
     {
         SapphireValue value = POP();
         SapphireValue name = POP();
@@ -2346,6 +2595,11 @@ op_make_named_arg: {
     }
     NEXT_CODE();
 }
+
+#ifdef _MSC_VER
+    default: return false;
+    }
+#endif
 
 #undef READ_BYTE
 #undef READ_SHORT
@@ -2368,7 +2622,107 @@ bool VM::run_function(ObjFunction* function) {
     return result;
 }
 
+static bool parse_top_memory_limit_mb(const std::string& source, size_t& out_limit_mb) {
+    size_t pos = 0;
+    const size_t len = source.size();
+
+    auto trim_left = [&](size_t& start) {
+        while (start < len && (source[start] == ' ' || source[start] == '\t' || source[start] == '\r')) {
+            start++;
+        }
+    };
+
+    const std::string keyword = "var";
+    const std::string name = "MEMORY_LIMIT";
+
+    while (pos < len) {
+        size_t line_start = pos;
+        size_t line_end = source.find('\n', pos);
+        if (line_end == std::string::npos) {
+            line_end = len;
+        }
+
+        size_t token_start = line_start;
+        trim_left(token_start);
+        if (token_start >= line_end) {
+            pos = line_end == len ? len : line_end + 1;
+            continue;
+        }
+
+        if (source.compare(token_start, 2, "//") == 0) {
+            pos = line_end == len ? len : line_end + 1;
+            continue;
+        }
+
+        if (source.compare(token_start, 2, "/*") == 0) {
+            size_t comment_end = source.find("*/", token_start + 2);
+            if (comment_end == std::string::npos) return false;
+            pos = comment_end + 2;
+            continue;
+        }
+
+        if (token_start + keyword.size() <= line_end && source.compare(token_start, keyword.size(), keyword) == 0) {
+            size_t after_keyword = token_start + keyword.size();
+            if (after_keyword < line_end && isspace(static_cast<unsigned char>(source[after_keyword]))) {
+                size_t var_name_start = after_keyword;
+                trim_left(var_name_start);
+                if (var_name_start + name.size() <= line_end && source.compare(var_name_start, name.size(), name) == 0) {
+                    size_t value_pos = var_name_start + name.size();
+                    trim_left(value_pos);
+                    if (value_pos < line_end && source[value_pos] == '=') {
+                        value_pos++;
+                        trim_left(value_pos);
+                        size_t value_start = value_pos;
+                        while (value_pos < line_end && isdigit(static_cast<unsigned char>(source[value_pos]))) {
+                            value_pos++;
+                        }
+                        if (value_start == value_pos) {
+                            return false;
+                        }
+
+                        size_t limit_mb = 0;
+                        try {
+                            limit_mb = std::stoull(source.substr(value_start, value_pos - value_start));
+                        } catch (...) {
+                            return false;
+                        }
+
+                        trim_left(value_pos);
+                        if (value_pos < line_end) {
+                            if (source[value_pos] == ';') {
+                                value_pos++;
+                                trim_left(value_pos);
+                            }
+                            // Permitir comentários após o ponto e vírgula
+                            if (value_pos < line_end && source.compare(value_pos, 2, "//") != 0) {
+                                return false;
+                            }
+                        }
+
+                        if (limit_mb == 0) {
+                            return false;
+                        }
+
+                        out_limit_mb = limit_mb;
+                        std::cout << "[VM] Memory limit set to " << limit_mb << " MB from script" << std::endl;
+                        return true;
+                    }
+                }
+            }
+        }
+
+        pos = line_end == len ? len : line_end + 1;
+    }
+
+    return false;
+}
+
 SapphireValue VM::interpret(const std::string& source) {
+    size_t memory_limit_mb;
+    if (parse_top_memory_limit_mb(source, memory_limit_mb)) {
+        max_memory_limit = memory_limit_mb * 1024ull * 1024ull;
+    }
+
     Preprocessor prep;
     std::string processed_source = prep.process(source);
 

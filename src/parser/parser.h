@@ -121,6 +121,7 @@ private:
     TokenType call(TokenType left_type, bool can_assign);
     TokenType dot(TokenType left_type, bool can_assign);
     TokenType array_literal(bool can_assign);
+    TokenType map_literal(bool can_assign);
     TokenType subscript(TokenType left_type, bool can_assign);
     TokenType this_expression(bool can_assign);
     TokenType and_(TokenType left_type, bool can_assign);

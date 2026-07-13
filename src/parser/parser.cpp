@@ -875,6 +875,7 @@ TokenType Parser::binary(TokenType left_type, bool can_assign) {
       case TokenType::TOKEN_MINUS: emit_byte(OP_SUBTRACT); break;
       case TokenType::TOKEN_STAR:  emit_byte(OP_MULTIPLY); break;
       case TokenType::TOKEN_SLASH: emit_byte(OP_DIVIDE); break;
+      case TokenType::TOKEN_PERCENT: emit_byte(OP_MODULO); break;
       case TokenType::TOKEN_EQUAL_EQUAL:   emit_byte(OP_EQUAL); break;
       case TokenType::TOKEN_BANG_EQUAL:    emit_bytes(OP_EQUAL, OP_NOT); break;
       case TokenType::TOKEN_GREATER:       emit_byte(OP_GREATER); break;
@@ -1020,6 +1021,7 @@ void Parser::initialize_rules() {
     rules[TokenType::TOKEN_PLUS]          = { nullptr,                                    [this](TokenType l, bool b){ return binary(l, b); }, PREC_TERM };
     rules[TokenType::TOKEN_SLASH]         = { nullptr,                                    [this](TokenType l, bool b){ return binary(l, b); }, PREC_FACTOR };
     rules[TokenType::TOKEN_STAR]          = { nullptr,                                    [this](TokenType l, bool b){ return binary(l, b); }, PREC_FACTOR };
+    rules[TokenType::TOKEN_PERCENT]       = { nullptr,                                    [this](TokenType l, bool b){ return binary(l, b); }, PREC_FACTOR };
     rules[TokenType::TOKEN_EQUAL_EQUAL]   = { nullptr,                                    [this](TokenType l, bool b){ return binary(l, b); }, PREC_EQUALITY };
     rules[TokenType::TOKEN_BANG_EQUAL]    = { nullptr,                                    [this](TokenType l, bool b){ return binary(l, b); }, PREC_EQUALITY };
     rules[TokenType::TOKEN_GREATER]       = { nullptr,                                    [this](TokenType l, bool b){ return binary(l, b); }, PREC_COMPARISON };
@@ -1039,7 +1041,7 @@ void Parser::initialize_rules() {
     rules[TokenType::TOKEN_THIS]          = { [this](bool b){ return this_expression(b); },nullptr, PREC_NONE };
     rules[TokenType::TOKEN_ILLEGAL]       = { nullptr, nullptr, PREC_NONE };
     rules[TokenType::TOKEN_RIGHT_PAREN]   = { nullptr, nullptr, PREC_NONE };
-    rules[TokenType::TOKEN_LEFT_BRACE]    = { nullptr, nullptr, PREC_NONE };
+    rules[TokenType::TOKEN_LEFT_BRACE]    = { [this](bool b){ return map_literal(b); }, nullptr, PREC_NONE };
     rules[TokenType::TOKEN_RIGHT_BRACE]   = { nullptr, nullptr, PREC_NONE };
     rules[TokenType::TOKEN_COMMA]         = { nullptr, nullptr, PREC_NONE };
     rules[TokenType::TOKEN_EQUAL]         = { nullptr, nullptr, PREC_NONE };
@@ -1076,6 +1078,25 @@ TokenType Parser::array_literal(bool can_assign) {
     }
     consume(TokenType::TOKEN_RIGHT_BRACKET, "Expect ']' after array elements.");
     emit_bytes(OP_BUILD_ARRAY, element_count);
+    return TokenType::TOKEN_ILLEGAL;
+}
+
+TokenType Parser::map_literal(bool can_assign) {
+    uint8_t element_count = 0;
+    if (!check(TokenType::TOKEN_RIGHT_BRACE)) {
+        do {
+            consume(TokenType::TOKEN_STRING_LITERAL, "Expect string key in map literal.");
+            string(false);
+            consume(TokenType::TOKEN_COLON, "Expect ':' after map key.");
+            expression();
+            if (element_count == 255) {
+                error("Cannot have more than 255 elements in a map literal.");
+            }
+            element_count++;
+        } while (match(TokenType::TOKEN_COMMA));
+    }
+    consume(TokenType::TOKEN_RIGHT_BRACE, "Expect '}' after map elements.");
+    emit_bytes(OP_BUILD_MAP, element_count);
     return TokenType::TOKEN_ILLEGAL;
 }
 

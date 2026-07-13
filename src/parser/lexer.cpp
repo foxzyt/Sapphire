@@ -158,6 +158,7 @@ Token Lexer::scan_token() {
             case '[': generated_token = make_token(TokenType::TOKEN_LEFT_BRACKET); break;
             case ']': generated_token = make_token(TokenType::TOKEN_RIGHT_BRACKET); break;
             case ';': generated_token = make_token(TokenType::TOKEN_SEMICOLON); break;
+            case ':': generated_token = make_token(TokenType::TOKEN_COLON); break;
             case ',': generated_token = make_token(TokenType::TOKEN_COMMA); break;
             case '.': generated_token = make_token(TokenType::TOKEN_DOT); break;
             case '+': 
@@ -174,6 +175,7 @@ Token Lexer::scan_token() {
                 if (match('=')) generated_token = make_token(TokenType::TOKEN_STAR_EQUAL);
                 else generated_token = make_token(TokenType::TOKEN_STAR);
                 break;
+            case '%': generated_token = make_token(TokenType::TOKEN_PERCENT); break;
             // Tokens de um ou dois caracteres
             case '!': generated_token = make_token(match('=') ? TokenType::TOKEN_BANG_EQUAL : TokenType::TOKEN_BANG); break;
             case '=': generated_token = make_token(match('=') ? TokenType::TOKEN_EQUAL_EQUAL : TokenType::TOKEN_EQUAL); break;
@@ -186,6 +188,7 @@ Token Lexer::scan_token() {
             // Tokens especiais como strings
             case '"': generated_token = string_token(); break;
             case '&': generated_token = make_token(match('&') ? TokenType::TOKEN_AND : TokenType::TOKEN_ILLEGAL); break;
+            case '|': generated_token = make_token(match('|') ? TokenType::TOKEN_OR : TokenType::TOKEN_ILLEGAL); break;
             default:
                 generated_token = error_token("Unexpected character.");
                 break;

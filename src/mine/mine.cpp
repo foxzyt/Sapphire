@@ -30,13 +30,15 @@ void print_info() {
 
   std::cout << tc_bold() << "Commands:\n" << tc_reset();
   std::cout << "  " << tc_green() << "mine get <name>" << tc_reset()
-            << "    - Download and install a plugin\n";
+            << "    - Download and install a plugin from the repository\n";
+  std::cout << "  " << tc_green() << "mine install <name>" << tc_reset()
+            << " - Install local file OR download from repository\n";
   std::cout << "  " << tc_yellow() << "mine remove <name>" << tc_reset()
-            << " - Remove an installed plugin\n";
+            << "  - Remove an installed plugin\n";
   std::cout << "  " << tc_cyan() << "mine list" << tc_reset()
-            << "          - List installed plugins\n";
+            << "           - List installed plugins\n";
   std::cout << "  " << tc_blue() << "mine info" << tc_reset()
-            << "          - Show this information\n";
+            << "           - Show this information\n";
 }
 
 void list_plugins() {
@@ -75,7 +77,12 @@ void remove_plugin(const std::string &name) {
   }
 }
 
-void get_plugin(const std::string &name) {
+void get_plugin(const std::string &raw_name) {
+  std::string name = raw_name;
+  if (name.length() >= 3 && name.substr(name.length() - 3) == ".sp") {
+    name = name.substr(0, name.length() - 3);
+  }
+
   const std::string host = "https://raw.githubusercontent.com";
   const std::string path = "/foxzyt/sapphire-mine/main/" + name + ".sp";
 
@@ -110,6 +117,30 @@ void get_plugin(const std::string &name) {
   }
 }
 
+void install_local_plugin(const std::string &filepath) {
+  fs::path file(filepath);
+  if (!fs::exists(file)) {
+    // Fallback to downloading from GitHub
+    get_plugin(filepath);
+    return;
+  }
+  if (file.extension() != ".sp") {
+    std::cerr << tc_red() << "Error:" << tc_reset() << " Plugin must be a .sp file.\n";
+    return;
+  }
+
+  fs::path dir = get_plugin_dir();
+  fs::path target = dir / file.filename();
+
+  try {
+    fs::copy_file(file, target, fs::copy_options::overwrite_existing);
+    std::cout << tc_bold() << tc_green() << "Successfully installed local plugin '" 
+              << file.stem().string() << "'!" << tc_reset() << "\n";
+  } catch (const std::exception &e) {
+    std::cerr << tc_red() << "Error:" << tc_reset() << " Failed to install plugin: " << e.what() << "\n";
+  }
+}
+
 int main(int argc, char *argv[]) {
   init_terminal();
 
@@ -132,6 +163,14 @@ int main(int argc, char *argv[]) {
       return 1;
     }
     get_plugin(argv[2]);
+  } else if (cmd == "install") {
+    if (argc < 3) {
+      std::cerr << tc_red() << "Error:" << tc_reset()
+                << " Missing plugin name or file path.\n";
+      std::cerr << "Usage: mine install <name>\n";
+      return 1;
+    }
+    install_local_plugin(argv[2]);
   } else if (cmd == "remove") {
     if (argc < 3) {
       std::cerr << tc_red() << "Error:" << tc_reset()

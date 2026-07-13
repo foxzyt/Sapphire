@@ -19,6 +19,7 @@ void free_object(Obj* object) {
         case OBJ_INSTANCE: delete static_cast<ObjInstance*>(object); break;
         case OBJ_BOUND_METHOD: delete static_cast<ObjBoundMethod*>(object); break;
         case OBJ_NAMED_ARG: delete static_cast<ObjNamedArg*>(object); break;
+        case OBJ_MAP: delete static_cast<ObjMap*>(object); break;
     }
 }
 
@@ -68,6 +69,19 @@ void print_object(const SapphireValue& value) {
             ObjNamedArg* arg = static_cast<ObjNamedArg*>(obj);
             std::cout << arg->name->chars << "=";
             print_value(arg->value);
+            break;
+        }
+        case OBJ_MAP: {
+            ObjMap* map_obj = static_cast<ObjMap*>(obj);
+            std::cout << "{";
+            bool first = true;
+            for (const auto& pair : map_obj->items) {
+                if (!first) std::cout << ", ";
+                std::cout << "\"" << pair.first << "\": ";
+                print_value(pair.second);
+                first = false;
+            }
+            std::cout << "}";
             break;
         }
     }
@@ -160,3 +174,11 @@ ObjString* new_string(VM* vm, const std::string& chars) {
     register_object(vm, string_obj);
     return string_obj;
 }
+
+ObjMap* new_map(VM* vm) {
+    auto* map_obj = new ObjMap();
+    map_obj->type = OBJ_MAP;
+    register_object(vm, map_obj);
+    return map_obj;
+}
+

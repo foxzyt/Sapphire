@@ -23,8 +23,9 @@ enum OpCode : uint8_t {
     OP_GET_PROPERTY,
     OP_SET_PROPERTY,
 
-    // Arrays
+    // Arrays and Maps
     OP_BUILD_ARRAY,
+    OP_BUILD_MAP,
     OP_GET_SUBSCRIPT,
     OP_SET_SUBSCRIPT,
 
@@ -39,6 +40,7 @@ enum OpCode : uint8_t {
     OP_SUBTRACT,
     OP_MULTIPLY,
     OP_DIVIDE,
+    OP_MODULO,
     OP_NEGATE,
 
     // Statements e Controle de Fluxo
@@ -48,9 +50,9 @@ enum OpCode : uint8_t {
     OP_LOOP,
     OP_CALL,
     OP_CLOSURE,
-    OP_RETURN = 31,
-    OP_IMPORT = 32,
-    OP_MAKE_NAMED_ARG = 33,
+    OP_RETURN,
+    OP_IMPORT,
+    OP_MAKE_NAMED_ARG,
 };
 
 #endif //SAPPHIRE_OPCODES_H
