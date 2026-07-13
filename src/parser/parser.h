@@ -17,6 +17,7 @@ class VM;
 enum Precedence {
     PREC_NONE,
     PREC_ASSIGNMENT, // =
+    PREC_CONDITIONAL,// ?:
     PREC_OR,         // or
     PREC_AND,        // and
     PREC_BITWISE_OR, // |
@@ -104,6 +105,8 @@ private:
     void if_statement();
     void while_statement();
     void for_statement();
+    void try_statement();
+    void throw_statement();
     void break_statement();
     void continue_statement();
     void enum_declaration();
@@ -126,13 +129,14 @@ private:
     TokenType unary(bool can_assign);
     TokenType binary(TokenType left_type, bool can_assign);
     TokenType call(TokenType left_type, bool can_assign);
+    TokenType and_(TokenType left_type, bool can_assign);
+    TokenType or_(TokenType left_type, bool can_assign);
+    TokenType ternary(TokenType left_type, bool can_assign);
     TokenType dot(TokenType left_type, bool can_assign);
     TokenType array_literal(bool can_assign);
     TokenType map_literal(bool can_assign);
     TokenType subscript(TokenType left_type, bool can_assign);
     TokenType this_expression(bool can_assign);
-    TokenType and_(TokenType left_type, bool can_assign);
-    TokenType or_(TokenType left_type, bool can_assign);
     uint8_t argument_list();
 };
 

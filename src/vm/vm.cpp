@@ -1874,6 +1874,8 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     this->objects = nullptr;
     this->sfml_window = window;
 
+    catch_count = 0;
+  
     define_native("clock", clock_native);
     define_native("parseDouble", native_string_to_double);
     define_native("valueToString", native_value_to_string);
@@ -2238,6 +2240,9 @@ bool VM::run() {
         dispatch_table[OP_IMPORT] = &&op_OP_IMPORT;
         dispatch_table[OP_MAKE_NAMED_ARG] = &&op_OP_MAKE_NAMED_ARG;
         dispatch_table[OP_DUP] = &&op_OP_DUP;
+        dispatch_table[OP_TRY_START] = &&op_OP_TRY_START;
+        dispatch_table[OP_TRY_END] = &&op_OP_TRY_END;
+        dispatch_table[OP_THROW] = &&op_OP_THROW;
         table_initialized = true;
     }
 #endif
@@ -2611,6 +2616,49 @@ TARGET(OP_MAKE_NAMED_ARG) {
         ObjNamedArg* arg = new_named_arg(this, static_cast<ObjString*>(std::get<Obj*>(name._value)), value);
         PUSH(arg);
     }
+    NEXT_CODE();
+}
+
+TARGET(OP_TRY_START) {
+    uint16_t offset = READ_SHORT();
+    if (catch_count < 64) {
+        CatchBlock& block = catch_blocks[catch_count++];
+        block.frame_count = frame_count;
+        block.stack_top = top;
+        block.catch_ip = ip + offset;
+    } else {
+        std::cerr << "[SAPPHIRE ERROR] Too many nested try blocks." << std::endl;
+        return false;
+    }
+    NEXT_CODE();
+}
+
+TARGET(OP_TRY_END) {
+    if (catch_count > 0) catch_count--;
+    NEXT_CODE();
+}
+
+TARGET(OP_THROW) {
+    SapphireValue err = POP();
+    if (catch_count == 0) {
+        std::cerr << "Unhandled Exception: ";
+        print_value(err);
+        std::cerr << "\nStack trace:\n";
+        for (int i = frame_count - 1; i >= 0; i--) {
+            CallFrame* f = &frames[i];
+            std::cerr << "  in " << (f->function->name != nullptr ? f->function->name->chars : "<script>") << "\n";
+        }
+        return false;
+    }
+    
+    CatchBlock block = catch_blocks[--catch_count];
+    frame_count = block.frame_count;
+    frame = &frames[frame_count - 1];
+    top = block.stack_top;
+    ip = block.catch_ip;
+    slots = frame->slots;
+    
+    PUSH(err); // Push the exception for the catch block to use
     NEXT_CODE();
 }
 

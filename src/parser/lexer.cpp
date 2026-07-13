@@ -28,6 +28,9 @@ static std::map<std::string, TokenType> keywords = {
     {"switch",   TokenType::TOKEN_SWITCH},
     {"case",     TokenType::TOKEN_CASE},
     {"default",  TokenType::TOKEN_DEFAULT},
+    {"try",      TokenType::TOKEN_TRY},
+    {"catch",    TokenType::TOKEN_CATCH},
+    {"throw",    TokenType::TOKEN_THROW},
     {"for",      TokenType::TOKEN_FOR},
     {"int",      TokenType::TOKEN_INT},
     {"bool",     TokenType::TOKEN_BOOL},
@@ -164,6 +167,7 @@ Token Lexer::scan_token() {
             case ']': generated_token = make_token(TokenType::TOKEN_RIGHT_BRACKET); break;
             case ';': generated_token = make_token(TokenType::TOKEN_SEMICOLON); break;
             case ':': generated_token = make_token(TokenType::TOKEN_COLON); break;
+            case '?': generated_token = make_token(TokenType::TOKEN_QUESTION); break;
             case ',': generated_token = make_token(TokenType::TOKEN_COMMA); break;
             case '.': generated_token = make_token(TokenType::TOKEN_DOT); break;
             case '+': 

@@ -480,6 +480,49 @@ void Parser::break_statement() {
     current_compiler->current_loop->break_jumps.push_back(jump);
 }
 
+void Parser::try_statement() {
+    consume(TokenType::TOKEN_LEFT_BRACE, "Expect '{' before try block.");
+    int try_jump = emit_jump(OP_TRY_START);
+    
+    block(); // the block leaves OP_TRY_END if finished successfully, wait, block doesn't emit OP_TRY_END. We emit it.
+    
+    emit_byte(OP_TRY_END);
+    int skip_catch = emit_jump(OP_JUMP);
+    
+    patch_jump(try_jump);
+    
+    consume(TokenType::TOKEN_CATCH, "Expect 'catch' after try block.");
+    consume(TokenType::TOKEN_LEFT_PAREN, "Expect '(' after 'catch'.");
+    consume(TokenType::TOKEN_IDENTIFIER, "Expect exception variable name.");
+    
+    Compiler* current = current_compiler;
+    if (current->local_count == 256) {
+        error("Too many local variables in function.");
+    }
+    
+    Local* local = &current->locals[current->local_count++];
+    local->name = previous;
+    local->depth = current->scope_depth;
+    local->type = TokenType::TOKEN_VOID; // Type inference could be added later
+    local->is_const = true; // Make exception variables const for safety
+    
+    consume(TokenType::TOKEN_RIGHT_PAREN, "Expect ')' after catch exception name.");
+    consume(TokenType::TOKEN_LEFT_BRACE, "Expect '{' before catch block.");
+    
+    begin_scope();
+    // the variable is already in scope, we just parse block
+    block();
+    end_scope();
+    
+    patch_jump(skip_catch);
+}
+
+void Parser::throw_statement() {
+    expression();
+    consume(TokenType::TOKEN_SEMICOLON, "Expect ';' after throw expression.");
+    emit_byte(OP_THROW);
+}
+
 void Parser::continue_statement() {
     if (current_compiler->current_loop == nullptr) {
         error("Cannot use 'continue' outside of a loop.");
@@ -711,6 +754,10 @@ void Parser::statement() {
         break_statement();
     } else if (match(TokenType::TOKEN_CONTINUE)) {
         continue_statement();
+    } else if (match(TokenType::TOKEN_TRY)) {
+        try_statement();
+    } else if (match(TokenType::TOKEN_THROW)) {
+        throw_statement();
     } else {
         expression_statement();
     }
@@ -1156,6 +1203,25 @@ TokenType Parser::or_(TokenType left_type, bool can_assign) {
     return TokenType::TOKEN_BOOL;
 }
 
+TokenType Parser::ternary(TokenType left_type, bool can_assign) {
+    int then_jump = emit_jump(OP_JUMP_IF_FALSE);
+    emit_byte(OP_POP);
+    
+    TokenType true_type = expression();
+    
+    int else_jump = emit_jump(OP_JUMP);
+    
+    patch_jump(then_jump);
+    emit_byte(OP_POP);
+    
+    consume(TokenType::TOKEN_COLON, "Expect ':' after then branch of ternary operator.");
+    
+    TokenType false_type = expression();
+    patch_jump(else_jump);
+    
+    return true_type; // the type isn't perfectly inferred if they differ, but sufficient for now.
+}
+
 void Parser::initialize_rules() {
     rules[TokenType::TOKEN_LEFT_PAREN]    = { [this](bool b){ return grouping(b); },      [this](TokenType l, bool b){ return call(l, b); }, PREC_CALL };
     rules[TokenType::TOKEN_DOT]           = { nullptr,                                    [this](TokenType l, bool b){ return dot(l, b); },    PREC_CALL };
@@ -1177,6 +1243,7 @@ void Parser::initialize_rules() {
     rules[TokenType::TOKEN_BITWISE_XOR]   = { nullptr,                                    [this](TokenType l, bool b){ return binary(l, b); },PREC_BITWISE_XOR };
     rules[TokenType::TOKEN_LEFT_SHIFT]    = { nullptr,                                    [this](TokenType l, bool b){ return binary(l, b); },PREC_BITWISE_SHIFT };
     rules[TokenType::TOKEN_RIGHT_SHIFT]   = { nullptr,                                    [this](TokenType l, bool b){ return binary(l, b); },PREC_BITWISE_SHIFT };
+    rules[TokenType::TOKEN_QUESTION]      = { nullptr,                                    [this](TokenType l, bool b){ return ternary(l, b); },PREC_CONDITIONAL };
     rules[TokenType::TOKEN_BITWISE_NOT]   = { [this](bool b){ return unary(b); },         nullptr, PREC_NONE };
     rules[TokenType::TOKEN_BANG]          = { [this](bool b){ return unary(b); },         nullptr, PREC_NONE };
     rules[TokenType::TOKEN_IDENTIFIER]    = { [this](bool b){ return variable(b); },      nullptr, PREC_NONE };

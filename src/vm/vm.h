@@ -99,6 +99,12 @@ struct CallFrame {
   SapphireValue *slots;
 };
 
+struct CatchBlock {
+  int frame_count;
+  SapphireValue* stack_top;
+  uint8_t* catch_ip;
+};
+
 class VM {
 public:
   VM();
@@ -150,6 +156,9 @@ public:
 private:
   CallFrame frames[FRAMES_MAX];
   int frame_count;
+
+  CatchBlock catch_blocks[64];
+  int catch_count;
 
   std::vector<Obj *> gray_stack;
 

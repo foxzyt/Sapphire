@@ -62,6 +62,11 @@ enum OpCode : uint8_t {
     OP_RETURN,
     OP_IMPORT,
     OP_MAKE_NAMED_ARG,
+    
+    // Exceptions
+    OP_TRY_START,
+    OP_TRY_END,
+    OP_THROW,
 };
 
 #endif //SAPPHIRE_OPCODES_H
