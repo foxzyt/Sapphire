@@ -1,5 +1,9 @@
 # Sapphire Programming Language (v1.0.8)
 
+[![CI Build](https://github.com/foxzyt/Sapphire/actions/workflows/ci.yml/badge.svg)](https://github.com/foxzyt/Sapphire/actions/workflows/ci.yml)
+[![Latest Release](https://img.shields.io/github/v/release/foxzyt/Sapphire?color=blue&label=release)](https://github.com/foxzyt/Sapphire/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 Sapphire is a hybrid programming language designed for performance and clarity. It combines the speed of compiled languages with the syntax of high-level scripting, making it suitable for tools, UI-driven applications, and system-level tasks.
 
 > **Note:** Sapphire currently only supports **Windows**.
