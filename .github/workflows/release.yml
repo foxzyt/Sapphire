@@ -13,7 +13,7 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
+      run: cmake -B ${{github.workspace}}/build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config Release
@@ -21,10 +21,10 @@ jobs:
     - name: Package Artifacts
       run: |
         mkdir release_artifacts
-        copy build\Release\sapphire.exe release_artifacts\
-        copy build\Release\runner.exe release_artifacts\
-        copy build\Release\mine.exe release_artifacts\
-        copy build\Release\spack.exe release_artifacts\
+        copy build\sapphire.exe release_artifacts\
+        copy build\runner.exe release_artifacts\
+        copy build\mine.exe release_artifacts\
+        copy build\spack.exe release_artifacts\
         Compress-Archive -Path release_artifacts\* -DestinationPath sapphire-windows.zip
       shell: powershell
 
