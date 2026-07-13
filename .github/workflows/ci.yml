@@ -17,19 +17,30 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Setup MSYS2 (MINGW64)
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        update: false
+        install: >-
+          mingw-w64-x86_64-cmake
+          mingw-w64-x86_64-gcc
+          mingw-w64-x86_64-make
+
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+      shell: msys2 {0}
+      run: cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
 
     - name: Build
-      run: cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}}
+      shell: msys2 {0}
+      run: cmake --build build --config ${{matrix.build_type}}
 
     - name: Test Execute
-      working-directory: ${{github.workspace}}
+      shell: msys2 {0}
       run: |
-        .\build\Release\sapphire.exe tests\test_syntax.sp
-        .\build\Release\sapphire.exe tests\test_loop.sp
-        .\build\Release\sapphire.exe tests\test_list.sp
-        .\build\Release\sapphire.exe tests\test_math.sp
-        .\build\Release\sapphire.exe tests\test_types.sp
-        .\build\Release\sapphire.exe tests\test_map.sp
-      shell: powershell
+        ./build/sapphire.exe tests/test_syntax.sp
+        ./build/sapphire.exe tests/test_loop.sp
+        ./build/sapphire.exe tests/test_list.sp
+        ./build/sapphire.exe tests/test_math.sp
+        ./build/sapphire.exe tests/test_types.sp
+        ./build/sapphire.exe tests/test_map.sp

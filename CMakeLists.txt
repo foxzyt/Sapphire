@@ -54,7 +54,7 @@ if(WIN32)
 endif()
 
 if(WIN32 AND CMAKE_COMPILER_IS_GNUCXX)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -static-libgcc -static-libstdc++")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
 endif()
 
 set(SFML_STATIC_LIBRARIES ON)
