@@ -70,6 +70,13 @@ int disassemble_instruction(const Chunk& chunk, int offset) {
         case OP_MODULO:        return simple_instruction("OP_MODULO", offset);
         case OP_NOT:           return simple_instruction("OP_NOT", offset);
         case OP_NEGATE:        return simple_instruction("OP_NEGATE", offset);
+        case OP_BITWISE_AND:   return simple_instruction("OP_BITWISE_AND", offset);
+        case OP_BITWISE_OR:    return simple_instruction("OP_BITWISE_OR", offset);
+        case OP_BITWISE_XOR:   return simple_instruction("OP_BITWISE_XOR", offset);
+        case OP_BITWISE_NOT:   return simple_instruction("OP_BITWISE_NOT", offset);
+        case OP_LEFT_SHIFT:    return simple_instruction("OP_LEFT_SHIFT", offset);
+        case OP_RIGHT_SHIFT:   return simple_instruction("OP_RIGHT_SHIFT", offset);
+        case OP_DUP:           return simple_instruction("OP_DUP", offset);
         case OP_PRINT:         return simple_instruction("OP_PRINT", offset);
         case OP_JUMP:          return jump_instruction("OP_JUMP", 1, chunk, offset);
         case OP_JUMP_IF_FALSE: return jump_instruction("OP_JUMP_IF_FALSE", 1, chunk, offset);

@@ -19,11 +19,15 @@ enum Precedence {
     PREC_ASSIGNMENT, // =
     PREC_OR,         // or
     PREC_AND,        // and
+    PREC_BITWISE_OR, // |
+    PREC_BITWISE_XOR,// ^
+    PREC_BITWISE_AND,// &
     PREC_EQUALITY,   // == !=
     PREC_COMPARISON, // < > <= >=
+    PREC_BITWISE_SHIFT, // << >>
     PREC_TERM,       // + -
     PREC_FACTOR,     // * /
-    PREC_UNARY,      // ! -
+    PREC_UNARY,      // ! - ~
     PREC_CALL,       // . ()
     PREC_PRIMARY
 };
@@ -78,6 +82,7 @@ private:
     void initialize_rules();
     TokenType expression();
     void statement();
+    void switch_statement();
     void expression_statement();
     void block();
     void synchronize();

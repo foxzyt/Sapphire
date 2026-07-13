@@ -25,6 +25,9 @@ static std::map<std::string, TokenType> keywords = {
     {"enum",     TokenType::TOKEN_ENUM},
     {"break",    TokenType::TOKEN_BREAK},
     {"continue", TokenType::TOKEN_CONTINUE},
+    {"switch",   TokenType::TOKEN_SWITCH},
+    {"case",     TokenType::TOKEN_CASE},
+    {"default",  TokenType::TOKEN_DEFAULT},
     {"for",      TokenType::TOKEN_FOR},
     {"int",      TokenType::TOKEN_INT},
     {"bool",     TokenType::TOKEN_BOOL},
@@ -181,16 +184,26 @@ Token Lexer::scan_token() {
             // Tokens de um ou dois caracteres
             case '!': generated_token = make_token(match('=') ? TokenType::TOKEN_BANG_EQUAL : TokenType::TOKEN_BANG); break;
             case '=': generated_token = make_token(match('=') ? TokenType::TOKEN_EQUAL_EQUAL : TokenType::TOKEN_EQUAL); break;
-            case '<': generated_token = make_token(match('=') ? TokenType::TOKEN_LESS_EQUAL : TokenType::TOKEN_LESS); break;
-            case '>': generated_token = make_token(match('=') ? TokenType::TOKEN_GREATER_EQUAL : TokenType::TOKEN_GREATER); break;
+            case '<': 
+                if (match('=')) generated_token = make_token(TokenType::TOKEN_LESS_EQUAL);
+                else if (match('<')) generated_token = make_token(TokenType::TOKEN_LEFT_SHIFT);
+                else generated_token = make_token(TokenType::TOKEN_LESS);
+                break;
+            case '>': 
+                if (match('=')) generated_token = make_token(TokenType::TOKEN_GREATER_EQUAL);
+                else if (match('>')) generated_token = make_token(TokenType::TOKEN_RIGHT_SHIFT);
+                else generated_token = make_token(TokenType::TOKEN_GREATER);
+                break;
             case '/':
                 if (match('=')) generated_token = make_token(TokenType::TOKEN_SLASH_EQUAL);
                 else generated_token = make_token(TokenType::TOKEN_SLASH);
                 break; // Agora o '/' é tratado aqui.
             // Tokens especiais como strings
             case '"': generated_token = string_token(); break;
-            case '&': generated_token = make_token(match('&') ? TokenType::TOKEN_AND : TokenType::TOKEN_ILLEGAL); break;
-            case '|': generated_token = make_token(match('|') ? TokenType::TOKEN_OR : TokenType::TOKEN_ILLEGAL); break;
+            case '&': generated_token = make_token(match('&') ? TokenType::TOKEN_AND : TokenType::TOKEN_BITWISE_AND); break;
+            case '|': generated_token = make_token(match('|') ? TokenType::TOKEN_OR : TokenType::TOKEN_BITWISE_OR); break;
+            case '^': generated_token = make_token(TokenType::TOKEN_BITWISE_XOR); break;
+            case '~': generated_token = make_token(TokenType::TOKEN_BITWISE_NOT); break;
             default:
                 generated_token = error_token("Unexpected character.");
                 break;

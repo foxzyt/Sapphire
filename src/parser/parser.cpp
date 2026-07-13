@@ -528,6 +528,76 @@ void Parser::enum_declaration() {
     define_variable(name_constant);
 }
 
+void Parser::switch_statement() {
+    consume(TokenType::TOKEN_LEFT_PAREN, "Expect '(' after 'switch'.");
+    expression();
+    consume(TokenType::TOKEN_RIGHT_PAREN, "Expect ')' after switch value.");
+    consume(TokenType::TOKEN_LEFT_BRACE, "Expect '{' before switch cases.");
+    
+    Loop switch_loop;
+    switch_loop.start = current_chunk()->code.size();
+    switch_loop.scope_depth = current_compiler->scope_depth;
+    switch_loop.enclosing = current_compiler->current_loop;
+    current_compiler->current_loop = &switch_loop;
+
+    begin_scope();
+
+    int previous_fallthrough = -1;
+    
+    while (!check(TokenType::TOKEN_RIGHT_BRACE) && !check(TokenType::TOKEN_END_OF_FILE)) {
+        if (match(TokenType::TOKEN_CASE)) {
+            emit_byte(OP_DUP);
+            expression();
+            consume(TokenType::TOKEN_COLON, "Expect ':' after case value.");
+            emit_byte(OP_EQUAL);
+            
+            int case_jump = emit_jump(OP_JUMP_IF_FALSE);
+            emit_byte(OP_POP);
+            
+            if (previous_fallthrough != -1) {
+                patch_jump(previous_fallthrough);
+                previous_fallthrough = -1;
+            }
+            
+            while (!check(TokenType::TOKEN_CASE) && !check(TokenType::TOKEN_DEFAULT) && !check(TokenType::TOKEN_RIGHT_BRACE)) {
+                statement();
+            }
+            
+            previous_fallthrough = emit_jump(OP_JUMP);
+            
+            patch_jump(case_jump);
+            emit_byte(OP_POP);
+        } else if (match(TokenType::TOKEN_DEFAULT)) {
+            consume(TokenType::TOKEN_COLON, "Expect ':' after default.");
+            if (previous_fallthrough != -1) {
+                patch_jump(previous_fallthrough);
+                previous_fallthrough = -1;
+            }
+            while (!check(TokenType::TOKEN_RIGHT_BRACE) && !check(TokenType::TOKEN_END_OF_FILE)) {
+                statement();
+            }
+        } else {
+            error("Expect 'case' or 'default' inside switch statement.");
+            break;
+        }
+    }
+    
+    if (previous_fallthrough != -1) {
+        patch_jump(previous_fallthrough);
+    }
+    
+    consume(TokenType::TOKEN_RIGHT_BRACE, "Expect '}' after switch cases.");
+    end_scope();
+    
+    current_compiler->current_loop = switch_loop.enclosing;
+    
+    for (int jump : switch_loop.break_jumps) {
+        patch_jump(jump);
+    }
+
+    emit_byte(OP_POP); // Pop the original switch value
+}
+
 void Parser::expression_statement() {
     expression();
     consume(TokenType::TOKEN_SEMICOLON, "Expect ';' after expression.");
@@ -635,6 +705,8 @@ void Parser::statement() {
         while_statement();
     } else if (match(TokenType::TOKEN_FOR)) {
         for_statement();
+    } else if (match(TokenType::TOKEN_SWITCH)) {
+        switch_statement();
     } else if (match(TokenType::TOKEN_BREAK)) {
         break_statement();
     } else if (match(TokenType::TOKEN_CONTINUE)) {
@@ -900,6 +972,7 @@ TokenType Parser::unary(bool can_assign) {
     switch (operator_type) {
         case TokenType::TOKEN_MINUS: emit_byte(OP_NEGATE); return TokenType::TOKEN_DOUBLE;
         case TokenType::TOKEN_BANG:  emit_byte(OP_NOT); return TokenType::TOKEN_BOOL;
+        case TokenType::TOKEN_BITWISE_NOT: emit_byte(OP_BITWISE_NOT); return TokenType::TOKEN_INT;
         default: return TokenType::TOKEN_ILLEGAL;
     }
 }
@@ -946,6 +1019,11 @@ TokenType Parser::binary(TokenType left_type, bool can_assign) {
       case TokenType::TOKEN_GREATER_EQUAL: emit_bytes(OP_LESS, OP_NOT); break;
       case TokenType::TOKEN_LESS:          emit_byte(OP_LESS); break;
       case TokenType::TOKEN_LESS_EQUAL:    emit_bytes(OP_GREATER, OP_NOT); break;
+      case TokenType::TOKEN_BITWISE_AND:   emit_byte(OP_BITWISE_AND); break;
+      case TokenType::TOKEN_BITWISE_OR:    emit_byte(OP_BITWISE_OR); break;
+      case TokenType::TOKEN_BITWISE_XOR:   emit_byte(OP_BITWISE_XOR); break;
+      case TokenType::TOKEN_LEFT_SHIFT:    emit_byte(OP_LEFT_SHIFT); break;
+      case TokenType::TOKEN_RIGHT_SHIFT:   emit_byte(OP_RIGHT_SHIFT); break;
       default:
         return TokenType::TOKEN_ILLEGAL;
     }
@@ -1094,6 +1172,12 @@ void Parser::initialize_rules() {
     rules[TokenType::TOKEN_LESS_EQUAL]    = { nullptr,                                    [this](TokenType l, bool b){ return binary(l, b); }, PREC_COMPARISON };
     rules[TokenType::TOKEN_AND]           = { nullptr,                                    [this](TokenType l, bool b){ return and_(l, b); },  PREC_AND };
     rules[TokenType::TOKEN_OR]            = { nullptr,                                    [this](TokenType l, bool b){ return or_(l, b); },   PREC_OR };
+    rules[TokenType::TOKEN_BITWISE_AND]   = { nullptr,                                    [this](TokenType l, bool b){ return binary(l, b); },PREC_BITWISE_AND };
+    rules[TokenType::TOKEN_BITWISE_OR]    = { nullptr,                                    [this](TokenType l, bool b){ return binary(l, b); },PREC_BITWISE_OR };
+    rules[TokenType::TOKEN_BITWISE_XOR]   = { nullptr,                                    [this](TokenType l, bool b){ return binary(l, b); },PREC_BITWISE_XOR };
+    rules[TokenType::TOKEN_LEFT_SHIFT]    = { nullptr,                                    [this](TokenType l, bool b){ return binary(l, b); },PREC_BITWISE_SHIFT };
+    rules[TokenType::TOKEN_RIGHT_SHIFT]   = { nullptr,                                    [this](TokenType l, bool b){ return binary(l, b); },PREC_BITWISE_SHIFT };
+    rules[TokenType::TOKEN_BITWISE_NOT]   = { [this](bool b){ return unary(b); },         nullptr, PREC_NONE };
     rules[TokenType::TOKEN_BANG]          = { [this](bool b){ return unary(b); },         nullptr, PREC_NONE };
     rules[TokenType::TOKEN_IDENTIFIER]    = { [this](bool b){ return variable(b); },      nullptr, PREC_NONE };
     rules[TokenType::TOKEN_NUMBER]        = { [this](bool b){ return number(b); },         nullptr, PREC_NONE };

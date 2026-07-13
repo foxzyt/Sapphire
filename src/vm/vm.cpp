@@ -2216,6 +2216,12 @@ bool VM::run() {
         dispatch_table[OP_MULTIPLY] = &&op_OP_MULTIPLY;
         dispatch_table[OP_DIVIDE] = &&op_OP_DIVIDE;
         dispatch_table[OP_MODULO] = &&op_OP_MODULO;
+        dispatch_table[OP_BITWISE_AND] = &&op_OP_BITWISE_AND;
+        dispatch_table[OP_BITWISE_OR] = &&op_OP_BITWISE_OR;
+        dispatch_table[OP_BITWISE_XOR] = &&op_OP_BITWISE_XOR;
+        dispatch_table[OP_BITWISE_NOT] = &&op_OP_BITWISE_NOT;
+        dispatch_table[OP_LEFT_SHIFT] = &&op_OP_LEFT_SHIFT;
+        dispatch_table[OP_RIGHT_SHIFT] = &&op_OP_RIGHT_SHIFT;
         dispatch_table[OP_NOT] = &&op_OP_NOT;
         dispatch_table[OP_NEGATE] = &&op_OP_NEGATE;
         dispatch_table[OP_PRINT] = &&op_OP_PRINT;
@@ -2231,6 +2237,7 @@ bool VM::run() {
         dispatch_table[OP_SET_SUBSCRIPT] = &&op_OP_SET_SUBSCRIPT;
         dispatch_table[OP_IMPORT] = &&op_OP_IMPORT;
         dispatch_table[OP_MAKE_NAMED_ARG] = &&op_OP_MAKE_NAMED_ARG;
+        dispatch_table[OP_DUP] = &&op_OP_DUP;
         table_initialized = true;
     }
 #endif
@@ -2278,6 +2285,10 @@ TARGET(OP_FALSE)
 
 TARGET(OP_POP)
     top--;
+    NEXT_CODE();
+
+TARGET(OP_DUP)
+    PUSH(top[-1]);
     NEXT_CODE();
 
 TARGET(OP_GET_LOCAL)
@@ -2409,6 +2420,13 @@ TARGET(OP_SUBTRACT) { double b = valueToDoubleC(POP()); double a = valueToDouble
 TARGET(OP_MULTIPLY) { double b = valueToDoubleC(POP()); double a = valueToDoubleC(POP()); PUSH(SapphireValue(a * b)); NEXT_CODE(); }
 TARGET(OP_DIVIDE)   { double b = valueToDoubleC(POP()); double a = valueToDoubleC(POP()); PUSH(SapphireValue(a / b)); NEXT_CODE(); }
 TARGET(OP_MODULO)   { double b = valueToDoubleC(POP()); double a = valueToDoubleC(POP()); PUSH(SapphireValue(std::fmod(a, b))); NEXT_CODE(); }
+
+TARGET(OP_BITWISE_AND) { int64_t b = (int64_t)valueToDoubleC(POP()); int64_t a = (int64_t)valueToDoubleC(POP()); PUSH(SapphireValue((double)(a & b))); NEXT_CODE(); }
+TARGET(OP_BITWISE_OR)  { int64_t b = (int64_t)valueToDoubleC(POP()); int64_t a = (int64_t)valueToDoubleC(POP()); PUSH(SapphireValue((double)(a | b))); NEXT_CODE(); }
+TARGET(OP_BITWISE_XOR) { int64_t b = (int64_t)valueToDoubleC(POP()); int64_t a = (int64_t)valueToDoubleC(POP()); PUSH(SapphireValue((double)(a ^ b))); NEXT_CODE(); }
+TARGET(OP_LEFT_SHIFT)  { int64_t b = (int64_t)valueToDoubleC(POP()); int64_t a = (int64_t)valueToDoubleC(POP()); PUSH(SapphireValue((double)(a << b))); NEXT_CODE(); }
+TARGET(OP_RIGHT_SHIFT) { int64_t b = (int64_t)valueToDoubleC(POP()); int64_t a = (int64_t)valueToDoubleC(POP()); PUSH(SapphireValue((double)(a >> b))); NEXT_CODE(); }
+TARGET(OP_BITWISE_NOT) { int64_t a = (int64_t)valueToDoubleC(top[-1]); top[-1] = SapphireValue((double)(~a)); NEXT_CODE(); }
 
 TARGET(OP_NOT)
     top[-1] = SapphireValue(is_falsey(top[-1]));
