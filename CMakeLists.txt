@@ -144,8 +144,10 @@ if(WIN32)
         bcrypt
         opengl32
         winmm
-        -pthread
     )
+    if(NOT MSVC)
+        list(APPEND COMMON_LIBS -pthread)
+    endif()
 endif()
 
 target_link_libraries(sapphire PRIVATE ${COMMON_LIBS})
