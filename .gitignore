@@ -1,19 +1,59 @@
-# Build directories and outputs
+# ── Build output directories ──────────────────────────────────────────────────
+build/
 bin/
 obj/
-*.sbc
+out/
 
-# CMake temporary files
+# ── CMake generated files ─────────────────────────────────────────────────────
 CMakeCache.txt
 CMakeFiles/
 CMakeScripts/
+CMakeUserPresets.json
 cmake_install.cmake
 Makefile
 *.cmake
+!CMakeLists.txt
 
-# Pre-compiled external dependencies (downloaded via script)
+# ── FetchContent / dependency cache ───────────────────────────────────────────
+_deps/
+
+# ── Pre-compiled / downloaded external libraries ──────────────────────────────
 libs/
+libs.zip
+test_libs.zip
+test_libs_extracted/
 
-# OS specific files
+# ── Compiled Sapphire bytecode ────────────────────────────────────────────────
+*.sbc
+
+# ── Compiled binaries ─────────────────────────────────────────────────────────
+*.exe
+*.out
+*.app
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+
+# ── IDE / editor files ────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.user
+*.ncb
+*.sdf
+*.opendb
+*.VC.db
+*.VC.VC.opendb
+.vs/
+
+# ── OS specific files ─────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# ── Scratch / temporary files ─────────────────────────────────────────────────
+scratch/
+*.log
+*.tmp
