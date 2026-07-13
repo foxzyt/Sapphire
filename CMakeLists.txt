@@ -21,10 +21,20 @@ FetchContent_MakeAvailable(opencl_headers)
 set(OPENCL_ICD_LOADER_HEADERS_DIR "${opencl_headers_SOURCE_DIR}" CACHE PATH "" FORCE)
 FetchContent_MakeAvailable(opencl_loader)
 
+# Fetch Sapphire Libs (OpenSSL, SFML, httplib, nlohmann, freetype)
+FetchContent_Declare(
+    sapphire_libs
+    URL https://github.com/foxzyt/Sapphire/releases/download/v1.0.7/libs.zip
+)
+FetchContent_MakeAvailable(sapphire_libs)
+
+# Define LIBS_DIR
+set(LIBS_DIR "${sapphire_libs_SOURCE_DIR}")
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(OPENSSL_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libs/openssl")
+set(OPENSSL_ROOT_DIR "${LIBS_DIR}/openssl")
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
@@ -48,7 +58,7 @@ if(WIN32 AND CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 set(SFML_STATIC_LIBRARIES ON)
-set(SFML_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libs/SFML-3.0.2/lib/cmake/SFML")
+set(SFML_DIR "${LIBS_DIR}/SFML-3.0.2/lib/cmake/SFML")
 find_package(SFML 3 COMPONENTS Graphics Window System REQUIRED)
 
 add_compile_definitions(HAS_OPENCL)
@@ -87,9 +97,9 @@ target_include_directories(sapphire_core PUBLIC
     src/graphics/
     src/utils/
     src/preprocessor/
-    "${CMAKE_CURRENT_SOURCE_DIR}/libs"
+    "${LIBS_DIR}"
     ${OPENSSL_INCLUDE_DIR}
-    "${CMAKE_CURRENT_SOURCE_DIR}/libs/openssl/include"
+    "${LIBS_DIR}/openssl/include"
 )
 
 # 3. Linka o OpenSSL à biblioteca principal
