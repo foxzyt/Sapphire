@@ -18,7 +18,7 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+      run: cmake -B ${{github.workspace}}/build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}}
@@ -27,12 +27,12 @@ jobs:
       working-directory: ${{github.workspace}}
       run: |
         if [ "$RUNNER_OS" == "Windows" ]; then
-          ./build/Release/sapphire.exe tests/test_syntax.sp
-          ./build/Release/sapphire.exe tests/test_loop.sp
-          ./build/Release/sapphire.exe tests/test_list.sp
-          ./build/Release/sapphire.exe tests/test_math.sp
-          ./build/Release/sapphire.exe tests/test_types.sp
-          ./build/Release/sapphire.exe tests/test_map.sp
+          ./build/sapphire.exe tests/test_syntax.sp
+          ./build/sapphire.exe tests/test_loop.sp
+          ./build/sapphire.exe tests/test_list.sp
+          ./build/sapphire.exe tests/test_math.sp
+          ./build/sapphire.exe tests/test_types.sp
+          ./build/sapphire.exe tests/test_map.sp
         else
           ./build/sapphire tests/test_syntax.sp
           ./build/sapphire tests/test_loop.sp
