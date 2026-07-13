@@ -12,33 +12,34 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Setup MSYS2 (MINGW64)
-      uses: msys2/setup-msys2@v2
+    - name: Cache vcpkg binary packages
+      uses: actions/cache@v4
       with:
-        msystem: MINGW64
-        update: false
-        install: >-
-          mingw-w64-x86_64-cmake
-          mingw-w64-x86_64-gcc
-          mingw-w64-x86_64-make
+        path: C:/Users/runneradmin/AppData/Local/vcpkg/archives
+        key: vcpkg-openssl-x64-windows-static-v1
+
+    - name: Install OpenSSL (vcpkg, x64-windows-static)
+      run: vcpkg install openssl:x64-windows-static
 
     - name: Configure CMake
-      shell: msys2 {0}
-      run: cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+      run: |
+        cmake -B ${{github.workspace}}/build `
+          -DCMAKE_BUILD_TYPE=Release `
+          -DOPENSSL_ROOT_DIR="C:/vcpkg/installed/x64-windows-static" `
+          -DOPENSSL_USE_STATIC_LIBS=TRUE
 
     - name: Build
-      shell: msys2 {0}
-      run: cmake --build build --config Release
+      run: cmake --build ${{github.workspace}}/build --config Release
 
     - name: Package Artifacts
+      shell: powershell
       run: |
         mkdir release_artifacts
-        copy build\sapphire.exe release_artifacts\
-        copy build\runner.exe release_artifacts\
-        copy build\mine.exe release_artifacts\
-        copy build\spack.exe release_artifacts\
+        copy build\Release\sapphire.exe release_artifacts\
+        copy build\Release\runner.exe release_artifacts\
+        copy build\Release\mine.exe release_artifacts\
+        copy build\Release\spack.exe release_artifacts\
         Compress-Archive -Path release_artifacts\* -DestinationPath sapphire-windows.zip
-      shell: powershell
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
