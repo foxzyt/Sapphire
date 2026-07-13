@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Configure CMake
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build --config Release
+
+    - name: Package Artifacts
+      run: |
+        mkdir release_artifacts
+        copy build\Release\sapphire.exe release_artifacts\
+        copy build\Release\runner.exe release_artifacts\
+        copy build\Release\mine.exe release_artifacts\
+        copy build\Release\spack.exe release_artifacts\
+        Compress-Archive -Path release_artifacts\* -DestinationPath sapphire-windows.zip
+      shell: powershell
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: sapphire-windows.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

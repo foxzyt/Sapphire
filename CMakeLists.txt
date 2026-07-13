@@ -1,5 +1,25 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.11)
 project(sapphire CXX)
+
+include(FetchContent)
+
+# Fetch OpenCL Headers
+FetchContent_Declare(
+    opencl_headers
+    GIT_REPOSITORY https://github.com/KhronosGroup/OpenCL-Headers.git
+    GIT_TAG        v2024.10.24
+)
+
+# Fetch OpenCL ICD Loader
+FetchContent_Declare(
+    opencl_loader
+    GIT_REPOSITORY https://github.com/KhronosGroup/OpenCL-ICD-Loader.git
+    GIT_TAG        v2024.10.24
+)
+
+FetchContent_MakeAvailable(opencl_headers)
+set(OPENCL_ICD_LOADER_HEADERS_DIR "${opencl_headers_SOURCE_DIR}" CACHE PATH "" FORCE)
+FetchContent_MakeAvailable(opencl_loader)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -31,6 +51,8 @@ set(SFML_STATIC_LIBRARIES ON)
 set(SFML_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libs/SFML-3.0.2/lib/cmake/SFML")
 find_package(SFML 3 COMPONENTS Graphics Window System REQUIRED)
 
+add_compile_definitions(HAS_OPENCL)
+
 add_library(sapphire_core STATIC
     src/compiler/compiler.cpp
     src/compiler/debug.cpp
@@ -46,6 +68,7 @@ add_library(sapphire_core STATIC
     src/graphics/vec3d.cpp
     src/compiler/bytecode_io.cpp
     src/api/sapphire_api.cpp
+    src/api/opencl_api.cpp
     src/preprocessor/preprocessor.cpp
 )
 
@@ -78,6 +101,8 @@ target_link_libraries(sapphire_core PUBLIC
     OpenSSL::Crypto
 )
 
+target_link_libraries(sapphire_core PUBLIC OpenCL)
+
 add_executable(sapphire src/main.cpp)
 add_executable(runner src/vm/runner.cpp)
 add_executable(mine src/mine/mine.cpp)
@@ -97,6 +122,8 @@ set(COMMON_LIBS
     OpenSSL::Crypto
 )
 
+list(APPEND COMMON_LIBS OpenCL)
+
 if(WIN32)
     list(APPEND COMMON_LIBS
         ws2_32
@@ -115,3 +142,26 @@ target_link_libraries(sapphire PRIVATE ${COMMON_LIBS})
 target_link_libraries(runner PRIVATE ${COMMON_LIBS})
 target_link_libraries(mine PRIVATE ${COMMON_LIBS})
 target_link_libraries(spack PRIVATE ${COMMON_LIBS})
+
+if(WIN32)
+    add_custom_command(TARGET sapphire POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:OpenCL>
+        $<TARGET_FILE_DIR:sapphire>
+    )
+    add_custom_command(TARGET runner POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:OpenCL>
+        $<TARGET_FILE_DIR:runner>
+    )
+    add_custom_command(TARGET mine POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:OpenCL>
+        $<TARGET_FILE_DIR:mine>
+    )
+    add_custom_command(TARGET spack POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:OpenCL>
+        $<TARGET_FILE_DIR:spack>
+    )
+endif()

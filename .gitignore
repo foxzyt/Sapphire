@@ -1,0 +1,19 @@
+# Build directories and outputs
+bin/
+obj/
+*.sbc
+
+# CMake temporary files
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+Makefile
+*.cmake
+
+# Pre-compiled external dependencies (downloaded via script)
+libs/
+
+# OS specific files
+.DS_Store
+Thumbs.db

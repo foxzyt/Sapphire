@@ -1,0 +1,7 @@
+# This is a generated file and its contents are an internal implementation detail.
+# The patch step will be re-executed if anything in this file changes.
+# No other meaning or use of this file is supported.
+
+command (connected)=C:/Program Files/CMake/bin/cmake.exe;-Dcan_fetch=YES;-DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE;-P;C:/Users/berna/Downloads/Sapphire-v1.0.6/Sapphire-v1.0.5/_deps/opencl_loader-subbuild/opencl_loader-populate-prefix/tmp/opencl_loader-populate-gitupdate.cmake
+command (disconnected)=C:/Program Files/CMake/bin/cmake.exe;-Dcan_fetch=NO;-DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE;-P;C:/Users/berna/Downloads/Sapphire-v1.0.6/Sapphire-v1.0.5/_deps/opencl_loader-subbuild/opencl_loader-populate-prefix/tmp/opencl_loader-populate-gitupdate.cmake
+work_dir=C:/Users/berna/Downloads/Sapphire-v1.0.6/Sapphire-v1.0.5/_deps/opencl_loader-src
