@@ -17,33 +17,41 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    # Cache vcpkg binary packages so OpenSSL isn't recompiled every run
-    - name: Cache vcpkg binary packages
-      uses: actions/cache@v4
+    # Install SFML and OpenSSL from MSYS2 MINGW64 packages.
+    # These are compiled with the same GCC version used to compile the project,
+    # eliminating all ABI mismatches that occur with the pre-built libs.zip.
+    - name: Setup MSYS2 (MINGW64) with SFML + OpenSSL
+      uses: msys2/setup-msys2@v2
       with:
-        path: C:/Users/runneradmin/AppData/Local/vcpkg/archives
-        key: vcpkg-openssl-x64-windows-static-v1
-
-    # Install MSVC-compiled static OpenSSL to match the MSVC-compiled SFML/FreeType in libs.zip
-    - name: Install OpenSSL (vcpkg, x64-windows-static)
-      run: vcpkg install openssl:x64-windows-static
+        msystem: MINGW64
+        update: true
+        install: >-
+          mingw-w64-x86_64-cmake
+          mingw-w64-x86_64-gcc
+          mingw-w64-x86_64-make
+          mingw-w64-x86_64-sfml
+          mingw-w64-x86_64-openssl
 
     - name: Configure CMake
+      shell: msys2 {0}
       run: |
-        cmake -B ${{github.workspace}}/build `
-          -DCMAKE_BUILD_TYPE=${{matrix.build_type}} `
-          -DOPENSSL_ROOT_DIR="C:/vcpkg/installed/x64-windows-static" `
+        cmake -B build -G "MinGW Makefiles" \
+          -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \
+          -DSFML_DIR=/mingw64/lib/cmake/SFML \
+          -DSFML_STATIC_LIBRARIES=ON \
+          -DOPENSSL_ROOT_DIR=/mingw64 \
           -DOPENSSL_USE_STATIC_LIBS=TRUE
 
     - name: Build
-      run: cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}}
+      shell: msys2 {0}
+      run: cmake --build build --config ${{matrix.build_type}}
 
     - name: Test Execute
-      shell: powershell
+      shell: msys2 {0}
       run: |
-        .\build\Release\sapphire.exe tests\test_syntax.sp
-        .\build\Release\sapphire.exe tests\test_loop.sp
-        .\build\Release\sapphire.exe tests\test_list.sp
-        .\build\Release\sapphire.exe tests\test_math.sp
-        .\build\Release\sapphire.exe tests\test_types.sp
-        .\build\Release\sapphire.exe tests\test_map.sp
+        ./build/sapphire.exe tests/test_syntax.sp
+        ./build/sapphire.exe tests/test_loop.sp
+        ./build/sapphire.exe tests/test_list.sp
+        ./build/sapphire.exe tests/test_math.sp
+        ./build/sapphire.exe tests/test_types.sp
+        ./build/sapphire.exe tests/test_map.sp

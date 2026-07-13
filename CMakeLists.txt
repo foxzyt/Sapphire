@@ -61,8 +61,12 @@ if(WIN32 AND CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
 endif()
 
-set(SFML_STATIC_LIBRARIES ON)
-set(SFML_DIR "${LIBS_DIR}/SFML-3.0.2/lib/cmake/SFML")
+if(NOT DEFINED SFML_STATIC_LIBRARIES)
+    set(SFML_STATIC_LIBRARIES ON)
+endif()
+if(NOT SFML_DIR)
+    set(SFML_DIR "${LIBS_DIR}/SFML-3.0.2/lib/cmake/SFML")
+endif()
 find_package(SFML 3 COMPONENTS Graphics Window System REQUIRED)
 
 add_compile_definitions(HAS_OPENCL)
@@ -103,7 +107,6 @@ target_include_directories(sapphire_core PUBLIC
     src/preprocessor/
     "${LIBS_DIR}"
     ${OPENSSL_INCLUDE_DIR}
-    "${LIBS_DIR}/openssl/include"
 )
 
 # 3. Linka o OpenSSL à biblioteca principal
