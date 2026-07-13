@@ -2255,8 +2255,10 @@ loop_start:
     NEXT_CODE();
 #endif
 
-TARGET(OP_UNKNOWN)
+#ifndef _MSC_VER
+op_OP_UNKNOWN:
     return false;
+#endif
 
 TARGET(OP_CONSTANT)
     PUSH(frame->function->chunk.constants[READ_SHORT()]);
