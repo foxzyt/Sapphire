@@ -95,6 +95,21 @@ numbers[0] = 10
 print(numbers[0]) // Outputs 10
 ```
 
+### Enums
+Enums can be defined using the `enum` keyword. Their values start at `0` and increment automatically.
+
+```javascript
+enum Color {
+    RED,
+    GREEN,
+    BLUE
+}
+
+var my_color = Color.GREEN
+print(my_color) // Outputs 1
+```
+
+
 ### HashMaps (Dictionaries)
 HashMaps store key-value pairs. Keys must be strings.
 
