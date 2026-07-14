@@ -54,42 +54,31 @@ jobs:
           if (Test-Path README.md) { Copy-Item README.md release_artifacts/ }
           Compress-Archive -Path release_artifacts/* -DestinationPath sapphire-windows.zip -Force
 
-      - name: Generate changelog
+      - name: Fetch tag history
         shell: bash
         run: |
           set -e
-          TAG_NAME="${GITHUB_REF_NAME}"
           git fetch --tags --force
           PREV_TAG="$(git tag --sort=-version:refname | grep -E '^v[0-9]' | head -n 2 | tail -n 1 || true)"
+          echo "PREV_TAG=${PREV_TAG}" >> "$GITHUB_ENV"
 
-          {
-            echo "# ${TAG_NAME}"
-            echo
-            echo "[Latest](https://github.com/${GITHUB_REPOSITORY}/releases/latest)"
-            echo
-            echo "Release created automatically for tag ${TAG_NAME}."
-            echo
-            echo "See the commit history and source tree here:"
-            echo "[${TAG_NAME}](https://github.com/${GITHUB_REPOSITORY}/tree/${TAG_NAME})"
-            echo
-            echo "## Changes"
-            echo
-            if [ -n "$PREV_TAG" ] && [ "$PREV_TAG" != "$TAG_NAME" ]; then
-              echo "Changes since ${PREV_TAG}:"
-              git log --pretty=format:'- %s (%h)' "${PREV_TAG}".."${TAG_NAME}"
-            else
-              echo "No previous tag found. Showing recent commits:"
-              git log --pretty=format:'- %s (%h)' -n 10
-            fi
-          } > release_body.md
+      - name: Run Copilot Release Notes
+        id: copilot_release
+        uses: github/copilot-release-notes@v1
+        with:
+          base-ref: ${{ env.PREV_TAG != '' && env.PREV_TAG || github.event.repository.default_branch }}
+          head-ref: ${{ github.ref_name }}
+          instructions: .github/release-notes-instructions.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create GitHub Release
+      - name: Create GitHub Release draft
         uses: softprops/action-gh-release@v2
         with:
           files: sapphire-windows.zip
-          generate_release_notes: true
-          draft: false
-          name: ${{ github.ref_name }}
-          body_path: release_body.md
+          tag_name: ${{ github.ref_name }}
+          name: Sapphire ${{ github.ref_name }}
+          body: ${{ steps.copilot_release.outputs.markdown }}
+          draft: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
