@@ -34,6 +34,10 @@ struct UIStyle {
   float height = 0.0f;
   float margin = 0.0f;
   float thickness = 0.0f;
+  float opacity = 1.0f;
+  float scaleX = 1.0f;
+  float scaleY = 1.0f;
+  float rotation = 0.0f;
 };
 
 struct ComponentProps {
@@ -43,6 +47,25 @@ struct ComponentProps {
   std::optional<float> borderRadius;
   std::optional<unsigned int> fontSize;
   std::optional<float> padding;
+};
+
+struct Keyframe {
+  float timeOffset; // from 0.0 to 1.0
+  std::map<std::string, float> numericProps;
+  std::map<std::string, sf::Color> colorProps;
+};
+
+struct Animation {
+  std::string id;
+  float duration = 1.0f; // in seconds
+  bool loop = false;
+  std::string easing = "linear";
+  std::vector<Keyframe> keyframes;
+};
+
+struct ActiveAnimation {
+  std::string animId;
+  float elapsedTime = 0.0f;
 };
 
 #include "ui_node.h"
@@ -89,8 +112,16 @@ struct UIState {
   std::map<std::string, std::string> lastPassedText;
   std::map<std::string, bool> textChangedState;
   std::map<std::string, SapphireValue> changeHandlers;
+  std::map<std::string, bool> toggleStates;
+  std::map<std::string, float> sliderValues;
   bool mouseJustClicked = false;
   sf::Vector2f mouseClickPos = {0, 0};
+
+  // Animations
+  std::map<std::string, Animation> animations;
+  std::map<std::string, ActiveAnimation> activeAnimations;
+  std::chrono::steady_clock::time_point lastRenderTime;
+  bool firstRender = true;
 };
 
 struct CallFrame {
@@ -143,6 +174,8 @@ public:
   SapphireValue pop();
   void push(const SapphireValue &value);
   bool call(ObjFunction *function, int arg_count);
+  bool run(int target_frame_count = 0);
+  bool call_value(SapphireValue callee, int arg_count);
 
   std::unordered_map<std::string, SapphireValue> globals;
   sf::RenderWindow *sfml_window;
@@ -161,6 +194,9 @@ public:
   size_t next_gc_threshold = 1024 * 1024; // 1MB threshold inicial
   size_t max_memory_limit = 500 * 1024 * 1024; // 500 MB limit
 
+  CallFrame frames[FRAMES_MAX];
+  int frame_count;
+
 
   enum class GCState {
     GC_IDLE,
@@ -173,17 +209,13 @@ public:
   Obj* sweep_current = nullptr;
 
 private:
-  CallFrame frames[FRAMES_MAX];
-  int frame_count;
 
   CatchBlock catch_blocks[64];
   int catch_count;
 
   std::vector<Obj *> gray_stack;
 
-  bool run();
   SapphireValue &peek(int distance);
-  bool call_value(SapphireValue callee, int arg_count);
 
   std::vector<std::string> module_search_paths;
   std::string find_and_load_module(const std::string &module_name);

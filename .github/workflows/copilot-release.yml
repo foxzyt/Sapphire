@@ -1,0 +1,41 @@
+name: Criar Rascunho de Release com Copilot
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  create-draft-release:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Rodar Copilot Release Notes
+        id: copilot_release
+        uses: github/copilot-release-notes@v1
+        with:
+          from-ref: ${{ github.event.pull_request.base.sha }}
+          to-ref: ${{ github.event.pull_request.head.sha }}
+          instructions-file: .github/release-notes-instructions.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Criar Rascunho no GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v-draft-${{ github.run_number }}
+          name: Rascunho de Release #${{ github.run_number }}
+          body: ${{ steps.copilot_release.outputs.markdown }}
+          draft: true
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

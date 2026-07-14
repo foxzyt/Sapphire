@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTTP Requests - Sapphire Documentation</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body class="dark-mode">
+    <div class="docs-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <button id="theme-toggle" aria-label="Toggle theme">💡</button>
+            <a href="../index.html" class="sidebar-logo">
+                <img src="assets/logo.svg" alt="Logo"> Sapphire
+            </a>
+            <nav>
+                <h4>Part 1: The Core</h4>
+                <ul>
+                    <li><a href="docs_intro.html">1. Intro & Variables</a></li>
+                    <li><a href="docs_control_flow.html">2. Control Flow & Functions</a></li>
+                    <li><a href="docs_data_structures.html">3. Lists & Maps</a></li>
+                    <li><a href="docs_std_basic.html">4. Math & System Modules</a></li>
+                </ul>
+
+                <h4>Part 2: Advanced</h4>
+                <ul>
+                    <li><a href="docs_oop.html">5. Object-Oriented (OOP)</a></li>
+                    <li><a href="docs_exceptions.html">6. Exceptions Handling</a></li>
+                    <li><a href="docs_async.html">7. Async & Await</a></li>
+                    <li><a href="docs_threading.html">8. Multi-threading</a></li>
+                </ul>
+
+                <h4>Part 3: I/O & UI</h4>
+                <ul>
+                    <li><a href="docs_file_io.html">9. File I/O</a></li>
+                    <li><a href="docs_http.html" class="active">10. HTTP Requests</a></li>
+                    <li><a href="docs_ui_engine.html">11. UI Engine</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="docs-content">
+            <h1>HTTP Requests</h1>
+            <p>Connecting to external APIs, downloading resources, or interacting with a backend server are core requirements of any modern programming language. Sapphire ships with an extremely fast HTTP Client module natively backed by libcurl.</p>
+
+            <h2>Performing a GET Request</h2>
+            <p>The simplest way to interact with the web is by performing a GET request to a URL. The <code>httpGet()</code> method synchronously fetches the URL and returns the raw response body.</p>
+            
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-function">print</span>(<span class="token-string">"Fetching JSON placeholder..."</span>)<span class="token-punctuation">;</span>
+
+<span class="token-keyword">var</span> response = <span class="token-function">httpGet</span>(<span class="token-string">"https://jsonplaceholder.typicode.com/todos/1"</span>)<span class="token-punctuation">;</span>
+
+<span class="token-function">print</span>(<span class="token-string">"Server Response:"</span>)<span class="token-punctuation">;</span>
+<span class="token-function">print</span>(response)<span class="token-punctuation">;</span></code></pre>
+                <div class="output-container">
+                    &gt; Fetching JSON placeholder...<br>
+                    &gt; Server Response:<br>
+                    &gt; {<br>
+                    &gt;   "userId": 1,<br>
+                    &gt;   "id": 1,<br>
+                    &gt;   "title": "delectus aut autem",<br>
+                    &gt;   "completed": false<br>
+                    &gt; }
+                </div>
+            </div>
+
+            <h2>Using HTTP with Async</h2>
+            <p>Because HTTP requests are strictly I/O bound and can take several seconds depending on network latency, it is highly recommended to wrap your HTTP calls in an <code>async</code> function and use <code>await</code> or a background Thread so your application (especially the UI) doesn't freeze.</p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-keyword">async function</span> <span class="token-function">downloadData</span>(url) <span class="token-punctuation">{</span>
+    <span class="token-keyword">try</span> <span class="token-punctuation">{</span>
+        <span class="token-comment">// Wait for the network...</span>
+        <span class="token-keyword">var</span> body = <span class="token-keyword">await</span> <span class="token-function">httpGet</span>(url)<span class="token-punctuation">;</span>
+        <span class="token-function">print</span>(<span class="token-string">"Downloaded "</span> + <span class="token-function">String.length</span>(body) + <span class="token-string">" bytes successfully!"</span>)<span class="token-punctuation">;</span>
+    <span class="token-punctuation">}</span> <span class="token-keyword">catch</span> (e) <span class="token-punctuation">{</span>
+        <span class="token-function">print</span>(<span class="token-string">"Failed to download: "</span> + e)<span class="token-punctuation">;</span>
+    <span class="token-punctuation">}</span>
+<span class="token-punctuation">}</span>
+
+<span class="token-function">print</span>(<span class="token-string">"Starting download..."</span>)<span class="token-punctuation">;</span>
+<span class="token-function">downloadData</span>(<span class="token-string">"https://example.com"</span>)<span class="token-punctuation">;</span></code></pre>
+                <div class="output-container">
+                    &gt; Starting download...<br>
+                    &gt; Downloaded 1256 bytes successfully!
+                </div>
+            </div>
+
+            <p style="margin-top: 4rem; display: flex; justify-content: space-between;">
+                <a href="docs_file_io.html" class="btn btn-outline">&larr; Previous</a>
+                <a href="docs_ui_engine.html" class="btn">Next: UI Engine &rarr;</a>
+            </p>
+        </main>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        const themeToggle = document.getElementById('theme-toggle');
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            if (document.body.classList.contains('dark-mode')) {
+                themeToggle.textContent = '🌙';
+            } else {
+                themeToggle.textContent = '💡';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -15,7 +15,30 @@ enum class UINodeType {
     Separator,
     Display,
     Menu,
-    MenuItem
+    MenuItem,
+    // Advanced & Layouts
+    Grid,
+    StackPanel,
+    DockPanel,
+    WrapPanel,
+    ScrollView,
+    Border,
+    // Controls
+    Image,
+    ProgressBar,
+    RadioBox,
+    ToggleSwitch,
+    ComboBox,
+    ListBox,
+    PasswordBox,
+    Hyperlink,
+    Expander,
+    // Specialized
+    DataGrid,
+    Canvas,
+    Tooltip,
+    Popup,
+    Window
 };
 
 class UINode {
@@ -52,6 +75,32 @@ public:
     std::string customColor = "";
     bool shadow = false;
     
+    // New specific properties
+    std::string src = ""; // For Image
+    float progress = 0.0f; // For ProgressBar
+    std::vector<std::string> options; // For ComboBox, ListBox
+    std::string selectedOption = "";
+    int selectedIndex = -1;
+    bool isPassword = false; // For PasswordBox
+    std::string href = ""; // For Hyperlink
+    bool expanded = false; // For Expander
+    
+    // Grid/Canvas positioning specifics
+    int row = 0;
+    int column = 0;
+    int rowSpan = 1;
+    int columnSpan = 1;
+    float left = 0.0f;
+    float top = 0.0f;
+    float right = 0.0f;
+    float bottom = 0.0f;
+
+    // Transform / Display specifics
+    float opacity = 1.0f;
+    float scaleX = 1.0f;
+    float scaleY = 1.0f;
+    float rotation = 0.0f;
+
     std::vector<std::shared_ptr<UINode>> children;
     UINode* parent = nullptr;
     

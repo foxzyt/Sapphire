@@ -45,7 +45,7 @@ endif()
 if(MSVC)
     add_compile_options(/O2 /MT /DNDEBUG)
 else()
-    add_compile_options(-O3 -march=native -DNDEBUG)
+    add_compile_options(-O2 -DNDEBUG)
 endif()
 
 if(NOT DEFINED OPENSSL_USE_STATIC_LIBS)
@@ -163,24 +163,24 @@ target_link_libraries(mine PRIVATE ${COMMON_LIBS})
 target_link_libraries(spack PRIVATE ${COMMON_LIBS})
 
 if(WIN32)
-    add_custom_command(TARGET sapphire POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_FILE:OpenCL>
-        $<TARGET_FILE_DIR:sapphire>
-    )
-    add_custom_command(TARGET runner POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_FILE:OpenCL>
-        $<TARGET_FILE_DIR:runner>
-    )
-    add_custom_command(TARGET mine POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_FILE:OpenCL>
-        $<TARGET_FILE_DIR:mine>
-    )
-    add_custom_command(TARGET spack POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_FILE:OpenCL>
-        $<TARGET_FILE_DIR:spack>
-    )
+#    add_custom_command(TARGET sapphire POST_BUILD
+#        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#        $<TARGET_FILE:OpenCL>
+#        $<TARGET_FILE_DIR:sapphire>
+#    )
+#    add_custom_command(TARGET runner POST_BUILD
+#        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#        $<TARGET_FILE:OpenCL>
+#        $<TARGET_FILE_DIR:runner>
+#    )
+#    add_custom_command(TARGET mine POST_BUILD
+#        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#        $<TARGET_FILE:OpenCL>
+#        $<TARGET_FILE_DIR:mine>
+#    )
+#    add_custom_command(TARGET spack POST_BUILD
+#        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#        $<TARGET_FILE:OpenCL>
+#        $<TARGET_FILE_DIR:spack>
+#    )
 endif()
