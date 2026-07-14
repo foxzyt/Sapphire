@@ -118,4 +118,4 @@ This project is licensed under the MIT License. See the `LICENSE` file for detai
 
 ## Note
 
-Sapphire is not affiliated in anyway with SapphireFoxx.
+Sapphire is not affiliated in anyway with SapphireFoxx or the Sapphire Language by Nithinbekal.
