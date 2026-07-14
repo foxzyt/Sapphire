@@ -19,12 +19,19 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Get previous tag
+        id: prev_tag
+        shell: bash
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || git rev-list --max-parents=0 HEAD | tail -n 1)
+          echo "tag=$PREV_TAG" >> $GITHUB_OUTPUT
+
       - name: Rodar Copilot Release Notes
         id: copilot_release
         uses: github/copilot-release-notes@v1
         with:
-          base-ref: ${{ github.event.pull_request.base.sha }}
-          head-ref: ${{ github.event.pull_request.head.sha }}
+          base-ref: ${{ steps.prev_tag.outputs.tag }}
+          head-ref: ${{ github.sha }}
           instructions: .github/release-notes-instructions.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -43,7 +50,7 @@ jobs:
             echo "Generated from merged pull request #${{ github.event.pull_request.number }}." >> release_body.md
             echo "" >> release_body.md
             echo "## Changes" >> release_body.md
-            git log --pretty=format:'- %s (%h)' "${{ github.event.pull_request.base.sha }}".."${{ github.event.pull_request.head.sha }}" >> release_body.md
+            git log --pretty=format:'- %s (%h)' "${{ steps.prev_tag.outputs.tag }}".."${{ github.sha }}" >> release_body.md
           fi
 
       - name: Create temporary tag
