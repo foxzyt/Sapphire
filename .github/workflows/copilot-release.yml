@@ -19,21 +19,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Read release instructions
-        id: release_instructions
-        shell: bash
-        run: |
-          echo "instructions<<EOF" >> "$GITHUB_OUTPUT"
-          cat .github/release-notes-instructions.md >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
-
       - name: Rodar Copilot Release Notes
         id: copilot_release
         uses: github/copilot-release-notes@v1
         with:
           base-ref: ${{ github.event.pull_request.base.sha }}
           head-ref: ${{ github.event.pull_request.head.sha }}
-          instructions: ${{ steps.release_instructions.outputs.instructions }}
+          instructions: .github/release-notes-instructions.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -42,16 +34,17 @@ jobs:
         run: |
           set -e
           if [ -n "${{ steps.copilot_release.outputs.markdown }}" ]; then
-            printf '%s
-' "${{ steps.copilot_release.outputs.markdown }}" > release_body.md
+            cat <<'EOF' > release_body.md
+${{ steps.copilot_release.outputs.markdown }}
+EOF
           else
-            cat > release_body.md <<EOF
-          # Draft release
+            cat <<'EOF' > release_body.md
+# Draft release
 
-          Generated from merged pull request #${{ github.event.pull_request.number }}.
+Generated from merged pull request #${{ github.event.pull_request.number }}.
 
-          ## Changes
-          EOF
+## Changes
+EOF
             git log --pretty=format:'- %s (%h)' "${{ github.event.pull_request.base.sha }}".."${{ github.event.pull_request.head.sha }}" >> release_body.md
           fi
 
@@ -59,6 +52,8 @@ jobs:
         shell: bash
         run: |
           set -e
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git tag "v-draft-${{ github.run_number }}" "${{ github.event.pull_request.merge_commit_sha }}"
           git push origin "v-draft-${{ github.run_number }}"
 
