@@ -8,6 +8,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   build-and-release:
@@ -68,7 +70,7 @@ jobs:
         with:
           base-ref: ${{ env.PREV_TAG != '' && env.PREV_TAG || github.event.repository.default_branch }}
           head-ref: ${{ github.ref_name }}
-          instructions: .github/release-notes-instructions.md
+          instructions: ".github/release-notes-instructions.md"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
