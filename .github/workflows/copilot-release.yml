@@ -34,7 +34,7 @@ jobs:
           head-ref: ${{ github.sha }}
           instructions: .github/release-notes-instructions.md
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.COPILOT_TOKEN }}
 
       - name: Prepare release body
         shell: bash
