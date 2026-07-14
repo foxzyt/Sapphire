@@ -1,6 +1,8 @@
 #include <stdexcept>
 #include <mutex>
 #include <condition_variable>
+#include <thread>
+#include <sstream>
 #include "vm.h"
 #include "compiler.h"
 #include "object.h"
@@ -14,6 +16,7 @@
 #include "nlohmann/json.hpp"
 #include "opencl_api.h"
 #include "preprocessor/preprocessor.h"
+#include "bytecode_io.h"
 #include <iostream>
 #include <fstream>
 #include <chrono>
@@ -439,12 +442,13 @@ static void sapphire_ui_trace(const std::string& id, sf::Vector2f size, float ra
 
 static sf::Color hexToColor(std::string hex) {
     if (hex[0] == '#') hex.erase(0, 1);
+    if (hex.length() == 8) {
+        uint32_t value = std::stoul(hex, nullptr, 16);
+        return sf::Color((value >> 24) & 0xFF, (value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF);
+    }
     if (hex.length() != 6) return sf::Color::White;
     uint32_t value = std::stoul(hex, nullptr, 16);
-    uint8_t r = static_cast<uint8_t>((value >> 16) & 0xFF);
-    uint8_t g = static_cast<uint8_t>((value >> 8) & 0xFF);
-    uint8_t b = static_cast<uint8_t>(value & 0xFF);
-    return sf::Color(r, g, b, 255);
+    return sf::Color((value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF, 255);
 }
 
 static UIStyle* get_style() {
@@ -552,8 +556,14 @@ static SapphireValue create_declarative_node(const std::string& type, int arg_co
     ObjInstance* node = new_instance(g_current_vm, g_current_vm->ui_component_class);
     node->fields["type"] = new_string(g_current_vm, type);
     
+    if (arg_count > 0 && is_obj_type(args[0], OBJ_MAP)) {
+        ObjMap* map = static_cast<ObjMap*>(std::get<Obj*>(args[0]._value));
+        for (auto& pair : map->items) {
+            node->fields[pair.first] = pair.second;
+        }
+    }
     // Check if the first argument is positional (not named), just in case backward compatibility is needed
-    if (arg_count > 0 && !is_obj_type(args[0], OBJ_NAMED_ARG)) {
+    else if (arg_count > 0 && !is_obj_type(args[0], OBJ_NAMED_ARG)) {
         if (type == "Text" || type == "Display") node->fields["text"] = new_string(g_current_vm, valueToStringC(args[0]));
         else node->fields["label"] = new_string(g_current_vm, valueToStringC(args[0]));
     }
@@ -578,6 +588,110 @@ static SapphireValue native_ui_input(int arg_count, SapphireValue* args) { retur
 static SapphireValue native_ui_separator(int arg_count, SapphireValue* args) { return create_declarative_node("Separator", arg_count, args); }
 static SapphireValue native_ui_menu(int arg_count, SapphireValue* args) { return create_declarative_node("Menu", arg_count, args); }
 static SapphireValue native_ui_menuitem(int arg_count, SapphireValue* args) { return create_declarative_node("MenuItem", arg_count, args); }
+
+// Advanced & Layouts
+static SapphireValue native_ui_grid(int arg_count, SapphireValue* args) { return create_declarative_node("Grid", arg_count, args); }
+static SapphireValue native_ui_stackpanel(int arg_count, SapphireValue* args) { return create_declarative_node("StackPanel", arg_count, args); }
+static SapphireValue native_ui_dockpanel(int arg_count, SapphireValue* args) { return create_declarative_node("DockPanel", arg_count, args); }
+static SapphireValue native_ui_wrappanel(int arg_count, SapphireValue* args) { return create_declarative_node("WrapPanel", arg_count, args); }
+static SapphireValue native_ui_scrollview(int arg_count, SapphireValue* args) { return create_declarative_node("ScrollView", arg_count, args); }
+static SapphireValue native_ui_border(int arg_count, SapphireValue* args) { return create_declarative_node("Border", arg_count, args); }
+
+// Controls
+static SapphireValue native_ui_image(int arg_count, SapphireValue* args) { return create_declarative_node("Image", arg_count, args); }
+static SapphireValue native_ui_progressbar(int arg_count, SapphireValue* args) { return create_declarative_node("ProgressBar", arg_count, args); }
+static SapphireValue native_ui_radiobox(int arg_count, SapphireValue* args) { return create_declarative_node("RadioBox", arg_count, args); }
+static SapphireValue native_ui_toggleswitch(int arg_count, SapphireValue* args) { return create_declarative_node("ToggleSwitch", arg_count, args); }
+static SapphireValue native_ui_combobox(int arg_count, SapphireValue* args) { return create_declarative_node("ComboBox", arg_count, args); }
+static SapphireValue native_ui_listbox(int arg_count, SapphireValue* args) { return create_declarative_node("ListBox", arg_count, args); }
+static SapphireValue native_ui_passwordbox(int arg_count, SapphireValue* args) { return create_declarative_node("PasswordBox", arg_count, args); }
+static SapphireValue native_ui_hyperlink(int arg_count, SapphireValue* args) { return create_declarative_node("Hyperlink", arg_count, args); }
+static SapphireValue native_ui_expander(int arg_count, SapphireValue* args) { return create_declarative_node("Expander", arg_count, args); }
+
+// Specialized
+static SapphireValue native_ui_datagrid(int arg_count, SapphireValue* args) { return create_declarative_node("DataGrid", arg_count, args); }
+static SapphireValue native_ui_canvas(int arg_count, SapphireValue* args) { return create_declarative_node("Canvas", arg_count, args); }
+static SapphireValue native_ui_tooltip(int arg_count, SapphireValue* args) { return create_declarative_node("Tooltip", arg_count, args); }
+static SapphireValue native_ui_popup(int arg_count, SapphireValue* args) { return create_declarative_node("Popup", arg_count, args); }
+static SapphireValue native_ui_window(int arg_count, SapphireValue* args) { return create_declarative_node("Window", arg_count, args); }
+
+static SapphireValue native_ui_animate(int arg_count, SapphireValue* args) {
+    std::cout << "native_ui_animate called with arg_count=" << arg_count << std::endl;
+    if (arg_count < 2) return false;
+    if (!is_obj_type(args[0], OBJ_STRING)) { std::cout << "arg0 not string" << std::endl; return false; }
+    if (!is_obj_type(args[1], OBJ_MAP)) { std::cout << "arg1 not map" << std::endl; return false; }
+
+    std::string id = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
+    ObjMap* dict = static_cast<ObjMap*>(std::get<Obj*>(args[1]._value));
+    std::cout << "native_ui_animate id=" << id << std::endl;
+
+    Animation anim;
+    anim.id = id;
+    if (dict->items.count("duration") && std::holds_alternative<double>(dict->items["duration"]._value))
+        anim.duration = (float)std::get<double>(dict->items["duration"]._value);
+    
+    if (dict->items.count("loop") && std::holds_alternative<bool>(dict->items["loop"]._value))
+        anim.loop = std::get<bool>(dict->items["loop"]._value);
+    
+    if (dict->items.count("easing") && is_obj_type(dict->items["easing"], OBJ_STRING))
+        anim.easing = static_cast<ObjString*>(std::get<Obj*>(dict->items["easing"]._value))->chars;
+    
+    if (dict->items.count("keyframes") && std::holds_alternative<std::shared_ptr<SapphireArray>>(dict->items["keyframes"]._value)) {
+        auto kfs = std::get<std::shared_ptr<SapphireArray>>(dict->items["keyframes"]._value);
+        for (auto& kfVal : kfs->elements) {
+            if (is_obj_type(kfVal, OBJ_MAP)) {
+                ObjMap* kfInst = static_cast<ObjMap*>(std::get<Obj*>(kfVal._value));
+                Keyframe kf;
+                if (kfInst->items.count("time") && std::holds_alternative<double>(kfInst->items["time"]._value))
+                    kf.timeOffset = (float)std::get<double>(kfInst->items["time"]._value);
+                
+                for (auto& [k, v] : kfInst->items) {
+                    if (k == "time") continue;
+                    if (std::holds_alternative<double>(v._value)) {
+                        kf.numericProps[k] = (float)std::get<double>(v._value);
+                        std::cout << "Parsed numeric prop: " << k << " = " << kf.numericProps[k] << std::endl;
+                    } else if (is_obj_type(v, OBJ_STRING)) {
+                        kf.colorProps[k] = hexToColor(static_cast<ObjString*>(std::get<Obj*>(v._value))->chars);
+                        std::cout << "Parsed color prop: " << k << std::endl;
+                    } else {
+                        std::cout << "Keyframe value for " << k << " has unknown type." << std::endl;
+                    }
+                }
+                anim.keyframes.push_back(kf);
+            } else if (is_obj_type(kfVal, OBJ_INSTANCE)) {
+                ObjInstance* kfInst = static_cast<ObjInstance*>(std::get<Obj*>(kfVal._value));
+                Keyframe kf;
+                if (kfInst->fields.count("time") && std::holds_alternative<double>(kfInst->fields["time"]._value))
+                    kf.timeOffset = (float)std::get<double>(kfInst->fields["time"]._value);
+                
+                for (auto& [k, v] : kfInst->fields) {
+                    if (k == "time") continue;
+                    if (std::holds_alternative<double>(v._value)) {
+                        kf.numericProps[k] = (float)std::get<double>(v._value);
+                        std::cout << "Parsed numeric prop (instance): " << k << " = " << kf.numericProps[k] << std::endl;
+                    } else if (is_obj_type(v, OBJ_STRING)) {
+                        kf.colorProps[k] = hexToColor(static_cast<ObjString*>(std::get<Obj*>(v._value))->chars);
+                        std::cout << "Parsed color prop (instance): " << k << std::endl;
+                    } else {
+                        std::cout << "Keyframe instance value for " << k << " has unknown type." << std::endl;
+                    }
+                }
+                anim.keyframes.push_back(kf);
+            } else {
+                std::cout << "kfVal is NOT OBJ_MAP or OBJ_INSTANCE. type index: " << kfVal._value.index() << std::endl;
+            }
+        }
+    }
+
+    g_current_vm->ui_state.animations[id] = anim;
+    
+    ActiveAnimation aa;
+    aa.animId = id;
+    aa.elapsedTime = 0.0f;
+    g_current_vm->ui_state.activeAnimations[id] = aa;
+
+    return true;
+}
 
 static SapphireValue native_ui_style(int arg_count, SapphireValue* args) {
     if (arg_count == 0) return {};
@@ -652,7 +766,8 @@ static void compute_sizes(std::shared_ptr<UINode> node) {
         compute_sizes(child);
     }
     
-    if (node->type == UINodeType::Container) {
+    bool isContainer = (node->type == UINodeType::Container || node->type == UINodeType::Window || node->type == UINodeType::StackPanel || node->type == UINodeType::Border || node->type == UINodeType::Grid || node->type == UINodeType::WrapPanel || node->type == UINodeType::DockPanel || node->type == UINodeType::ScrollView || node->type == UINodeType::Canvas);
+    if (isContainer) {
         float maxChildWidth = 0.0f;
         float maxChildHeight = 0.0f;
         float sumWidth = 0.0f;
@@ -683,7 +798,8 @@ static void place_children(std::shared_ptr<UINode> node, float startX, float sta
     node->x = startX;
     node->y = startY;
     
-    if (node->type == UINodeType::Container) {
+    bool isContainer = (node->type == UINodeType::Container || node->type == UINodeType::Window || node->type == UINodeType::StackPanel || node->type == UINodeType::Border || node->type == UINodeType::Grid || node->type == UINodeType::WrapPanel || node->type == UINodeType::DockPanel || node->type == UINodeType::ScrollView || node->type == UINodeType::Canvas);
+    if (isContainer) {
         float currentX = startX;
         float currentY = startY;
         
@@ -788,14 +904,33 @@ static void hit_test_tree(std::shared_ptr<UINode> node, sf::Vector2i m, bool mou
             } else {
                 g_current_vm->ui_state.cursorPositions[node->id] = text.length();
             }
-        } else if (node->type == UINodeType::Button || node->type == UINodeType::Checkbox || node->type == UINodeType::Slider || node->type == UINodeType::MenuItem) {
+        } else if (node->type == UINodeType::Button || node->type == UINodeType::Checkbox || node->type == UINodeType::RadioBox || node->type == UINodeType::ToggleSwitch || node->type == UINodeType::Slider || node->type == UINodeType::MenuItem) {
             auto now = std::chrono::steady_clock::now();
             auto elapsed = std::chrono::duration_cast<std::chrono::duration<float>>(now - g_current_vm->ui_state.lastClickTime);
             if (elapsed.count() > g_current_vm->ui_state.debounceTime) {
                 g_current_vm->ui_state.lastClickTime = now;
                 g_current_vm->ui_state.clickState[node->id] = true;
+                if (node->type == UINodeType::Checkbox || node->type == UINodeType::RadioBox || node->type == UINodeType::ToggleSwitch) {
+                    g_current_vm->ui_state.toggleStates[node->id] = !g_current_vm->ui_state.toggleStates[node->id];
+                }
                 g_current_vm->ui_state.focusedInputId = "";
                 g_current_vm->ui_state.activeMenu = ""; // Close menu on option click
+            }
+        } else if (node->type == UINodeType::Hyperlink) {
+            auto now = std::chrono::steady_clock::now();
+            auto elapsed = std::chrono::duration_cast<std::chrono::duration<float>>(now - g_current_vm->ui_state.lastClickTime);
+            if (elapsed.count() > g_current_vm->ui_state.debounceTime) {
+                g_current_vm->ui_state.lastClickTime = now;
+                g_current_vm->ui_state.clickState[node->id] = true;
+                if (!node->href.empty()) {
+                    #if defined(_WIN32)
+                        system(("start \"\" \"" + node->href + "\"").c_str());
+                    #elif defined(__APPLE__)
+                        system(("open " + node->href).c_str());
+                    #else
+                        system(("xdg-open " + node->href).c_str());
+                    #endif
+                }
             }
         } else if (node->type == UINodeType::Menu) {
             auto now = std::chrono::steady_clock::now();
@@ -829,7 +964,12 @@ static void render_ui_tree(std::shared_ptr<UINode> node) {
     }
     
     UIStyle s = resolve_style(node->id, node->styleName);
+    if (!node->customColor.empty()) {
+        s.bgColor = hexToColor(node->customColor);
+        s.textColor = s.bgColor;
+    }
     if (node->fontSize > 0) s.fontSize = node->fontSize;
+    if (s.fontSize <= 0) s.fontSize = 18;
     if (!node->fontAlias.empty()) s.fontAlias = node->fontAlias;
     
     bool hovered = g_current_vm->ui_state.hoverState[node->id];
@@ -841,27 +981,45 @@ static void render_ui_tree(std::shared_ptr<UINode> node) {
         }
     }
     else if (node->type == UINodeType::Button || node->type == UINodeType::Menu || node->type == UINodeType::MenuItem) {
+        sf::Color btnBg = s.bgColor.a == 0 ? s.accentColor : s.bgColor;
+        if (hovered) {
+            btnBg = sf::Color(std::min(btnBg.r + 30, 255), std::min(btnBg.g + 30, 255), std::min(btnBg.b + 30, 255), btnBg.a);
+        }
         draw_rounded_rect(*g_current_vm->sfml_window, {node->x, node->y}, {node->width, node->height}, 
-                          s.borderRadius, hovered ? s.hoverColor : s.bgColor, s.accentColor, s.borderThickness);
+                          s.borderRadius, btnBg, s.borderColor, s.borderThickness);
         
         if (!node->label.empty()) {
-            float textX = node->x + s.padding;
             std::string finalAlias = s.fontAlias;
             if (g_current_vm->ui_state.fontStack.find(finalAlias) == g_current_vm->ui_state.fontStack.end()) finalAlias = "default";
+            sf::Font& font = g_current_vm->ui_state.fontStack[finalAlias];
             
-            sf::Text dummyText(g_current_vm->ui_state.fontStack[finalAlias], node->label, s.fontSize);
+            unsigned int actualSize = s.fontSize;
+            if (node->width > 0) {
+                float maxTextWidth = node->width - (s.padding * 2);
+                if (maxTextWidth > 0) {
+                    while (actualSize > 8) {
+                        sf::Text dummy(font, node->label, actualSize);
+                        if (dummy.getLocalBounds().size.x <= maxTextWidth) break;
+                        actualSize--;
+                    }
+                }
+            }
+            
+            sf::Text dummyText(font, node->label, actualSize);
             float tw = dummyText.getLocalBounds().size.x;
             
+            float textX = node->x + s.padding;
             if (node->align == "center") {
                 textX = node->x + (node->width / 2.0f) - (tw / 2.0f);
             } else if (node->align == "right") {
                 textX = node->x + node->width - tw - s.padding;
+            } else {
+                textX = node->x + (node->width / 2.0f) - (tw / 2.0f); // Default to center for buttons
             }
             
-            sf::Font& font = g_current_vm->ui_state.fontStack[finalAlias];
-            sf::Text txt(font, node->label, s.fontSize);
-            txt.setFillColor(s.textColor);
-            txt.setPosition({textX, node->y + (node->height / 2.0f) - (s.fontSize / 2.0f) - 2.0f});
+            sf::Text txt(font, node->label, actualSize);
+            txt.setFillColor(sf::Color::White); // Buttons look best with white text on accent background
+            txt.setPosition({textX, node->y + (node->height / 2.0f) - (actualSize / 2.0f) - 2.0f});
             g_current_vm->sfml_window->draw(txt);
         }
     }
@@ -909,7 +1067,7 @@ static void render_ui_tree(std::shared_ptr<UINode> node) {
                              s.textColor, s.fontAlias, s.fontSize);
     }
     else if (node->type == UINodeType::Checkbox) {
-        float size = node->width > 0 ? node->width : 20.0f;
+        float size = 20.0f;
         sf::Vector2f pos(node->x, node->y);
         draw_rounded_rect(*g_current_vm->sfml_window, pos, {size, size}, s.borderRadius, hovered ? s.hoverColor : s.bgColor, s.accentColor, s.borderThickness);
         if (node->checked) {
@@ -939,6 +1097,7 @@ static void render_ui_tree(std::shared_ptr<UINode> node) {
             sf::Vector2i m = sf::Mouse::getPosition(*g_current_vm->sfml_window);
             float newPos = std::clamp((float)m.x - node->x, 0.0f, width);
             node->value = node->min + (newPos / width) * (node->max - node->min);
+            g_current_vm->ui_state.sliderValues[node->id] = node->value;
         }
         
         g_current_vm->sfml_window->draw(handle);
@@ -1012,6 +1171,77 @@ static void render_ui_tree(std::shared_ptr<UINode> node) {
         line.setFillColor(s.borderColor);
         g_current_vm->sfml_window->draw(line);
     }
+    else if (node->type == UINodeType::ProgressBar) {
+        float width = node->width > 0 ? node->width : 200.0f;
+        float height = node->height > 0 ? node->height : 15.0f;
+        sf::Color trackBg = sf::Color(80, 80, 80, 200);
+        draw_rounded_rect(*g_current_vm->sfml_window, {node->x, node->y}, {width, height}, height / 2.0f, trackBg, sf::Color::Transparent, 0.0f);
+        float p = std::clamp(node->progress, 0.0f, 100.0f) / 100.0f;
+        if (p > 0.0f) {
+            draw_rounded_rect(*g_current_vm->sfml_window, {node->x, node->y}, {std::max(height, width * p), height}, height / 2.0f, s.accentColor, sf::Color::Transparent, 0.0f);
+        }
+    }
+    else if (node->type == UINodeType::ToggleSwitch) {
+        float width = node->width > 0 ? node->width : 40.0f;
+        float height = node->height > 0 ? node->height : 20.0f;
+        sf::Color bg = node->checked ? s.accentColor : sf::Color(100, 100, 100, 200);
+        draw_rounded_rect(*g_current_vm->sfml_window, {node->x, node->y}, {width, height}, height / 2.0f, bg, sf::Color::Transparent, 0.0f);
+        
+        float circleRadius = (height / 2.0f) - 2.0f;
+        float cx = node->checked ? (node->x + width - circleRadius * 2.0f - 2.0f) : (node->x + 2.0f);
+        sf::CircleShape handle(circleRadius);
+        handle.setPosition({cx, node->y + 2.0f});
+        handle.setFillColor(sf::Color::White);
+        
+        sf::CircleShape shadow(circleRadius);
+        shadow.setPosition({cx, node->y + 3.0f});
+        shadow.setFillColor(sf::Color(0, 0, 0, 80));
+        g_current_vm->sfml_window->draw(shadow);
+        g_current_vm->sfml_window->draw(handle);
+    }
+    else if (node->type == UINodeType::RadioBox) {
+        float size = 20.0f;
+        sf::Vector2f pos(node->x, node->y);
+        sf::CircleShape outer(size / 2.0f);
+        outer.setPosition(pos);
+        outer.setFillColor(hovered ? sf::Color(255, 255, 255, 20) : sf::Color::Transparent);
+        outer.setOutlineColor(node->checked ? s.accentColor : sf::Color(150, 150, 150));
+        outer.setOutlineThickness(2.0f);
+        g_current_vm->sfml_window->draw(outer);
+        if (node->checked) {
+            sf::CircleShape inner(size / 4.0f);
+            inner.setPosition({pos.x + size / 4.0f, pos.y + size / 4.0f});
+            inner.setFillColor(s.accentColor);
+            g_current_vm->sfml_window->draw(inner);
+        }
+        if (!node->label.empty()) {
+            sapphire_render_text(*g_current_vm->sfml_window, node->label, {pos.x + size + 10.0f, pos.y + (size / 2.0f) - (s.fontSize / 2.0f) - 2.0f}, s.textColor, s.fontAlias, s.fontSize);
+        }
+    }
+    else if (node->type == UINodeType::Hyperlink) {
+        sf::Color linkColor = hovered ? sf::Color(100, 180, 255) : s.accentColor;
+        sapphire_render_text(*g_current_vm->sfml_window, node->label, {node->x, node->y}, linkColor, s.fontAlias, s.fontSize);
+        if (hovered) {
+            std::string finalAlias = s.fontAlias;
+            if (g_current_vm->ui_state.fontStack.find(finalAlias) == g_current_vm->ui_state.fontStack.end()) finalAlias = "default";
+            sf::Text dummyText(g_current_vm->ui_state.fontStack[finalAlias], node->label, s.fontSize > 0 ? s.fontSize : 18);
+            float tw = dummyText.getLocalBounds().size.x;
+            sf::RectangleShape line({tw, 1.0f});
+            line.setPosition({node->x, node->y + (s.fontSize > 0 ? s.fontSize : 18) + 2.0f});
+            line.setFillColor(linkColor);
+            g_current_vm->sfml_window->draw(line);
+        }
+    }
+    // Generic blocks for layout panels
+    else if (node->type == UINodeType::Grid || node->type == UINodeType::StackPanel || node->type == UINodeType::DockPanel || node->type == UINodeType::WrapPanel || node->type == UINodeType::Border || node->type == UINodeType::Canvas || node->type == UINodeType::Window) {
+        if (s.bgColor.a > 0 || s.borderThickness > 0) {
+            draw_rounded_rect(*g_current_vm->sfml_window, {node->x, node->y}, {node->width, node->height}, 
+                              s.borderRadius, s.bgColor, s.borderColor, s.borderThickness);
+        }
+    }
+    
+    // We update scale and rotation by using SFML transforms directly if needed, but since we use manual drawing, 
+    // it's complex for generic containers. For an MVP animation, we just change X, Y, Width, Height, Opacity.
     
     if (node->type != UINodeType::Menu) {
         for (auto& child : node->children) {
@@ -1038,6 +1268,26 @@ static std::shared_ptr<UINode> build_ui_tree(ObjInstance* nodeDict, int& counter
     else if (typeStr == "Separator") type = UINodeType::Separator;
     else if (typeStr == "Menu") type = UINodeType::Menu;
     else if (typeStr == "MenuItem") type = UINodeType::MenuItem;
+    else if (typeStr == "Grid") type = UINodeType::Grid;
+    else if (typeStr == "StackPanel") type = UINodeType::StackPanel;
+    else if (typeStr == "DockPanel") type = UINodeType::DockPanel;
+    else if (typeStr == "WrapPanel") type = UINodeType::WrapPanel;
+    else if (typeStr == "ScrollView") type = UINodeType::ScrollView;
+    else if (typeStr == "Border") type = UINodeType::Border;
+    else if (typeStr == "Image") type = UINodeType::Image;
+    else if (typeStr == "ProgressBar") type = UINodeType::ProgressBar;
+    else if (typeStr == "RadioBox") type = UINodeType::RadioBox;
+    else if (typeStr == "ToggleSwitch") type = UINodeType::ToggleSwitch;
+    else if (typeStr == "ComboBox") type = UINodeType::ComboBox;
+    else if (typeStr == "ListBox") type = UINodeType::ListBox;
+    else if (typeStr == "PasswordBox") type = UINodeType::PasswordBox;
+    else if (typeStr == "Hyperlink") type = UINodeType::Hyperlink;
+    else if (typeStr == "Expander") type = UINodeType::Expander;
+    else if (typeStr == "DataGrid") type = UINodeType::DataGrid;
+    else if (typeStr == "Canvas") type = UINodeType::Canvas;
+    else if (typeStr == "Tooltip") type = UINodeType::Tooltip;
+    else if (typeStr == "Popup") type = UINodeType::Popup;
+    else if (typeStr == "Window") type = UINodeType::Window;
     
     std::string id = typeStr + "_" + std::to_string(counter++);
     if (nodeDict->fields.count("id") && is_obj_type(nodeDict->fields["id"], OBJ_STRING)) {
@@ -1093,10 +1343,55 @@ static std::shared_ptr<UINode> build_ui_tree(ObjInstance* nodeDict, int& counter
     get_num("min", node->min);
     get_num("max", node->max);
     get_bool("checked", node->checked);
+    if (type == UINodeType::Checkbox || type == UINodeType::RadioBox || type == UINodeType::ToggleSwitch) {
+        if (g_current_vm->ui_state.toggleStates.find(id) != g_current_vm->ui_state.toggleStates.end()) {
+            node->checked = g_current_vm->ui_state.toggleStates[id];
+        } else {
+            g_current_vm->ui_state.toggleStates[id] = node->checked;
+        }
+    }
+    else if (type == UINodeType::Slider) {
+        if (g_current_vm->ui_state.sliderValues.find(id) != g_current_vm->ui_state.sliderValues.end()) {
+            node->value = g_current_vm->ui_state.sliderValues[id];
+        } else {
+            g_current_vm->ui_state.sliderValues[id] = node->value;
+        }
+    }
     get_bool("shadow", node->shadow);
     get_num("thickness", node->thickness);
     get_num("margin", node->margin);
     get_str("color", node->customColor);
+    if (node->customColor.empty()) {
+        get_str("customColor", node->customColor);
+    }
+    get_str("src", node->src);
+    get_num("progress", node->progress);
+    get_str("href", node->href);
+    get_bool("isPassword", node->isPassword);
+    get_bool("expanded", node->expanded);
+    get_num("opacity", node->opacity);
+    get_num("scaleX", node->scaleX);
+    get_num("scaleY", node->scaleY);
+    get_num("rotation", node->rotation);
+    
+    float vrow = 0; get_num("row", vrow); node->row = (int)vrow;
+    float vcol = 0; get_num("column", vcol); node->column = (int)vcol;
+    float vrowS = 0; get_num("rowSpan", vrowS); if (vrowS > 0) node->rowSpan = (int)vrowS;
+    float vcolS = 0; get_num("columnSpan", vcolS); if (vcolS > 0) node->columnSpan = (int)vcolS;
+    
+    get_num("left", node->left);
+    get_num("top", node->top);
+    get_num("right", node->right);
+    get_num("bottom", node->bottom);
+
+    if (nodeDict->fields.count("options") && std::holds_alternative<std::shared_ptr<SapphireArray>>(nodeDict->fields["options"]._value)) {
+        auto arr = std::get<std::shared_ptr<SapphireArray>>(nodeDict->fields["options"]._value);
+        for (auto& val : arr->elements) {
+            if (is_obj_type(val, OBJ_STRING)) {
+                node->options.push_back(static_cast<ObjString*>(std::get<Obj*>(val._value))->chars);
+            }
+        }
+    }
     
     float fsize = 0;
     get_num("size", fsize);
@@ -1162,23 +1457,135 @@ static std::shared_ptr<UINode> build_ui_tree(ObjInstance* nodeDict, int& counter
     }
 
     if (node->width <= 0.0f) {
-        if (type == UINodeType::Button || type == UINodeType::Menu || type == UINodeType::MenuItem) node->width = 120.0f;
-        else if (type == UINodeType::Checkbox) node->width = 20.0f;
-        else if (type == UINodeType::Slider) node->width = 200.0f;
+        if (type == UINodeType::Button || type == UINodeType::Menu || type == UINodeType::MenuItem) {
+            node->width = 120.0f;
+            if (!node->label.empty()) {
+                std::string finalAlias = node->fontAlias.empty() ? "default" : node->fontAlias;
+                if (!g_current_vm->ui_state.fontStack.count(finalAlias)) finalAlias = "default";
+                if (g_current_vm->ui_state.fontStack.count(finalAlias)) {
+                    sf::Text dummyText(g_current_vm->ui_state.fontStack[finalAlias], node->label, node->fontSize > 0 ? node->fontSize : 18);
+                    float textW = dummyText.getLocalBounds().size.x + 30.0f; // Add horizontal padding
+                    if (textW > node->width) node->width = textW;
+                }
+            }
+        }
+        else if (type == UINodeType::Checkbox || type == UINodeType::RadioBox) {
+            node->width = 20.0f;
+            if (!node->label.empty()) {
+                std::string finalAlias = node->fontAlias.empty() ? "default" : node->fontAlias;
+                if (!g_current_vm->ui_state.fontStack.count(finalAlias)) finalAlias = "default";
+                if (g_current_vm->ui_state.fontStack.count(finalAlias)) {
+                    sf::Text dummyText(g_current_vm->ui_state.fontStack[finalAlias], node->label, node->fontSize > 0 ? node->fontSize : 18);
+                    node->width += dummyText.getLocalBounds().size.x + 15.0f;
+                }
+            }
+        }
+        else if (type == UINodeType::Slider || type == UINodeType::ProgressBar) node->width = 200.0f;
         else if (type == UINodeType::Input) node->width = 250.0f;
         else if (type == UINodeType::Display) node->width = 200.0f;
         else if (type == UINodeType::Separator) node->width = 100.0f;
+        else if (type == UINodeType::ToggleSwitch) node->width = 40.0f;
+        else if (type == UINodeType::Text || type == UINodeType::Hyperlink) {
+            std::string finalAlias = node->fontAlias.empty() ? "default" : node->fontAlias;
+            if (g_current_vm->ui_state.fontStack.find(finalAlias) == g_current_vm->ui_state.fontStack.end()) finalAlias = "default";
+            unsigned int fsize = node->fontSize > 0 ? node->fontSize : 18;
+            if (g_current_vm->ui_state.fontStack.count(finalAlias)) {
+                sf::Text dummyText(g_current_vm->ui_state.fontStack[finalAlias], node->label, fsize);
+                node->width = dummyText.getLocalBounds().size.x;
+            } else {
+                node->width = node->label.length() * (fsize * 0.6f);
+            }
+        }
     }
     if (node->height <= 0.0f) {
         if (type == UINodeType::Button || type == UINodeType::Menu || type == UINodeType::MenuItem) node->height = 40.0f;
-        else if (type == UINodeType::Checkbox) node->height = 20.0f;
+        else if (type == UINodeType::Checkbox || type == UINodeType::RadioBox) node->height = 20.0f;
         else if (type == UINodeType::Slider) node->height = 20.0f;
+        else if (type == UINodeType::ProgressBar) node->height = 15.0f;
         else if (type == UINodeType::Input) node->height = 35.0f;
         else if (type == UINodeType::Display) node->height = 50.0f;
         else if (type == UINodeType::Separator) node->height = 2.0f;
+        else if (type == UINodeType::ToggleSwitch) node->height = 20.0f;
+        else if (type == UINodeType::Text || type == UINodeType::Hyperlink) {
+            unsigned int fsize = node->fontSize > 0 ? node->fontSize : 18;
+            node->height = (float)fsize + 4.0f;
+        }
     }
 
     return node;
+}
+
+static float lerp_val(float a, float b, float t) { return a + (b - a) * t; }
+static sf::Color lerp_color(sf::Color a, sf::Color b, float t) {
+    return sf::Color(
+        (uint8_t)lerp_val(a.r, b.r, t),
+        (uint8_t)lerp_val(a.g, b.g, t),
+        (uint8_t)lerp_val(a.b, b.b, t),
+        (uint8_t)lerp_val(a.a, b.a, t)
+    );
+}
+
+static void apply_animations_to_tree(std::shared_ptr<UINode> node, float dt) {
+    if (!node) return;
+    
+    auto it = g_current_vm->ui_state.activeAnimations.find(node->id);
+    if (it != g_current_vm->ui_state.activeAnimations.end()) {
+        auto& aa = it->second;
+        auto animIt = g_current_vm->ui_state.animations.find(aa.animId);
+        if (animIt != g_current_vm->ui_state.animations.end()) {
+            auto& anim = animIt->second;
+            aa.elapsedTime += dt;
+            float t = anim.duration > 0 ? (aa.elapsedTime / anim.duration) : 1.0f;
+            if (t > 1.0f) {
+                if (anim.loop) { aa.elapsedTime = std::fmod(aa.elapsedTime, anim.duration); t = aa.elapsedTime / anim.duration; }
+                else t = 1.0f;
+            }
+            std::cout << "Anim: id=" << node->id << " dt=" << dt << " elapsed=" << aa.elapsedTime << " t=" << t << " width=" << node->width << std::endl;
+            
+            if (anim.keyframes.size() >= 2) {
+                size_t kfIndex = 0;
+                for (size_t i = 0; i < anim.keyframes.size() - 1; i++) {
+                    if (t >= anim.keyframes[i].timeOffset && t <= anim.keyframes[i+1].timeOffset) {
+                        kfIndex = i; break;
+                    }
+                }
+                auto& kf1 = anim.keyframes[kfIndex];
+                auto& kf2 = anim.keyframes[kfIndex+1];
+                float timeSpan = kf2.timeOffset - kf1.timeOffset;
+                float localT = timeSpan > 0 ? ((t - kf1.timeOffset) / timeSpan) : 0.0f;
+                
+                for (auto& [prop, val1] : kf1.numericProps) {
+                    if (kf2.numericProps.count(prop)) {
+                        float val2 = kf2.numericProps.at(prop);
+                        float interpolated = lerp_val(val1, val2, localT);
+                        if (prop == "width") node->width = interpolated;
+                        else if (prop == "height") node->height = interpolated;
+                        else if (prop == "x") node->x = interpolated;
+                        else if (prop == "y") node->y = interpolated;
+                        else if (prop == "opacity") node->opacity = interpolated;
+                        else if (prop == "scaleX") node->scaleX = interpolated;
+                        else if (prop == "scaleY") node->scaleY = interpolated;
+                        else if (prop == "rotation") node->rotation = interpolated;
+                    }
+                }
+                for (auto& [prop, c1] : kf1.colorProps) {
+                    if (kf2.colorProps.count(prop)) {
+                        sf::Color c2 = kf2.colorProps.at(prop);
+                        sf::Color interpolated = lerp_color(c1, c2, localT);
+                        if (prop == "color") {
+                            char buf[10];
+                            snprintf(buf, sizeof(buf), "#%02X%02X%02X%02X", interpolated.r, interpolated.g, interpolated.b, interpolated.a);
+                            node->customColor = buf;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    for (auto& child : node->children) {
+        apply_animations_to_tree(child, dt);
+    }
 }
 
 static SapphireValue native_ui_get_input_text(int arg_count, SapphireValue* args) {
@@ -1256,6 +1663,16 @@ static SapphireValue native_ui_render(int arg_count, SapphireValue* args) {
     int counter = 0;
     auto rootNode = build_ui_tree(static_cast<ObjInstance*>(std::get<Obj*>(args[0]._value)), counter);
     g_current_vm->ui_state.rootNode = rootNode;
+
+    auto now = std::chrono::steady_clock::now();
+    float dt = 0.016f;
+    if (!g_current_vm->ui_state.firstRender) {
+        dt = std::chrono::duration_cast<std::chrono::duration<float>>(now - g_current_vm->ui_state.lastRenderTime).count();
+    }
+    g_current_vm->ui_state.firstRender = false;
+    g_current_vm->ui_state.lastRenderTime = now;
+
+    apply_animations_to_tree(g_current_vm->ui_state.rootNode, dt);
 
     if (g_current_vm->ui_state.layoutEngineEnabled && g_current_vm->ui_state.rootNode) {
         sf::Vector2u winSize = g_current_vm->sfml_window->getSize();
@@ -1420,6 +1837,88 @@ static SapphireValue native_http_download(int arg_count, SapphireValue* args) {
     } catch (...) {}
 
     return false;
+}
+
+static SapphireValue native_http_serve(int arg_count, SapphireValue* args) {
+    if (arg_count != 2 || !std::holds_alternative<double>(args[0]._value) || !std::holds_alternative<Obj*>(args[1]._value)) {
+        if (!g_current_vm->soft_mode) std::cerr << "Runtime Error: httpServer() expects a number and a function/closure." << std::endl;
+        return false;
+    }
+    
+    int port = (int)std::get<double>(args[0]._value);
+    SapphireValue callback = args[1];
+    
+    httplib::Server svr;
+    VM* original_vm = g_current_vm;
+    
+    auto handler = [callback, original_vm](const httplib::Request& req, httplib::Response& res) {
+        std::lock_guard<std::mutex> lock(thread_mutex);
+        
+        VM* prev_vm = g_current_vm;
+        g_current_vm = original_vm;
+        
+        ObjMap* req_map = new_map(g_current_vm);
+        req_map->items["method"] = new_string(g_current_vm, req.method);
+        req_map->items["path"] = new_string(g_current_vm, req.path);
+        req_map->items["body"] = new_string(g_current_vm, req.body);
+        
+        int target_frame_count = g_current_vm->frame_count;
+        g_current_vm->push(callback);
+        g_current_vm->push(SapphireValue(req_map));
+        
+        if (g_current_vm->call_value(callback, 1)) {
+            if (g_current_vm->run(target_frame_count)) {
+                SapphireValue result = g_current_vm->pop();
+                if (is_obj_type(result, OBJ_STRING)) {
+                    res.set_content(static_cast<ObjString*>(std::get<Obj*>(result._value))->chars, "text/plain");
+                } else if (is_obj_type(result, OBJ_MAP)) {
+                    ObjMap* map_res = static_cast<ObjMap*>(std::get<Obj*>(result._value));
+                    std::string body = "";
+                    std::string ctype = "text/plain";
+                    if (map_res->items.count("body")) {
+                        if (is_obj_type(map_res->items["body"], OBJ_STRING)) {
+                            body = static_cast<ObjString*>(std::get<Obj*>(map_res->items["body"]._value))->chars;
+                        }
+                    }
+                    if (map_res->items.count("status")) {
+                        res.status = (int)std::get<double>(map_res->items["status"]._value);
+                    }
+                    if (map_res->items.count("contentType")) {
+                        if (is_obj_type(map_res->items["contentType"], OBJ_STRING)) {
+                            ctype = static_cast<ObjString*>(std::get<Obj*>(map_res->items["contentType"]._value))->chars;
+                        }
+                    }
+                    
+                    if (map_res->items.count("headers")) {
+                        if (is_obj_type(map_res->items["headers"], OBJ_MAP)) {
+                            ObjMap* headers_map = static_cast<ObjMap*>(std::get<Obj*>(map_res->items["headers"]._value));
+                            for (auto const& [key, val] : headers_map->items) {
+                                if (is_obj_type(val, OBJ_STRING)) {
+                                    std::string header_val = static_cast<ObjString*>(std::get<Obj*>(val._value))->chars;
+                                    res.set_header(key, header_val);
+                                }
+                            }
+                        }
+                    }
+
+                    res.set_content(body, ctype);
+                }
+            }
+        }
+        
+        g_current_vm = prev_vm;
+    };
+
+    svr.Get(".*", handler);
+    svr.Post(".*", handler);
+    svr.Put(".*", handler);
+    svr.Patch(".*", handler);
+    svr.Delete(".*", handler);
+    svr.Options(".*", handler);
+
+    std::cout << "[Sapphire] HTTP Server natively listening on port " << port << "..." << std::endl;
+    bool success = svr.listen("0.0.0.0", port);
+    return success;
 }
 
 static SapphireValue native_json_parse(int arg_count, SapphireValue* args) {
@@ -1874,6 +2373,8 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     this->objects = nullptr;
     this->sfml_window = window;
 
+    catch_count = 0;
+  
     define_native("clock", clock_native);
     define_native("parseDouble", native_string_to_double);
     define_native("valueToString", native_value_to_string);
@@ -1957,6 +2458,7 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     define_native("httpPost", native_http_post);
     define_native("httpPing", native_http_ping);
     define_native("httpDownload", native_http_download);
+    define_native("httpServer", native_http_serve);
 
     // --- Color ---
     define_native("hexToRGB", native_color_hex_to_rgb);
@@ -2006,6 +2508,35 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
         define_native("GetInputText", native_ui_get_input_text);
         define_native("Menu", native_ui_menu);
         define_native("MenuItem", native_ui_menuitem);
+        
+        // Advanced & Layouts
+        define_native("Grid", native_ui_grid);
+        define_native("StackPanel", native_ui_stackpanel);
+        define_native("DockPanel", native_ui_dockpanel);
+        define_native("WrapPanel", native_ui_wrappanel);
+        define_native("ScrollView", native_ui_scrollview);
+        define_native("Border", native_ui_border);
+        
+        // Controls
+        define_native("Image", native_ui_image);
+        define_native("ProgressBar", native_ui_progressbar);
+        define_native("RadioBox", native_ui_radiobox);
+        define_native("ToggleSwitch", native_ui_toggleswitch);
+        define_native("ComboBox", native_ui_combobox);
+        define_native("ListBox", native_ui_listbox);
+        define_native("PasswordBox", native_ui_passwordbox);
+        define_native("Hyperlink", native_ui_hyperlink);
+        define_native("Expander", native_ui_expander);
+        
+        // Specialized
+        define_native("DataGrid", native_ui_datagrid);
+        define_native("Canvas", native_ui_canvas);
+        define_native("Tooltip", native_ui_tooltip);
+        define_native("Popup", native_ui_popup);
+        define_native("Window", native_ui_window);
+        
+        // Animations
+        define_native("Animate", native_ui_animate);
 
         globals["_ui_initialized"] = {};
         globals["APP_WINDOW_WIDTH"] = (double)config.windowWidth;
@@ -2085,6 +2616,18 @@ bool VM::call(ObjFunction* function, int arg_count) {
 
     if (arg_count != function->arity) {
         arg_count = function->arity;
+    }
+
+    if (function->is_async) {
+        ObjPromise* promise = new_promise(this);
+        promise->function = function;
+        for (int i = 0; i < arg_count; i++) {
+            promise->args.push_back(stack_top[-arg_count + i]);
+        }
+        stack_top -= arg_count + 1; // pop args and function
+        push(SapphireValue((Obj*)promise));
+        event_loop_queue.push_back(promise);
+        return true;
     }
 
     if (frame_count == FRAMES_MAX) {
@@ -2176,7 +2719,7 @@ bool VM::call_value(SapphireValue callee, int arg_count) {
         // std::cout << "    [CALL_VALUE SPY] Despachando chamada para objeto tipo: " << obj->type << std::endl;
         // Eu nem tiro mais os debugs, vai que eu preciso ¯\_(ツ)_/¯
 
-bool VM::run() {
+bool VM::run(int target_frame_count) {
     CallFrame* frame = &frames[frame_count - 1];
     uint8_t* ip = frame->ip;
     SapphireValue* slots = frame->slots;
@@ -2216,6 +2759,12 @@ bool VM::run() {
         dispatch_table[OP_MULTIPLY] = &&op_OP_MULTIPLY;
         dispatch_table[OP_DIVIDE] = &&op_OP_DIVIDE;
         dispatch_table[OP_MODULO] = &&op_OP_MODULO;
+        dispatch_table[OP_BITWISE_AND] = &&op_OP_BITWISE_AND;
+        dispatch_table[OP_BITWISE_OR] = &&op_OP_BITWISE_OR;
+        dispatch_table[OP_BITWISE_XOR] = &&op_OP_BITWISE_XOR;
+        dispatch_table[OP_BITWISE_NOT] = &&op_OP_BITWISE_NOT;
+        dispatch_table[OP_LEFT_SHIFT] = &&op_OP_LEFT_SHIFT;
+        dispatch_table[OP_RIGHT_SHIFT] = &&op_OP_RIGHT_SHIFT;
         dispatch_table[OP_NOT] = &&op_OP_NOT;
         dispatch_table[OP_NEGATE] = &&op_OP_NEGATE;
         dispatch_table[OP_PRINT] = &&op_OP_PRINT;
@@ -2231,6 +2780,15 @@ bool VM::run() {
         dispatch_table[OP_SET_SUBSCRIPT] = &&op_OP_SET_SUBSCRIPT;
         dispatch_table[OP_IMPORT] = &&op_OP_IMPORT;
         dispatch_table[OP_MAKE_NAMED_ARG] = &&op_OP_MAKE_NAMED_ARG;
+        dispatch_table[OP_DUP] = &&op_OP_DUP;
+        dispatch_table[OP_TRY_START] = &&op_OP_TRY_START;
+        dispatch_table[OP_TRY_END] = &&op_OP_TRY_END;
+        dispatch_table[OP_THROW] = &&op_OP_THROW;
+        dispatch_table[OP_INHERIT] = &&op_OP_INHERIT;
+        dispatch_table[OP_GET_SUPER] = &&op_OP_GET_SUPER;
+        dispatch_table[OP_SPAWN] = &&op_OP_SPAWN;
+        dispatch_table[OP_AWAIT] = &&op_OP_AWAIT;
+        dispatch_table[OP_ASYNC_CALL] = &&op_OP_ASYNC_CALL;
         table_initialized = true;
     }
 #endif
@@ -2280,9 +2838,15 @@ TARGET(OP_POP)
     top--;
     NEXT_CODE();
 
-TARGET(OP_GET_LOCAL)
-    PUSH(slots[READ_BYTE()]);
+TARGET(OP_DUP)
+    PUSH(top[-1]);
     NEXT_CODE();
+
+TARGET(OP_GET_LOCAL) {
+    uint8_t slot = READ_BYTE();
+    PUSH(slots[slot]);
+    NEXT_CODE();
+}
 
 TARGET(OP_SET_LOCAL)
     slots[READ_BYTE()] = top[-1];
@@ -2324,10 +2888,18 @@ TARGET(OP_GET_PROPERTY) {
         if (it_f != instance->fields.end()) {
             top[-1] = it_f->second;
         } else {
-            auto it_m = instance->klass->methods.find(name_tmp->chars);
-            if (it_m != instance->klass->methods.end()) {
-                top[-1] = new_bound_method(this, top[-1], it_m->second);
-            } else {
+            ObjClass* klass = instance->klass;
+            bool found_method = false;
+            while (klass != nullptr) {
+                auto it_m = klass->methods.find(name_tmp->chars);
+                if (it_m != klass->methods.end()) {
+                    top[-1] = new_bound_method(this, top[-1], it_m->second, klass);
+                    found_method = true;
+                    break;
+                }
+                klass = klass->superclass;
+            }
+            if (!found_method) {
                 top[-1] = SapphireValue();
             }
         }
@@ -2410,6 +2982,13 @@ TARGET(OP_MULTIPLY) { double b = valueToDoubleC(POP()); double a = valueToDouble
 TARGET(OP_DIVIDE)   { double b = valueToDoubleC(POP()); double a = valueToDoubleC(POP()); PUSH(SapphireValue(a / b)); NEXT_CODE(); }
 TARGET(OP_MODULO)   { double b = valueToDoubleC(POP()); double a = valueToDoubleC(POP()); PUSH(SapphireValue(std::fmod(a, b))); NEXT_CODE(); }
 
+TARGET(OP_BITWISE_AND) { int64_t b = (int64_t)valueToDoubleC(POP()); int64_t a = (int64_t)valueToDoubleC(POP()); PUSH(SapphireValue((double)(a & b))); NEXT_CODE(); }
+TARGET(OP_BITWISE_OR)  { int64_t b = (int64_t)valueToDoubleC(POP()); int64_t a = (int64_t)valueToDoubleC(POP()); PUSH(SapphireValue((double)(a | b))); NEXT_CODE(); }
+TARGET(OP_BITWISE_XOR) { int64_t b = (int64_t)valueToDoubleC(POP()); int64_t a = (int64_t)valueToDoubleC(POP()); PUSH(SapphireValue((double)(a ^ b))); NEXT_CODE(); }
+TARGET(OP_LEFT_SHIFT)  { int64_t b = (int64_t)valueToDoubleC(POP()); int64_t a = (int64_t)valueToDoubleC(POP()); PUSH(SapphireValue((double)(a << b))); NEXT_CODE(); }
+TARGET(OP_RIGHT_SHIFT) { int64_t b = (int64_t)valueToDoubleC(POP()); int64_t a = (int64_t)valueToDoubleC(POP()); PUSH(SapphireValue((double)(a >> b))); NEXT_CODE(); }
+TARGET(OP_BITWISE_NOT) { int64_t a = (int64_t)valueToDoubleC(top[-1]); top[-1] = SapphireValue((double)(~a)); NEXT_CODE(); }
+
 TARGET(OP_NOT)
     top[-1] = SapphireValue(is_falsey(top[-1]));
     NEXT_CODE();
@@ -2418,12 +2997,11 @@ TARGET(OP_NEGATE)
     if (top[-1]._value.index() == 2) std::get<double>(top[-1]._value) *= -1;
     NEXT_CODE();
 
-TARGET(OP_PRINT)
-    stack_top = top;
+TARGET(OP_PRINT) {
     print_value(POP());
     std::cout << std::endl;
-    top = stack_top;
     NEXT_CODE();
+}
 
 TARGET(OP_JUMP)
     ip += READ_SHORT();
@@ -2460,7 +3038,18 @@ TARGET(OP_CLOSURE) {
 TARGET(OP_RETURN) {
     val_tmp = POP();
     frame_count--;
-    if (frame_count == 0) { stack_top = top; return true; }
+    if (frame_count == target_frame_count) { 
+        stack_top = top; 
+        if (this->current_promise != nullptr) {
+            this->current_promise->state = PromiseState::FULFILLED;
+            this->current_promise->value = val_tmp;
+            for (auto* awaiter : this->current_promise->awaiters) {
+                this->event_loop_queue.push_back(awaiter);
+            }
+            this->current_promise->awaiters.clear();
+        }
+        return true; 
+    }
     top = frame->slots;
     PUSH(val_tmp);
     frame = &frames[frame_count - 1];
@@ -2593,6 +3182,184 @@ TARGET(OP_MAKE_NAMED_ARG) {
         ObjNamedArg* arg = new_named_arg(this, static_cast<ObjString*>(std::get<Obj*>(name._value)), value);
         PUSH(arg);
     }
+    NEXT_CODE();
+}
+
+TARGET(OP_AWAIT) {
+    SapphireValue promise_val = top[-1]; // Peek at it
+    if (!std::holds_alternative<Obj*>(promise_val._value) || std::get<Obj*>(promise_val._value)->type != OBJ_PROMISE) {
+        if (!this->soft_mode) std::cerr << "Runtime Error: Can only await promises." << std::endl;
+        return false;
+    }
+    
+    ObjPromise* promise = (ObjPromise*)std::get<Obj*>(promise_val._value);
+    
+    if (promise->state == PromiseState::FULFILLED) {
+        POP(); // Remove promise
+        PUSH(promise->value); // Push result
+        NEXT_CODE();
+    } else if (promise->state == PromiseState::REJECTED) {
+        if (!this->soft_mode) std::cerr << "Runtime Error: Unhandled promise rejection." << std::endl;
+        return false;
+    } else {
+        // Promise is PENDING. We must suspend the current coroutine.
+        if (this->current_promise == nullptr) {
+            // If we are awaiting in the main thread (not inside an async function), we have to block or fail.
+            // For now, let's create a dummy main promise to suspend the main thread.
+            this->current_promise = new_promise(this);
+            this->current_promise->function = nullptr; // Main script
+        }
+        
+        // Save state to current_promise
+        this->current_promise->saved_stack.clear();
+        for (SapphireValue* s = stack; s < top; s++) this->current_promise->saved_stack.push_back(*s);
+        
+        this->current_promise->saved_frames.clear();
+        for (int i = 0; i < frame_count; i++) this->current_promise->saved_frames.push_back(frames[i]);
+        
+        // Register as an awaiter
+        promise->awaiters.push_back(this->current_promise);
+        
+        // Yield execution back to event loop!
+        frame->ip = ip - 1; // Point back to OP_AWAIT
+        event_loop_queue.push_back(this->current_promise);
+        return true; // Exits run() cleanly. The event loop will resume later.
+    }
+}TARGET(OP_ASYNC_CALL) {
+    // TODO: implement OP_ASYNC_CALL
+    NEXT_CODE();
+}
+
+TARGET(OP_INHERIT) {
+    // Stack has: [superclass, subclass]
+    SapphireValue subclass_val = POP();
+    SapphireValue superclass_val = top[-1];
+    
+    if (superclass_val._value.index() != 3 || std::get<Obj*>(superclass_val._value)->type != OBJ_CLASS) {
+        std::cerr << "Runtime Error: Superclass must be a class." << std::endl;
+        return false;
+    }
+    ObjClass* superclass = static_cast<ObjClass*>(std::get<Obj*>(superclass_val._value));
+    ObjClass* subclass = static_cast<ObjClass*>(std::get<Obj*>(subclass_val._value));
+    
+    subclass->superclass = superclass;
+    
+    // Replace the superclass on the stack with the subclass so define_variable binds the subclass
+    top[-1] = subclass_val;
+    
+    NEXT_CODE();
+}
+
+TARGET(OP_SPAWN) {
+    SapphireValue func_val = POP();
+    
+    if (func_val._value.index() != 3 || (std::get<Obj*>(func_val._value)->type != OBJ_CLOSURE && std::get<Obj*>(func_val._value)->type != OBJ_FUNCTION)) {
+        std::cerr << "Runtime Error: Can only spawn functions or closures." << std::endl;
+        return false;
+    }
+    
+    ObjFunction* function = nullptr;
+    Obj* obj = std::get<Obj*>(func_val._value);
+    if (obj->type == OBJ_CLOSURE) {
+        function = static_cast<ObjClosure*>(obj)->function;
+    } else {
+        function = static_cast<ObjFunction*>(obj);
+    }
+    
+    // Serialize function
+    std::stringstream ss;
+    serialize_function_to_stream(function, this, ss);
+    std::string bytecode = ss.str();
+    
+    // Spawn a C++ thread
+    std::thread worker([bytecode, config = this->config]() {
+        VM* thread_vm = new VM(config);
+        std::stringstream in_ss(bytecode);
+        
+        ObjFunction* thread_function = deserialize_function_from_stream(thread_vm, in_ss);
+        if (thread_function) {
+            thread_vm->push(SapphireValue(thread_function));
+            thread_vm->call_and_run(thread_function);
+        }
+        
+        delete thread_vm;
+    });
+    
+    worker.detach();
+    
+    // Do NOT push since spawn is a statement!
+    NEXT_CODE();
+}
+
+TARGET(OP_GET_SUPER) {
+    name_tmp = (ObjString*)std::get<Obj*>(frame->function->chunk.constants[READ_SHORT()]._value);
+    ObjClass* superclass = frame->function->owner_class->superclass;
+    if (superclass == nullptr) {
+        std::cerr << "Runtime Error: Cannot use 'super' in a class with no superclass." << std::endl;
+        return false;
+    }
+    
+    SapphireValue instance_val = top[-1];
+    ObjClass* current_class = superclass;
+    bool found_method = false;
+    
+    while (current_class != nullptr) {
+        auto it_m = current_class->methods.find(name_tmp->chars);
+        if (it_m != current_class->methods.end()) {
+            top[-1] = new_bound_method(this, instance_val, it_m->second, current_class);
+            found_method = true;
+            break;
+        }
+        current_class = current_class->superclass;
+    }
+    
+    if (!found_method) {
+        std::cerr << "Runtime Error: Undefined property '" << name_tmp->chars << "'." << std::endl;
+        return false;
+    }
+    NEXT_CODE();
+}
+
+TARGET(OP_TRY_START) {
+    uint16_t offset = READ_SHORT();
+    if (catch_count < 64) {
+        CatchBlock& block = catch_blocks[catch_count++];
+        block.frame_count = frame_count;
+        block.stack_top = top;
+        block.catch_ip = ip + offset;
+    } else {
+        std::cerr << "[SAPPHIRE ERROR] Too many nested try blocks." << std::endl;
+        return false;
+    }
+    NEXT_CODE();
+}
+
+TARGET(OP_TRY_END) {
+    if (catch_count > 0) catch_count--;
+    NEXT_CODE();
+}
+
+TARGET(OP_THROW) {
+    SapphireValue err = POP();
+    if (catch_count == 0) {
+        std::cerr << "Unhandled Exception: ";
+        print_value(err);
+        std::cerr << "\nStack trace:\n";
+        for (int i = frame_count - 1; i >= 0; i--) {
+            CallFrame* f = &frames[i];
+            std::cerr << "  in " << (f->function->name != nullptr ? f->function->name->chars : "<script>") << "\n";
+        }
+        return false;
+    }
+    
+    CatchBlock block = catch_blocks[--catch_count];
+    frame_count = block.frame_count;
+    frame = &frames[frame_count - 1];
+    top = block.stack_top;
+    ip = block.catch_ip;
+    slots = frame->slots;
+    
+    PUSH(err); // Push the exception for the catch block to use
     NEXT_CODE();
 }
 
@@ -2735,6 +3502,41 @@ SapphireValue VM::interpret(const std::string& source) {
     if (!call(function, 0)) return {};
 
     bool result = run();
+
+    // Event Loop
+    while (!event_loop_queue.empty()) {
+        ObjPromise* next_promise = event_loop_queue.front();
+        event_loop_queue.erase(event_loop_queue.begin());
+        
+        if (next_promise->state != PromiseState::PENDING) continue;
+        
+        this->current_promise = next_promise;
+        
+        if (next_promise->saved_frames.empty() && next_promise->function != nullptr) {
+            // First time running this coroutine!
+            resetStack();
+            push(SapphireValue(next_promise->function));
+            for (const auto& arg : next_promise->args) push(arg);
+            
+            CallFrame* frame = &frames[frame_count++];
+            frame->function = next_promise->function;
+            frame->ip = &next_promise->function->chunk.code[0];
+            frame->slots = stack;
+        } else if (!next_promise->saved_frames.empty()) {
+            // Resuming!
+            stack_top = stack;
+            for (auto v : next_promise->saved_stack) *stack_top++ = v;
+            frame_count = 0;
+            for (auto f : next_promise->saved_frames) frames[frame_count++] = f;
+        } else {
+            // Dummy main promise
+            continue;
+        }
+        
+        run();
+    }
+    
+    this->current_promise = nullptr;
 
     if (result && stack_top > stack) {
         return pop();

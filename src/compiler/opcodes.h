@@ -13,6 +13,7 @@ enum OpCode : uint8_t {
 
     // Stack
     OP_POP,
+    OP_DUP,
 
     // Variáveis e Propriedades
     OP_GET_LOCAL,
@@ -42,6 +43,14 @@ enum OpCode : uint8_t {
     OP_DIVIDE,
     OP_MODULO,
     OP_NEGATE,
+    
+    // Bitwise Operadores
+    OP_BITWISE_AND,
+    OP_BITWISE_OR,
+    OP_BITWISE_XOR,
+    OP_BITWISE_NOT,
+    OP_LEFT_SHIFT,
+    OP_RIGHT_SHIFT,
 
     // Statements e Controle de Fluxo
     OP_PRINT,
@@ -53,6 +62,16 @@ enum OpCode : uint8_t {
     OP_RETURN,
     OP_IMPORT,
     OP_MAKE_NAMED_ARG,
+    OP_INHERIT,
+    OP_GET_SUPER,
+    OP_SPAWN,
+    OP_AWAIT,
+    OP_ASYNC_CALL,
+    
+    // Exceptions
+    OP_TRY_START,
+    OP_TRY_END,
+    OP_THROW,
 };
 
 #endif //SAPPHIRE_OPCODES_H

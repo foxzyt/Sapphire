@@ -4,53 +4,92 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-and-release:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Setup MSYS2 (MINGW64) with SFML + OpenSSL
-      uses: msys2/setup-msys2@v2
-      with:
-        msystem: MINGW64
-        update: true
-        install: >-
-          mingw-w64-x86_64-cmake
-          mingw-w64-x86_64-gcc
-          mingw-w64-x86_64-make
-          mingw-w64-x86_64-sfml
-          mingw-w64-x86_64-openssl
+      - name: Setup MSYS2 (MINGW64)
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-make
+            mingw-w64-x86_64-sfml
+            mingw-w64-x86_64-openssl
 
-    - name: Configure CMake
-      shell: msys2 {0}
-      run: |
-        cmake -B build -G "MinGW Makefiles" \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DSFML_DIR=/mingw64/lib/cmake/SFML \
-          -DSFML_STATIC_LIBRARIES=ON \
-          -DOPENSSL_ROOT_DIR=/mingw64 \
-          -DOPENSSL_USE_STATIC_LIBS=TRUE
+      - name: Configure CMake
+        shell: msys2 {0}
+        run: |
+          cmake -S . -B build -G "MinGW Makefiles" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DSFML_DIR=/mingw64/lib/cmake/SFML \
+            -DSFML_STATIC_LIBRARIES=ON \
+            -DOPENSSL_ROOT_DIR=/mingw64 \
+            -DOPENSSL_USE_STATIC_LIBS=TRUE
 
-    - name: Build
-      shell: msys2 {0}
-      run: cmake --build build --config Release
+      - name: Build
+        shell: msys2 {0}
+        run: cmake --build build --config Release --parallel
 
-    - name: Package Artifacts
-      shell: powershell
-      run: |
-        mkdir release_artifacts
-        copy build\sapphire.exe release_artifacts\
-        copy build\runner.exe release_artifacts\
-        copy build\mine.exe release_artifacts\
-        copy build\spack.exe release_artifacts\
-        Compress-Archive -Path release_artifacts\* -DestinationPath sapphire-windows.zip
+      - name: Package artifacts
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force -Path release_artifacts | Out-Null
+          if (Test-Path build/sapphire.exe) { Copy-Item build/sapphire.exe release_artifacts/ }
+          if (Test-Path build/runner.exe) { Copy-Item build/runner.exe release_artifacts/ }
+          if (Test-Path build/mine.exe) { Copy-Item build/mine.exe release_artifacts/ }
+          if (Test-Path build/spack.exe) { Copy-Item build/spack.exe release_artifacts/ }
+          if (Test-Path README.md) { Copy-Item README.md release_artifacts/ }
+          Compress-Archive -Path release_artifacts/* -DestinationPath sapphire-windows.zip -Force
 
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: sapphire-windows.zip
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate changelog
+        shell: bash
+        run: |
+          set -e
+          TAG_NAME="${GITHUB_REF_NAME}"
+          git fetch --tags --force
+          PREV_TAG="$(git tag --sort=-version:refname | grep -E '^v[0-9]' | head -n 2 | tail -n 1 || true)"
+
+          {
+            echo "# ${TAG_NAME}"
+            echo
+            echo "[Latest](https://github.com/${GITHUB_REPOSITORY}/releases/latest)"
+            echo
+            echo "Release created automatically for tag ${TAG_NAME}."
+            echo
+            echo "See the commit history and source tree here:"
+            echo "[${TAG_NAME}](https://github.com/${GITHUB_REPOSITORY}/tree/${TAG_NAME})"
+            echo
+            echo "## Changes"
+            echo
+            if [ -n "$PREV_TAG" ] && [ "$PREV_TAG" != "$TAG_NAME" ]; then
+              echo "Changes since ${PREV_TAG}:"
+              git log --pretty=format:'- %s (%h)' "${PREV_TAG}".."${TAG_NAME}"
+            else
+              echo "No previous tag found. Showing recent commits:"
+              git log --pretty=format:'- %s (%h)' -n 10
+            fi
+          } > release_body.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: sapphire-windows.zip
+          generate_release_notes: true
+          draft: false
+          name: ${{ github.ref_name }}
+          body_path: release_body.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

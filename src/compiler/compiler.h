@@ -21,6 +21,13 @@ struct Local {
     bool is_const;
 };
 
+struct Loop {
+    int start;
+    int scope_depth;
+    std::vector<int> break_jumps;
+    Loop* enclosing;
+};
+
 // A classe principal do Compilador.
 class Compiler {
 public:
@@ -28,6 +35,8 @@ public:
     Compiler* enclosing;
     // A função que este compilador está compilando.
     ObjFunction* function;
+
+    Loop* current_loop = nullptr;
 
     int local_count;
     int scope_depth;

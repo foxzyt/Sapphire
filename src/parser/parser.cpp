@@ -6,6 +6,8 @@
 #include "compiler.h"
 #include "utils.h"
 #include "termcolor.h"
+#include "../compiler/debug.h"
+#include "../vm/object.h"
 #include <iostream>
 #include <stdexcept>
 
@@ -13,9 +15,6 @@ using enum TokenType;
 
 // Função auxiliar movida para fora, pois não precisa ser membro
 static bool types_are_compatible(TokenType variable_type, TokenType value_type) {
-    //std::cout << "[DEBUG_TYPE_CHECK] Comparando Variavel (tipo " << (int)variable_type
-    //          << ") com Valor (tipo " << (int)value_type << ")" << std::endl;
-
     if (value_type == TokenType::TOKEN_ILLEGAL) return true;
     if (variable_type == value_type) return true;
     if (variable_type == TokenType::TOKEN_VOID && value_type == TokenType::TOKEN_NIL) return true;
@@ -26,8 +25,6 @@ static bool types_are_compatible(TokenType variable_type, TokenType value_type) 
     bool is_nil_value = (value_type == static_cast<TokenType>(26));
 
     if (is_class_type && is_nil_value) {
-        // std::cout << "[DEBUG_TYPE_CHECK] Regra 'objeto = nil' ativada. Permitindo atribuicao." << std::endl;
-        // novamente, vai que eu preciso
         return true;
     }
 
@@ -105,9 +102,6 @@ void Parser::error_at_current(const std::string& message) { error_at(current, me
 void Parser::advance() {
     previous = current;
     current = next;
-    // std::cout << "[PARSER DEBUG] Advancing. New current token: " << token_type_to_string(current.type)
-    //         << ", Literal: '" << current.literal << "', Line: " << current.line << std::endl;
-    // AVISO : Não coloque isso, vai travar o script sapphire, eu acho..
     for (;;) {
         next = lexer.scan_token();
         if (next.type != TokenType::TOKEN_ILLEGAL) break;
@@ -148,8 +142,6 @@ void Parser::emit_return() { emit_byte(OP_NIL); emit_byte(OP_RETURN); }
 
 void Parser::emit_constant(const SapphireValue& value) {
     int index = current_chunk()->add_constant(value);
-    // Lógica de 16-bit para constantes
-    // Próximo é 32-bit, pois é fácil de implementar, só mudar o UINT16 para UINT32, eu acho..
     if (index > UINT16_MAX) {
         error("Too many constants in one chunk.");
         index = 0;
@@ -169,7 +161,7 @@ int Parser::emit_jump(uint8_t instruction) {
 void Parser::patch_jump(int offset) {
     int jump = current_chunk()->code.size() - offset - 2;
     if (jump > UINT16_MAX) {
-        error("Jump is too long to be encoded."); // eu não sei o que fazer para corrigir essa função
+        error("Jump is too long to be encoded.");
     }
     current_chunk()->code[offset] = (jump >> 8) & 0xff;
     current_chunk()->code[offset + 1] = jump & 0xff;
@@ -181,8 +173,6 @@ void Parser::emit_loop(int loop_start) {
     if (offset > UINT16_MAX) {
         error("Loop body too large.");
     }
-    // Emite o offset como dois bytes (big-endian)
-    // big endian : indiano grande (sem ofensas)
     emit_byte((offset >> 8) & 0xff);
     emit_byte(offset & 0xff);
 }
@@ -212,7 +202,6 @@ uint8_t Parser::argument_list() {
 }
 
 // Lógica principal do Parser
-// Levei 7 horas para escrever isso, ou mais..
 TokenType Parser::parse_precedence(Precedence precedence) {
     advance();
     PrefixParseFn prefix_rule = get_rule(previous.type)->prefix;
@@ -281,7 +270,7 @@ static TokenType resolve_global_type(Compiler* compiler, const std::string& name
         compiler = compiler->enclosing;
     }
     return TokenType::TOKEN_ILLEGAL;
-} // merda, deu errado
+}
 
 void Parser::declare_variable(const Token& name, TokenType type, bool is_const) {
     if (current_compiler->scope_depth == 0) {
@@ -293,7 +282,6 @@ void Parser::declare_variable(const Token& name, TokenType type, bool is_const) 
         Local* local = &current_compiler->locals[i];
         if (local->depth != -1 && local->depth < current_compiler->scope_depth) break;
         if (name.literal == local->name.literal) {
-            // error("Already a variable with this name in this scope.");
         }
     }
     add_local(name, type, is_const);
@@ -304,7 +292,7 @@ uint16_t Parser::parse_variable(const std::string& error_message, TokenType type
     declare_variable(previous, type, is_const);
     if (current_compiler->scope_depth > 0) return 0;
     return identifier_constant(previous);
-} // ele vai levar a variável para passear, hehe
+}
 
 void Parser::mark_initialized() {
     if (current_compiler->scope_depth == 0) return;
@@ -321,8 +309,6 @@ void Parser::define_variable(uint16_t global) {
     emit_byte(global & 0xFF);
 }
 
-// eu perdi a noção do tempo, já é 11:00 da noite?
-
 void Parser::begin_scope() { current_compiler->scope_depth++; }
 void Parser::end_scope() {
     current_compiler->scope_depth--;
@@ -335,12 +321,12 @@ void Parser::end_scope() {
 ObjFunction* Parser::end_compiler_scope() {
     emit_return();
     ObjFunction* function = current_compiler->function;
-    #ifdef DEBUG_PRINT_CODE
-        if (!had_error) {
-            disassemble_chunk(function->chunk, function->name != nullptr ? function->name->chars : "<script>");
-        }
-        // porque que o código está meio transparente?
-    #endif
+#ifdef DEBUG_PRINT_CODE
+    if (!had_error) {
+        std::string debug_name = function->name != nullptr ? function->name->chars : "<script>";
+        disassemble_chunk(function->chunk, debug_name);
+    }
+#endif
     current_compiler = current_compiler->enclosing;
     return function;
 }
@@ -373,11 +359,17 @@ void Parser::if_statement() {
     emit_byte(OP_POP);
     if (match(TokenType::TOKEN_ELSE)) statement();
     patch_jump(else_jump);
-    // ahn?
 }
 
 void Parser::while_statement() {
     int loop_start = current_chunk()->code.size();
+    
+    Loop loop;
+    loop.start = loop_start;
+    loop.scope_depth = current_compiler->scope_depth;
+    loop.enclosing = current_compiler->current_loop;
+    current_compiler->current_loop = &loop;
+    
     consume(TokenType::TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
     expression();
     consume(TokenType::TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
@@ -387,6 +379,11 @@ void Parser::while_statement() {
     emit_loop(loop_start);
     patch_jump(exit_jump);
     emit_byte(OP_POP);
+    
+    for (int jump : current_compiler->current_loop->break_jumps) {
+        patch_jump(jump);
+    }
+    current_compiler->current_loop = current_compiler->current_loop->enclosing;
 }
 
 void Parser::for_statement() {
@@ -427,6 +424,12 @@ void Parser::for_statement() {
         patch_jump(body_jump);
     }
     
+    Loop loop;
+    loop.start = loop_start;
+    loop.scope_depth = current_compiler->scope_depth;
+    loop.enclosing = current_compiler->current_loop;
+    current_compiler->current_loop = &loop;
+    
     statement();
     emit_loop(loop_start);
     
@@ -435,7 +438,97 @@ void Parser::for_statement() {
         emit_byte(OP_POP);
     }
     
+    for (int jump : current_compiler->current_loop->break_jumps) {
+        patch_jump(jump);
+    }
+    current_compiler->current_loop = current_compiler->current_loop->enclosing;
+    
     end_scope();
+}
+
+void Parser::break_statement() {
+    if (current_compiler->current_loop == nullptr) {
+        error("Cannot use 'break' outside of a loop.");
+        return;
+    }
+    
+    for (int i = current_compiler->local_count - 1; i >= 0; i--) {
+        if (current_compiler->locals[i].depth > current_compiler->current_loop->scope_depth) {
+            emit_byte(OP_POP);
+        } else {
+            break;
+        }
+    }
+
+    consume(TokenType::TOKEN_SEMICOLON, "Expect ';' after 'break'.");
+    int jump = emit_jump(OP_JUMP);
+    current_compiler->current_loop->break_jumps.push_back(jump);
+}
+
+void Parser::try_statement() {
+    consume(TokenType::TOKEN_LEFT_BRACE, "Expect '{' before try block.");
+    int try_jump = emit_jump(OP_TRY_START);
+    
+    block();
+    
+    emit_byte(OP_TRY_END);
+    int skip_catch = emit_jump(OP_JUMP);
+    
+    patch_jump(try_jump);
+    
+    consume(TokenType::TOKEN_CATCH, "Expect 'catch' after try block.");
+    consume(TokenType::TOKEN_LEFT_PAREN, "Expect '(' after 'catch'.");
+    consume(TokenType::TOKEN_IDENTIFIER, "Expect exception variable name.");
+    
+    Compiler* current = current_compiler;
+    if (current->local_count == 256) {
+        error("Too many local variables in function.");
+    }
+    
+    Local* local = &current->locals[current->local_count++];
+    local->name = previous;
+    local->depth = current->scope_depth;
+    local->type = TokenType::TOKEN_VOID;
+    local->is_const = true;
+    
+    consume(TokenType::TOKEN_RIGHT_PAREN, "Expect ')' after catch exception name.");
+    consume(TokenType::TOKEN_LEFT_BRACE, "Expect '{' before catch block.");
+    
+    begin_scope();
+    block();
+    end_scope();
+    
+    patch_jump(skip_catch);
+}
+
+void Parser::throw_statement() {
+    expression();
+    consume(TokenType::TOKEN_SEMICOLON, "Expect ';' after thrown value.");
+    emit_byte(OP_THROW);
+}
+
+void Parser::spawn_statement() {
+    expression();
+    consume(TokenType::TOKEN_SEMICOLON, "Expect ';' after spawn statement.");
+    emit_byte(OP_SPAWN);
+}
+
+void Parser::continue_statement() {
+    if (current_compiler->current_loop == nullptr) {
+        error("Cannot use 'continue' outside of a loop.");
+        return;
+    }
+
+    for (int i = current_compiler->local_count - 1; i >= 0; i--) {
+        if (current_compiler->locals[i].depth > current_compiler->current_loop->scope_depth) {
+            emit_byte(OP_POP);
+        } else {
+            break;
+        }
+    }
+
+    consume(TokenType::TOKEN_SEMICOLON, "Expect ';' after 'continue'.");
+    emit_loop(current_compiler->current_loop->start);
 }
 
 void Parser::enum_declaration() {
@@ -468,6 +561,76 @@ void Parser::enum_declaration() {
     define_variable(name_constant);
 }
 
+void Parser::switch_statement() {
+    consume(TokenType::TOKEN_LEFT_PAREN, "Expect '(' after 'switch'.");
+    expression();
+    consume(TokenType::TOKEN_RIGHT_PAREN, "Expect ')' after switch value.");
+    consume(TokenType::TOKEN_LEFT_BRACE, "Expect '{' before switch cases.");
+    
+    Loop switch_loop;
+    switch_loop.start = current_chunk()->code.size();
+    switch_loop.scope_depth = current_compiler->scope_depth;
+    switch_loop.enclosing = current_compiler->current_loop;
+    current_compiler->current_loop = &switch_loop;
+
+    begin_scope();
+
+    int previous_fallthrough = -1;
+    
+    while (!check(TokenType::TOKEN_RIGHT_BRACE) && !check(TokenType::TOKEN_END_OF_FILE)) {
+        if (match(TokenType::TOKEN_CASE)) {
+            emit_byte(OP_DUP);
+            expression();
+            consume(TokenType::TOKEN_COLON, "Expect ':' after case value.");
+            emit_byte(OP_EQUAL);
+            
+            int case_jump = emit_jump(OP_JUMP_IF_FALSE);
+            emit_byte(OP_POP);
+            
+            if (previous_fallthrough != -1) {
+                patch_jump(previous_fallthrough);
+                previous_fallthrough = -1;
+            }
+            
+            while (!check(TokenType::TOKEN_CASE) && !check(TokenType::TOKEN_DEFAULT) && !check(TokenType::TOKEN_RIGHT_BRACE)) {
+                statement();
+            }
+            
+            previous_fallthrough = emit_jump(OP_JUMP);
+            
+            patch_jump(case_jump);
+            emit_byte(OP_POP);
+        } else if (match(TokenType::TOKEN_DEFAULT)) {
+            consume(TokenType::TOKEN_COLON, "Expect ':' after default.");
+            if (previous_fallthrough != -1) {
+                patch_jump(previous_fallthrough);
+                previous_fallthrough = -1;
+            }
+            while (!check(TokenType::TOKEN_RIGHT_BRACE) && !check(TokenType::TOKEN_END_OF_FILE)) {
+                statement();
+            }
+        } else {
+            error("Expect 'case' or 'default' inside switch statement.");
+            break;
+        }
+    }
+    
+    if (previous_fallthrough != -1) {
+        patch_jump(previous_fallthrough);
+    }
+    
+    consume(TokenType::TOKEN_RIGHT_BRACE, "Expect '}' after switch cases.");
+    end_scope();
+    
+    current_compiler->current_loop = switch_loop.enclosing;
+    
+    for (int jump : switch_loop.break_jumps) {
+        patch_jump(jump);
+    }
+
+    emit_byte(OP_POP); 
+}
+
 void Parser::expression_statement() {
     expression();
     consume(TokenType::TOKEN_SEMICOLON, "Expect ';' after expression.");
@@ -483,7 +646,7 @@ void Parser::synchronize() {
             case TokenType::TOKEN_FUNCTION:
             case TokenType::TOKEN_INT:
             case TokenType::TOKEN_BOOL:
-            case TokenType::TOKEN_STRING: // OBS: na linha 118 eu tinha escrito CINCO letras erradas e me fez dar aquele erro, agora que eu descobri eu me sinto um pateta
+            case TokenType::TOKEN_STRING:
             case TokenType::TOKEN_DOUBLE:
             case TokenType::TOKEN_FLOAT:
             case TokenType::TOKEN_VOID:
@@ -493,8 +656,8 @@ void Parser::synchronize() {
             case TokenType::TOKEN_RETURN:
                 return;
             default:
-                ; // Não faz nada
-        } // então porque botou miséria?
+                ; 
+        } 
         advance();
     }
 }
@@ -521,7 +684,7 @@ void Parser::declaration() {
         Token class_or_var_name;
 
         if (check(TokenType::TOKEN_IDENTIFIER)) {
-            if (check_next(TokenType::TOKEN_LEFT_BRACE)) {
+            if (check_next(TokenType::TOKEN_LEFT_BRACE) || check_next(TokenType::TOKEN_EXTENDS)) {
                 class_declaration();
             } else {
                 advance();
@@ -546,10 +709,13 @@ void Parser::declaration() {
         import_statement();
     } else if (match(TokenType::TOKEN_FUNCTION)) {
         function_declaration();
+    } else if (match(TokenType::TOKEN_ASYNC)) {
+        consume(TokenType::TOKEN_FUNCTION, "Expect 'function' after 'async'.");
+        function_declaration(true);
     } else if (check(TokenType::TOKEN_INT) || check(TokenType::TOKEN_BOOL) || check(TokenType::TOKEN_STRING) ||
                check(TokenType::TOKEN_DOUBLE) || check(TokenType::TOKEN_FLOAT) || check(TokenType::TOKEN_VOID) ||
                check(TokenType::TOKEN_CONST) || check(TokenType::TOKEN_VAR) ||
-               (check(TokenType::TOKEN_IDENTIFIER) && check_next(TokenType::TOKEN_IDENTIFIER))) { // Added check for ClassName variableName
+               (check(TokenType::TOKEN_IDENTIFIER) && check_next(TokenType::TOKEN_IDENTIFIER))) {
         declaration_statement();
     } else {
         statement();
@@ -575,6 +741,18 @@ void Parser::statement() {
         while_statement();
     } else if (match(TokenType::TOKEN_FOR)) {
         for_statement();
+    } else if (match(TokenType::TOKEN_SWITCH)) {
+        switch_statement();
+    } else if (match(TokenType::TOKEN_BREAK)) {
+        break_statement();
+    } else if (match(TokenType::TOKEN_CONTINUE)) {
+        continue_statement();
+    } else if (match(TokenType::TOKEN_TRY)) {
+        try_statement();
+    } else if (match(TokenType::TOKEN_THROW)) {
+        throw_statement();
+    } else if (match(TokenType::TOKEN_SPAWN)) {
+        spawn_statement();
     } else {
         expression_statement();
     }
@@ -648,13 +826,12 @@ void Parser::declaration_statement() {
         emit_byte(global_idx & 0xFF);
     }
 }
-// correção número #29
-void Parser::function_declaration() {
+void Parser::function_declaration(bool is_async) {
     TokenType return_type = TokenType::TOKEN_VOID;
 
     uint16_t global = parse_variable("Expect function name.", TokenType::TOKEN_FUNCTION, false);
 
-    ObjFunction* func = function(TokenType::TOKEN_FUNCTION, return_type);
+    ObjFunction* func = function(TokenType::TOKEN_FUNCTION, return_type, nullptr, is_async);
 
     int index = current_chunk()->add_constant(func);
     if (index > UINT16_MAX) {
@@ -676,19 +853,26 @@ void Parser::class_declaration() {
     declare_variable(class_name, TokenType::TOKEN_CLASS, false);
 
     ObjClass* klass = new_class(vm, new_string(vm, class_name.literal));
+    
+    bool has_superclass = false;
+    if (match(TokenType::TOKEN_EXTENDS)) {
+        consume(TokenType::TOKEN_IDENTIFIER, "Expect superclass name.");
+        variable(false);
+        has_superclass = true;
+    }
 
     consume(TokenType::TOKEN_LEFT_BRACE, "Expect '{' before class body.");
 
     while (!check(TokenType::TOKEN_RIGHT_BRACE) && !check(TokenType::TOKEN_END_OF_FILE)) {
         if (check(TokenType::TOKEN_FUNCTION)) {
-            advance(); // Consome o 'function'. Consome haha
+            advance(); 
 
             TokenType method_default_return_type = TokenType::TOKEN_VOID;
 
             consume(TokenType::TOKEN_IDENTIFIER, "Expect method name.");
             Token method_name = previous;
 
-            ObjFunction* method_body = function(TokenType::TOKEN_FUNCTION, method_default_return_type);
+            ObjFunction* method_body = function(TokenType::TOKEN_FUNCTION, method_default_return_type, klass, false);
             klass->methods[method_name.literal] = SapphireValue((Obj*)new_closure(vm, method_body));
 
         } else if (check(TokenType::TOKEN_INT) || check(TokenType::TOKEN_BOOL) || check(TokenType::TOKEN_STRING) ||
@@ -709,12 +893,17 @@ void Parser::class_declaration() {
     consume(TokenType::TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
 
     emit_constant(klass);
+    if (has_superclass) {
+        emit_byte(OP_INHERIT);
+    }
     define_variable(name_constant);
 }
 
 
-ObjFunction* Parser::function(TokenType kind, TokenType default_return_type_if_not_explicit) {
+ObjFunction* Parser::function(TokenType kind, TokenType default_return_type_if_not_explicit, ObjClass* owner_class, bool is_async) {
     Compiler compiler(new_function(vm));
+    compiler.function->owner_class = owner_class;
+    compiler.function->is_async = is_async;
     compiler.enclosing = current_compiler;
 
     compiler.function_return_type = default_return_type_if_not_explicit;
@@ -836,6 +1025,8 @@ TokenType Parser::unary(bool can_assign) {
     switch (operator_type) {
         case TokenType::TOKEN_MINUS: emit_byte(OP_NEGATE); return TokenType::TOKEN_DOUBLE;
         case TokenType::TOKEN_BANG:  emit_byte(OP_NOT); return TokenType::TOKEN_BOOL;
+        case TokenType::TOKEN_BITWISE_NOT: emit_byte(OP_BITWISE_NOT); return TokenType::TOKEN_INT;
+        case TokenType::TOKEN_AWAIT: emit_byte(OP_AWAIT); return TokenType::TOKEN_ILLEGAL;
         default: return TokenType::TOKEN_ILLEGAL;
     }
 }
@@ -882,6 +1073,11 @@ TokenType Parser::binary(TokenType left_type, bool can_assign) {
       case TokenType::TOKEN_GREATER_EQUAL: emit_bytes(OP_LESS, OP_NOT); break;
       case TokenType::TOKEN_LESS:          emit_byte(OP_LESS); break;
       case TokenType::TOKEN_LESS_EQUAL:    emit_bytes(OP_GREATER, OP_NOT); break;
+      case TokenType::TOKEN_BITWISE_AND:   emit_byte(OP_BITWISE_AND); break;
+      case TokenType::TOKEN_BITWISE_OR:    emit_byte(OP_BITWISE_OR); break;
+      case TokenType::TOKEN_BITWISE_XOR:   emit_byte(OP_BITWISE_XOR); break;
+      case TokenType::TOKEN_LEFT_SHIFT:    emit_byte(OP_LEFT_SHIFT); break;
+      case TokenType::TOKEN_RIGHT_SHIFT:   emit_byte(OP_RIGHT_SHIFT); break;
       default:
         return TokenType::TOKEN_ILLEGAL;
     }
@@ -1014,6 +1210,25 @@ TokenType Parser::or_(TokenType left_type, bool can_assign) {
     return TokenType::TOKEN_BOOL;
 }
 
+TokenType Parser::ternary(TokenType left_type, bool can_assign) {
+    int then_jump = emit_jump(OP_JUMP_IF_FALSE);
+    emit_byte(OP_POP);
+    
+    TokenType true_type = expression();
+    
+    int else_jump = emit_jump(OP_JUMP);
+    
+    patch_jump(then_jump);
+    emit_byte(OP_POP);
+    
+    consume(TokenType::TOKEN_COLON, "Expect ':' after then branch of ternary operator.");
+    
+    TokenType false_type = expression();
+    patch_jump(else_jump);
+    
+    return true_type; // the type isn't perfectly inferred if they differ, but sufficient for now.
+}
+
 void Parser::initialize_rules() {
     rules[TokenType::TOKEN_LEFT_PAREN]    = { [this](bool b){ return grouping(b); },      [this](TokenType l, bool b){ return call(l, b); }, PREC_CALL };
     rules[TokenType::TOKEN_DOT]           = { nullptr,                                    [this](TokenType l, bool b){ return dot(l, b); },    PREC_CALL };
@@ -1030,6 +1245,14 @@ void Parser::initialize_rules() {
     rules[TokenType::TOKEN_LESS_EQUAL]    = { nullptr,                                    [this](TokenType l, bool b){ return binary(l, b); }, PREC_COMPARISON };
     rules[TokenType::TOKEN_AND]           = { nullptr,                                    [this](TokenType l, bool b){ return and_(l, b); },  PREC_AND };
     rules[TokenType::TOKEN_OR]            = { nullptr,                                    [this](TokenType l, bool b){ return or_(l, b); },   PREC_OR };
+    rules[TokenType::TOKEN_BITWISE_AND]   = { nullptr,                                    [this](TokenType l, bool b){ return binary(l, b); },PREC_BITWISE_AND };
+    rules[TokenType::TOKEN_BITWISE_OR]    = { nullptr,                                    [this](TokenType l, bool b){ return binary(l, b); },PREC_BITWISE_OR };
+    rules[TokenType::TOKEN_BITWISE_XOR]   = { nullptr,                                    [this](TokenType l, bool b){ return binary(l, b); },PREC_BITWISE_XOR };
+    rules[TokenType::TOKEN_LEFT_SHIFT]    = { nullptr,                                    [this](TokenType l, bool b){ return binary(l, b); },PREC_BITWISE_SHIFT };
+    rules[TokenType::TOKEN_RIGHT_SHIFT]   = { nullptr,                                    [this](TokenType l, bool b){ return binary(l, b); },PREC_BITWISE_SHIFT };
+    rules[TokenType::TOKEN_QUESTION]      = { nullptr,                                    [this](TokenType l, bool b){ return ternary(l, b); },PREC_CONDITIONAL };
+    rules[TokenType::TOKEN_BITWISE_NOT]   = { [this](bool b){ return unary(b); },         nullptr, PREC_NONE };
+    rules[TokenType::TOKEN_AWAIT]         = { [this](bool b){ return unary(b); },         nullptr, PREC_NONE };
     rules[TokenType::TOKEN_BANG]          = { [this](bool b){ return unary(b); },         nullptr, PREC_NONE };
     rules[TokenType::TOKEN_IDENTIFIER]    = { [this](bool b){ return variable(b); },      nullptr, PREC_NONE };
     rules[TokenType::TOKEN_NUMBER]        = { [this](bool b){ return number(b); },         nullptr, PREC_NONE };
@@ -1039,6 +1262,7 @@ void Parser::initialize_rules() {
     rules[TokenType::TOKEN_NIL]           = { [this](bool b){ return literal(b); },        nullptr, PREC_NONE };
     rules[TokenType::TOKEN_LEFT_BRACKET]  = { [this](bool b){ return array_literal(b); }, [this](TokenType l, bool b){ return subscript(l, b); }, PREC_CALL };
     rules[TokenType::TOKEN_THIS]          = { [this](bool b){ return this_expression(b); },nullptr, PREC_NONE };
+    rules[TokenType::TOKEN_SUPER]         = { [this](bool b){ return super_expression(b); },nullptr, PREC_NONE };
     rules[TokenType::TOKEN_ILLEGAL]       = { nullptr, nullptr, PREC_NONE };
     rules[TokenType::TOKEN_RIGHT_PAREN]   = { nullptr, nullptr, PREC_NONE };
     rules[TokenType::TOKEN_LEFT_BRACE]    = { [this](bool b){ return map_literal(b); }, nullptr, PREC_NONE };
@@ -1113,10 +1337,29 @@ TokenType Parser::subscript(TokenType left_type, bool can_assign) {
 }
 
 TokenType Parser::this_expression(bool can_assign) {
-    if (current_compiler->enclosing == nullptr) {
+    if (current_compiler->function->owner_class == nullptr) {
         error("'this' can only be used inside a class method.");
         return TokenType::TOKEN_ILLEGAL;
     }
     emit_bytes(OP_GET_LOCAL, 0);
     return TokenType::TOKEN_CLASS;
+}
+
+TokenType Parser::super_expression(bool can_assign) {
+    if (current_compiler->function->owner_class == nullptr) {
+        error("'super' can only be used inside a class method.");
+    }
+    consume(TokenType::TOKEN_DOT, "Expect '.' after 'super'.");
+    consume(TokenType::TOKEN_IDENTIFIER, "Expect superclass method name.");
+    uint16_t name_idx = identifier_constant(previous);
+    
+    // push 'this' (the receiver is always local 0)
+    emit_byte(OP_GET_LOCAL);
+    emit_byte(0);
+    
+    emit_byte(OP_GET_SUPER);
+    emit_byte((name_idx >> 8) & 0xFF);
+    emit_byte(name_idx & 0xFF);
+    
+    return TokenType::TOKEN_VOID;
 } // espero que não tenha que adicionar mais nada ..

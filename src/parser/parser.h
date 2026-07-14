@@ -17,13 +17,18 @@ class VM;
 enum Precedence {
     PREC_NONE,
     PREC_ASSIGNMENT, // =
+    PREC_CONDITIONAL,// ?:
     PREC_OR,         // or
     PREC_AND,        // and
+    PREC_BITWISE_OR, // |
+    PREC_BITWISE_XOR,// ^
+    PREC_BITWISE_AND,// &
     PREC_EQUALITY,   // == !=
     PREC_COMPARISON, // < > <= >=
+    PREC_BITWISE_SHIFT, // << >>
     PREC_TERM,       // + -
     PREC_FACTOR,     // * /
-    PREC_UNARY,      // ! -
+    PREC_UNARY,      // ! - ~
     PREC_CALL,       // . ()
     PREC_PRIMARY
 };
@@ -78,6 +83,7 @@ private:
     void initialize_rules();
     TokenType expression();
     void statement();
+    void switch_statement();
     void expression_statement();
     void block();
     void synchronize();
@@ -85,11 +91,12 @@ private:
     // Declarações
     void declaration_statement();
     void class_declaration();
-    void function_declaration();
-    ObjFunction* function(TokenType kind, TokenType return_type);
+    void function_declaration(bool is_async = false);
+    ObjFunction* function(TokenType kind, TokenType return_type, ObjClass* owner_class = nullptr, bool is_async = false);
     void return_statement();
     void field_declaration();
     void import_statement();
+    void spawn_statement();
 
     // Escopo
     void begin_scope();
@@ -99,6 +106,10 @@ private:
     void if_statement();
     void while_statement();
     void for_statement();
+    void try_statement();
+    void throw_statement();
+    void break_statement();
+    void continue_statement();
     void enum_declaration();
 
     // Variáveis
@@ -119,13 +130,15 @@ private:
     TokenType unary(bool can_assign);
     TokenType binary(TokenType left_type, bool can_assign);
     TokenType call(TokenType left_type, bool can_assign);
+    TokenType and_(TokenType left_type, bool can_assign);
+    TokenType or_(TokenType left_type, bool can_assign);
+    TokenType ternary(TokenType left_type, bool can_assign);
     TokenType dot(TokenType left_type, bool can_assign);
     TokenType array_literal(bool can_assign);
     TokenType map_literal(bool can_assign);
     TokenType subscript(TokenType left_type, bool can_assign);
     TokenType this_expression(bool can_assign);
-    TokenType and_(TokenType left_type, bool can_assign);
-    TokenType or_(TokenType left_type, bool can_assign);
+    TokenType super_expression(bool can_assign);
     uint8_t argument_list();
 };
 

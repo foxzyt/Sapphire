@@ -70,6 +70,13 @@ int disassemble_instruction(const Chunk& chunk, int offset) {
         case OP_MODULO:        return simple_instruction("OP_MODULO", offset);
         case OP_NOT:           return simple_instruction("OP_NOT", offset);
         case OP_NEGATE:        return simple_instruction("OP_NEGATE", offset);
+        case OP_BITWISE_AND:   return simple_instruction("OP_BITWISE_AND", offset);
+        case OP_BITWISE_OR:    return simple_instruction("OP_BITWISE_OR", offset);
+        case OP_BITWISE_XOR:   return simple_instruction("OP_BITWISE_XOR", offset);
+        case OP_BITWISE_NOT:   return simple_instruction("OP_BITWISE_NOT", offset);
+        case OP_LEFT_SHIFT:    return simple_instruction("OP_LEFT_SHIFT", offset);
+        case OP_RIGHT_SHIFT:   return simple_instruction("OP_RIGHT_SHIFT", offset);
+        case OP_DUP:           return simple_instruction("OP_DUP", offset);
         case OP_PRINT:         return simple_instruction("OP_PRINT", offset);
         case OP_JUMP:          return jump_instruction("OP_JUMP", 1, chunk, offset);
         case OP_JUMP_IF_FALSE: return jump_instruction("OP_JUMP_IF_FALSE", 1, chunk, offset);
@@ -80,6 +87,15 @@ int disassemble_instruction(const Chunk& chunk, int offset) {
         case OP_BUILD_MAP:     return byte_instruction("OP_BUILD_MAP", chunk, offset);
         case OP_RETURN:        return simple_instruction("OP_RETURN", offset);
         case OP_IMPORT:        return constant_instruction("OP_IMPORT", chunk, offset);
+        case OP_MAKE_NAMED_ARG: return byte_instruction("OP_MAKE_NAMED_ARG", chunk, offset);
+        case OP_INHERIT:       return simple_instruction("OP_INHERIT", offset);
+        case OP_GET_SUPER:     return constant_instruction("OP_GET_SUPER", chunk, offset);
+        case OP_SPAWN:         return simple_instruction("OP_SPAWN", offset);
+        case OP_AWAIT:         return simple_instruction("OP_AWAIT", offset);
+        case OP_ASYNC_CALL:    return byte_instruction("OP_ASYNC_CALL", chunk, offset);
+        case OP_TRY_START:     return jump_instruction("OP_TRY_START", 1, chunk, offset);
+        case OP_TRY_END:       return simple_instruction("OP_TRY_END", offset);
+        case OP_THROW:         return simple_instruction("OP_THROW", offset);
         default:
             std::cout << "Instrucao desconhecida: " << (int)instruction << std::endl;
             return offset + 1;
