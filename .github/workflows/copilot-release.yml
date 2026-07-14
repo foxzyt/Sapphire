@@ -31,20 +31,18 @@ jobs:
 
       - name: Prepare release body
         shell: bash
+        env:
+          MARKDOWN: ${{ steps.copilot_release.outputs.markdown }}
         run: |
           set -e
-          if [ -n "${{ steps.copilot_release.outputs.markdown }}" ]; then
-            cat <<'EOF' > release_body.md
-${{ steps.copilot_release.outputs.markdown }}
-EOF
+          if [ -n "$MARKDOWN" ]; then
+            echo "$MARKDOWN" > release_body.md
           else
-            cat <<'EOF' > release_body.md
-# Draft release
-
-Generated from merged pull request #${{ github.event.pull_request.number }}.
-
-## Changes
-EOF
+            echo "# Draft release" > release_body.md
+            echo "" >> release_body.md
+            echo "Generated from merged pull request #${{ github.event.pull_request.number }}." >> release_body.md
+            echo "" >> release_body.md
+            echo "## Changes" >> release_body.md
             git log --pretty=format:'- %s (%h)' "${{ github.event.pull_request.base.sha }}".."${{ github.event.pull_request.head.sha }}" >> release_body.md
           fi
 
