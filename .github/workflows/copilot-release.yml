@@ -23,7 +23,7 @@ jobs:
         id: prev_tag
         shell: bash
         run: |
-          PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || git rev-list --max-parents=0 HEAD | tail -n 1)
+          PREV_TAG=$(git describe --tags --abbrev=0 --match="v[0-9]*" 2>/dev/null || git rev-list --max-parents=0 HEAD | tail -n 1)
           echo "tag=$PREV_TAG" >> $GITHUB_OUTPUT
 
       - name: Rodar Copilot Release Notes
