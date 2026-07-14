@@ -19,13 +19,21 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Read release instructions
+        id: release_instructions
+        shell: bash
+        run: |
+          echo "instructions<<EOF" >> "$GITHUB_OUTPUT"
+          cat .github/release-notes-instructions.md >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
       - name: Rodar Copilot Release Notes
         id: copilot_release
         uses: github/copilot-release-notes@v1
         with:
-          from-ref: ${{ github.event.pull_request.base.sha }}
-          to-ref: ${{ github.event.pull_request.head.sha }}
-          instructions-file: .github/release-notes-instructions.md
+          base-ref: ${{ github.event.pull_request.base.sha }}
+          head-ref: ${{ github.event.pull_request.head.sha }}
+          instructions: ${{ steps.release_instructions.outputs.instructions }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

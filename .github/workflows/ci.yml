@@ -6,8 +6,32 @@ on:
   pull_request:
     branches: [ "main", "master" ]
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
+  deploy-pages:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
   build:
+    needs: deploy-pages
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -15,7 +39,7 @@ jobs:
         build_type: [Release]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     # Install SFML and OpenSSL from MSYS2 MINGW64 packages.
     # These are compiled with the same GCC version used to compile the project,
