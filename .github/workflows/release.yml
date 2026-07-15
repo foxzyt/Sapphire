@@ -2,8 +2,8 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -12,12 +12,15 @@ permissions:
   id-token: write
 
 jobs:
-  build-and-release:
+  build:
+    if: github.ref == 'refs/heads/main'
     runs-on: windows-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup MSYS2 (MINGW64)
         uses: msys2/setup-msys2@v2
@@ -56,20 +59,56 @@ jobs:
           if (Test-Path README.md) { Copy-Item README.md release_artifacts/ }
           Compress-Archive -Path release_artifacts/* -DestinationPath sapphire-windows.zip -Force
 
-      - name: Fetch tag history
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sapphire-windows-build
+          path: sapphire-windows.zip
+          retention-days: 1
+
+  generate-release:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: sapphire-windows-build
+
+      - name: Create Version Tag
+        id: tag
+        shell: bash
+        run: |
+          TAG="v1.0.${{ github.run_number }}"
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "$TAG"
+          git push origin "$TAG"
+
+      - name: Fetch previous tag history
         shell: bash
         run: |
           set -e
           git fetch --tags --force
-          PREV_TAG="$(git tag --sort=-version:refname | grep -E '^v[0-9]' | head -n 2 | tail -n 1 || true)"
+          PREV_TAG="$(git tag --sort=-version:refname | grep -E '^v[0-9]' | grep -v "${{ env.TAG }}" | head -n 1 || true)"
           echo "PREV_TAG=${PREV_TAG}" >> "$GITHUB_ENV"
+          echo "Calculated PREV_TAG: $PREV_TAG"
 
       - name: Run Copilot Release Notes
         id: copilot_release
         uses: github/copilot-release-notes@v1
+        continue-on-error: true
         with:
           base-ref: ${{ env.PREV_TAG != '' && env.PREV_TAG || github.event.repository.default_branch }}
-          head-ref: ${{ github.ref_name }}
+          head-ref: ${{ env.TAG }}
           instructions: ".github/release-notes-instructions.md"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -79,48 +118,66 @@ jobs:
         shell: bash
         env:
           MARKDOWN: ${{ steps.copilot_release.outputs.release-notes }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
           if [ -n "$MARKDOWN" ]; then
             echo "$MARKDOWN" > release_body.md
-            echo "" >> release_body.md
-            cat .github/v1.0.8-examples.md >> release_body.md
-            echo "## How to Compile (MinGW)" >> release_body.md
-            echo "" >> release_body.md
-            echo "To build Sapphire from source on Windows using MSYS2 and MinGW:" >> release_body.md
-            echo "" >> release_body.md
-            echo "1. Install [MSYS2](https://www.msys2.org/)." >> release_body.md
-            echo "2. Open the **MSYS2 MINGW64** terminal and install the dependencies:" >> release_body.md
-            echo "   \`\`\`bash" >> release_body.md
-            echo "   pacman -S mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc mingw-w64-x86_64-make mingw-w64-x86_64-sfml mingw-w64-x86_64-openssl" >> release_body.md
-            echo "   \`\`\`" >> release_body.md
-            echo "3. Clone the repository:" >> release_body.md
-            echo "   \`\`\`bash" >> release_body.md
-            echo "   git clone https://github.com/foxzyt/Sapphire.git" >> release_body.md
-            echo "   cd Sapphire" >> release_body.md
-            echo "   \`\`\`" >> release_body.md
-            echo "4. Configure and build:" >> release_body.md
-            echo "   \`\`\`bash" >> release_body.md
-            echo "   cmake -B build -G \"MinGW Makefiles\" -DCMAKE_BUILD_TYPE=Release -DSFML_DIR=/mingw64/lib/cmake/SFML -DSFML_STATIC_LIBRARIES=ON -DOPENSSL_ROOT_DIR=/mingw64 -DOPENSSL_USE_STATIC_LIBS=TRUE" >> release_body.md
-            echo "   cmake --build build --config Release -j 8" >> release_body.md
-            echo "   \`\`\`" >> release_body.md
           else
-            echo "Fallback release notes" > release_body.md
+            echo "Copilot failed or returned empty. Falling back to native GitHub release notes..."
+            if [ -n "$PREV_TAG" ]; then
+              gh api --method POST -H "Accept: application/vnd.github+json" \
+                repos/${{ github.repository }}/releases/generate-notes \
+                -f tag_name="${{ env.TAG }}" \
+                -f previous_tag_name="${PREV_TAG}" -q .body > release_body.md
+            else
+              gh api --method POST -H "Accept: application/vnd.github+json" \
+                repos/${{ github.repository }}/releases/generate-notes \
+                -f tag_name="${{ env.TAG }}" -q .body > release_body.md
+            fi
           fi
+
+          echo "" >> release_body.md
+          cat .github/v1.0.8-examples.md >> release_body.md
+          
+          echo "## How to Compile (MinGW)" >> release_body.md
+          echo "" >> release_body.md
+          echo "To build Sapphire from source on Windows using MSYS2 and MinGW:" >> release_body.md
+          echo "" >> release_body.md
+          echo "1. Install [MSYS2](https://www.msys2.org/)." >> release_body.md
+          echo "2. Open the **MSYS2 MINGW64** terminal and install the dependencies:" >> release_body.md
+          echo "   \`\`\`bash" >> release_body.md
+          echo "   pacman -S mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc mingw-w64-x86_64-make mingw-w64-x86_64-sfml mingw-w64-x86_64-openssl" >> release_body.md
+          echo "   \`\`\`" >> release_body.md
+          echo "3. Clone the repository:" >> release_body.md
+          echo "   \`\`\`bash" >> release_body.md
+          echo "   git clone https://github.com/foxzyt/Sapphire.git" >> release_body.md
+          echo "   cd Sapphire" >> release_body.md
+          echo "   \`\`\`" >> release_body.md
+          echo "4. Configure and build:" >> release_body.md
+          echo "   \`\`\`bash" >> release_body.md
+          echo "   cmake -B build -G \"MinGW Makefiles\" -DCMAKE_BUILD_TYPE=Release -DSFML_DIR=/mingw64/lib/cmake/SFML -DSFML_STATIC_LIBRARIES=ON -DOPENSSL_ROOT_DIR=/mingw64 -DOPENSSL_USE_STATIC_LIBS=TRUE" >> release_body.md
+          echo "   cmake --build build --config Release -j 8" >> release_body.md
+          echo "   \`\`\`" >> release_body.md
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: sapphire-windows.zip
-          tag_name: ${{ github.ref_name }}
-          name: Sapphire ${{ github.ref_name }}
+          tag_name: ${{ env.TAG }}
+          name: Sapphire ${{ env.TAG }}
           body_path: release_body.md
           draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   deploy-pages:
+    needs: build
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -134,4 +191,5 @@ jobs:
           path: ./site
 
       - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
