@@ -93,6 +93,9 @@ int disassemble_instruction(const Chunk& chunk, int offset) {
         case OP_SPAWN:         return simple_instruction("OP_SPAWN", offset);
         case OP_AWAIT:         return simple_instruction("OP_AWAIT", offset);
         case OP_ASYNC_CALL:    return byte_instruction("OP_ASYNC_CALL", chunk, offset);
+        case OP_GET_ITERATOR:  return simple_instruction("OP_GET_ITERATOR", offset);
+        case OP_ITER_NEXT_IN:  return jump_instruction("OP_ITER_NEXT_IN", 1, chunk, offset);
+        case OP_ITER_NEXT_OF:  return jump_instruction("OP_ITER_NEXT_OF", 1, chunk, offset);
         case OP_TRY_START:     return jump_instruction("OP_TRY_START", 1, chunk, offset);
         case OP_TRY_END:       return simple_instruction("OP_TRY_END", offset);
         case OP_THROW:         return simple_instruction("OP_THROW", offset);

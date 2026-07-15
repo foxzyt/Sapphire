@@ -38,6 +38,9 @@ static std::map<std::string, TokenType> keywords = {
     {"await",    TokenType::TOKEN_AWAIT},
     {"spawn",    TokenType::TOKEN_SPAWN},
     {"for",      TokenType::TOKEN_FOR},
+    {"in",       TokenType::TOKEN_IN},
+    {"of",       TokenType::TOKEN_OF},
+    {"foreach",  TokenType::TOKEN_FOREACH},
     {"class",    TokenType::TOKEN_CLASS},
 };
 

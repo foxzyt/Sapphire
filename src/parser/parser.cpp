@@ -452,62 +452,143 @@ void Parser::while_statement() {
     current_compiler->current_loop = current_compiler->current_loop->enclosing;
 }
 
-void Parser::for_statement() {
+void Parser::for_statement(bool force_of) {
     begin_scope();
     consume(TokenType::TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
     
-    // Initializer
+    bool is_iterator = false;
+    bool is_for_of = force_of;
+    Token loop_var;
+    bool is_const_var = false;
+
     if (match(TokenType::TOKEN_SEMICOLON)) {
         // No initializer
-    } else if (check(TokenType::TOKEN_CONST) || check(TokenType::TOKEN_VAR) || check(TokenType::TOKEN_INT) || check(TokenType::TOKEN_FLOAT) || check(TokenType::TOKEN_DOUBLE) || check(TokenType::TOKEN_BOOL) || check(TokenType::TOKEN_STRING)) {
+    } else if (check(TokenType::TOKEN_CONST) || check(TokenType::TOKEN_VAR)) {
+        is_const_var = match(TokenType::TOKEN_CONST);
+        if (!is_const_var) advance(); // consume 'var'
+        
+        consume(TokenType::TOKEN_IDENTIFIER, "Expect variable name.");
+        loop_var = previous;
+        
+        if (match(TokenType::TOKEN_IN) || match(TokenType::TOKEN_OF)) {
+            is_iterator = true;
+            if (!force_of) {
+                is_for_of = previous.type == TokenType::TOKEN_OF;
+            }
+            
+            declare_variable(loop_var, TokenType::TOKEN_ILLEGAL, is_const_var);
+            mark_initialized();
+            
+            if (current_compiler->scope_depth > 0) {
+                emit_byte(OP_NIL); // Reserve slot for loop_var on the stack
+            }
+            
+            expression(); // evaluate iterable
+            consume(TokenType::TOKEN_RIGHT_PAREN, "Expect ')' after iterable.");
+        } else {
+            // normal declaration inside for
+            declare_variable(loop_var, TokenType::TOKEN_ILLEGAL, is_const_var);
+            
+            if (match(TokenType::TOKEN_EQUAL)) {
+                expression();
+            } else {
+                emit_byte(OP_NIL);
+            }
+            consume(TokenType::TOKEN_SEMICOLON, "Expect ';' after loop variable declaration.");
+            if (current_compiler->scope_depth > 0) {
+                mark_initialized();
+            } else {
+                uint16_t global_idx = identifier_constant(loop_var);
+                emit_byte(OP_DEFINE_GLOBAL);
+                emit_byte((global_idx >> 8) & 0xFF);
+                emit_byte(global_idx & 0xFF);
+            }
+        }
+    } else if (check(TokenType::TOKEN_INT) || check(TokenType::TOKEN_FLOAT) || check(TokenType::TOKEN_DOUBLE) || check(TokenType::TOKEN_BOOL) || check(TokenType::TOKEN_STRING)) {
         declaration_statement();
     } else {
         expression_statement();
     }
     
-    int loop_start = current_chunk()->code.size();
-    
-    // Condition
-    int exit_jump = -1;
-    if (!match(TokenType::TOKEN_SEMICOLON)) {
-        expression();
-        consume(TokenType::TOKEN_SEMICOLON, "Expect ';' after loop condition.");
-        exit_jump = emit_jump(OP_JUMP_IF_FALSE);
-        emit_byte(OP_POP);
-    }
-    
-    // Increment
-    if (!match(TokenType::TOKEN_RIGHT_PAREN)) {
-        int body_jump = emit_jump(OP_JUMP);
-        int increment_start = current_chunk()->code.size();
+    if (is_iterator) {
+        emit_byte(OP_GET_ITERATOR);
+        int loop_start = current_chunk()->code.size();
         
-        expression();
-        emit_byte(OP_POP);
-        consume(TokenType::TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
+        int exit_jump = emit_jump(is_for_of ? OP_ITER_NEXT_OF : OP_ITER_NEXT_IN);
         
+        if (current_compiler->scope_depth > 0) {
+            int local_idx = resolve_local(current_compiler, loop_var);
+            emit_byte(OP_SET_LOCAL);
+            emit_byte(local_idx);
+            emit_byte(OP_POP);
+        } else {
+            uint16_t global_idx = identifier_constant(loop_var);
+            emit_byte(OP_SET_GLOBAL);
+            emit_byte((global_idx >> 8) & 0xFF);
+            emit_byte(global_idx & 0xFF);
+            emit_byte(OP_POP);
+        }
+        
+        Loop loop;
+        loop.start = loop_start;
+        loop.scope_depth = current_compiler->scope_depth;
+        loop.enclosing = current_compiler->current_loop;
+        current_compiler->current_loop = &loop;
+        
+        statement();
         emit_loop(loop_start);
-        loop_start = increment_start;
-        patch_jump(body_jump);
-    }
-    
-    Loop loop;
-    loop.start = loop_start;
-    loop.scope_depth = current_compiler->scope_depth;
-    loop.enclosing = current_compiler->current_loop;
-    current_compiler->current_loop = &loop;
-    
-    statement();
-    emit_loop(loop_start);
-    
-    if (exit_jump != -1) {
+        
         patch_jump(exit_jump);
-        emit_byte(OP_POP);
+        emit_byte(OP_POP); // pop iterator state
+        emit_byte(OP_POP); // pop iterable
+        
+        for (int jump : current_compiler->current_loop->break_jumps) {
+            patch_jump(jump);
+        }
+        current_compiler->current_loop = current_compiler->current_loop->enclosing;
+    } else {
+        int loop_start = current_chunk()->code.size();
+        
+        int exit_jump = -1;
+        if (!match(TokenType::TOKEN_SEMICOLON)) {
+            expression();
+            consume(TokenType::TOKEN_SEMICOLON, "Expect ';' after loop condition.");
+            exit_jump = emit_jump(OP_JUMP_IF_FALSE);
+            emit_byte(OP_POP);
+        }
+        
+        if (!match(TokenType::TOKEN_RIGHT_PAREN)) {
+            int body_jump = emit_jump(OP_JUMP);
+            int increment_start = current_chunk()->code.size();
+            
+            expression();
+            emit_byte(OP_POP);
+            consume(TokenType::TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
+            
+            emit_loop(loop_start);
+            loop_start = increment_start;
+            patch_jump(body_jump);
+        }
+        
+        Loop loop;
+        loop.start = loop_start;
+        loop.scope_depth = current_compiler->scope_depth;
+        loop.enclosing = current_compiler->current_loop;
+        current_compiler->current_loop = &loop;
+        
+        statement();
+        emit_loop(loop_start);
+        
+        if (exit_jump != -1) {
+            patch_jump(exit_jump);
+            emit_byte(OP_POP);
+        }
+        
+        for (int jump : current_compiler->current_loop->break_jumps) {
+            patch_jump(jump);
+        }
+        current_compiler->current_loop = current_compiler->current_loop->enclosing;
     }
-    
-    for (int jump : current_compiler->current_loop->break_jumps) {
-        patch_jump(jump);
-    }
-    current_compiler->current_loop = current_compiler->current_loop->enclosing;
     
     end_scope();
 }
@@ -806,7 +887,9 @@ void Parser::statement() {
     } else if (match(TokenType::TOKEN_WHILE)) {
         while_statement();
     } else if (match(TokenType::TOKEN_FOR)) {
-        for_statement();
+        for_statement(false);
+    } else if (match(TokenType::TOKEN_FOREACH)) {
+        for_statement(true);
     } else if (match(TokenType::TOKEN_SWITCH)) {
         switch_statement();
     } else if (match(TokenType::TOKEN_BREAK)) {

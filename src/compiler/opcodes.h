@@ -71,6 +71,11 @@ enum OpCode : uint8_t {
     OP_AWAIT,
     OP_ASYNC_CALL,
     
+    // Iterators
+    OP_GET_ITERATOR,
+    OP_ITER_NEXT_IN,
+    OP_ITER_NEXT_OF,
+    
     // Exceptions
     OP_TRY_START,
     OP_TRY_END,

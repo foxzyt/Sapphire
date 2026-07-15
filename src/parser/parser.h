@@ -107,7 +107,7 @@ private:
     void print_statement();
     void if_statement();
     void while_statement();
-    void for_statement();
+    void for_statement(bool force_of = false);
     void try_statement();
     void throw_statement();
     void break_statement();

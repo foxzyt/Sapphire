@@ -2792,6 +2792,9 @@ bool VM::run(int target_frame_count) {
         dispatch_table[OP_SPAWN] = &&op_OP_SPAWN;
         dispatch_table[OP_AWAIT] = &&op_OP_AWAIT;
         dispatch_table[OP_ASYNC_CALL] = &&op_OP_ASYNC_CALL;
+        dispatch_table[OP_GET_ITERATOR] = &&op_OP_GET_ITERATOR;
+        dispatch_table[OP_ITER_NEXT_IN] = &&op_OP_ITER_NEXT_IN;
+        dispatch_table[OP_ITER_NEXT_OF] = &&op_OP_ITER_NEXT_OF;
         table_initialized = true;
     }
 #endif
@@ -3395,6 +3398,103 @@ TARGET(OP_THROW) {
     slots = frame->slots;
     
     PUSH(err); // Push the exception for the catch block to use
+    NEXT_CODE();
+}
+
+TARGET(OP_GET_ITERATOR) {
+    PUSH(SapphireValue((double)0));
+    NEXT_CODE();
+}
+
+TARGET(OP_ITER_NEXT_IN) {
+    {
+        uint16_t offset = READ_SHORT();
+        SapphireValue state_val = top[-1];
+        SapphireValue iterable_val = top[-2];
+        
+        int index = (int)std::get<double>(state_val._value);
+        
+        if (std::holds_alternative<std::shared_ptr<SapphireArray>>(iterable_val._value)) {
+            auto arr = std::get<std::shared_ptr<SapphireArray>>(iterable_val._value);
+            if (index < arr->elements.size()) {
+                PUSH(SapphireValue((double)index));
+                std::get<double>(top[-2]._value) += 1.0;
+            } else {
+                ip += offset;
+            }
+        } else if (std::holds_alternative<Obj*>(iterable_val._value)) {
+            Obj* obj = std::get<Obj*>(iterable_val._value);
+            if (obj->type == OBJ_MAP) {
+                ObjMap* map = static_cast<ObjMap*>(obj);
+                if (index < map->items.size()) {
+                    auto it = map->items.begin();
+                    std::advance(it, index);
+                    PUSH(new_string(this, it->first));
+                    std::get<double>(top[-2]._value) += 1.0;
+                } else {
+                    ip += offset;
+                }
+            } else if (obj->type == OBJ_STRING) {
+                ObjString* str = static_cast<ObjString*>(obj);
+                if (index < str->chars.length()) {
+                    PUSH(SapphireValue((double)index));
+                    std::get<double>(top[-2]._value) += 1.0;
+                } else {
+                    ip += offset;
+                }
+            } else {
+                ip += offset;
+            }
+        } else {
+            ip += offset;
+        }
+    }
+    NEXT_CODE();
+}
+
+TARGET(OP_ITER_NEXT_OF) {
+    {
+        uint16_t offset = READ_SHORT();
+        SapphireValue state_val = top[-1];
+        SapphireValue iterable_val = top[-2];
+        
+        int index = (int)std::get<double>(state_val._value);
+        
+        if (std::holds_alternative<std::shared_ptr<SapphireArray>>(iterable_val._value)) {
+            auto arr = std::get<std::shared_ptr<SapphireArray>>(iterable_val._value);
+            if (index < arr->elements.size()) {
+                PUSH(arr->elements[index]);
+                std::get<double>(top[-2]._value) += 1.0;
+            } else {
+                ip += offset;
+            }
+        } else if (std::holds_alternative<Obj*>(iterable_val._value)) {
+            Obj* obj = std::get<Obj*>(iterable_val._value);
+            if (obj->type == OBJ_MAP) {
+                ObjMap* map = static_cast<ObjMap*>(obj);
+                if (index < map->items.size()) {
+                    auto it = map->items.begin();
+                    std::advance(it, index);
+                    PUSH(it->second);
+                    std::get<double>(top[-2]._value) += 1.0;
+                } else {
+                    ip += offset;
+                }
+            } else if (obj->type == OBJ_STRING) {
+                ObjString* str = static_cast<ObjString*>(obj);
+                if (index < str->chars.length()) {
+                    PUSH(new_string(this, std::string(1, str->chars[index])));
+                    std::get<double>(top[-2]._value) += 1.0;
+                } else {
+                    ip += offset;
+                }
+            } else {
+                ip += offset;
+            }
+        } else {
+            ip += offset;
+        }
+    }
     NEXT_CODE();
 }
 
