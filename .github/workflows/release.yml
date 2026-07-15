@@ -96,12 +96,12 @@ jobs:
             echo "Copilot failed or returned empty. Falling back to native GitHub release notes..."
             if [ -n "$PREV_TAG" ]; then
               gh api --method POST -H "Accept: application/vnd.github+json" \
-                /repos/${{ github.repository }}/releases/generate-notes \
+                repos/${{ github.repository }}/releases/generate-notes \
                 -f tag_name="${{ github.ref_name }}" \
                 -f previous_tag_name="${PREV_TAG}" -q .body > release_body.md
             else
               gh api --method POST -H "Accept: application/vnd.github+json" \
-                /repos/${{ github.repository }}/releases/generate-notes \
+                repos/${{ github.repository }}/releases/generate-notes \
                 -f tag_name="${{ github.ref_name }}" -q .body > release_body.md
             fi
           fi
@@ -142,6 +142,9 @@ jobs:
 
   deploy-pages:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
