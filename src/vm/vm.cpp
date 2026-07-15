@@ -2770,6 +2770,8 @@ bool VM::run(int target_frame_count) {
         dispatch_table[OP_PRINT] = &&op_OP_PRINT;
         dispatch_table[OP_JUMP] = &&op_OP_JUMP;
         dispatch_table[OP_JUMP_IF_FALSE] = &&op_OP_JUMP_IF_FALSE;
+        dispatch_table[OP_JUMP_IF_NIL] = &&op_OP_JUMP_IF_NIL;
+        dispatch_table[OP_JUMP_IF_NOT_NIL] = &&op_OP_JUMP_IF_NOT_NIL;
         dispatch_table[OP_LOOP] = &&op_OP_LOOP;
         dispatch_table[OP_CALL] = &&op_OP_CALL;
         dispatch_table[OP_CLOSURE] = &&op_OP_CLOSURE;
@@ -2778,6 +2780,7 @@ bool VM::run(int target_frame_count) {
         dispatch_table[OP_BUILD_MAP] = &&op_OP_BUILD_MAP;
         dispatch_table[OP_GET_SUBSCRIPT] = &&op_OP_GET_SUBSCRIPT;
         dispatch_table[OP_SET_SUBSCRIPT] = &&op_OP_SET_SUBSCRIPT;
+        dispatch_table[OP_SPREAD_ARRAY] = &&op_OP_SPREAD_ARRAY;
         dispatch_table[OP_IMPORT] = &&op_OP_IMPORT;
         dispatch_table[OP_MAKE_NAMED_ARG] = &&op_OP_MAKE_NAMED_ARG;
         dispatch_table[OP_DUP] = &&op_OP_DUP;
@@ -3013,6 +3016,18 @@ TARGET(OP_JUMP_IF_FALSE) {
     NEXT_CODE();
 }
 
+TARGET(OP_JUMP_IF_NIL) {
+    uint16_t offset = READ_SHORT();
+    if (std::holds_alternative<std::monostate>(top[-1]._value)) ip += offset;
+    NEXT_CODE();
+}
+
+TARGET(OP_JUMP_IF_NOT_NIL) {
+    uint16_t offset = READ_SHORT();
+    if (!std::holds_alternative<std::monostate>(top[-1]._value)) ip += offset;
+    NEXT_CODE();
+}
+
 TARGET(OP_LOOP)
     step_gc();
     ip -= READ_SHORT();
@@ -3063,6 +3078,22 @@ TARGET(OP_BUILD_ARRAY) {
         auto arr = std::make_shared<SapphireArray>();
         for (int i = 0; i < count; i++) arr->elements.push_back(top[-count + i]);
         top -= count; PUSH(arr);
+    }
+    NEXT_CODE();
+}
+
+TARGET(OP_SPREAD_ARRAY) {
+    {
+        SapphireValue src = POP();
+        SapphireValue target = top[-1];
+        if (std::holds_alternative<std::shared_ptr<SapphireArray>>(target._value) && 
+            std::holds_alternative<std::shared_ptr<SapphireArray>>(src._value)) {
+            auto arr_target = std::get<std::shared_ptr<SapphireArray>>(target._value);
+            auto arr_src = std::get<std::shared_ptr<SapphireArray>>(src._value);
+            arr_target->elements.insert(arr_target->elements.end(), arr_src->elements.begin(), arr_src->elements.end());
+        } else {
+            if (!this->soft_mode) std::cerr << "Runtime Error: Cannot spread non-array." << std::endl;
+        }
     }
     NEXT_CODE();
 }

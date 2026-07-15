@@ -69,8 +69,8 @@ void display_info() {
       "",
       "** SAPPHIRE INFORMATIONS: **",
       "",
-      "Version: 1.0.7 (build 0714-06212025 (June 21, 2026))",
-      "Release Date: June 21, 2026",
+      "Version: 1.0.9 (build 0715-07152026 (July 15, 2026))",
+      "Release Date: July 15, 2026",
       "",
       "Developed by: Bernardo Alvim",
       "Protected by MIT License",
@@ -99,7 +99,7 @@ void display_info() {
 }
 
 void display_version() {
-  std::cout << "Sapphire 1.0.7 (build 0714-06212026)" << std::endl;
+  std::cout << "Sapphire 1.0.9 (build 0715-07152026)" << std::endl;
 }
 
 std::string load_source_script(const std::string &path) {
@@ -252,7 +252,7 @@ void run_file_mode(const std::string &script_content,
 }
 
 void run_repl() {
-  std::cout << "Sapphire REPL v1.0.6\nType 'exit' or 'quit' to close.\n";
+  std::cout << "Sapphire REPL v1.0.9\nType 'exit' or 'quit' to close.\n";
   VM vm;
   g_current_vm = &vm;
   std::string line;

@@ -71,6 +71,7 @@ private:
     bool check_next(TokenType type);
     Chunk* current_chunk();
     void emit_byte(uint8_t byte);
+    bool is_arrow_function();
     void emit_bytes(uint8_t byte1, uint8_t byte2);
     void emit_constant(const SapphireValue& value);
     int emit_jump(uint8_t instruction);
@@ -92,6 +93,7 @@ private:
     void declaration_statement();
     void class_declaration();
     void function_declaration(bool is_async = false);
+    TokenType arrow_function_declaration();
     ObjFunction* function(TokenType kind, TokenType return_type, ObjClass* owner_class = nullptr, bool is_async = false);
     void return_statement();
     void field_declaration();
@@ -133,6 +135,8 @@ private:
     TokenType and_(TokenType left_type, bool can_assign);
     TokenType or_(TokenType left_type, bool can_assign);
     TokenType ternary(TokenType left_type, bool can_assign);
+    TokenType optional_chain(TokenType left_type, bool can_assign);
+    TokenType nullish_coalescing(TokenType left_type, bool can_assign);
     TokenType dot(TokenType left_type, bool can_assign);
     TokenType array_literal(bool can_assign);
     TokenType map_literal(bool can_assign);

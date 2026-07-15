@@ -57,3 +57,7 @@ desktop.ini
 scratch/
 *.log
 *.tmp
+
+# ── AI Agents ────────────────────────────────────────────────────────────────
+AGENTS.md
+agents.md

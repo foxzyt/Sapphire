@@ -104,6 +104,14 @@ Token Lexer::number_token() {
 Token Lexer::identifier_token() {
     while (isalnum(static_cast<unsigned char>(peek())) || peek() == '_') advance();
     std::string text = source.substr(start, current - start);
+    
+    // Check for f-string
+    if (text == "f" && peek() == '"') {
+        advance(); // consume '"'
+        fstring_tokens();
+        return scan_token();
+    }
+
     auto it = keywords.find(text);
     if (it != keywords.end()) {
         return make_token(it->second);
@@ -112,6 +120,11 @@ Token Lexer::identifier_token() {
 }
 
 Token Lexer::scan_token() {
+    if (!pending_tokens.empty()) {
+        Token t = pending_tokens.front();
+        pending_tokens.pop();
+        return t;
+    }
     while (true) {
         if (is_at_end()) break;
         char c = peek();
@@ -167,15 +180,35 @@ Token Lexer::scan_token() {
             // Tokens de um caractere
             case '(': generated_token = make_token(TokenType::TOKEN_LEFT_PAREN); break;
             case ')': generated_token = make_token(TokenType::TOKEN_RIGHT_PAREN); break;
-            case '{': generated_token = make_token(TokenType::TOKEN_LEFT_BRACE); break;
-            case '}': generated_token = make_token(TokenType::TOKEN_RIGHT_BRACE); break;
+            case '{': 
+                if (!fstring_brace_depths.empty()) fstring_brace_depths.back()++;
+                generated_token = make_token(TokenType::TOKEN_LEFT_BRACE); break;
+            case '}': 
+                if (!fstring_brace_depths.empty()) {
+                    fstring_brace_depths.back()--;
+                    if (fstring_brace_depths.back() == 0) {
+                        fstring_brace_depths.pop_back();
+                        pending_tokens.push(make_token(TokenType::TOKEN_RIGHT_PAREN, ")"));
+                        pending_tokens.push(make_token(TokenType::TOKEN_PLUS, "+"));
+                        resume_fstring();
+                        return scan_token();
+                    }
+                }
+                generated_token = make_token(TokenType::TOKEN_RIGHT_BRACE); break;
             case '[': generated_token = make_token(TokenType::TOKEN_LEFT_BRACKET); break;
             case ']': generated_token = make_token(TokenType::TOKEN_RIGHT_BRACKET); break;
             case ';': generated_token = make_token(TokenType::TOKEN_SEMICOLON); break;
             case ':': generated_token = make_token(TokenType::TOKEN_COLON); break;
-            case '?': generated_token = make_token(TokenType::TOKEN_QUESTION); break;
+            case '?': 
+                if (match('.')) generated_token = make_token(TokenType::TOKEN_QUESTION_DOT);
+                else if (match('?')) generated_token = make_token(TokenType::TOKEN_QUESTION_QUESTION);
+                else generated_token = make_token(TokenType::TOKEN_QUESTION); 
+                break;
             case ',': generated_token = make_token(TokenType::TOKEN_COMMA); break;
-            case '.': generated_token = make_token(TokenType::TOKEN_DOT); break;
+            case '.': 
+                if (match('.') && match('.')) generated_token = make_token(TokenType::TOKEN_DOT_DOT_DOT);
+                else generated_token = make_token(TokenType::TOKEN_DOT); 
+                break;
             case '+': 
                 if (match('+')) generated_token = make_token(TokenType::TOKEN_PLUS_PLUS);
                 else if (match('=')) generated_token = make_token(TokenType::TOKEN_PLUS_EQUAL);
@@ -193,7 +226,11 @@ Token Lexer::scan_token() {
             case '%': generated_token = make_token(TokenType::TOKEN_PERCENT); break;
             // Tokens de um ou dois caracteres
             case '!': generated_token = make_token(match('=') ? TokenType::TOKEN_BANG_EQUAL : TokenType::TOKEN_BANG); break;
-            case '=': generated_token = make_token(match('=') ? TokenType::TOKEN_EQUAL_EQUAL : TokenType::TOKEN_EQUAL); break;
+            case '=': 
+                if (match('=')) generated_token = make_token(TokenType::TOKEN_EQUAL_EQUAL);
+                else if (match('>')) generated_token = make_token(TokenType::TOKEN_ARROW);
+                else generated_token = make_token(TokenType::TOKEN_EQUAL);
+                break;
             case '<': 
                 if (match('=')) generated_token = make_token(TokenType::TOKEN_LESS_EQUAL);
                 else if (match('<')) generated_token = make_token(TokenType::TOKEN_LEFT_SHIFT);
@@ -221,3 +258,41 @@ Token Lexer::scan_token() {
     }
     return generated_token;
 }
+
+void Lexer::fstring_tokens() {
+    resume_fstring();
+}
+
+void Lexer::resume_fstring() {
+    size_t string_start = current;
+    while (peek() != '"' && peek() != '{' && !is_at_end()) {
+        if (peek() == '\n') {
+            line++;
+            line_start = current + 1;
+        }
+        advance();
+    }
+
+    std::string text = source.substr(string_start, current - string_start);
+    int col = static_cast<int>(string_start - line_start + 1);
+    int len = static_cast<int>(current - string_start);
+    pending_tokens.push({TokenType::TOKEN_STRING_LITERAL, text, line, col, len});
+
+    if (is_at_end()) {
+        pending_tokens.push(error_token("Unterminated f-string."));
+        return;
+    }
+
+    if (peek() == '"') {
+        advance();
+        return;
+    }
+
+    if (peek() == '{') {
+        advance(); // consume '{'
+        pending_tokens.push({TokenType::TOKEN_PLUS, "+", line, col, 1});
+        pending_tokens.push({TokenType::TOKEN_LEFT_PAREN, "(", line, col, 1});
+        fstring_brace_depths.push_back(1);
+    }
+}
+

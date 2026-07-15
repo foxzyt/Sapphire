@@ -29,6 +29,7 @@ enum OpCode : uint8_t {
     OP_BUILD_MAP,
     OP_GET_SUBSCRIPT,
     OP_SET_SUBSCRIPT,
+    OP_SPREAD_ARRAY,
 
     // Operadores Lógicos e de Comparação
     OP_EQUAL,
@@ -56,6 +57,8 @@ enum OpCode : uint8_t {
     OP_PRINT,
     OP_JUMP,
     OP_JUMP_IF_FALSE,
+    OP_JUMP_IF_NIL,
+    OP_JUMP_IF_NOT_NIL,
     OP_LOOP,
     OP_CALL,
     OP_CLOSURE,

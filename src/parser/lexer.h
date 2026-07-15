@@ -3,6 +3,8 @@
 
 #include "tokens.h"
 #include <string>
+#include <queue>
+#include <vector>
 
 class Lexer {
 public:
@@ -24,7 +26,11 @@ private:
     Token string_token();
     Token number_token();
     Token identifier_token();
+    void fstring_tokens();
+    void resume_fstring();
 
+    std::queue<Token> pending_tokens;
+    std::vector<int> fstring_brace_depths;
     std::string source;
     size_t start = 0;
     size_t current = 0;

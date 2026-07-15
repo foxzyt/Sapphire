@@ -138,6 +138,69 @@ bool Parser::match(TokenType type) {
 Chunk* Parser::current_chunk() { return &current_compiler->function->chunk; }
 void Parser::emit_byte(uint8_t byte) { current_chunk()->write(byte); }
 void Parser::emit_bytes(uint8_t byte1, uint8_t byte2) { emit_byte(byte1); emit_byte(byte2); }
+
+bool Parser::is_arrow_function() {
+    if (current.type == TokenType::TOKEN_IDENTIFIER && next.type == TokenType::TOKEN_ARROW) return true;
+    if (current.type == TokenType::TOKEN_LEFT_PAREN) {
+        Lexer temp_lexer = lexer;
+        Token t = next; // The token right after '(' is `next`!
+        int depth = 1;
+        while (depth > 0 && t.type != TokenType::TOKEN_END_OF_FILE) {
+            if (t.type == TokenType::TOKEN_LEFT_PAREN) depth++;
+            else if (t.type == TokenType::TOKEN_RIGHT_PAREN) depth--;
+            
+            if (depth > 0) t = temp_lexer.scan_token();
+        }
+        t = temp_lexer.scan_token();
+        return t.type == TokenType::TOKEN_ARROW;
+    }
+    return false;
+}
+
+TokenType Parser::arrow_function_declaration() {
+    Compiler compiler(new_function(vm));
+    compiler.function->owner_class = current_compiler->function->owner_class;
+    compiler.function->is_async = false;
+    compiler.enclosing = current_compiler;
+    compiler.function_return_type = TokenType::TOKEN_ILLEGAL; // Inferred
+    current_compiler = &compiler;
+    current_compiler->function->name = new_string(vm, "anonymous");
+
+    begin_scope();
+    
+    if (match(TokenType::TOKEN_LEFT_PAREN)) {
+        if (!check(TokenType::TOKEN_RIGHT_PAREN)) {
+            do {
+                current_compiler->function->arity++;
+                if (current_compiler->function->arity > 255) error_at_current("Can't have more than 255 parameters.");
+                uint16_t param_const = parse_variable("Expect parameter name.", TokenType::TOKEN_ILLEGAL, false);
+                define_variable(param_const);
+            } while (match(TokenType::TOKEN_COMMA));
+        }
+        consume(TokenType::TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
+    } else {
+        current_compiler->function->arity = 1;
+        uint16_t param_const = parse_variable("Expect parameter name.", TokenType::TOKEN_ILLEGAL, false);
+        define_variable(param_const);
+    }
+
+    consume(TokenType::TOKEN_ARROW, "Expect '=>' after arrow function parameters.");
+
+    if (match(TokenType::TOKEN_LEFT_BRACE)) {
+        block();
+    } else {
+        TokenType return_type = expression();
+        emit_byte(OP_RETURN);
+    }
+
+    ObjFunction* func = end_compiler_scope();
+    int index = current_chunk()->add_constant(func);
+    emit_byte(OP_CLOSURE);
+    emit_byte((index >> 8) & 0xFF);
+    emit_byte(index & 0xFF);
+    
+    return TokenType::TOKEN_CLASS;
+}
 void Parser::emit_return() { emit_byte(OP_NIL); emit_byte(OP_RETURN); }
 
 void Parser::emit_constant(const SapphireValue& value) {
@@ -332,7 +395,10 @@ ObjFunction* Parser::end_compiler_scope() {
 }
 
 // Parsing de statements e declarações
-TokenType Parser::expression() { return parse_precedence(PREC_ASSIGNMENT); }
+TokenType Parser::expression() { 
+    if (is_arrow_function()) return arrow_function_declaration();
+    return parse_precedence(PREC_ASSIGNMENT); 
+}
 
 void Parser::block() {
     while (!check(TokenType::TOKEN_RIGHT_BRACE) && !check(TokenType::TOKEN_END_OF_FILE)) {
@@ -764,11 +830,11 @@ void Parser::declaration_statement() {
 
     if (match(TokenType::TOKEN_CONST)) {
         is_const = true;
-        if (check(TokenType::TOKEN_IDENTIFIER)) {
+        if (check(TokenType::TOKEN_IDENTIFIER) || check(TokenType::TOKEN_LEFT_BRACKET)) {
             is_inferred = true;
         }
     } else if (match(TokenType::TOKEN_VAR)) {
-        if (check(TokenType::TOKEN_IDENTIFIER)) {
+        if (check(TokenType::TOKEN_IDENTIFIER) || check(TokenType::TOKEN_LEFT_BRACKET)) {
             is_inferred = true;
         }
     }
@@ -788,42 +854,89 @@ void Parser::declaration_statement() {
         }
     }
 
-    consume(TokenType::TOKEN_IDENTIFIER, "Expected variable name.");
-    Token var_name = previous;
+    bool is_destructuring = false;
+    std::vector<Token> destructure_vars;
 
-    declare_variable(var_name, var_type, is_const);
+    if (match(TokenType::TOKEN_LEFT_BRACKET)) {
+        is_destructuring = true;
+        is_inferred = true; // Destructuring implies type inference
+        do {
+            consume(TokenType::TOKEN_IDENTIFIER, "Expected variable name in destructuring.");
+            destructure_vars.push_back(previous);
+        } while (match(TokenType::TOKEN_COMMA));
+        consume(TokenType::TOKEN_RIGHT_BRACKET, "Expect ']' after destructuring variables.");
+    } else {
+        consume(TokenType::TOKEN_IDENTIFIER, "Expected variable name.");
+        destructure_vars.push_back(previous);
+        declare_variable(previous, var_type, is_const);
+    }
 
     if (match(TokenType::TOKEN_EQUAL)) {
         TokenType expr_type = expression();
 
-        if (is_inferred) {
-            if (current_compiler->scope_depth == 0) {
-                current_compiler->global_types[var_name.literal] = expr_type;
+        if (is_destructuring) {
+            if (current_compiler->scope_depth > 0) {
+                // Local destructuring: store array in a hidden local
+                Token temp_name;
+                temp_name.literal = "";
+                temp_name.length = 0;
+                add_local(temp_name, TokenType::TOKEN_ILLEGAL, false);
+                mark_initialized();
+                int array_local_idx = current_compiler->local_count - 1;
+
+                for (size_t i = 0; i < destructure_vars.size(); i++) {
+                    emit_bytes(OP_GET_LOCAL, array_local_idx);
+                    emit_constant((double)i);
+                    emit_byte(OP_GET_SUBSCRIPT);
+                    declare_variable(destructure_vars[i], TokenType::TOKEN_ILLEGAL, is_const);
+                    mark_initialized();
+                }
             } else {
-                for (int i = current_compiler->local_count - 1; i >= 0; i--) {
-                    if (current_compiler->locals[i].name.literal == var_name.literal) {
-                        current_compiler->locals[i].type = expr_type;
-                        break;
+                // Global destructuring
+                for (size_t i = 0; i < destructure_vars.size(); i++) {
+                    emit_byte(OP_DUP);
+                    emit_constant((double)i);
+                    emit_byte(OP_GET_SUBSCRIPT);
+                    uint16_t global_idx = identifier_constant(destructure_vars[i]);
+                    emit_byte(OP_DEFINE_GLOBAL);
+                    emit_byte((global_idx >> 8) & 0xFF);
+                    emit_byte(global_idx & 0xFF);
+                }
+                emit_byte(OP_POP); // Pop the array
+            }
+        } else {
+            if (is_inferred) {
+                Token var_name = destructure_vars[0];
+                if (current_compiler->scope_depth == 0) {
+                    current_compiler->global_types[var_name.literal] = expr_type;
+                } else {
+                    for (int i = current_compiler->local_count - 1; i >= 0; i--) {
+                        if (current_compiler->locals[i].name.literal == var_name.literal) {
+                            current_compiler->locals[i].type = expr_type;
+                            break;
+                        }
                     }
                 }
             }
         }
     } else {
-        if (is_const || is_inferred) {
-            error("Const and inferred var declarations must be initialized.");
+        if (is_const || is_inferred || is_destructuring) {
+            error("Const, inferred and destructuring declarations must be initialized.");
         }
         emit_byte(OP_NIL);
     }
 
     consume(TokenType::TOKEN_SEMICOLON, "Expected ';' after variable declaration.");
 
-    if (current_compiler->scope_depth > 0) {
-        mark_initialized();
-    } else {
-        uint16_t global_idx = identifier_constant(var_name);
-        emit_byte(OP_DEFINE_GLOBAL);
-        emit_byte((global_idx >> 8) & 0xFF);
-        emit_byte(global_idx & 0xFF);
+    if (!is_destructuring) {
+        if (current_compiler->scope_depth > 0) {
+            mark_initialized();
+        } else {
+            uint16_t global_idx = identifier_constant(destructure_vars[0]);
+            emit_byte(OP_DEFINE_GLOBAL);
+            emit_byte((global_idx >> 8) & 0xFF);
+            emit_byte(global_idx & 0xFF);
+        }
     }
 }
 void Parser::function_declaration(bool is_async) {
@@ -877,6 +990,7 @@ void Parser::class_declaration() {
 
         } else if (check(TokenType::TOKEN_INT) || check(TokenType::TOKEN_BOOL) || check(TokenType::TOKEN_STRING) ||
                    check(TokenType::TOKEN_DOUBLE) || check(TokenType::TOKEN_FLOAT) || check(TokenType::TOKEN_VOID) ||
+                   check(TokenType::TOKEN_VAR) || check(TokenType::TOKEN_CONST) ||
                    (check(TokenType::TOKEN_IDENTIFIER) && check_next(TokenType::TOKEN_IDENTIFIER))) {
 
             field_declaration();
@@ -1229,6 +1343,25 @@ TokenType Parser::ternary(TokenType left_type, bool can_assign) {
     return true_type; // the type isn't perfectly inferred if they differ, but sufficient for now.
 }
 
+TokenType Parser::nullish_coalescing(TokenType left_type, bool can_assign) {
+    int end_jump = emit_jump(OP_JUMP_IF_NOT_NIL);
+    emit_byte(OP_POP);
+    parse_precedence(PREC_OR);
+    patch_jump(end_jump);
+    return TokenType::TOKEN_ILLEGAL; // Bypass type checking for right hand side
+}
+
+TokenType Parser::optional_chain(TokenType left_type, bool can_assign) {
+    int end_jump = emit_jump(OP_JUMP_IF_NIL);
+    consume(TokenType::TOKEN_IDENTIFIER, "Expect property name after '?.'.");
+    uint16_t name = identifier_constant(previous);
+    emit_byte(OP_GET_PROPERTY);
+    emit_byte((name >> 8) & 0xFF);
+    emit_byte(name & 0xFF);
+    patch_jump(end_jump);
+    return TokenType::TOKEN_ILLEGAL;
+}
+
 void Parser::initialize_rules() {
     rules[TokenType::TOKEN_LEFT_PAREN]    = { [this](bool b){ return grouping(b); },      [this](TokenType l, bool b){ return call(l, b); }, PREC_CALL };
     rules[TokenType::TOKEN_DOT]           = { nullptr,                                    [this](TokenType l, bool b){ return dot(l, b); },    PREC_CALL };
@@ -1251,6 +1384,8 @@ void Parser::initialize_rules() {
     rules[TokenType::TOKEN_LEFT_SHIFT]    = { nullptr,                                    [this](TokenType l, bool b){ return binary(l, b); },PREC_BITWISE_SHIFT };
     rules[TokenType::TOKEN_RIGHT_SHIFT]   = { nullptr,                                    [this](TokenType l, bool b){ return binary(l, b); },PREC_BITWISE_SHIFT };
     rules[TokenType::TOKEN_QUESTION]      = { nullptr,                                    [this](TokenType l, bool b){ return ternary(l, b); },PREC_CONDITIONAL };
+    rules[TokenType::TOKEN_QUESTION_QUESTION] = { nullptr,                                [this](TokenType l, bool b){ return nullish_coalescing(l, b); }, PREC_OR };
+    rules[TokenType::TOKEN_QUESTION_DOT]  = { nullptr,                                    [this](TokenType l, bool b){ return optional_chain(l, b); }, PREC_CALL };
     rules[TokenType::TOKEN_BITWISE_NOT]   = { [this](bool b){ return unary(b); },         nullptr, PREC_NONE };
     rules[TokenType::TOKEN_AWAIT]         = { [this](bool b){ return unary(b); },         nullptr, PREC_NONE };
     rules[TokenType::TOKEN_BANG]          = { [this](bool b){ return unary(b); },         nullptr, PREC_NONE };
@@ -1290,18 +1425,40 @@ TokenType Parser::dot(TokenType left_type, bool can_assign) {
 }
 
 TokenType Parser::array_literal(bool can_assign) {
-    uint8_t element_count = 0;
+    uint8_t current_count = 0;
+    bool has_spread = false;
+
     if (!check(TokenType::TOKEN_RIGHT_BRACKET)) {
         do {
-            expression();
-            if (element_count == 255) {
-                error("Cannot have more than 255 elements in an array literal.");
+            if (match(TokenType::TOKEN_DOT_DOT_DOT)) {
+                if (current_count > 0) {
+                    emit_bytes(OP_BUILD_ARRAY, current_count);
+                    if (has_spread) emit_byte(OP_SPREAD_ARRAY);
+                    current_count = 0;
+                    has_spread = true;
+                }
+                expression(); 
+                if (!has_spread) {
+                    emit_bytes(OP_BUILD_ARRAY, 0);
+                    has_spread = true;
+                }
+                emit_byte(OP_SPREAD_ARRAY);
+            } else {
+                expression();
+                current_count++;
+                if (current_count == 255) {
+                    error("Cannot have more than 255 elements in an array literal block.");
+                }
             }
-            element_count++;
         } while (match(TokenType::TOKEN_COMMA));
     }
     consume(TokenType::TOKEN_RIGHT_BRACKET, "Expect ']' after array elements.");
-    emit_bytes(OP_BUILD_ARRAY, element_count);
+    
+    if (current_count > 0 || !has_spread) {
+        emit_bytes(OP_BUILD_ARRAY, current_count);
+        if (has_spread) emit_byte(OP_SPREAD_ARRAY);
+    }
+    
     return TokenType::TOKEN_ILLEGAL;
 }
 
@@ -1309,10 +1466,17 @@ TokenType Parser::map_literal(bool can_assign) {
     uint8_t element_count = 0;
     if (!check(TokenType::TOKEN_RIGHT_BRACE)) {
         do {
-            consume(TokenType::TOKEN_STRING_LITERAL, "Expect string key in map literal.");
-            string(false);
-            consume(TokenType::TOKEN_COLON, "Expect ':' after map key.");
-            expression();
+            if (check(TokenType::TOKEN_IDENTIFIER) && (check_next(TokenType::TOKEN_COMMA) || check_next(TokenType::TOKEN_RIGHT_BRACE))) {
+                advance();
+                Token id = previous;
+                emit_constant(new_string(vm, previous.literal));
+                variable(false);
+            } else {
+                consume(TokenType::TOKEN_STRING_LITERAL, "Expect string key in map literal.");
+                string(false);
+                consume(TokenType::TOKEN_COLON, "Expect ':' after map key.");
+                expression();
+            }
             if (element_count == 255) {
                 error("Cannot have more than 255 elements in a map literal.");
             }
