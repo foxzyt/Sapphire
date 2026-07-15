@@ -73,15 +73,49 @@ jobs:
           instructions: ".github/release-notes-instructions.md"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_TOKEN }}
 
-      - name: Create GitHub Release draft
+      - name: Prepare release body
+        shell: bash
+        env:
+          MARKDOWN: ${{ steps.copilot_release.outputs.release-notes }}
+        run: |
+          set -e
+          if [ -n "$MARKDOWN" ]; then
+            echo "$MARKDOWN" > release_body.md
+            echo "" >> release_body.md
+            cat .github/v1.0.8-examples.md >> release_body.md
+            echo "## How to Compile (MinGW)" >> release_body.md
+            echo "" >> release_body.md
+            echo "To build Sapphire from source on Windows using MSYS2 and MinGW:" >> release_body.md
+            echo "" >> release_body.md
+            echo "1. Install [MSYS2](https://www.msys2.org/)." >> release_body.md
+            echo "2. Open the **MSYS2 MINGW64** terminal and install the dependencies:" >> release_body.md
+            echo "   \`\`\`bash" >> release_body.md
+            echo "   pacman -S mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc mingw-w64-x86_64-make mingw-w64-x86_64-sfml mingw-w64-x86_64-openssl" >> release_body.md
+            echo "   \`\`\`" >> release_body.md
+            echo "3. Clone the repository:" >> release_body.md
+            echo "   \`\`\`bash" >> release_body.md
+            echo "   git clone https://github.com/foxzyt/Sapphire.git" >> release_body.md
+            echo "   cd Sapphire" >> release_body.md
+            echo "   \`\`\`" >> release_body.md
+            echo "4. Configure and build:" >> release_body.md
+            echo "   \`\`\`bash" >> release_body.md
+            echo "   cmake -B build -G \"MinGW Makefiles\" -DCMAKE_BUILD_TYPE=Release -DSFML_DIR=/mingw64/lib/cmake/SFML -DSFML_STATIC_LIBRARIES=ON -DOPENSSL_ROOT_DIR=/mingw64 -DOPENSSL_USE_STATIC_LIBS=TRUE" >> release_body.md
+            echo "   cmake --build build --config Release -j 8" >> release_body.md
+            echo "   \`\`\`" >> release_body.md
+          else
+            echo "Fallback release notes" > release_body.md
+          fi
+
+      - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: sapphire-windows.zip
           tag_name: ${{ github.ref_name }}
           name: Sapphire ${{ github.ref_name }}
-          body: ${{ steps.copilot_release.outputs.release-notes }}
-          draft: true
+          body_path: release_body.md
+          draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
