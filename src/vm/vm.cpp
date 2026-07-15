@@ -9,6 +9,10 @@
 #include "debug.h"
 #include "value.h"
 #include "config.h"
+#include "termcolor.h"
+#include "sapphire_api.h"
+#include "opencl_api.h"
+#include "sqlite_api.h"
 #include "utils.h"
 #include "opcodes.h"
 #include "httplib.h"
@@ -409,7 +413,26 @@ static std::string valueToStringC(const SapphireValue& val) {
     } else if (std::holds_alternative<Obj*>(val._value)) {
         Obj* obj = std::get<Obj*>(val._value);
         if (obj->type == OBJ_STRING) ss << static_cast<ObjString*>(obj)->chars;
+        else if (obj->type == OBJ_MAP) {
+            ObjMap* map = static_cast<ObjMap*>(obj);
+            ss << "{";
+            auto it = map->items.begin();
+            while (it != map->items.end()) {
+                ss << it->first << ": " << valueToStringC(it->second);
+                if (std::next(it) != map->items.end()) ss << ", ";
+                ++it;
+            }
+            ss << "}";
+        }
         else ss << "[object]";
+    } else if (std::holds_alternative<std::shared_ptr<SapphireArray>>(val._value)) {
+        auto arr = std::get<std::shared_ptr<SapphireArray>>(val._value);
+        ss << "[";
+        for (size_t i = 0; i < arr->elements.size(); ++i) {
+            ss << valueToStringC(arr->elements[i]);
+            if (i < arr->elements.size() - 1) ss << ", ";
+        }
+        ss << "]";
     } else {
         ss << "[unknown]";
     }
@@ -2474,6 +2497,7 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     register_graphics_engine(this);
     register_vec2d_class(this);
     register_vec3d_class(this);
+    define_sqlite_natives(this);
 
     if (init_ui) {
         g_current_vm = this;
@@ -2892,25 +2916,33 @@ TARGET(OP_GET_PROPERTY) {
         if (!this->soft_mode) return false;
         top[-1] = SapphireValue();
     } else {
-        ObjInstance* instance = (ObjInstance*)std::get<Obj*>(top[-1]._value);
+        Obj* obj = std::get<Obj*>(top[-1]._value);
         name_tmp = (ObjString*)std::get<Obj*>(frame->function->chunk.constants[READ_SHORT()]._value);
-        auto it_f = instance->fields.find(name_tmp->chars);
-        if (it_f != instance->fields.end()) {
-            top[-1] = it_f->second;
+        if (obj->type == OBJ_MAP) {
+            ObjMap* map = (ObjMap*)obj;
+            auto it = map->items.find(name_tmp->chars);
+            if (it != map->items.end()) top[-1] = it->second;
+            else top[-1] = SapphireValue();
         } else {
-            ObjClass* klass = instance->klass;
-            bool found_method = false;
-            while (klass != nullptr) {
-                auto it_m = klass->methods.find(name_tmp->chars);
-                if (it_m != klass->methods.end()) {
-                    top[-1] = new_bound_method(this, top[-1], it_m->second, klass);
-                    found_method = true;
-                    break;
+            ObjInstance* instance = (ObjInstance*)obj;
+            auto it_f = instance->fields.find(name_tmp->chars);
+            if (it_f != instance->fields.end()) {
+                top[-1] = it_f->second;
+            } else {
+                ObjClass* klass = instance->klass;
+                bool found_method = false;
+                while (klass != nullptr) {
+                    auto it_m = klass->methods.find(name_tmp->chars);
+                    if (it_m != klass->methods.end()) {
+                        top[-1] = new_bound_method(this, top[-1], it_m->second, klass);
+                        found_method = true;
+                        break;
+                    }
+                    klass = klass->superclass;
                 }
-                klass = klass->superclass;
-            }
-            if (!found_method) {
-                top[-1] = SapphireValue();
+                if (!found_method) {
+                    top[-1] = SapphireValue();
+                }
             }
         }
     }
@@ -2918,10 +2950,17 @@ TARGET(OP_GET_PROPERTY) {
 }
 
 TARGET(OP_SET_PROPERTY) {
-    ObjInstance* instance = (ObjInstance*)std::get<Obj*>(top[-2]._value);
+    Obj* obj = std::get<Obj*>(top[-2]._value);
     name_tmp = (ObjString*)std::get<Obj*>(frame->function->chunk.constants[READ_SHORT()]._value);
-    instance->fields[name_tmp->chars] = top[-1];
-    write_barrier((Obj*)instance, top[-1]);
+    if (obj->type == OBJ_MAP) {
+        ObjMap* map = (ObjMap*)obj;
+        map->items[name_tmp->chars] = top[-1];
+        write_barrier(obj, top[-1]);
+    } else {
+        ObjInstance* instance = (ObjInstance*)obj;
+        instance->fields[name_tmp->chars] = top[-1];
+        write_barrier(obj, top[-1]);
+    }
     val_tmp = POP(); top--; PUSH(val_tmp);
     NEXT_CODE();
 }
@@ -3036,15 +3075,16 @@ TARGET(OP_JUMP_IF_NOT_NIL) {
 }
 
 TARGET(OP_LOOP)
+    stack_top = top;
     step_gc();
     ip -= READ_SHORT();
     NEXT_CODE();
 
 TARGET(OP_CALL) {
+    stack_top = top;
     step_gc();
     int arg_count = READ_BYTE();
     frame->ip = ip;
-    stack_top = top;
     if (!call_value(top[-arg_count - 1], arg_count)) return false;
     frame = &frames[frame_count - 1];
     ip = frame->ip; slots = frame->slots; top = stack_top;
@@ -3418,7 +3458,7 @@ TARGET(OP_ITER_NEXT_IN) {
             auto arr = std::get<std::shared_ptr<SapphireArray>>(iterable_val._value);
             if (index < arr->elements.size()) {
                 PUSH(SapphireValue((double)index));
-                std::get<double>(top[-2]._value) += 1.0;
+                    std::get<double>(top[-2]._value) += 1.0;
             } else {
                 ip += offset;
             }
@@ -3464,7 +3504,7 @@ TARGET(OP_ITER_NEXT_OF) {
             auto arr = std::get<std::shared_ptr<SapphireArray>>(iterable_val._value);
             if (index < arr->elements.size()) {
                 PUSH(arr->elements[index]);
-                std::get<double>(top[-2]._value) += 1.0;
+                    std::get<double>(top[-2]._value) += 1.0;
             } else {
                 ip += offset;
             }
