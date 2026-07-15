@@ -80,7 +80,7 @@ jobs:
           files: sapphire-windows.zip
           tag_name: ${{ github.ref_name }}
           name: Sapphire ${{ github.ref_name }}
-          body: ${{ steps.copilot_release.outputs.markdown }}
+          body: ${{ steps.copilot_release.outputs.release-notes }}
           draft: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
