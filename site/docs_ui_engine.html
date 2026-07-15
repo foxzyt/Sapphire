@@ -47,10 +47,11 @@
         <main class="docs-content">
             <h1>Native UI Engine</h1>
             <p>One of Sapphire's most powerful features is its built-in, native User Interface Engine. Unlike other scripting languages that require heavy dependencies like Electron or QT, Sapphire ships with a lightning-fast, retained-mode GUI system right out of the box, bound directly to C++ graphics rendering.</p>
+            <p>Sapphire utilizes modern declarative UI principles and named arguments to construct the UI tree in a way that is highly readable and manageable.</p>
 
-            <h2>Retained Mode Architecture</h2>
-            <p>Sapphire's UI uses a declarative, "retained-mode" architecture. You describe what the window should look like using a tree of widgets (Windows, Texts, Buttons), and the engine handles drawing and state persistence behind the scenes!</p>
-            
+            <h2>Creating Styles</h2>
+            <p>Before building components, you can define reusable visual styles using the <code>Style()</code> function. Styles can define colors, borders, fonts, and interaction states (like hover color).</p>
+
             <div class="snippet-container">
                 <div class="snippet-header">
                     <span class="snippet-lang">sapphire</span>
@@ -58,34 +59,14 @@
                         <button class="btn-copy">Copy</button>
                     </div>
                 </div>
-                <pre><code><span class="token-comment">// A simple callback function for our button</span>
-<span class="token-keyword">function</span> <span class="token-function">onButtonClick</span>() <span class="token-punctuation">{</span>
-    <span class="token-function">print</span>(<span class="token-string">"The button was clicked!"</span>)<span class="token-punctuation">;</span>
-<span class="token-punctuation">}</span>
-
-<span class="token-comment">// Define the UI Tree using Maps for configuration</span>
-<span class="token-keyword">var</span> app = <span class="token-function">Window</span>(<span class="token-punctuation">{</span>
-    <span class="token-string">"title"</span>: <span class="token-string">"My First Sapphire App"</span><span class="token-punctuation">,</span>
-    <span class="token-string">"width"</span>: <span class="token-number">400</span><span class="token-punctuation">,</span>
-    <span class="token-string">"height"</span>: <span class="token-number">300</span><span class="token-punctuation">,</span>
-    <span class="token-string">"children"</span>: <span class="token-punctuation">[</span>
-        <span class="token-function">Text</span>(<span class="token-punctuation">{</span> <span class="token-string">"text"</span>: <span class="token-string">"Welcome to the GUI!"</span> <span class="token-punctuation">}</span>)<span class="token-punctuation">,</span>
-        <span class="token-function">Button</span>(<span class="token-punctuation">{</span> 
-            <span class="token-string">"label"</span>: <span class="token-string">"Click Me!"</span><span class="token-punctuation">,</span> 
-            <span class="token-string">"onClick"</span>: onButtonClick 
-        <span class="token-punctuation">}</span>)
-    <span class="token-punctuation">]</span>
-<span class="token-punctuation">}</span>)<span class="token-punctuation">;</span>
-
-<span class="token-comment">// Start the Event Loop</span>
-<span class="token-comment">// updateUI() returns true as long as the window is open</span>
-<span class="token-keyword">while</span> (<span class="token-function">updateUI</span>()) <span class="token-punctuation">{</span>
-    <span class="token-function">Render</span>(app)<span class="token-punctuation">;</span>
-<span class="token-punctuation">}</span></code></pre>
+                <pre><code><span class="token-comment">// Defining visual styles using named arguments</span>
+<span class="token-function">Style</span>(<span class="token-string">"DisplayBg"</span>, bgColor=<span class="token-string">"#000000"</span>, textColor=<span class="token-string">"#ffffff"</span>, fontSize=<span class="token-number">64</span>)<span class="token-punctuation">;</span>
+<span class="token-function">Style</span>(<span class="token-string">"DarkBtn"</span>, bgColor=<span class="token-string">"#333333"</span>, hoverColor=<span class="token-string">"#4d4d4d"</span>, borderRadius=<span class="token-number">40.0</span>, fontSize=<span class="token-number">32</span>)<span class="token-punctuation">;</span>
+<span class="token-function">Style</span>(<span class="token-string">"OpBtn"</span>, bgColor=<span class="token-string">"#ff9f0a"</span>, hoverColor=<span class="token-string">"#ffc266"</span>, borderRadius=<span class="token-number">40.0</span>, fontSize=<span class="token-number">32</span>)<span class="token-punctuation">;</span></code></pre>
             </div>
 
-            <h2>Interactive Widgets: The Slider</h2>
-            <p>Because Sapphire manages state across frames (retained-mode), widgets like Sliders maintain their values automatically. You simply bind an <code>onChange</code> event to react to the new value.</p>
+            <h2>Building Layouts: The Flex Container</h2>
+            <p>The core building block for layout in Sapphire is the <code>Flex</code> container. It allows you to arrange its <code>children</code> either horizontally (<code>row</code>) or vertically (<code>column</code>), just like CSS Flexbox.</p>
 
             <div class="snippet-container">
                 <div class="snippet-header">
@@ -94,28 +75,84 @@
                         <button class="btn-copy">Copy</button>
                     </div>
                 </div>
-                <pre><code><span class="token-keyword">var</span> globalVolume = <span class="token-number">50</span><span class="token-punctuation">;</span>
+                <pre><code><span class="token-keyword">var</span> myLayout = <span class="token-function">Flex</span>(
+    direction=<span class="token-string">"column"</span>,
+    justify=<span class="token-string">"center"</span>,
+    align=<span class="token-string">"center"</span>,
+    gap=<span class="token-number">15.0</span>,
+    style=<span class="token-string">"DisplayBg"</span>,
+    children=[
+        <span class="token-comment">/* Widgets go here... */</span>
+    ]
+)<span class="token-punctuation">;</span></code></pre>
+            </div>
 
-<span class="token-keyword">function</span> <span class="token-function">onVolumeChange</span>(newValue) <span class="token-punctuation">{</span>
-    globalVolume = newValue<span class="token-punctuation">;</span>
-    <span class="token-function">print</span>(<span class="token-string">"Volume changed to: "</span> + globalVolume)<span class="token-punctuation">;</span>
-<span class="token-punctuation">}</span>
+            <h2>UI Elements</h2>
+            <p>Sapphire provides a variety of interactive and static elements that you can inject inside your layouts:</p>
 
-<span class="token-keyword">var</span> settingsApp = <span class="token-function">Window</span>(<span class="token-punctuation">{</span>
-    <span class="token-string">"title"</span>: <span class="token-string">"Settings"</span><span class="token-punctuation">,</span>
-    <span class="token-string">"children"</span>: <span class="token-punctuation">[</span>
-        <span class="token-function">Text</span>(<span class="token-punctuation">{</span> <span class="token-string">"text"</span>: <span class="token-string">"Adjust Volume:"</span> <span class="token-punctuation">}</span>)<span class="token-punctuation">,</span>
-        <span class="token-function">Slider</span>(<span class="token-punctuation">{</span> 
-            <span class="token-string">"min"</span>: <span class="token-number">0</span><span class="token-punctuation">,</span> 
-            <span class="token-string">"max"</span>: <span class="token-number">100</span><span class="token-punctuation">,</span> 
-            <span class="token-string">"initialValue"</span>: <span class="token-number">50</span><span class="token-punctuation">,</span>
-            <span class="token-string">"onChange"</span>: onVolumeChange 
-        <span class="token-punctuation">}</span>)
-    <span class="token-punctuation">]</span>
-<span class="token-punctuation">}</span>)<span class="token-punctuation">;</span>
+            <h3>Text</h3>
+            <p>Used for displaying strings. It can inherit properties from its container's style, or be overridden directly.</p>
+            <pre><code><span class="token-function">Text</span>(<span class="token-string">"Hello World!"</span>, size=<span class="token-number">72</span>)</code></pre>
 
-<span class="token-keyword">while</span> (<span class="token-function">updateUI</span>()) <span class="token-punctuation">{</span>
-    <span class="token-function">Render</span>(settingsApp)<span class="token-punctuation">;</span>
+            <h3>Button</h3>
+            <p>An interactive element that can execute a callback function when clicked. You assign the callback to the <code>onClick</code> named argument.</p>
+            <pre><code><span class="token-function">Button</span>(label=<span class="token-string">"Click Me"</span>, width=<span class="token-number">80.0</span>, height=<span class="token-number">80.0</span>, style=<span class="token-string">"DarkBtn"</span>, onClick=myCallback)</code></pre>
+
+            <h3>Slider</h3>
+            <p>An interactive slider widget for selecting numeric values.</p>
+            <pre><code><span class="token-function">Slider</span>(min=<span class="token-number">0</span>, max=<span class="token-number">100</span>, initialValue=<span class="token-number">50</span>, onChange=onVolumeChange)</code></pre>
+
+            <h2>Complete Example: The Calculator App Architecture</h2>
+            <p>Putting it all together, here is how you structure a declarative, stateful UI in Sapphire, heavily inspired by modern UI frameworks. This resembles our official Calculator test script:</p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// State</span>
+<span class="token-keyword">var</span> currentInput = <span class="token-string">"0"</span><span class="token-punctuation">;</span>
+
+<span class="token-comment">// Actions</span>
+<span class="token-keyword">function</span> <span class="token-function">handleClear</span>() <span class="token-punctuation">{</span> currentInput = <span class="token-string">"0"</span><span class="token-punctuation">;</span> <span class="token-punctuation">}</span>
+
+<span class="token-comment">// Render Loop</span>
+<span class="token-keyword">function</span> <span class="token-function">updateUI</span>() bool <span class="token-punctuation">{</span>
+    <span class="token-keyword">var</span> app = <span class="token-function">Flex</span>(
+        direction=<span class="token-string">"column"</span>,
+        justify=<span class="token-string">"flex-start"</span>,
+        align=<span class="token-string">"center"</span>,
+        gap=<span class="token-number">15.0</span>,
+        style=<span class="token-string">"DisplayBg"</span>,
+        children=[
+            <span class="token-comment">// The Display Area</span>
+            <span class="token-function">Flex</span>(
+                direction=<span class="token-string">"row"</span>,
+                justify=<span class="token-string">"center"</span>,
+                align=<span class="token-string">"center"</span>,
+                width=<span class="token-number">350.0</span>,
+                height=<span class="token-number">140.0</span>,
+                children=[ <span class="token-function">Text</span>(currentInput, size=<span class="token-number">72</span>) ]
+            ),
+            
+            <span class="token-comment">// The Buttons Row</span>
+            <span class="token-function">Flex</span>(
+                direction=<span class="token-string">"row"</span>, 
+                gap=<span class="token-number">10.0</span>, 
+                children=[
+                    <span class="token-function">Button</span>(label=<span class="token-string">"AC"</span>, width=<span class="token-number">80.0</span>, height=<span class="token-number">80.0</span>, style=<span class="token-string">"DarkBtn"</span>, onClick=handleClear),
+                    <span class="token-function">Button</span>(label=<span class="token-string">"/"</span>, width=<span class="token-number">80.0</span>, height=<span class="token-number">80.0</span>, style=<span class="token-string">"OpBtn"</span>, onClick=handleDiv)
+                ]
+            )
+        ]
+    )<span class="token-punctuation">;</span>
+    
+    <span class="token-comment">// Instructs the engine to draw the tree</span>
+    <span class="token-function">Render</span>(app)<span class="token-punctuation">;</span>
+    
+    <span class="token-keyword">return</span> <span class="token-keyword">true</span><span class="token-punctuation">;</span>
 <span class="token-punctuation">}</span></code></pre>
             </div>
 

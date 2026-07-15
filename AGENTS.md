@@ -23,7 +23,7 @@ Este documento contém instruções estritas que **todos os Agentes de Inteligê
   2. Criar um novo arquivo de exemplos de versão, no formato `.github/vX.Y.Z-examples.md` (ex: `v1.0.9-examples.md`), se houver novas funcionalidades para demonstrar.
   3. Documentar exemplos claros, com sintaxe apropriada, demonstrando como as novas funcionalidades ou correções podem ser utilizadas pelos usuários finais.
   4. Atualizar referências de documentação que apontam para a versão anterior.
-  5. **Atualizar o Site Oficial**: O arquivo principal `index.html` (e/ou documentações públicas na pasta `site/`) deve obrigatoriamente ser atualizado para incluir os novos exemplos de código, atalhos de sintaxe e definições que foram recém-adicionados. A página do projeto sempre deve refletir as capacidades atuais da linguagem.
+  5. **Atualizar a Documentação do Site**: Os arquivos de documentação dentro da pasta `site/` (ex: `docs_intro.html`, `docs_ui_engine.html`, etc.) devem obrigatoriamente ser atualizados para incluir novos capítulos, definições e exemplos didáticos ensinando como usar as novas funcionalidades. **NÃO documente as novidades diretamente no `index.html`**, mas sim nos arquivos da documentação oficial (`site/docs_*.html`).
 
 ## 5. Manutenção de Código
 - Preserve os comentários e docstrings que explicam o porquê de decisões técnicas.
