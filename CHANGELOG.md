@@ -11,15 +11,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Iterators:** Added support for `for in`, `for of`, and `foreach` syntax to iterate over arrays, maps, and strings.
+  ```sapphire
+  foreach (var item in array) print(item);
+  ```
 - **SQLite Support:** Native SQLite integration allowing database creation, query execution, and fetching results as Sapphire maps.
-- **Arrow Functions:** Added support for arrow function syntax `(x) => x * x;`.
-- **String Interpolation:** Added support for f-strings `f"Hello {name}"`.
-- **Optional Chaining:** Added the `?.` operator to safely access nested properties (`user?.profile?.email`).
-- **Nullish Coalescing:** Added the `??` operator to provide default values when an expression evaluates to `nil` (`a ?? b`).
-- **Destructuring:** Added support for array destructuring `var [x, y] = arr;`.
-- **Spread/Rest Operator:** Added the `...` operator for arrays (`[...arr1, 4, 5]`).
-- **Shorthand Properties:** Added support for shorthand properties in map literals (`{ theme, fontSize }`).
+  ```sapphire
+  var sql = SQLite(); var db = sql.open("data.db");
+  ```
+- **Arrow Functions:** Added support for arrow function syntax.
+  ```sapphire
+  var square = (x) => x * x;
+  ```
+- **String Interpolation:** Added support for f-strings.
+  ```sapphire
+  print f"Hello {name}, your score is {score}";
+  ```
+- **Optional Chaining:** Added the `?.` operator to safely access nested properties without crashing.
+  ```sapphire
+  var email = user?.profile?.email;
+  ```
+- **Nullish Coalescing:** Added the `??` operator to provide default values when an expression evaluates to `nil`.
+  ```sapphire
+  var config = userConfig ?? defaultConfig;
+  ```
+- **Destructuring:** Added support for array destructuring.
+  ```sapphire
+  var [x, y] = arr;
+  ```
+- **Spread/Rest Operator:** Added the `...` operator for arrays.
+  ```sapphire
+  var merged = [...arr1, 4, 5];
+  ```
+- **Shorthand Properties:** Added support for shorthand properties in map literals.
+  ```sapphire
+  var map = { theme, fontSize };
+  ```
 - **Class Fields:** Allow `var` and `const` keywords when defining class fields.
+  ```sapphire
+  class User { var name; const type = "admin"; }
+  ```
 
 ### Changed
 - **Dynamic Typing:** Radically simplified the language syntax. Explicit typing keywords (`int`, `bool`, `string`, `void`, `double`, `float`) have been entirely removed.
