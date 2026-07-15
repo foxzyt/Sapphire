@@ -1,0 +1,66 @@
+name: Fix Release v1.0.8
+on: workflow_dispatch
+
+jobs:
+  fix-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Edit Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat << 'EOF' > release_notes.md
+          ## 💎 Sapphire 1.0.8
+          
+          ### Language Features
+          - Merge the finished Sapphire 1.0.8 release, adding documentation, a new website, ten UI elements, and language features including switch/case, async/await, and try/catch/finally. (#21)
+          
+          ### Standard Library
+          - Introduce HashMap support (ObjMap) with map literals and VM opcodes, add OpenCL bindings for GPU acceleration, establish CI/CD workflows, and reorganize docs/README. (#20)
+          
+          ### Other Fixes & CI
+          - Resolve SIGPIPE failures during diff extraction used by CI scripts to prevent process-output crashes. (#34)
+          - Replace heredoc usage with echo in workflow scripts to fix a YAML syntax error that broke CI parsing. (#33)
+          - Fix output variable name for the copilot action so generated artifacts are stored under release-notes. (#31)
+          - Refresh Copilot token handling and add an instruction to include a compile guide in release automation. (#30)
+          - Adjust CI steps to correct GitHub Pages deployment and improve Copilot release tag lookup logic. (#29)
+          - Switch the copilot-release-notes action to read credentials from COPILOT_TOKEN for secure authentication. (#28)
+          - Change the release workflow to compute diffs since the last tag instead of relying solely on a single PR to produce more complete release notes. (#27)
+          - Fix a YAML syntax error in the Copilot release workflow so the action parses and runs correctly. (#26)
+          - Add GitHub Pages environment configuration and correct workflow syntax to stabilize CI/CD publishing. (#25)
+          - Correct GitHub Pages and release-note generation syntax so page deployment and automated notes run reliably. (#24)
+          - Update the Sapphire site to include documentation and repair the automatic release-notes generation pipeline. (#23)
+          - Change GitHub Pages deployment order to publish before running certain build tests to improve CI flow. (#22)
+
+          EOF
+          
+          cat .github/v1.0.8-examples.md >> release_notes.md
+          
+          cat << 'EOF' >> release_notes.md
+          
+          ## How to Compile (MinGW)
+          
+          To build Sapphire from source on Windows using MSYS2 and MinGW:
+          
+          1. Install [MSYS2](https://www.msys2.org/).
+          2. Open the **MSYS2 MINGW64** terminal and install the dependencies:
+             ```bash
+             pacman -S mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc mingw-w64-x86_64-make mingw-w64-x86_64-sfml mingw-w64-x86_64-openssl
+             ```
+          3. Clone the repository:
+             ```bash
+             git clone https://github.com/foxzyt/Sapphire.git
+             cd Sapphire
+             ```
+          4. Configure and build:
+             ```bash
+             cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DSFML_DIR=/mingw64/lib/cmake/SFML -DSFML_STATIC_LIBRARIES=ON -DOPENSSL_ROOT_DIR=/mingw64 -DOPENSSL_USE_STATIC_LIBS=TRUE
+             cmake --build build --config Release -j 8
+             ```
+          EOF
+          
+          gh release edit v1.0.8 -F release_notes.md
