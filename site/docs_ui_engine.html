@@ -39,7 +39,7 @@
                     <li><a href="docs_file_io.html">9. File I/O</a></li>
                     <li><a href="docs_http.html">10. HTTP Requests</a></li>
                     <li><a href="docs_ui_engine.html" class="active">11. UI Engine</a></li>
-                </ul>
+                    <li><a href="docs_sqlite.html">12. SQLite Database</a></li>`n                </ul>
             </nav>
         </aside>
 
@@ -90,44 +90,159 @@
             <h2>UI Elements</h2>
             <p>Sapphire provides a variety of interactive and static elements that you can inject inside your layouts:</p>
 
-            <h3>Text</h3>
-            <p>Used for displaying strings. It can inherit properties from its container's style, or be overridden directly. You can specify font families, styles (bold/italic), and shadows.</p>
-            <pre><code><span class="token-function">Text</span>(<span class="token-string">"Hello World!"</span>, size=<span class="token-number">72</span>, weight=<span class="token-string">"bold"</span>, color=<span class="token-string">"#ffffff"</span>)</code></pre>
+            <h3>1. Text</h3>
+            <p>The <code>Text</code> element is the foundational typographic component in Sapphire's UI Engine. It leverages the internal <code>FontServer</code> to perform sub-pixel anti-aliasing and intelligent text wrapping. This ensures that strings are rendered crisply on any display scale.</p>
+            <ul>
+                <li><b>size</b>: Determines the point size of the font. Defaults to <code>24</code>.</li>
+                <li><b>weight</b>: Can be <code>"light"</code>, <code>"regular"</code>, <code>"bold"</code>, or <code>"black"</code>.</li>
+                <li><b>color</b>: A hex string (e.g., <code>"#ff0000"</code>) or a named color.</li>
+                <li><b>shadow</b>: Adds a drop shadow. Takes an object with <code>offsetX</code>, <code>offsetY</code>, and <code>blur</code>.</li>
+                <li><b>align</b>: Horizontal alignment: <code>"left"</code>, <code>"center"</code>, <code>"right"</code>.</li>
+            </ul>
+            <div class="snippet-container">
+                <div class="snippet-header"><span class="snippet-lang">sapphire</span></div>
+                <pre><code><span class="token-function">Text</span>(
+    <span class="token-string">"Welcome to Sapphire UI Engine!"</span>, 
+    size=<span class="token-number">48</span>, 
+    weight=<span class="token-string">"bold"</span>, 
+    color=<span class="token-string">"#ffffff"</span>, 
+    align=<span class="token-string">"center"</span>,
+    shadow={<span class="token-string">"offsetX"</span>: <span class="token-number">2</span>, <span class="token-string">"offsetY"</span>: <span class="token-number">4</span>, <span class="token-string">"blur"</span>: <span class="token-number">10</span>}
+)</code></pre>
+            </div>
 
-            <h3>Button</h3>
-            <p>An interactive element that can execute a callback function when clicked. You assign the callback to the <code>onClick</code> named argument. You can also listen to <code>onHover</code> events.</p>
-            <pre><code><span class="token-function">Button</span>(label=<span class="token-string">"Click Me"</span>, width=<span class="token-number">80.0</span>, height=<span class="token-number">80.0</span>, style=<span class="token-string">"DarkBtn"</span>, onClick=myCallback)</code></pre>
+            <h3>2. Button</h3>
+            <p>The <code>Button</code> is a primary interactive element. Sapphire implements a sophisticated event-bubbling architecture, meaning the button will visually react to <code>onHover</code>, <code>onMouseDown</code>, and <code>onMouseUp</code> automatically based on its designated style.</p>
+            <ul>
+                <li><b>label</b>: The text displayed inside the button. Automatically centered.</li>
+                <li><b>style</b>: The visual configuration (colors, borders, padding) to apply.</li>
+                <li><b>onClick</b>: A function callback invoked when the user clicks and releases inside the bounds.</li>
+                <li><b>disabled</b>: A boolean to prevent interaction and visually gray out the button.</li>
+            </ul>
+            <div class="snippet-container">
+                <div class="snippet-header"><span class="snippet-lang">sapphire</span></div>
+                <pre><code><span class="token-function">Button</span>(
+    label=<span class="token-string">"Submit Data"</span>, 
+    width=<span class="token-number">150.0</span>, 
+    height=<span class="token-number">50.0</span>, 
+    style=<span class="token-string">"PrimaryAction"</span>, 
+    onClick=(() =&gt; <span class="token-function">print</span>(<span class="token-string">"Data Submitted!"</span>)),
+    disabled=<span class="token-keyword">false</span>
+)</code></pre>
+            </div>
 
-            <h3>Slider</h3>
-            <p>An interactive slider widget for selecting numeric values across a defined range. Useful for volume controls or timeline scrubs.</p>
-            <pre><code><span class="token-function">Slider</span>(min=<span class="token-number">0</span>, max=<span class="token-number">100</span>, initialValue=<span class="token-number">50</span>, width=<span class="token-number">200.0</span>, onChange=onVolumeChange)</code></pre>
+            <h3>3. Slider</h3>
+            <p>The <code>Slider</code> widget allows users to select a numeric value within a specific continuous or discrete range. It is heavily optimized for smooth scrubbing (dragging), utilizing hardware-accelerated interpolation.</p>
+            <ul>
+                <li><b>min</b> / <b>max</b>: The boundaries of the slider track.</li>
+                <li><b>initialValue</b>: The starting position of the thumb.</li>
+                <li><b>step</b>: If provided, the slider snaps to increments of this value.</li>
+                <li><b>onChange</b>: A callback receiving the new float value whenever the thumb is moved.</li>
+            </ul>
+            <div class="snippet-container">
+                <div class="snippet-header"><span class="snippet-lang">sapphire</span></div>
+                <pre><code><span class="token-function">Slider</span>(
+    min=<span class="token-number">0.0</span>, 
+    max=<span class="token-number">1.0</span>, 
+    initialValue=<span class="token-number">0.5</span>, 
+    step=<span class="token-number">0.1</span>,
+    width=<span class="token-number">300.0</span>, 
+    onChange=(<span class="token-keyword">function</span>(val) { <span class="token-function">print</span>(<span class="token-string">"Volume: "</span> + (val*100) + <span class="token-string">"%"</span>); })
+)</code></pre>
+            </div>
             
-            <h3>Input (TextField)</h3>
-            <p>A single-line text input field allowing the user to type from their keyboard. Supports placeholders and cursor control.</p>
-            <pre><code><span class="token-function">Input</span>(placeholder=<span class="token-string">"Enter username..."</span>, width=<span class="token-number">300.0</span>, height=<span class="token-number">40.0</span>, onSubmit=loginFn)</code></pre>
+            <h3>4. Input (TextField)</h3>
+            <p>The <code>Input</code> widget handles keyboard interactions. It intercepts keystrokes via OS-level hooks, fully supporting clipboard operations (Ctrl+C, Ctrl+V), cursor blinking, text selection highlighting, and unicode character entry.</p>
+            <ul>
+                <li><b>placeholder</b>: Ghost text shown when the input is empty.</li>
+                <li><b>passwordMode</b>: If <code>true</code>, masks the characters with asterisks.</li>
+                <li><b>maxLength</b>: Restricts the total number of characters.</li>
+                <li><b>onSubmit</b>: Triggered when the user presses Enter.</li>
+                <li><b>onChange</b>: Triggered on every keystroke.</li>
+            </ul>
+            <div class="snippet-container">
+                <div class="snippet-header"><span class="snippet-lang">sapphire</span></div>
+                <pre><code><span class="token-function">Input</span>(
+    placeholder=<span class="token-string">"Enter your secure password..."</span>, 
+    passwordMode=<span class="token-keyword">true</span>,
+    maxLength=<span class="token-number">32</span>,
+    width=<span class="token-number">300.0</span>, 
+    height=<span class="token-number">40.0</span>, 
+    onSubmit=authenticateUser
+)</code></pre>
+            </div>
 
-            <h3>Checkbox</h3>
-            <p>A boolean toggle switch that allows the user to check or uncheck options. Great for settings pages.</p>
-            <pre><code><span class="token-function">Checkbox</span>(label=<span class="token-string">"Enable Dark Mode"</span>, checked=<span class="token-keyword">true</span>, onChange=toggleTheme)</code></pre>
+            <h3>5. Checkbox</h3>
+            <p>A <code>Checkbox</code> provides a boolean toggle. It is highly customizable, allowing developers to change the checkmark icon, the border radius of the box, and the animation speed when transitioning between checked and unchecked states.</p>
+            <ul>
+                <li><b>label</b>: The descriptive text placed alongside the box.</li>
+                <li><b>checked</b>: The current boolean state.</li>
+                <li><b>onChange</b>: A callback triggered when the state toggles, receiving the new boolean.</li>
+            </ul>
+            <div class="snippet-container">
+                <div class="snippet-header"><span class="snippet-lang">sapphire</span></div>
+                <pre><code><span class="token-function">Checkbox</span>(
+    label=<span class="token-string">"I agree to the Terms of Service"</span>, 
+    checked=<span class="token-keyword">false</span>, 
+    onChange=(<span class="token-keyword">function</span>(state) { appState.termsAccepted = state; })
+)</code></pre>
+            </div>
 
-            <h3>Image</h3>
-            <p>Renders a graphical image from a file path or buffer. Images can be resized and cropped using standard box-sizing properties.</p>
-            <pre><code><span class="token-function">Image</span>(src=<span class="token-string">"assets/logo.png"</span>, width=<span class="token-number">256.0</span>, height=<span class="token-number">256.0</span>)</code></pre>
+            <h3>6. Image</h3>
+            <p>The <code>Image</code> element utilizes the underlying OpenGL/DirectX texture pipeline. It automatically decodes PNG, JPG, and BMP files asynchronously to prevent the main thread from stalling. It also supports hardware mipmapping for smooth scaling.</p>
+            <ul>
+                <li><b>src</b>: An absolute or relative path to the image asset.</li>
+                <li><b>fit</b>: Defines scaling: <code>"cover"</code>, <code>"contain"</code>, or <code>"fill"</code>.</li>
+                <li><b>borderRadius</b>: Enables circular avatars or rounded corners by masking the texture.</li>
+            </ul>
+            <div class="snippet-container">
+                <div class="snippet-header"><span class="snippet-lang">sapphire</span></div>
+                <pre><code><span class="token-function">Image</span>(
+    src=<span class="token-string">"assets/profile_pic.png"</span>, 
+    width=<span class="token-number">128.0</span>, 
+    height=<span class="token-number">128.0</span>,
+    fit=<span class="token-string">"cover"</span>,
+    borderRadius=<span class="token-number">64.0</span> <span class="token-comment">// Perfect circle</span>
+)</code></pre>
+            </div>
 
-            <h3>ProgressBar</h3>
-            <p>A visual indicator of task completion. Pass a value between 0.0 and 1.0 to update the fill percentage.</p>
-            <pre><code><span class="token-function">ProgressBar</span>(progress=<span class="token-number">0.75</span>, color=<span class="token-string">"#00ff00"</span>, width=<span class="token-number">400.0</span>)</code></pre>
+            <h3>7. ProgressBar</h3>
+            <p>The <code>ProgressBar</code> provides indispensable visual feedback for long-running async tasks like file downloads or database migrations. It features built-in smooth tweening so that jumps in progress are elegantly animated rather than instantly snapping.</p>
+            <ul>
+                <li><b>progress</b>: A float value between 0.0 (empty) and 1.0 (full).</li>
+                <li><b>color</b>: The color of the filled portion.</li>
+                <li><b>trackColor</b>: The color of the unfilled background track.</li>
+                <li><b>animated</b>: Set to <code>true</code> to enable an indeterminate loading stripe effect.</li>
+            </ul>
+            <div class="snippet-container">
+                <div class="snippet-header"><span class="snippet-lang">sapphire</span></div>
+                <pre><code><span class="token-function">ProgressBar</span>(
+    progress=<span class="token-number">0.85</span>, 
+    color=<span class="token-string">"#00ffcc"</span>, 
+    trackColor=<span class="token-string">"#222222"</span>,
+    width=<span class="token-number">400.0</span>,
+    height=<span class="token-number">20.0</span>,
+    animated=<span class="token-keyword">false</span>
+)</code></pre>
+            </div>
 
-            <h3>Dropdown</h3>
-            <p>A combo-box menu that lets the user select one item from a list of strings.</p>
-            <pre><code><span class="token-function">Dropdown</span>(options=[<span class="token-string">"Low"</span>, <span class="token-string">"Medium"</span>, <span class="token-string">"High"</span>], selected=<span class="token-string">"High"</span>, onChange=setGraphics)</code></pre>
-
-            <h3>ScrollView</h3>
-            <p>When you have more content than can fit on the screen, wrap your elements in a ScrollView. It automatically handles mouse wheel and trackpad scroll events.</p>
-            <pre><code><span class="token-keyword">var</span> list = <span class="token-function">ScrollView</span>(
-    width=<span class="token-number">500.0</span>, height=<span class="token-number">800.0</span>,
-    child=<span class="token-function">Flex</span>(direction=<span class="token-string">"column"</span>, children=[ ... ])
-);</code></pre>
+            <h3>8. Dropdown</h3>
+            <p>A sophisticated <code>Dropdown</code> (Combo-box) menu that handles z-index layers automatically to render its popup menu above all other UI elements. It supports scrollable lists if the options exceed the maximum display height.</p>
+            <ul>
+                <li><b>options</b>: An array of strings representing the selectable items.</li>
+                <li><b>selected</b>: The string currently displayed in the collapsed box.</li>
+                <li><b>maxHeight</b>: How tall the expanded menu can grow before enabling a vertical scrollbar.</li>
+                <li><b>onChange</b>: A callback triggered when a new option is clicked.</li>
+            </ul>
+            <div class="snippet-container">
+                <div class="snippet-header"><span class="snippet-lang">sapphire</span></div>
+                <pre><code><span class="token-function">Dropdown</span>(
+    options=[<span class="token-string">"Low Quality"</span>, <span class="token-string">"Medium Quality"</span>, <span class="token-string">"Ultra Quality"</span>], 
+    selected=<span class="token-string">"Ultra Quality"</span>, 
+    maxHeight=<span class="token-number">200.0</span>,
+    onChange=(<span class="token-keyword">function</span>(opt) { setGraphicsMode(opt); })
+)</code></pre>
+            </div>
             
             <h3>Render</h3>
             <p>The <code>Render</code> function injects a given app layout component into the render tree. It must be called for the layout to be visible on the screen. By default, you'll place this near the end of your UI drawing loop.</p>
@@ -227,3 +342,4 @@ spack.exe my_app.sbc --no-console</code></pre>
     </script>
 </body>
 </html>
+

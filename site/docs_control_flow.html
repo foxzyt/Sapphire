@@ -39,7 +39,7 @@
                     <li><a href="docs_file_io.html">9. File I/O</a></li>
                     <li><a href="docs_http.html">10. HTTP Requests</a></li>
                     <li><a href="docs_ui_engine.html">11. UI Engine</a></li>
-                </ul>
+                    <li><a href="docs_sqlite.html">12. SQLite Database</a></li>`n                </ul>
             </nav>
         </aside>
 
@@ -124,6 +124,28 @@
 <span class="token-punctuation">}</span></code></pre>
                 <div class="output-container">
                     &gt; Operation completed successfully.
+                </div>
+            </div>
+
+            <h2>For Loops (C-style)</h2>
+            <p>Sapphire also supports traditional C-style <code>for</code> loops for precise control over the initialization, condition, and increment steps.</p>
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-keyword">for</span> (<span class="token-keyword">var</span> i = <span class="token-number">0</span><span class="token-punctuation">;</span> i &lt; <span class="token-number">5</span><span class="token-punctuation">;</span> i = i + <span class="token-number">1</span>) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"Loop index: "</span> + i)<span class="token-punctuation">;</span>
+<span class="token-punctuation">}</span></code></pre>
+                <div class="output-container">
+                    &gt; Loop index: 0<br>
+                    &gt; Loop index: 1<br>
+                    &gt; Loop index: 2<br>
+                    &gt; Loop index: 3<br>
+                    &gt; Loop index: 4
                 </div>
             </div>
 
@@ -243,4 +265,5 @@
     </script>
 </body>
 </html>
+
 
