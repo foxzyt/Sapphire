@@ -1,3 +1,4 @@
+// Sapphire VM Implementation
 #include <stdexcept>
 #include <mutex>
 #include <condition_variable>
@@ -23,6 +24,8 @@
 #include "bytecode_io.h"
 #include <iostream>
 #include <fstream>
+#include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <vector>
 #include <cmath>
@@ -134,29 +137,31 @@ static SapphireValue native_system_core_count(int arg_count, SapphireValue* args
     return SapphireValue((double)cores);
 }
 
-static SapphireValue convertJsonToSapphire(VM* vm, const nlohmann::json& j, ObjClass* json_object_class);
+static SapphireValue convertJsonToSapphire(VM* vm, const nlohmann::json& j);
 
-static SapphireValue convertJsonObjectToSapphireInstance(VM* vm, const nlohmann::json& j, ObjClass* json_object_class) {
-    ObjInstance* instance = new_instance(vm, json_object_class);
+static SapphireValue convertJsonObjectToSapphireMap(VM* vm, const nlohmann::json& j) {
+    ObjMap* map_obj = new_map(vm);
+    vm->push(SapphireValue(map_obj));
     for (auto it = j.begin(); it != j.end(); ++it) {
         std::string key_copy = it.key();
         const nlohmann::json& value = it.value();
-        instance->fields[key_copy] = convertJsonToSapphire(vm, value, json_object_class);
+        map_obj->items[key_copy] = convertJsonToSapphire(vm, value);
     }
-    return instance;
+    vm->pop();
+    return map_obj;
 }
 
-static SapphireValue convertJsonArrayToSapphireArray(VM* vm, const nlohmann::json& j, ObjClass* json_object_class) {
+static SapphireValue convertJsonArrayToSapphireArray(VM* vm, const nlohmann::json& j) {
     auto array_obj = std::make_shared<SapphireArray>();
     for (const auto& element : j) {
-        array_obj->elements.push_back(convertJsonToSapphire(vm, element, json_object_class));
+        array_obj->elements.push_back(convertJsonToSapphire(vm, element));
     }
     return array_obj;
 }
 
-static SapphireValue convertJsonToSapphire(VM* vm, const nlohmann::json& j, ObjClass* json_object_class) {
-    if (j.is_object()) return convertJsonObjectToSapphireInstance(vm, j, json_object_class);
-    if (j.is_array()) return convertJsonArrayToSapphireArray(vm, j, json_object_class);
+static SapphireValue convertJsonToSapphire(VM* vm, const nlohmann::json& j) {
+    if (j.is_object()) return convertJsonObjectToSapphireMap(vm, j);
+    if (j.is_array()) return convertJsonArrayToSapphireArray(vm, j);
     if (j.is_string()) return new_string(vm, j.get<std::string>());
     if (j.is_number()) return j.get<double>();
     if (j.is_boolean()) return j.get<bool>();
@@ -397,6 +402,52 @@ static SapphireValue native_string_split(int arg_count, SapphireValue* args) {
     arr->elements.push_back(new_string(g_current_vm, s));
     
     return SapphireValue(arr);
+}
+
+static SapphireValue native_string_replace(int arg_count, SapphireValue* args) {
+    if (arg_count != 3 || !is_obj_type(args[0], OBJ_STRING) || !is_obj_type(args[1], OBJ_STRING) || !is_obj_type(args[2], OBJ_STRING)) {
+        if (!g_current_vm->soft_mode) std::cerr << "Runtime Error: stringReplace expects 3 string arguments." << std::endl;
+        return {};
+    }
+    std::string s = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
+    std::string search = static_cast<ObjString*>(std::get<Obj*>(args[1]._value))->chars;
+    std::string replace = static_cast<ObjString*>(std::get<Obj*>(args[2]._value))->chars;
+    if (search.empty()) return new_string(g_current_vm, s);
+    size_t pos = 0;
+    while ((pos = s.find(search, pos)) != std::string::npos) {
+        s.replace(pos, search.length(), replace);
+        pos += replace.length();
+    }
+    return new_string(g_current_vm, s);
+}
+
+static SapphireValue native_string_to_upper(int arg_count, SapphireValue* args) {
+    if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) return {};
+    std::string s = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
+    std::transform(s.begin(), s.end(), s.begin(), ::toupper);
+    return new_string(g_current_vm, s);
+}
+
+static SapphireValue native_string_to_lower(int arg_count, SapphireValue* args) {
+    if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) return {};
+    std::string s = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
+    std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+    return new_string(g_current_vm, s);
+}
+
+static SapphireValue native_string_trim(int arg_count, SapphireValue* args) {
+    if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) return {};
+    std::string s = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) { return !std::isspace(ch); }));
+    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) { return !std::isspace(ch); }).base(), s.end());
+    return new_string(g_current_vm, s);
+}
+
+static SapphireValue native_string_contains(int arg_count, SapphireValue* args) {
+    if (arg_count != 2 || !is_obj_type(args[0], OBJ_STRING) || !is_obj_type(args[1], OBJ_STRING)) return SapphireValue(false);
+    std::string s = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
+    std::string search = static_cast<ObjString*>(std::get<Obj*>(args[1]._value))->chars;
+    return SapphireValue(s.find(search) != std::string::npos);
 }
 
 static std::string valueToStringC(const SapphireValue& val) {
@@ -1957,14 +2008,61 @@ static SapphireValue native_json_parse(int arg_count, SapphireValue* args) {
 
     try {
         nlohmann::json parsed_json = nlohmann::json::parse(json_string);
-        ObjClass* json_object_class = new_class(g_current_vm, new_string(g_current_vm, "JsonObject"));
-        return convertJsonToSapphire(g_current_vm, parsed_json, json_object_class);
+        return convertJsonToSapphire(g_current_vm, parsed_json);
     } catch (const std::exception& e) {
         if (!g_current_vm->soft_mode) {
             std::cerr << "Runtime Error: Failed to parse JSON string: " << e.what() << std::endl;
         }
         return {};
     }
+}
+
+static nlohmann::json convertSapphireToJson(SapphireValue val) {
+    if (std::holds_alternative<double>(val._value)) {
+        return std::get<double>(val._value);
+    } else if (std::holds_alternative<bool>(val._value)) {
+        return std::get<bool>(val._value);
+    } else if (std::holds_alternative<std::monostate>(val._value)) {
+        return nullptr;
+    } else if (std::holds_alternative<std::shared_ptr<SapphireArray>>(val._value)) {
+        auto arr = std::get<std::shared_ptr<SapphireArray>>(val._value);
+        nlohmann::json j = nlohmann::json::array();
+        for (const auto& elem : arr->elements) {
+            j.push_back(convertSapphireToJson(elem));
+        }
+        return j;
+    } else if (std::holds_alternative<Obj*>(val._value)) {
+        Obj* obj = std::get<Obj*>(val._value);
+        if (obj->type == OBJ_STRING) {
+            return static_cast<ObjString*>(obj)->chars;
+        } else if (obj->type == OBJ_MAP) {
+            ObjMap* map = static_cast<ObjMap*>(obj);
+            nlohmann::json j = nlohmann::json::object();
+            for (const auto& pair : map->items) {
+                j[pair.first] = convertSapphireToJson(pair.second);
+            }
+            return j;
+        } else if (obj->type == OBJ_INSTANCE) {
+            ObjInstance* instance = static_cast<ObjInstance*>(obj);
+            nlohmann::json j = nlohmann::json::object();
+            for (const auto& pair : instance->fields) {
+                j[pair.first] = convertSapphireToJson(pair.second);
+            }
+            return j;
+        }
+    }
+    return nullptr;
+}
+
+static SapphireValue native_json_stringify(int arg_count, SapphireValue* args) {
+    if (arg_count != 1) {
+        if (!g_current_vm->soft_mode) {
+            std::cerr << "Runtime Error: JSON.stringify() expects 1 argument." << std::endl;
+        }
+        return {};
+    }
+    nlohmann::json j = convertSapphireToJson(args[0]);
+    return new_string(g_current_vm, j.dump());
 }
 
 static SapphireValue core_create_instance(int arg_count, SapphireValue* args) {
@@ -2407,6 +2505,11 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     define_native("stringLength", native_string_length);
     define_native("stringSubstring", native_string_substring);
     define_native("stringSplit", native_string_split);
+    define_native("stringReplace", native_string_replace);
+    define_native("stringToUpper", native_string_to_upper);
+    define_native("stringToLower", native_string_to_lower);
+    define_native("stringTrim", native_string_trim);
+    define_native("stringContains", native_string_contains);
     define_native("getQuote", native_get_quote);
 
     const char* appdata_path = getenv("APPDATA");
@@ -2441,7 +2544,11 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     define_native("lerp", native_math_lerp);
 
     // --- JSON ---
-    define_native("jsonParse", native_json_parse);
+    ObjString* json_name = new_string(this, "JSON");
+    ObjClass* json_class = new_class(this, json_name);
+    json_class->methods["parse"] = SapphireValue(new_native(this, native_json_parse));
+    json_class->methods["stringify"] = SapphireValue(new_native(this, native_json_stringify));
+    globals["JSON"] = SapphireValue(json_class);
 
     // --- Core ---
     define_native("createInstance", core_create_instance);
@@ -2571,24 +2678,41 @@ void VM::add_module_search_path(const std::string& path) {
     module_search_paths.push_back(path);
 }
 
-std::string VM::find_and_load_module(const std::string& module_name) {
+std::string VM::find_and_load_module(const std::string& module_name, std::string& out_resolved_path) {
     std::string content = load_file_as_string(module_name);
-    if (!content.empty()) return content;
+    if (!content.empty()) {
+        try {
+            out_resolved_path = std::filesystem::absolute(module_name).string();
+        } catch(...) {
+            out_resolved_path = module_name;
+        }
+        return content;
+    }
 
     for (const std::string& base_path : module_search_paths) {
         std::string path_direct = base_path + "\\" + module_name;
         content = load_file_as_string(path_direct);
-        if (!content.empty()) return content;
+        if (!content.empty()) {
+            try { out_resolved_path = std::filesystem::absolute(path_direct).string(); } catch(...) { out_resolved_path = path_direct; }
+            return content;
+        }
 
         std::string path_sp = base_path + "\\" + module_name + ".sp";
         content = load_file_as_string(path_sp);
-        if (!content.empty()) return content;
+        if (!content.empty()) {
+            try { out_resolved_path = std::filesystem::absolute(path_sp).string(); } catch(...) { out_resolved_path = path_sp; }
+            return content;
+        }
 
         std::string path_main_sp = base_path + "\\" + module_name + "\\main.sp";
         content = load_file_as_string(path_main_sp);
-        if (!content.empty()) return content;
+        if (!content.empty()) {
+            try { out_resolved_path = std::filesystem::absolute(path_main_sp).string(); } catch(...) { out_resolved_path = path_main_sp; }
+            return content;
+        }
     }
 
+    out_resolved_path = "";
     return "";
 }
 
@@ -2757,6 +2881,7 @@ bool VM::run(int target_frame_count) {
     // Variáveis auxiliares declaradas fora para evitar erro de inicialização cruzada
     ObjString* name_tmp;
     std::string src_tmp;
+    std::string resolved_path_tmp;
     ObjFunction* func_tmp;
     SapphireValue val_tmp;
 
@@ -2923,6 +3048,14 @@ TARGET(OP_GET_PROPERTY) {
             auto it = map->items.find(name_tmp->chars);
             if (it != map->items.end()) top[-1] = it->second;
             else top[-1] = SapphireValue();
+        } else if (obj->type == OBJ_CLASS) {
+            ObjClass* klass = (ObjClass*)obj;
+            auto it_m = klass->methods.find(name_tmp->chars);
+            if (it_m != klass->methods.end()) {
+                top[-1] = it_m->second;
+            } else {
+                top[-1] = SapphireValue();
+            }
         } else {
             ObjInstance* instance = (ObjInstance*)obj;
             auto it_f = instance->fields.find(name_tmp->chars);
@@ -3239,11 +3372,20 @@ TARGET(OP_SET_SUBSCRIPT) {
 TARGET(OP_IMPORT) {
     name_tmp = (ObjString*)std::get<Obj*>(frame->function->chunk.constants[READ_SHORT()]._value);
     frame->ip = ip; stack_top = top;
-    src_tmp = find_and_load_module(name_tmp->chars);
+    
+    src_tmp = find_and_load_module(name_tmp->chars, resolved_path_tmp);
     if (src_tmp.empty()) {
         std::cerr << "[SAPPHIRE ERROR] Module '" << name_tmp->chars << "' not found." << std::endl;
         return false;
     }
+    
+    if (loaded_modules.find(resolved_path_tmp) != loaded_modules.end()) {
+        PUSH(SapphireValue());
+        NEXT_CODE();
+    }
+    
+    loaded_modules.insert(resolved_path_tmp);
+    
     func_tmp = compile(this, src_tmp);
     if (!func_tmp) return false;
     PUSH(new_closure(this, func_tmp));
@@ -3264,136 +3406,138 @@ TARGET(OP_MAKE_NAMED_ARG) {
 }
 
 TARGET(OP_AWAIT) {
-    SapphireValue promise_val = top[-1]; // Peek at it
-    if (!std::holds_alternative<Obj*>(promise_val._value) || std::get<Obj*>(promise_val._value)->type != OBJ_PROMISE) {
-        if (!this->soft_mode) std::cerr << "Runtime Error: Can only await promises." << std::endl;
-        return false;
-    }
-    
-    ObjPromise* promise = (ObjPromise*)std::get<Obj*>(promise_val._value);
-    
-    if (promise->state == PromiseState::FULFILLED) {
-        POP(); // Remove promise
-        PUSH(promise->value); // Push result
-        NEXT_CODE();
-    } else if (promise->state == PromiseState::REJECTED) {
-        if (!this->soft_mode) std::cerr << "Runtime Error: Unhandled promise rejection." << std::endl;
-        return false;
-    } else {
-        // Promise is PENDING. We must suspend the current coroutine.
-        if (this->current_promise == nullptr) {
-            // If we are awaiting in the main thread (not inside an async function), we have to block or fail.
-            // For now, let's create a dummy main promise to suspend the main thread.
-            this->current_promise = new_promise(this);
-            this->current_promise->function = nullptr; // Main script
+    {
+        SapphireValue promise_val = top[-1]; // Peek at it
+        if (!std::holds_alternative<Obj*>(promise_val._value) || std::get<Obj*>(promise_val._value)->type != OBJ_PROMISE) {
+            if (!this->soft_mode) std::cerr << "Runtime Error: Can only await promises." << std::endl;
+            return false;
         }
         
-        // Save state to current_promise
-        this->current_promise->saved_stack.clear();
-        for (SapphireValue* s = stack; s < top; s++) this->current_promise->saved_stack.push_back(*s);
+        ObjPromise* promise = (ObjPromise*)std::get<Obj*>(promise_val._value);
         
-        this->current_promise->saved_frames.clear();
-        for (int i = 0; i < frame_count; i++) this->current_promise->saved_frames.push_back(frames[i]);
-        
-        // Register as an awaiter
-        promise->awaiters.push_back(this->current_promise);
-        
-        // Yield execution back to event loop!
-        frame->ip = ip - 1; // Point back to OP_AWAIT
-        event_loop_queue.push_back(this->current_promise);
-        return true; // Exits run() cleanly. The event loop will resume later.
+        if (promise->state == PromiseState::FULFILLED) {
+            POP(); // Remove promise
+            PUSH(promise->value); // Push result
+            // proceed to NEXT_CODE below
+        } else if (promise->state == PromiseState::REJECTED) {
+            if (!this->soft_mode) std::cerr << "Runtime Error: Unhandled promise rejection." << std::endl;
+            return false;
+        } else {
+            // Promise is PENDING. We must suspend the current coroutine.
+            if (this->current_promise == nullptr) {
+                this->current_promise = new_promise(this);
+                this->current_promise->function = nullptr; // Main script
+            }
+            
+            this->current_promise->saved_stack.clear();
+            for (SapphireValue* s = stack; s < top; s++) this->current_promise->saved_stack.push_back(*s);
+            
+            this->current_promise->saved_frames.clear();
+            for (int i = 0; i < frame_count; i++) this->current_promise->saved_frames.push_back(frames[i]);
+            
+            promise->awaiters.push_back(this->current_promise);
+            
+            frame->ip = ip - 1; // Point back to OP_AWAIT
+            event_loop_queue.push_back(this->current_promise);
+            return true; // Exits run() cleanly.
+        }
     }
+    NEXT_CODE();
 }TARGET(OP_ASYNC_CALL) {
     // TODO: implement OP_ASYNC_CALL
     NEXT_CODE();
 }
 
 TARGET(OP_INHERIT) {
-    // Stack has: [superclass, subclass]
-    SapphireValue subclass_val = POP();
-    SapphireValue superclass_val = top[-1];
-    
-    if (superclass_val._value.index() != 3 || std::get<Obj*>(superclass_val._value)->type != OBJ_CLASS) {
-        std::cerr << "Runtime Error: Superclass must be a class." << std::endl;
-        return false;
+    {
+        // Stack has: [superclass, subclass]
+        SapphireValue subclass_val = POP();
+        SapphireValue superclass_val = top[-1];
+        
+        if (superclass_val._value.index() != 3 || std::get<Obj*>(superclass_val._value)->type != OBJ_CLASS) {
+            std::cerr << "Runtime Error: Superclass must be a class." << std::endl;
+            return false;
+        }
+        ObjClass* superclass = static_cast<ObjClass*>(std::get<Obj*>(superclass_val._value));
+        ObjClass* subclass = static_cast<ObjClass*>(std::get<Obj*>(subclass_val._value));
+        
+        subclass->superclass = superclass;
+        
+        // Replace the superclass on the stack with the subclass so define_variable binds the subclass
+        top[-1] = subclass_val;
     }
-    ObjClass* superclass = static_cast<ObjClass*>(std::get<Obj*>(superclass_val._value));
-    ObjClass* subclass = static_cast<ObjClass*>(std::get<Obj*>(subclass_val._value));
-    
-    subclass->superclass = superclass;
-    
-    // Replace the superclass on the stack with the subclass so define_variable binds the subclass
-    top[-1] = subclass_val;
-    
     NEXT_CODE();
 }
 
 TARGET(OP_SPAWN) {
-    SapphireValue func_val = POP();
-    
-    if (func_val._value.index() != 3 || (std::get<Obj*>(func_val._value)->type != OBJ_CLOSURE && std::get<Obj*>(func_val._value)->type != OBJ_FUNCTION)) {
-        std::cerr << "Runtime Error: Can only spawn functions or closures." << std::endl;
-        return false;
-    }
-    
-    ObjFunction* function = nullptr;
-    Obj* obj = std::get<Obj*>(func_val._value);
-    if (obj->type == OBJ_CLOSURE) {
-        function = static_cast<ObjClosure*>(obj)->function;
-    } else {
-        function = static_cast<ObjFunction*>(obj);
-    }
-    
-    // Serialize function
-    std::stringstream ss;
-    serialize_function_to_stream(function, this, ss);
-    std::string bytecode = ss.str();
-    
-    // Spawn a C++ thread
-    std::thread worker([bytecode, config = this->config]() {
-        VM* thread_vm = new VM(config);
-        std::stringstream in_ss(bytecode);
+    {
+        SapphireValue func_val = POP();
         
-        ObjFunction* thread_function = deserialize_function_from_stream(thread_vm, in_ss);
-        if (thread_function) {
-            thread_vm->push(SapphireValue(thread_function));
-            thread_vm->call_and_run(thread_function);
+        if (func_val._value.index() != 3 || (std::get<Obj*>(func_val._value)->type != OBJ_CLOSURE && std::get<Obj*>(func_val._value)->type != OBJ_FUNCTION)) {
+            std::cerr << "Runtime Error: Can only spawn functions or closures." << std::endl;
+            return false;
         }
         
-        delete thread_vm;
-    });
-    
-    worker.detach();
-    
+        ObjFunction* function = nullptr;
+        Obj* obj = std::get<Obj*>(func_val._value);
+        if (obj->type == OBJ_CLOSURE) {
+            function = static_cast<ObjClosure*>(obj)->function;
+        } else {
+            function = static_cast<ObjFunction*>(obj);
+        }
+        
+        // Serialize function
+        std::stringstream ss;
+        serialize_function_to_stream(function, this, ss);
+        std::string bytecode = ss.str();
+        
+        // Spawn a C++ thread
+        std::thread worker([bytecode, config = this->config]() {
+            VM* thread_vm = new VM(config);
+            std::stringstream in_ss(bytecode);
+            
+            ObjFunction* thread_function = deserialize_function_from_stream(thread_vm, in_ss);
+            if (thread_function) {
+                thread_vm->push(SapphireValue(thread_function));
+                thread_vm->call_and_run(thread_function);
+            }
+            
+            delete thread_vm;
+        });
+        
+        worker.detach();
+    }
     // Do NOT push since spawn is a statement!
     NEXT_CODE();
 }
 
 TARGET(OP_GET_SUPER) {
-    name_tmp = (ObjString*)std::get<Obj*>(frame->function->chunk.constants[READ_SHORT()]._value);
-    ObjClass* superclass = frame->function->owner_class->superclass;
-    if (superclass == nullptr) {
-        std::cerr << "Runtime Error: Cannot use 'super' in a class with no superclass." << std::endl;
-        return false;
-    }
-    
-    SapphireValue instance_val = top[-1];
-    ObjClass* current_class = superclass;
-    bool found_method = false;
-    
-    while (current_class != nullptr) {
-        auto it_m = current_class->methods.find(name_tmp->chars);
-        if (it_m != current_class->methods.end()) {
-            top[-1] = new_bound_method(this, instance_val, it_m->second, current_class);
-            found_method = true;
-            break;
+    {
+        name_tmp = (ObjString*)std::get<Obj*>(frame->function->chunk.constants[READ_SHORT()]._value);
+        ObjClass* superclass = frame->function->owner_class->superclass;
+        if (superclass == nullptr) {
+            std::cerr << "Runtime Error: Cannot use 'super' in a class with no superclass." << std::endl;
+            return false;
         }
-        current_class = current_class->superclass;
-    }
-    
-    if (!found_method) {
-        std::cerr << "Runtime Error: Undefined property '" << name_tmp->chars << "'." << std::endl;
-        return false;
+        
+        SapphireValue instance_val = top[-1];
+        ObjClass* current_class = superclass;
+        bool found_method = false;
+        
+        while (current_class != nullptr) {
+            auto it_m = current_class->methods.find(name_tmp->chars);
+            if (it_m != current_class->methods.end()) {
+                top[-1] = new_bound_method(this, instance_val, it_m->second, current_class);
+                found_method = true;
+                break;
+            }
+            current_class = current_class->superclass;
+        }
+        
+        if (!found_method) {
+            std::cerr << "Runtime Error: Undefined property '" << name_tmp->chars << "'." << std::endl;
+            return false;
+        }
     }
     NEXT_CODE();
 }
@@ -3418,26 +3562,28 @@ TARGET(OP_TRY_END) {
 }
 
 TARGET(OP_THROW) {
-    SapphireValue err = POP();
-    if (catch_count == 0) {
-        std::cerr << "Unhandled Exception: ";
-        print_value(err);
-        std::cerr << "\nStack trace:\n";
-        for (int i = frame_count - 1; i >= 0; i--) {
-            CallFrame* f = &frames[i];
-            std::cerr << "  in " << (f->function->name != nullptr ? f->function->name->chars : "<script>") << "\n";
+    {
+        SapphireValue err = POP();
+        if (catch_count == 0) {
+            std::cerr << "Unhandled Exception: ";
+            print_value(err);
+            std::cerr << "\nStack trace:\n";
+            for (int i = frame_count - 1; i >= 0; i--) {
+                CallFrame* f = &frames[i];
+                std::cerr << "  in " << (f->function->name != nullptr ? f->function->name->chars : "<script>") << "\n";
+            }
+            return false;
         }
-        return false;
+        
+        CatchBlock block = catch_blocks[--catch_count];
+        frame_count = block.frame_count;
+        frame = &frames[frame_count - 1];
+        top = block.stack_top;
+        ip = block.catch_ip;
+        slots = frame->slots;
+        
+        PUSH(err); // Push the exception for the catch block to use
     }
-    
-    CatchBlock block = catch_blocks[--catch_count];
-    frame_count = block.frame_count;
-    frame = &frames[frame_count - 1];
-    top = block.stack_top;
-    ip = block.catch_ip;
-    slots = frame->slots;
-    
-    PUSH(err); // Push the exception for the catch block to use
     NEXT_CODE();
 }
 

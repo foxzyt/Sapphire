@@ -13,6 +13,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 
@@ -218,7 +219,8 @@ private:
   SapphireValue &peek(int distance);
 
   std::vector<std::string> module_search_paths;
-  std::string find_and_load_module(const std::string &module_name);
+  std::unordered_set<std::string> loaded_modules;
+  std::string find_and_load_module(const std::string &module_name, std::string& out_resolved_path);
 
   void define_native(const std::string &name, NativeFn function);
   void define_ui_natives();
