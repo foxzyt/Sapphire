@@ -81,3 +81,5 @@ jobs:
         ./build/sapphire.exe tests/test_math.sp
         ./build/sapphire.exe tests/test_types.sp
         ./build/sapphire.exe tests/test_map.sp
+        ./build/sapphire.exe tests/test_iterators.sp
+        ./build/sapphire.exe tests/test_sqlite.sp
