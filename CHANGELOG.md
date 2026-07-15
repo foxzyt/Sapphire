@@ -14,6 +14,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ```sapphire
   foreach (var item in array) print(item);
   ```
+- **C-Style For Loops:** Standard `for` loops for traditional index iteration.
+  ```sapphire
+  for (var i = 0; i < 5; i = i + 1) print(i);
+  ```
+- **JSON Module:** Modernized native JSON library using `nlohmann::json`. Allows reliable stringification and parsing of complex Sapphire `ObjMap` objects.
+  ```sapphire
+  var jsonStr = JSON.stringify({ name: "Bob" });
+  var obj = JSON.parse('{"name":"Bob"}');
+  ```
+- **String Utilities:** Greatly expanded the native `String` module with standard manipulation functions.
+  ```sapphire
+  var lower = String.toLowerCase("HELLO");
+  var trimmed = String.trim("   spacing   ");
+  ```
+- **Module Imports:** Added import caching to prevent modules from being evaluated multiple times upon repeated imports.
 - **SQLite Support:** Native SQLite integration allowing database creation, query execution, and fetching results as Sapphire maps.
   ```sapphire
   var sql = SQLite(); var db = sql.open("data.db");
