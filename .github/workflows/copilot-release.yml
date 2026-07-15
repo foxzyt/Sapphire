@@ -19,12 +19,19 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get previous tag
+      - name: Get previous tag and inject diff
         id: prev_tag
         shell: bash
         run: |
           PREV_TAG=$(git describe --tags --abbrev=0 --match="v[0-9]*" 2>/dev/null || git rev-list --max-parents=0 HEAD | tail -n 1)
           echo "tag=$PREV_TAG" >> $GITHUB_OUTPUT
+          
+          # Injeta o diff de código nas instruções para forçar o Copilot a ter contexto real
+          echo "" >> .github/release-notes-instructions.md
+          echo "---" >> .github/release-notes-instructions.md
+          echo "RAW CODE DIFF FOR CONTEXT:" >> .github/release-notes-instructions.md
+          echo "You MUST read the following git diff to understand the changes. Use it to generate the # Before and # After code examples requested above. Only focus on logical changes (like switch/case, try/catch, async/await)." >> .github/release-notes-instructions.md
+          git diff --unified=1 $PREV_TAG..${{ github.sha }} -- '*.sp' '*.cpp' '*.h' | head -n 3000 >> .github/release-notes-instructions.md
 
       - name: Rodar Copilot Release Notes
         id: copilot_release
@@ -45,6 +52,29 @@ jobs:
           set -e
           if [ -n "$MARKDOWN" ]; then
             echo "$MARKDOWN" > release_body.md
+            # Adiciona o guia do MinGW de forma fixa caso o Copilot esqueça
+            cat <<'EOF' >> release_body.md
+
+## How to Compile (MinGW)
+
+To build Sapphire from source on Windows using MSYS2 and MinGW:
+
+1. Install [MSYS2](https://www.msys2.org/).
+2. Open the **MSYS2 MINGW64** terminal and install the dependencies:
+   ```bash
+   pacman -S mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc mingw-w64-x86_64-make mingw-w64-x86_64-sfml mingw-w64-x86_64-openssl
+   ```
+3. Clone the repository:
+   ```bash
+   git clone https://github.com/foxzyt/Sapphire.git
+   cd Sapphire
+   ```
+4. Configure and build:
+   ```bash
+   cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DSFML_DIR=/mingw64/lib/cmake/SFML -DSFML_STATIC_LIBRARIES=ON -DOPENSSL_ROOT_DIR=/mingw64 -DOPENSSL_USE_STATIC_LIBS=TRUE
+   cmake --build build --config Release -j 8
+   ```
+EOF
           else
             echo "# Draft release" > release_body.md
             echo "" >> release_body.md
