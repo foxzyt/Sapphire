@@ -91,16 +91,43 @@
             <p>Sapphire provides a variety of interactive and static elements that you can inject inside your layouts:</p>
 
             <h3>Text</h3>
-            <p>Used for displaying strings. It can inherit properties from its container's style, or be overridden directly.</p>
-            <pre><code><span class="token-function">Text</span>(<span class="token-string">"Hello World!"</span>, size=<span class="token-number">72</span>)</code></pre>
+            <p>Used for displaying strings. It can inherit properties from its container's style, or be overridden directly. You can specify font families, styles (bold/italic), and shadows.</p>
+            <pre><code><span class="token-function">Text</span>(<span class="token-string">"Hello World!"</span>, size=<span class="token-number">72</span>, weight=<span class="token-string">"bold"</span>, color=<span class="token-string">"#ffffff"</span>)</code></pre>
 
             <h3>Button</h3>
-            <p>An interactive element that can execute a callback function when clicked. You assign the callback to the <code>onClick</code> named argument.</p>
+            <p>An interactive element that can execute a callback function when clicked. You assign the callback to the <code>onClick</code> named argument. You can also listen to <code>onHover</code> events.</p>
             <pre><code><span class="token-function">Button</span>(label=<span class="token-string">"Click Me"</span>, width=<span class="token-number">80.0</span>, height=<span class="token-number">80.0</span>, style=<span class="token-string">"DarkBtn"</span>, onClick=myCallback)</code></pre>
 
             <h3>Slider</h3>
-            <p>An interactive slider widget for selecting numeric values.</p>
-            <pre><code><span class="token-function">Slider</span>(min=<span class="token-number">0</span>, max=<span class="token-number">100</span>, initialValue=<span class="token-number">50</span>, onChange=onVolumeChange)</code></pre>
+            <p>An interactive slider widget for selecting numeric values across a defined range. Useful for volume controls or timeline scrubs.</p>
+            <pre><code><span class="token-function">Slider</span>(min=<span class="token-number">0</span>, max=<span class="token-number">100</span>, initialValue=<span class="token-number">50</span>, width=<span class="token-number">200.0</span>, onChange=onVolumeChange)</code></pre>
+            
+            <h3>Input (TextField)</h3>
+            <p>A single-line text input field allowing the user to type from their keyboard. Supports placeholders and cursor control.</p>
+            <pre><code><span class="token-function">Input</span>(placeholder=<span class="token-string">"Enter username..."</span>, width=<span class="token-number">300.0</span>, height=<span class="token-number">40.0</span>, onSubmit=loginFn)</code></pre>
+
+            <h3>Checkbox</h3>
+            <p>A boolean toggle switch that allows the user to check or uncheck options. Great for settings pages.</p>
+            <pre><code><span class="token-function">Checkbox</span>(label=<span class="token-string">"Enable Dark Mode"</span>, checked=<span class="token-keyword">true</span>, onChange=toggleTheme)</code></pre>
+
+            <h3>Image</h3>
+            <p>Renders a graphical image from a file path or buffer. Images can be resized and cropped using standard box-sizing properties.</p>
+            <pre><code><span class="token-function">Image</span>(src=<span class="token-string">"assets/logo.png"</span>, width=<span class="token-number">256.0</span>, height=<span class="token-number">256.0</span>)</code></pre>
+
+            <h3>ProgressBar</h3>
+            <p>A visual indicator of task completion. Pass a value between 0.0 and 1.0 to update the fill percentage.</p>
+            <pre><code><span class="token-function">ProgressBar</span>(progress=<span class="token-number">0.75</span>, color=<span class="token-string">"#00ff00"</span>, width=<span class="token-number">400.0</span>)</code></pre>
+
+            <h3>Dropdown</h3>
+            <p>A combo-box menu that lets the user select one item from a list of strings.</p>
+            <pre><code><span class="token-function">Dropdown</span>(options=[<span class="token-string">"Low"</span>, <span class="token-string">"Medium"</span>, <span class="token-string">"High"</span>], selected=<span class="token-string">"High"</span>, onChange=setGraphics)</code></pre>
+
+            <h3>ScrollView</h3>
+            <p>When you have more content than can fit on the screen, wrap your elements in a ScrollView. It automatically handles mouse wheel and trackpad scroll events.</p>
+            <pre><code><span class="token-keyword">var</span> list = <span class="token-function">ScrollView</span>(
+    width=<span class="token-number">500.0</span>, height=<span class="token-number">800.0</span>,
+    child=<span class="token-function">Flex</span>(direction=<span class="token-string">"column"</span>, children=[ ... ])
+);</code></pre>
             
             <h3>Render</h3>
             <p>The <code>Render</code> function injects a given app layout component into the render tree. It must be called for the layout to be visible on the screen. By default, you'll place this near the end of your UI drawing loop.</p>
