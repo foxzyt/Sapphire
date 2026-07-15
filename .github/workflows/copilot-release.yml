@@ -53,28 +53,26 @@ jobs:
           if [ -n "$MARKDOWN" ]; then
             echo "$MARKDOWN" > release_body.md
             # Adiciona o guia do MinGW de forma fixa caso o Copilot esqueça
-            cat <<'EOF' >> release_body.md
-
-## How to Compile (MinGW)
-
-To build Sapphire from source on Windows using MSYS2 and MinGW:
-
-1. Install [MSYS2](https://www.msys2.org/).
-2. Open the **MSYS2 MINGW64** terminal and install the dependencies:
-   ```bash
-   pacman -S mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc mingw-w64-x86_64-make mingw-w64-x86_64-sfml mingw-w64-x86_64-openssl
-   ```
-3. Clone the repository:
-   ```bash
-   git clone https://github.com/foxzyt/Sapphire.git
-   cd Sapphire
-   ```
-4. Configure and build:
-   ```bash
-   cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DSFML_DIR=/mingw64/lib/cmake/SFML -DSFML_STATIC_LIBRARIES=ON -DOPENSSL_ROOT_DIR=/mingw64 -DOPENSSL_USE_STATIC_LIBS=TRUE
-   cmake --build build --config Release -j 8
-   ```
-EOF
+            echo "" >> release_body.md
+            echo "## How to Compile (MinGW)" >> release_body.md
+            echo "" >> release_body.md
+            echo "To build Sapphire from source on Windows using MSYS2 and MinGW:" >> release_body.md
+            echo "" >> release_body.md
+            echo "1. Install [MSYS2](https://www.msys2.org/)." >> release_body.md
+            echo "2. Open the **MSYS2 MINGW64** terminal and install the dependencies:" >> release_body.md
+            echo "   \`\`\`bash" >> release_body.md
+            echo "   pacman -S mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc mingw-w64-x86_64-make mingw-w64-x86_64-sfml mingw-w64-x86_64-openssl" >> release_body.md
+            echo "   \`\`\`" >> release_body.md
+            echo "3. Clone the repository:" >> release_body.md
+            echo "   \`\`\`bash" >> release_body.md
+            echo "   git clone https://github.com/foxzyt/Sapphire.git" >> release_body.md
+            echo "   cd Sapphire" >> release_body.md
+            echo "   \`\`\`" >> release_body.md
+            echo "4. Configure and build:" >> release_body.md
+            echo "   \`\`\`bash" >> release_body.md
+            echo "   cmake -B build -G \"MinGW Makefiles\" -DCMAKE_BUILD_TYPE=Release -DSFML_DIR=/mingw64/lib/cmake/SFML -DSFML_STATIC_LIBRARIES=ON -DOPENSSL_ROOT_DIR=/mingw64 -DOPENSSL_USE_STATIC_LIBS=TRUE" >> release_body.md
+            echo "   cmake --build build --config Release -j 8" >> release_body.md
+            echo "   \`\`\`" >> release_body.md
           else
             echo "# Draft release" > release_body.md
             echo "" >> release_body.md
