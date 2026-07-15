@@ -31,7 +31,7 @@ jobs:
           echo "---" >> .github/release-notes-instructions.md
           echo "RAW CODE DIFF FOR CONTEXT:" >> .github/release-notes-instructions.md
           echo "You MUST read the following git diff to understand the changes. Use it to generate the # Before and # After code examples requested above. Only focus on logical changes (like switch/case, try/catch, async/await)." >> .github/release-notes-instructions.md
-          git diff --unified=1 $PREV_TAG..${{ github.sha }} -- '*.sp' '*.cpp' '*.h' | head -n 3000 >> .github/release-notes-instructions.md
+          git diff --unified=1 $PREV_TAG..${{ github.sha }} -- '*.sp' '*.cpp' '*.h' | head -n 3000 >> .github/release-notes-instructions.md || true
 
       - name: Rodar Copilot Release Notes
         id: copilot_release
