@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.11)
-project(sapphire CXX)
+project(sapphire C CXX)
 
 include(FetchContent)
 
@@ -20,6 +20,15 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(opencl_headers)
 set(OPENCL_ICD_LOADER_HEADERS_DIR "${opencl_headers_SOURCE_DIR}" CACHE PATH "" FORCE)
 FetchContent_MakeAvailable(opencl_loader)
+
+# Fetch SQLite3 Amalgamation
+FetchContent_Declare(
+    sqlite3
+    URL https://www.sqlite.org/2024/sqlite-amalgamation-3460000.zip
+)
+FetchContent_MakeAvailable(sqlite3)
+add_library(sqlite3 STATIC "${sqlite3_SOURCE_DIR}/sqlite3.c")
+target_include_directories(sqlite3 PUBLIC "${sqlite3_SOURCE_DIR}")
 
 # Fetch Sapphire Libs (OpenSSL, SFML, httplib, nlohmann, freetype)
 FetchContent_Declare(
@@ -87,6 +96,7 @@ add_library(sapphire_core STATIC
     src/compiler/bytecode_io.cpp
     src/api/sapphire_api.cpp
     src/api/opencl_api.cpp
+    src/api/sqlite_api.cpp
     src/preprocessor/preprocessor.cpp
 )
 
@@ -118,7 +128,7 @@ target_link_libraries(sapphire_core PUBLIC
     OpenSSL::Crypto
 )
 
-target_link_libraries(sapphire_core PUBLIC OpenCL)
+target_link_libraries(sapphire_core PUBLIC OpenCL sqlite3)
 
 add_executable(sapphire src/main.cpp)
 add_executable(runner src/vm/runner.cpp)
@@ -139,7 +149,7 @@ set(COMMON_LIBS
     OpenSSL::Crypto
 )
 
-list(APPEND COMMON_LIBS OpenCL)
+list(APPEND COMMON_LIBS OpenCL sqlite3)
 
 if(WIN32)
     list(APPEND COMMON_LIBS
