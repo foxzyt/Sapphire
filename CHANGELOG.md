@@ -7,17 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- **Iterators:** Added support for `for in`, `for of`, and `foreach` syntax to iterate over arrays, maps, and strings.
-- **SQLite Support:** Native SQLite integration allowing database creation, query execution, and fetching results as Sapphire maps.
-
-### Fixed
-- **VM Garbage Collection:** Fixed memory corruption in `OP_CALL` and `OP_LOOP` where `step_gc()` could be called with an inconsistent stack state.
-- **Property Access:** Fixed `OP_GET_PROPERTY` and `OP_SET_PROPERTY` causing variant access exceptions when interacting with `ObjMap` objects.
-
 ## [1.0.9] - 2026-07-15
 
 ### Added
+- **Iterators:** Added support for `for in`, `for of`, and `foreach` syntax to iterate over arrays, maps, and strings.
+- **SQLite Support:** Native SQLite integration allowing database creation, query execution, and fetching results as Sapphire maps.
 - **Arrow Functions:** Added support for arrow function syntax `(x) => x * x;`.
 - **String Interpolation:** Added support for f-strings `f"Hello {name}"`.
 - **Optional Chaining:** Added the `?.` operator to safely access nested properties (`user?.profile?.email`).
@@ -33,5 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Functions:** Functions no longer require a return type. All functions inherently return a value, and if no explicit `return` is used, they seamlessly return `nil`.
 
 ### Fixed
+- **VM Garbage Collection:** Fixed memory corruption in `OP_CALL` and `OP_LOOP` where `step_gc()` could be called with an inconsistent stack state.
+- **Property Access:** Fixed `OP_GET_PROPERTY` and `OP_SET_PROPERTY` causing variant access exceptions when interacting with `ObjMap` objects.
 - Fixed parser expressions that incorrectly required a semicolon when evaluating an arrow function.
 - Fixed nullish coalescing type check failure when the left-hand side is `nil`.
