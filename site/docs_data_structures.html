@@ -96,6 +96,26 @@ inventory[<span class="token-number">0</span>] = <span class="token-string">"Dia
                 </div>
             </div>
 
+            </div>
+
+            <h3>Spread Operator & Destructuring</h3>
+            <p>In v1.0.9, Sapphire introduced the spread operator (<code>...</code>) to easily expand elements from one list into another, and destructuring syntax to extract list values directly into variables.</p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-keyword">var</span> baseItems = [<span class="token-string">"Map"</span>, <span class="token-string">"Compass"</span>]<span class="token-punctuation">;</span>
+<span class="token-keyword">var</span> allItems = [<span class="token-operator">...</span>baseItems, <span class="token-string">"Key"</span>]<span class="token-punctuation">;</span>
+
+<span class="token-comment">// Extract first two items</span>
+<span class="token-keyword">var</span> [item1, item2] = allItems<span class="token-punctuation">;</span>
+<span class="token-function">print</span>(<span class="token-string">"First item: "</span> + item1)<span class="token-punctuation">;</span></code></pre>
+            </div>
+
             <h2>Working with Maps (Dictionaries)</h2>
             <p>Maps (also known as Dictionaries or Hash Tables) allow you to store Key-Value pairs. They are perfect for grouping related properties together, like representing a user or a configuration object.</p>
 
@@ -124,6 +144,27 @@ player[<span class="token-string">"level"</span>] = <span class="token-number">4
                     &gt; Player Name: Foxzyt<br>
                     &gt; Player Level: 43
                 </div>
+            </div>
+            
+                </div>
+            </div>
+
+            <h3>Shorthand Properties</h3>
+            <p>If you are assigning variables to a map where the key name matches the variable name, you can use the shorthand syntax (introduced in v1.0.9) to keep your code clean.</p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-keyword">var</span> theme = <span class="token-string">"dark"</span><span class="token-punctuation">;</span>
+<span class="token-keyword">var</span> fontSize = <span class="token-number">14</span><span class="token-punctuation">;</span>
+
+<span class="token-comment">// Shorthand syntax instead of { "theme": theme, "fontSize": fontSize }</span>
+<span class="token-keyword">var</span> config = <span class="token-punctuation">{</span> theme, fontSize <span class="token-punctuation">}</span><span class="token-punctuation">;</span>
+<span class="token-function">print</span>(config[<span class="token-string">"theme"</span>])<span class="token-punctuation">;</span> <span class="token-comment">// Prints: dark</span></code></pre>
             </div>
             
             <p style="margin-top: 4rem; display: flex; justify-content: space-between;">

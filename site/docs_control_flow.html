@@ -152,6 +152,25 @@
                 </div>
             </div>
             
+            <h3>Arrow Functions</h3>
+            <p>For short, concise operations, you can use arrow functions (added in v1.0.9). They are great for passing callbacks or saving space.</p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// A concise arrow function</span>
+<span class="token-keyword">var</span> square = (x) <span class="token-operator">=&gt;</span> x * x<span class="token-punctuation">;</span>
+<span class="token-function">print</span>(<span class="token-string">"Square of 6 is: "</span> + <span class="token-function">square</span>(<span class="token-number">6</span>))<span class="token-punctuation">;</span>
+
+<span class="token-comment">// With multiple parameters</span>
+<span class="token-keyword">var</span> add = (a, b) <span class="token-operator">=&gt;</span> a + b<span class="token-punctuation">;</span>
+<span class="token-function">print</span>(<span class="token-string">"10 + 20 is: "</span> + <span class="token-function">add</span>(<span class="token-number">10</span>, <span class="token-number">20</span>))<span class="token-punctuation">;</span></code></pre>
+            </div>
+
             <h3>Recursive Functions</h3>
             <p>Because Sapphire has a robust call stack, functions can safely call themselves. This is known as recursion and is heavily used in advanced algorithmic logic.</p>
             

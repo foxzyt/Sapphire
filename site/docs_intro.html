@@ -68,6 +68,20 @@
             
             <p>You can also print multiple arguments by concatenating them with the <code>+</code> operator. Since Sapphire dynamically resolves types for standard output, concatenating strings and numbers is completely safe!</p>
 
+            <h3>String Interpolation (f-strings)</h3>
+            <p>For a cleaner way to format strings with variables, you can use <b>f-strings</b> (added in v1.0.9). Simply prefix the string with <code>f</code> and use curly braces <code>{}</code> to insert variables or expressions directly.</p>
+            
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-keyword">var</span> name = <span class="token-string">"Developer"</span><span class="token-punctuation">;</span>
+<span class="token-function">print</span>(<span class="token-string">f"Welcome, {name}!"</span>)<span class="token-punctuation">;</span></code></pre>
+            </div>
+
             <h2>Variables and Data Types</h2>
             <p>Sapphire is a dynamically typed language. This means you do not have to declare the type of a variable (like <code>int</code>, <code>string</code>, or <code>bool</code>). Instead, you simply use the <code>var</code> keyword, and the VM figures out the rest!</p>
             
@@ -140,6 +154,30 @@ data = <span class="token-string">"Now I am a string!"</span><span class="token-
                     &gt; Modulo: 1<br>
                     &gt; Complex Result: 80
                 </div>
+            </div>
+
+            </div>
+
+            <h2>Nullish Coalescing & Optional Chaining</h2>
+            <p>When working with variables that might be <code>nil</code> (null), Sapphire v1.0.9 introduced two powerful operators:</p>
+            <ul>
+                <li><code>??</code> <b>(Nullish Coalescing)</b>: Returns the right side if the left side is <code>nil</code>. Useful for default values.</li>
+                <li><code>?.</code> <b>(Optional Chaining)</b>: Safely accesses properties or methods. If the object is <code>nil</code>, the expression short-circuits and returns <code>nil</code> instead of throwing an error.</li>
+            </ul>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-keyword">var</span> input = <span class="token-keyword">nil</span><span class="token-punctuation">;</span>
+<span class="token-keyword">var</span> username = input <span class="token-operator">??</span> <span class="token-string">"Guest"</span><span class="token-punctuation">;</span>
+<span class="token-function">print</span>(username)<span class="token-punctuation">;</span> <span class="token-comment">// Prints: Guest</span>
+
+<span class="token-keyword">var</span> user = <span class="token-keyword">nil</span><span class="token-punctuation">;</span>
+<span class="token-function">print</span>(user<span class="token-operator">?.</span>profile<span class="token-operator">?.</span>email)<span class="token-punctuation">;</span> <span class="token-comment">// Safely prints nil</span></code></pre>
             </div>
 
             <p style="margin-top: 4rem; display: flex; justify-content: space-between;">
