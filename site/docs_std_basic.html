@@ -155,6 +155,38 @@
                 </div>
             </div>
 
+            </div>
+            
+            <h2>The SQLite Module</h2>
+            <p>For data persistence, Sapphire provides a native module for SQLite3, allowing you to easily create, query, and manipulate SQL databases directly from your scripts without needing heavy ORMs or external drivers.</p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// Instantiate the SQLite object</span>
+<span class="token-keyword">var</span> sql = <span class="token-function">SQLite</span>()<span class="token-punctuation">;</span>
+
+<span class="token-comment">// Open a database (creates it if it doesn't exist)</span>
+<span class="token-keyword">var</span> db = sql.<span class="token-function">open</span>(<span class="token-string">"my_database.db"</span>)<span class="token-punctuation">;</span>
+
+<span class="token-comment">// Execute DDL and DML statements</span>
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"CREATE TABLE IF NOT EXISTS inventory (id INTEGER PRIMARY KEY, item TEXT, qty INTEGER);"</span>)<span class="token-punctuation">;</span>
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO inventory (item, qty) VALUES ('Potions', 99);"</span>)<span class="token-punctuation">;</span>
+
+<span class="token-comment">// Query results directly into Sapphire Maps!</span>
+<span class="token-keyword">var</span> results = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM inventory;"</span>)<span class="token-punctuation">;</span>
+<span class="token-keyword">foreach</span> (<span class="token-keyword">var</span> row <span class="token-keyword">in</span> results) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"Item: "</span> + row.item + <span class="token-string">", Quantity: "</span> + row.qty)<span class="token-punctuation">;</span>
+<span class="token-punctuation">}</span>
+
+<span class="token-comment">// Always close the connection</span>
+sql.<span class="token-function">close</span>(db)<span class="token-punctuation">;</span></code></pre>
+            </div>
+
             <p style="margin-top: 4rem; display: flex; justify-content: space-between;">
                 <a href="docs_data_structures.html" class="btn btn-outline">&larr; Previous</a>
                 <a href="docs_oop.html" class="btn">Next: Object-Oriented (OOP) &rarr;</a>

@@ -127,6 +127,33 @@
                 </div>
             </div>
 
+            <h2>Iterators (for...in, for...of, foreach)</h2>
+            <p>Sapphire supports elegant iteration over arrays, maps, and strings using <code>for in</code>, <code>for of</code>, and <code>foreach</code>.</p>
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-keyword">var</span> fruits = [<span class="token-string">"Apple"</span>, <span class="token-string">"Banana"</span>, <span class="token-string">"Cherry"</span>]<span class="token-punctuation">;</span>
+
+<span class="token-comment">// 'for of' gives you the values</span>
+<span class="token-keyword">for</span> (<span class="token-keyword">var</span> fruit <span class="token-keyword">of</span> fruits) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"Value: "</span> + fruit)<span class="token-punctuation">;</span>
+<span class="token-punctuation">}</span>
+
+<span class="token-comment">// 'foreach' is an alias for 'for of'</span>
+<span class="token-keyword">foreach</span> (<span class="token-keyword">var</span> fruit <span class="token-keyword">in</span> fruits) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"Foreach: "</span> + fruit)<span class="token-punctuation">;</span>
+<span class="token-punctuation">}</span>
+
+<span class="token-comment">// 'for in' gives you the keys or indices</span>
+<span class="token-keyword">for</span> (<span class="token-keyword">var</span> index <span class="token-keyword">in</span> fruits) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"Index: "</span> + index + <span class="token-string">" is "</span> + fruits[index])<span class="token-punctuation">;</span>
+<span class="token-punctuation">}</span></code></pre>
+            </div>
+
             <h2>Functions</h2>
             <p>Functions are reusable blocks of code. You define them using the <code>function</code> keyword. They can accept inputs (parameters) and optionally return an output value using the <code>return</code> keyword.</p>
 
