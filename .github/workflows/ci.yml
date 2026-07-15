@@ -77,9 +77,13 @@ jobs:
       run: |
         ./build/sapphire.exe tests/test_syntax.sp
         ./build/sapphire.exe tests/test_loop.sp
+        ./build/sapphire.exe tests/test_for_loop.sp
         ./build/sapphire.exe tests/test_list.sp
         ./build/sapphire.exe tests/test_math.sp
         ./build/sapphire.exe tests/test_types.sp
         ./build/sapphire.exe tests/test_map.sp
         ./build/sapphire.exe tests/test_iterators.sp
         ./build/sapphire.exe tests/test_sqlite.sp
+        ./build/sapphire.exe tests/test_json.sp
+        ./build/sapphire.exe tests/test_strings.sp
+        ./build/sapphire.exe tests/test_imports.sp
