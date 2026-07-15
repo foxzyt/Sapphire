@@ -40,7 +40,7 @@ jobs:
       - name: Prepare release body
         shell: bash
         env:
-          MARKDOWN: ${{ steps.copilot_release.outputs.markdown }}
+          MARKDOWN: ${{ steps.copilot_release.outputs.release-notes }}
         run: |
           set -e
           if [ -n "$MARKDOWN" ]; then
