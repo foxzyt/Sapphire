@@ -2,8 +2,8 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -12,7 +12,8 @@ permissions:
   id-token: write
 
 jobs:
-  build-and-release:
+  build:
+    if: github.ref == 'refs/heads/main'
     runs-on: windows-latest
 
     steps:
@@ -58,16 +59,46 @@ jobs:
           if (Test-Path README.md) { Copy-Item README.md release_artifacts/ }
           Compress-Archive -Path release_artifacts/* -DestinationPath sapphire-windows.zip -Force
 
-      - name: Get previous tag
-        id: prev_tag
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sapphire-windows-build
+          path: sapphire-windows.zip
+          retention-days: 1
+
+  generate-release:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: sapphire-windows-build
+
+      - name: Create Version Tag
+        id: tag
         shell: bash
         run: |
-          CUR_TAG="${{ github.ref_name }}"
-          # Get all semantic tags, sort them, find the one right before CUR_TAG
-          PREV_TAG=$(git tag -l "v[0-9]*" | sort -V | grep -B 1 "^${CUR_TAG}$" | head -n 1)
-          if [ "$PREV_TAG" == "$CUR_TAG" ]; then
-            PREV_TAG=""
-          fi
+          TAG="v1.0.${{ github.run_number }}"
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "$TAG"
+          git push origin "$TAG"
+
+      - name: Fetch previous tag history
+        shell: bash
+        run: |
+          set -e
+          git fetch --tags --force
+          PREV_TAG="$(git tag --sort=-version:refname | grep -E '^v[0-9]' | grep -v "${{ env.TAG }}" | head -n 1 || true)"
           echo "PREV_TAG=${PREV_TAG}" >> "$GITHUB_ENV"
           echo "Calculated PREV_TAG: $PREV_TAG"
 
@@ -76,8 +107,8 @@ jobs:
         uses: github/copilot-release-notes@v1
         continue-on-error: true
         with:
-          base-ref: ${{ env.PREV_TAG || 'main' }}
-          head-ref: ${{ github.ref_name }}
+          base-ref: ${{ env.PREV_TAG != '' && env.PREV_TAG || github.event.repository.default_branch }}
+          head-ref: ${{ env.TAG }}
           instructions: ".github/release-notes-instructions.md"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -97,12 +128,12 @@ jobs:
             if [ -n "$PREV_TAG" ]; then
               gh api --method POST -H "Accept: application/vnd.github+json" \
                 repos/${{ github.repository }}/releases/generate-notes \
-                -f tag_name="${{ github.ref_name }}" \
+                -f tag_name="${{ env.TAG }}" \
                 -f previous_tag_name="${PREV_TAG}" -q .body > release_body.md
             else
               gh api --method POST -H "Accept: application/vnd.github+json" \
                 repos/${{ github.repository }}/releases/generate-notes \
-                -f tag_name="${{ github.ref_name }}" -q .body > release_body.md
+                -f tag_name="${{ env.TAG }}" -q .body > release_body.md
             fi
           fi
 
@@ -133,14 +164,16 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: sapphire-windows.zip
-          tag_name: ${{ github.ref_name }}
-          name: Sapphire ${{ github.ref_name }}
+          tag_name: ${{ env.TAG }}
+          name: Sapphire ${{ env.TAG }}
           body_path: release_body.md
           draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   deploy-pages:
+    needs: build
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -158,4 +191,5 @@ jobs:
           path: ./site
 
       - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
