@@ -721,16 +721,26 @@
 <span class="token-keyword">var</span> <span class="token-variable">isFalse</span> <span class="token-operator">=</span> <span class="token-keyword">false</span><span class="token-punctuation">;</span>
 <span class="token-function">print</span>(<span class="token-variable">isTrue</span> <span class="token-operator">&&</span> <span class="token-variable">isFalse</span>)<span class="token-punctuation">;</span>
 
-<span class="token-comment">// String concatenation</span>
+<span class="token-comment">// String concatenation and Interpolation (f-strings)</span>
 <span class="token-keyword">var</span> <span class="token-variable">greeting</span> <span class="token-operator">=</span> <span class="token-string">"Hello"</span><span class="token-punctuation">;</span>
 <span class="token-keyword">var</span> <span class="token-variable">target</span> <span class="token-operator">=</span> <span class="token-string">"World"</span><span class="token-punctuation">;</span>
 <span class="token-function">print</span>(<span class="token-variable">greeting</span> <span class="token-operator">+</span> <span class="token-string">", "</span> <span class="token-operator">+</span> <span class="token-variable">target</span> <span class="token-operator">+</span> <span class="token-string">"!"</span>)<span class="token-punctuation">;</span>
+<span class="token-function">print</span>(<span class="token-string">f"Or simpler: {greeting}, {target}!"</span>)<span class="token-punctuation">;</span>
+
+<span class="token-comment">// Nullish Coalescing (??)</span>
+<span class="token-keyword">var</span> <span class="token-variable">userInput</span> <span class="token-operator">=</span> <span class="token-keyword">nil</span><span class="token-punctuation">;</span>
+<span class="token-keyword">var</span> <span class="token-variable">username</span> <span class="token-operator">=</span> <span class="token-variable">userInput</span> <span class="token-operator">??</span> <span class="token-string">"Guest"</span><span class="token-punctuation">;</span>
+<span class="token-function">print</span>(<span class="token-string">"Welcome "</span> <span class="token-operator">+</span> <span class="token-variable">username</span>)<span class="token-punctuation">;</span>
 </code></pre>
 
                     <pre class="code-snippet" id="code-snippet-functions"><code><span class="token-comment">// Function declaration with parameters</span>
 <span class="token-keyword">function</span> <span class="token-function">calculateArea</span>(<span class="token-variable">length</span><span class="token-punctuation">,</span> <span class="token-variable">width</span>) <span class="token-punctuation">{</span>
     <span class="token-keyword">return</span> <span class="token-variable">length</span> <span class="token-operator">*</span> <span class="token-variable">width</span><span class="token-punctuation">;</span>
 <span class="token-punctuation">}</span>
+
+<span class="token-comment">// Concise Arrow Functions</span>
+<span class="token-keyword">var</span> <span class="token-function">square</span> <span class="token-operator">=</span> (<span class="token-variable">x</span>) <span class="token-operator">=></span> <span class="token-variable">x</span> <span class="token-operator">*</span> <span class="token-variable">x</span><span class="token-punctuation">;</span>
+<span class="token-function">print</span>(<span class="token-string">"Square of 5: "</span> <span class="token-operator">+</span> <span class="token-function">square</span>(<span class="token-number">5</span>))<span class="token-punctuation">;</span>
 
 <span class="token-comment">// Function returning void</span>
 <span class="token-keyword">function</span> <span class="token-function">greet</span>(<span class="token-variable">name</span>) <span class="token-punctuation">{</span>
@@ -789,13 +799,18 @@
 <span class="token-function">listAppend</span>(<span class="token-variable">myList</span><span class="token-punctuation">,</span> <span class="token-string">"banana"</span>)<span class="token-punctuation">;</span>
 <span class="token-function">listAppend</span>(<span class="token-variable">myList</span><span class="token-punctuation">,</span> <span class="token-number">123</span>)<span class="token-punctuation">;</span>
 
-<span class="token-function">print</span>(<span class="token-string">"List element at index 0: "</span> <span class="token-operator">+</span> <span class="token-variable">myList</span><span class="token-punctuation">[</span><span class="token-number">0</span><span class="token-punctuation">]</span>)<span class="token-punctuation">;</span>
-<span class="token-function">print</span>(<span class="token-string">"List length: "</span> <span class="token-operator">+</span> <span class="token-function">listLength</span>(<span class="token-variable">myList</span>))<span class="token-punctuation">;</span>
+<span class="token-comment">// Array spread operator and destructuring</span>
+<span class="token-keyword">var</span> <span class="token-variable">extendedList</span> <span class="token-operator">=</span> <span class="token-punctuation">[</span><span class="token-operator">...</span><span class="token-variable">myList</span><span class="token-punctuation">,</span> <span class="token-string">"cherry"</span><span class="token-punctuation">]</span><span class="token-punctuation">;</span>
+<span class="token-keyword">var</span> <span class="token-punctuation">[</span><span class="token-variable">first</span><span class="token-punctuation">,</span> <span class="token-variable">second</span><span class="token-punctuation">]</span> <span class="token-operator">=</span> <span class="token-variable">extendedList</span><span class="token-punctuation">;</span>
+<span class="token-function">print</span>(<span class="token-string">"First element: "</span> <span class="token-operator">+</span> <span class="token-variable">first</span>)<span class="token-punctuation">;</span>
 
-<span class="token-comment">// Creating and accessing Maps</span>
-<span class="token-keyword">var</span> <span class="token-variable">player</span> <span class="token-operator">=</span> <span class="token-punctuation">{</span> <span class="token-string">"name"</span><span class="token-operator">:</span> <span class="token-string">"Fox"</span><span class="token-punctuation">,</span> <span class="token-string">"score"</span><span class="token-operator">:</span> <span class="token-number">999</span> <span class="token-punctuation">}</span><span class="token-punctuation">;</span>
+<span class="token-comment">// Shorthand properties and Optional Chaining</span>
+<span class="token-keyword">var</span> <span class="token-variable">name</span> <span class="token-operator">=</span> <span class="token-string">"Fox"</span><span class="token-punctuation">;</span>
+<span class="token-keyword">var</span> <span class="token-variable">score</span> <span class="token-operator">=</span> <span class="token-number">999</span><span class="token-punctuation">;</span>
+<span class="token-keyword">var</span> <span class="token-variable">player</span> <span class="token-operator">=</span> <span class="token-punctuation">{</span> <span class="token-variable">name</span><span class="token-punctuation">,</span> <span class="token-variable">score</span> <span class="token-punctuation">}</span><span class="token-punctuation">;</span>
 
 <span class="token-function">print</span>(<span class="token-string">"Player Name: "</span> <span class="token-operator">+</span> <span class="token-variable">player</span><span class="token-punctuation">[</span><span class="token-string">"name"</span><span class="token-punctuation">]</span>)<span class="token-punctuation">;</span>
+<span class="token-function">print</span>(<span class="token-string">"Guild: "</span> <span class="token-operator">+</span> (<span class="token-variable">player</span><span class="token-operator">?.</span><span class="token-variable">guild</span><span class="token-operator">?.</span><span class="token-variable">name</span> <span class="token-operator">??</span> <span class="token-string">"None"</span>))<span class="token-punctuation">;</span> <span class="token-comment">// Safely handles missing properties</span>
 </code></pre>
                 </div>
             </div>
