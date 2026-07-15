@@ -60,9 +60,9 @@
                     </div>
                 </div>
                 <pre><code><span class="token-comment">// Defining visual styles using named arguments</span>
-<span class="token-function">Style</span>(<span class="token-string">"DisplayBg"</span>, bgColor=<span class="token-string">"#000000"</span>, textColor=<span class="token-string">"#ffffff"</span>, fontSize=<span class="token-number">64</span>)<span class="token-punctuation">;</span>
-<span class="token-function">Style</span>(<span class="token-string">"DarkBtn"</span>, bgColor=<span class="token-string">"#333333"</span>, hoverColor=<span class="token-string">"#4d4d4d"</span>, borderRadius=<span class="token-number">40.0</span>, fontSize=<span class="token-number">32</span>)<span class="token-punctuation">;</span>
-<span class="token-function">Style</span>(<span class="token-string">"OpBtn"</span>, bgColor=<span class="token-string">"#ff9f0a"</span>, hoverColor=<span class="token-string">"#ffc266"</span>, borderRadius=<span class="token-number">40.0</span>, fontSize=<span class="token-number">32</span>)<span class="token-punctuation">;</span></code></pre>
+<span class="token-function">Style</span>(<span class="token-string">"DisplayBg"</span>, bgColor=<span class="token-string">"#000000"</span>, textColor=<span class="token-string">"#ffffff"</span>, fontSize=<span class="token-number">64</span>);
+<span class="token-function">Style</span>(<span class="token-string">"DarkBtn"</span>, bgColor=<span class="token-string">"#333333"</span>, hoverColor=<span class="token-string">"#4d4d4d"</span>, borderRadius=<span class="token-number">40.0</span>, fontSize=<span class="token-number">32</span>);
+<span class="token-function">Style</span>(<span class="token-string">"OpBtn"</span>, bgColor=<span class="token-string">"#ff9f0a"</span>, hoverColor=<span class="token-string">"#ffc266"</span>, borderRadius=<span class="token-number">40.0</span>, fontSize=<span class="token-number">32</span>);</code></pre>
             </div>
 
             <h2>Building Layouts: The Flex Container</h2>
@@ -84,7 +84,7 @@
     children=[
         <span class="token-comment">/* Widgets go here... */</span>
     ]
-)<span class="token-punctuation">;</span></code></pre>
+);</code></pre>
             </div>
 
             <h2>UI Elements</h2>
@@ -101,6 +101,10 @@
             <h3>Slider</h3>
             <p>An interactive slider widget for selecting numeric values.</p>
             <pre><code><span class="token-function">Slider</span>(min=<span class="token-number">0</span>, max=<span class="token-number">100</span>, initialValue=<span class="token-number">50</span>, onChange=onVolumeChange)</code></pre>
+            
+            <h3>Render</h3>
+            <p>The <code>Render</code> function injects a given app layout component into the render tree. It must be called for the layout to be visible on the screen. By default, you'll place this near the end of your UI drawing loop.</p>
+            <pre><code><span class="token-keyword">var</span> event = <span class="token-function">Render</span>(myLayout);</code></pre>
 
             <h2>Complete Example: The Calculator App Architecture</h2>
             <p>Putting it all together, here is how you structure a declarative, stateful UI in Sapphire, heavily inspired by modern UI frameworks. This resembles our official Calculator test script:</p>
@@ -113,13 +117,13 @@
                     </div>
                 </div>
                 <pre><code><span class="token-comment">// State</span>
-<span class="token-keyword">var</span> currentInput = <span class="token-string">"0"</span><span class="token-punctuation">;</span>
+<span class="token-keyword">var</span> currentInput = <span class="token-string">"0"</span>;
 
 <span class="token-comment">// Actions</span>
-<span class="token-keyword">function</span> <span class="token-function">handleClear</span>() <span class="token-punctuation">{</span> currentInput = <span class="token-string">"0"</span><span class="token-punctuation">;</span> <span class="token-punctuation">}</span>
+<span class="token-keyword">function</span> <span class="token-function">handleClear</span>() { currentInput = <span class="token-string">"0"</span>; }
 
 <span class="token-comment">// Render Loop</span>
-<span class="token-keyword">function</span> <span class="token-function">updateUI</span>() bool <span class="token-punctuation">{</span>
+<span class="token-keyword">function</span> <span class="token-function">updateUI</span>() {
     <span class="token-keyword">var</span> app = <span class="token-function">Flex</span>(
         direction=<span class="token-string">"column"</span>,
         justify=<span class="token-string">"flex-start"</span>,
@@ -147,13 +151,14 @@
                 ]
             )
         ]
-    )<span class="token-punctuation">;</span>
+    );
     
     <span class="token-comment">// Instructs the engine to draw the tree</span>
-    <span class="token-function">Render</span>(app)<span class="token-punctuation">;</span>
+    <span class="token-keyword">var</span> event = <span class="token-function">Render</span>(app);
+    <span class="token-keyword">if</span> (event != nil) { event() }
     
-    <span class="token-keyword">return</span> <span class="token-keyword">true</span><span class="token-punctuation">;</span>
-<span class="token-punctuation">}</span></code></pre>
+    <span class="token-keyword">return</span> <span class="token-keyword">true</span>;
+}</code></pre>
             </div>
 
             <h2>Building Standalone Executables</h2>

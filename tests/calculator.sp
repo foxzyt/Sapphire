@@ -15,17 +15,17 @@ var shouldResetInput = false
 var config_window_height = 700
 
 class Calculator {
-    function handleNumber(string num) void {
+    function handleNumber(num) {
         if (shouldResetInput) { currentInput = num; shouldResetInput = false }
         else { if (currentInput == "0" && num != ".") currentInput = num; else currentInput += num }
     }
-    function handleOp(string newOp) void {
+    function handleOp(newOp) {
         if (op != "" && !shouldResetInput) this.calculateResult()
         previousInput = currentInput
         op = newOp
         shouldResetInput = true
     }
-    function calculateResult() void {
+    function calculateResult() {
         if (op == "") return
         if (op == "+") { currentInput = previousInput + currentInput }
         else if (op == "-") { currentInput = previousInput - currentInput }
@@ -40,16 +40,16 @@ class Calculator {
         op = ""
         shouldResetInput = true
     }
-    function handleClear() void { currentInput = "0"; previousInput = "0"; op = "" }
-    function handleSign() void { currentInput *= -1.0 }
-    function handlePercent() void { currentInput /= 100.0 }
-    function handleDiv() void { this.handleOp("/") }
-    function handleMul() void { this.handleOp("*") }
-    function handleSub() void { this.handleOp("-") }
-    function handleAdd() void { this.handleOp("+") }
+    function handleClear() { currentInput = "0"; previousInput = "0"; op = "" }
+    function handleSign() { currentInput *= -1.0 }
+    function handlePercent() { currentInput /= 100.0 }
+    function handleDiv() { this.handleOp("/") }
+    function handleMul() { this.handleOp("*") }
+    function handleSub() { this.handleOp("-") }
+    function handleAdd() { this.handleOp("+") }
 
     macro NUM_HANDLER(name, val) {
-        function handleNum##name() void { this.handleNumber("val") }
+        function handleNum##name() { this.handleNumber("val") }
     }
     
     NUM_HANDLER(7, 7)
@@ -67,7 +67,7 @@ class Calculator {
 
 var calc = Calculator()
 
-function updateUI() bool {
+function updateUI() {
     var app = Flex(
         direction="column",
         justify="flex-start",

@@ -826,40 +826,20 @@ void Parser::statement() {
 
 void Parser::declaration_statement() {
     bool is_const = false;
-    bool is_inferred = false;
 
     if (match(TokenType::TOKEN_CONST)) {
         is_const = true;
-        if (check(TokenType::TOKEN_IDENTIFIER) || check(TokenType::TOKEN_LEFT_BRACKET)) {
-            is_inferred = true;
-        }
-    } else if (match(TokenType::TOKEN_VAR)) {
-        if (check(TokenType::TOKEN_IDENTIFIER) || check(TokenType::TOKEN_LEFT_BRACKET)) {
-            is_inferred = true;
-        }
+    } else {
+        consume(TokenType::TOKEN_VAR, "Expect 'var' or 'const' keyword.");
     }
 
     TokenType var_type = TokenType::TOKEN_ILLEGAL;
-
-    if (!is_inferred) {
-        var_type = current.type;
-        advance();
-
-        if (match(TokenType::TOKEN_LEFT_BRACKET)) {
-            consume(TokenType::TOKEN_RIGHT_BRACKET, "Expect ']' after '[' in array type specifier.");
-        }
-
-        if (var_type == TokenType::TOKEN_IDENTIFIER) {
-            var_type = TokenType::TOKEN_CLASS;
-        }
-    }
 
     bool is_destructuring = false;
     std::vector<Token> destructure_vars;
 
     if (match(TokenType::TOKEN_LEFT_BRACKET)) {
         is_destructuring = true;
-        is_inferred = true; // Destructuring implies type inference
         do {
             consume(TokenType::TOKEN_IDENTIFIER, "Expected variable name in destructuring.");
             destructure_vars.push_back(previous);
@@ -905,7 +885,7 @@ void Parser::declaration_statement() {
                 emit_byte(OP_POP); // Pop the array
             }
         } else {
-            if (is_inferred) {
+            if (true) {
                 Token var_name = destructure_vars[0];
                 if (current_compiler->scope_depth == 0) {
                     current_compiler->global_types[var_name.literal] = expr_type;
@@ -920,8 +900,8 @@ void Parser::declaration_statement() {
             }
         }
     } else {
-        if (is_const || is_inferred || is_destructuring) {
-            error("Const, inferred and destructuring declarations must be initialized.");
+        if (true) {
+            error("Declarations must be initialized.");
         }
         emit_byte(OP_NIL);
     }
@@ -1033,35 +1013,11 @@ ObjFunction* Parser::function(TokenType kind, TokenType default_return_type_if_n
 
             TokenType param_type = TokenType::TOKEN_ILLEGAL;
 
-            if (match(TokenType::TOKEN_INT) || match(TokenType::TOKEN_BOOL) || match(TokenType::TOKEN_STRING) ||
-                match(TokenType::TOKEN_DOUBLE) || match(TokenType::TOKEN_FLOAT) || match(TokenType::TOKEN_VOID) ||
-                match(TokenType::TOKEN_CLASS)) {
-                param_type = previous.type;
-            }
-            else if (check(TokenType::TOKEN_IDENTIFIER)) {
-                advance();
-                param_type = TokenType::TOKEN_CLASS;
-            } else {
-                error_at_current("Expect parameter type.");
-                while (!check(TokenType::TOKEN_COMMA) && !check(TokenType::TOKEN_RIGHT_PAREN) && !check(TokenType::TOKEN_END_OF_FILE)) {
-                     advance();
-                }
-                continue;
-            }
-
             uint16_t param_const = parse_variable("Expect parameter name.", param_type, false);
             define_variable(param_const);
         } while (match(TokenType::TOKEN_COMMA));
     }
     consume(TokenType::TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
-
-    if (check(TokenType::TOKEN_INT) || check(TokenType::TOKEN_BOOL) || check(TokenType::TOKEN_STRING) ||
-        check(TokenType::TOKEN_DOUBLE) || check(TokenType::TOKEN_FLOAT) || check(TokenType::TOKEN_VOID)) {
-        advance();
-        current_compiler->function_return_type = previous.type;
-    }
-
-
     consume(TokenType::TOKEN_LEFT_BRACE, "Expect '{' before function body.");
     block();
 
@@ -1069,28 +1025,17 @@ ObjFunction* Parser::function(TokenType kind, TokenType default_return_type_if_n
 }
 
 void Parser::return_statement() {
-    if (current_compiler->function_return_type == TokenType::TOKEN_VOID) {
-        if (previous.line == current.line && current.type != TokenType::TOKEN_SEMICOLON && current.type != TokenType::TOKEN_RIGHT_BRACE) {
-            TokenType value_type = expression();
-            error("A 'void' function cannot return a value.");
-            emit_byte(OP_POP);
-        }
+
+
+    if (previous.line == current.line && current.type != TokenType::TOKEN_SEMICOLON && current.type != TokenType::TOKEN_RIGHT_BRACE) {
+        expression();
         consume(TokenType::TOKEN_SEMICOLON, "Expect ';' after return statement.");
-        emit_return();
+        emit_byte(OP_RETURN);
     } else {
-        if (previous.line < current.line || current.type == TokenType::TOKEN_SEMICOLON || current.type == TokenType::TOKEN_RIGHT_BRACE) {
-            error("A non-void function must return a value.");
-            emit_return();
-        } else {
-            TokenType value_type = expression();
-            if (current_compiler->enclosing != nullptr) {
-                if (!types_are_compatible(current_compiler->function_return_type, value_type)) {
-                    error("Return value type does not match function return type.");
-                }
-            }
-            emit_byte(OP_RETURN);
+        emit_return();
+        if (current.type == TokenType::TOKEN_SEMICOLON) {
+            advance();
         }
-        consume(TokenType::TOKEN_SEMICOLON, "Expect ';' after return statement.");
     }
 }
 void Parser::field_declaration() {

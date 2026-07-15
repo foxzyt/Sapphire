@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Shorthand Properties:** Added support for shorthand properties in map literals (`{ theme, fontSize }`).
 - **Class Fields:** Allow `var` and `const` keywords when defining class fields.
 
+### Changed
+- **Dynamic Typing:** Radically simplified the language syntax. Explicit typing keywords (`int`, `bool`, `string`, `void`, `double`, `float`) have been entirely removed.
+- **Variable Declarations:** Variables and constants now strictly require the explicit use of `var` or `const` keyword. Unintentionally assigning to an undeclared variable will now throw a `Runtime Error`.
+- **Functions:** Functions no longer require a return type. All functions inherently return a value, and if no explicit `return` is used, they seamlessly return `nil`.
+
 ### Fixed
 - Fixed parser expressions that incorrectly required a semicolon when evaluating an arrow function.
 - Fixed nullish coalescing type check failure when the left-hand side is `nil`.

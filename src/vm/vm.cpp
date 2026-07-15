@@ -2876,6 +2876,10 @@ TARGET(OP_DEFINE_GLOBAL) {
 
 TARGET(OP_SET_GLOBAL) {
     name_tmp = (ObjString*)std::get<Obj*>(frame->function->chunk.constants[READ_SHORT()]._value);
+    if (globals.find(name_tmp->chars) == globals.end()) {
+        if (!this->soft_mode) std::cerr << "Runtime Error: Undefined variable '" << name_tmp->chars << "'. Variables must be declared with 'var' or 'const'." << std::endl;
+        return false;
+    }
     globals[name_tmp->chars] = top[-1];
     NEXT_CODE();
 }
