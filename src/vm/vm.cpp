@@ -2679,6 +2679,62 @@ void VM::add_module_search_path(const std::string& path) {
 }
 
 std::string VM::find_and_load_module(const std::string& module_name, std::string& out_resolved_path) {
+    // Check if this is a plugin import (format: plugin@version or plugin@latest)
+    size_t at_pos = module_name.find('@');
+    if (at_pos != std::string::npos) {
+        std::string plugin_name = module_name.substr(0, at_pos);
+        std::string version = module_name.substr(at_pos + 1);
+        
+        // Try multiple possible plugin paths
+        std::vector<std::string> possible_paths = {
+            "plugins/" + plugin_name + "/versions/v" + version + "/files/main.sp",
+            "../plugins/" + plugin_name + "/versions/v" + version + "/files/main.sp",
+            "../../plugins/" + plugin_name + "/versions/v" + version + "/files/main.sp",
+            // Also try the build directory structure
+            "../" + plugin_name + "/versions/v" + version + "/files/main.sp",
+        };
+        
+        for (const auto& plugin_path : possible_paths) {
+            std::string content = load_file_as_string(plugin_path);
+            if (!content.empty()) {
+                try {
+                    out_resolved_path = std::filesystem::absolute(plugin_path).string();
+                } catch(...) {
+                    out_resolved_path = plugin_path;
+                }
+                return content;
+            }
+        }
+        
+        // If version is "latest", try to find the latest version
+        if (version == "latest") {
+            // This is a simplified approach - in production, you'd scan the directory
+            // For now, try v1.0.0 as a fallback
+            std::vector<std::string> latest_paths = {
+                "plugins/" + plugin_name + "/versions/v1.0.0/files/main.sp",
+                "../plugins/" + plugin_name + "/versions/v1.0.0/files/main.sp",
+                "../../plugins/" + plugin_name + "/versions/v1.0.0/files/main.sp",
+                "../" + plugin_name + "/versions/v1.0.0/files/main.sp",
+            };
+            
+            for (const auto& plugin_path : latest_paths) {
+                std::string content = load_file_as_string(plugin_path);
+                if (!content.empty()) {
+                    try {
+                        out_resolved_path = std::filesystem::absolute(plugin_path).string();
+                    } catch(...) {
+                        out_resolved_path = plugin_path;
+                    }
+                    return content;
+                }
+            }
+        }
+        
+        // Plugin not found
+        return "";
+    }
+    
+    // Traditional file path import
     std::string content = load_file_as_string(module_name);
     if (!content.empty()) {
         try {
@@ -3344,8 +3400,12 @@ TARGET(OP_SET_SUBSCRIPT) {
             auto arr = std::get<std::shared_ptr<SapphireArray>>(collection._value);
             if (index._value.index() == 2) {
                 int idx = (int)std::get<double>(index._value);
-                if (idx >= 0 && idx < arr->elements.size()) {
-                    arr->elements[idx] = value;
+                if (idx >= 0 && idx <= arr->elements.size()) {
+                    if (idx == arr->elements.size()) {
+                        arr->elements.push_back(value);
+                    } else {
+                        arr->elements[idx] = value;
+                    }
                 } else {
                     if (!this->soft_mode) { std::cerr << "Runtime Error: Array index out of bounds." << std::endl; return false; }
                 }

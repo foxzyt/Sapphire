@@ -1,0 +1,1593 @@
+================================================================================
+SAPPHIRE - SUGESTÕES DE FUNCIONALIDADES PARA ADICIONAR
+================================================================================
+Documento gerado em 15/07/2026
+Versão atual: v1.0.9
+
+Este documento contém uma lista abrangente de funcionalidades que podem ser
+adicionadas à linguagem Sapphire, organizadas por categorias.
+
+================================================================================
+1. SISTEMA DE TIPOS E TYPE SAFETY
+================================================================================
+
+1.1 TYPE HINTS (Opcionais)
+   - Adicionar suporte a type hints opcionais para melhorar legibilidade e IDE support
+   - Sintaxe: function add(a: number, b: number): number { return a + b; }
+   - Benefício: Melhor autocompletion, detecção de erros em tempo de desenvolvimento
+   - Complexidade: Média (parser + type checker opcional)
+
+1.2 GENERIC TYPES / GENERICS
+   - Suporte a generics para funções e classes
+   - Sintaxe: function identity<T>(value: T): T { return value; }
+   - Benefício: Reutilização de código, type safety para collections
+   - Complexidade: Alta (requer sistema de tipos mais robusto)
+
+1.3 UNION TYPES
+   - Permitir tipos que podem ser uma coisa ou outra
+   - Sintaxe: var result: string | number = getValue();
+   - Benefício: Flexibilidade com type safety
+   - Complexidade: Média
+
+1.4 TYPE ALIASES
+   - Definir aliases para tipos complexos
+   - Sintaxe: type UserID = string;
+   - Benefício: Legibilidade, manutenção
+   - Complexidade: Baixa
+
+1.5 ENUM COM VALORES CUSTOMIZADOS
+   - Atualmente enums são apenas inteiros incrementais
+   - Permitir: enum Status { ACTIVE = "active", INACTIVE = "inactive" }
+   - Benefício: Mais flexibilidade, melhor para APIs
+   - Complexidade: Média
+
+================================================================================
+2. ESTRUTURAS DE DADOS
+================================================================================
+
+2.1 SETS (Conjuntos)
+   - Implementar estrutura Set nativa
+   - Sintaxe: var mySet = Set([1, 2, 3]); mySet.add(4);
+   - Operações: add, remove, has, union, intersection, difference
+   - Benefício: Operações matemáticas de conjuntos, deduplicação
+   - Complexidade: Média
+
+2.2 TUPLES (Tuplas)
+   - Estrutura imutável com tamanho fixo e tipos heterogêneos
+   - Sintaxe: var point = (10, 20); var [x, y] = point;
+   - Benefício: Retornar múltiplos valores, dados estruturados
+   - Complexidade: Média
+
+2.3 RANGES / INTERVALOS
+   - Sintaxe para criar ranges numéricos
+   - Sintaxe: for (i in 0..10) print(i); ou 0..10 step 2
+   - Benefício: Iteração mais limpa, expressiva
+   - Complexidade: Baixa
+
+2.4 QUEUES E STACKS
+   - Estruturas de dados FIFO e LIFO nativas
+   - Sintaxe: var queue = Queue(); queue.enqueue(item);
+   - Benefício: Algoritmos comuns, mais performático que arrays
+   - Complexidade: Baixa
+
+2.5 LINKED LISTS
+   - Listas encadeadas nativas
+   - Benefício: Inserção/remoção O(1) em posições conhecidas
+   - Complexidade: Média
+
+2.6 HEAP / PRIORITY QUEUE
+   - Estrutura de dados para priorização
+   - Benefício: Algoritmos de scheduling, pathfinding
+   - Complexidade: Média
+
+2.7 TREES (Árvores)
+   - Árvores binárias, BST, etc.
+   - Benefício: Estruturas hierárquicas, busca eficiente
+   - Complexidade: Alta
+
+2.8 GRAPHS (Grafos)
+   - Estrutura de grafo com algoritmos (BFS, DFS, Dijkstra)
+   - Benefício: Redes, pathfinding, dependências
+   - Complexidade: Alta
+
+================================================================================
+3. MANIPULAÇÃO DE STRINGS
+================================================================================
+
+3.1 REGEX NATIVO
+   - Suporte a expressões regulares nativas
+   - Sintaxe: var matches = "hello".match(/h.*o/);
+   - Métodos: match, replace, split, test
+   - Benefício: Validação, parsing, manipulação avançada
+   - Complexidade: Alta (pode usar PCRE ou similar)
+
+3.2 MULTILINE STRINGS
+   - Strings multilinha nativas
+   - Sintaxe: var text = `Line 1
+Line 2
+Line 3`;
+   - Benefício: Templates, SQL queries, HTML
+   - Complexidade: Baixa
+
+3.3 RAW STRINGS
+   - Strings sem escape de caracteres
+   - Sintaxe: var path = r"C:\Users\Name";
+   - Benefício: Paths, regex literais
+   - Complexidade: Baixa
+
+3.4 STRING BUILDER
+   - Classe otimizada para concatenação de strings
+   - Benefício: Performance em loops com muitas concatenações
+   - Complexidade: Baixa
+
+3.5 ENCODING/DECODING
+   - Funções para encoding/decoding (Base64, URL encoding, HTML entities)
+   - Sintaxe: String.base64Encode("hello");
+   - Benefício: Integração com APIs web
+   - Complexidade: Baixa
+
+3.6 LOCALE AWARE STRING OPERATIONS
+   - Operações de string sensíveis a locale (uppercase, lowercase, compare)
+   - Benefício: Internacionalização
+   - Complexidade: Média
+
+3.7 STRING TEMPLATES COM EXPRESSÕES
+   - Expansão de f-strings atuais para permitir expressões complexas
+   - Sintaxe: print f"Result: {a + b * 2}";
+   - Benefício: Menos verboso
+   - Complexidade: Baixa
+
+3.8 PADDING E TRUNCATION
+   - Métodos para padLeft, padRight, truncate
+   - Benefício: Formatação de output
+   - Complexidade: Baixa
+
+================================================================================
+4. FUNÇÕES E PROGRAMAÇÃO FUNCIONAL
+================================================================================
+
+4.1 HIGHER-ORDER FUNCTIONS PARA ARRAYS
+   - map, filter, reduce, forEach, find, some, every
+   - Sintaxe: var doubled = numbers.map(x => x * 2);
+   - Benefício: Programação funcional mais expressiva
+   - Complexidade: Baixa
+
+4.2 FUNCTION COMPOSITION
+   - Operador de composição de funções
+   - Sintaxe: var composed = f . g; // equivale a f(g(x))
+   - Benefício: Pipeline de transformações
+   - Complexidade: Média
+
+4.3 CURRYING
+   - Suporte nativo a currying
+   - Benefício: Reutilização de funções parciais
+   - Complexidade: Média
+
+4.4 MEMOIZATION
+   - Decorador ou função para memoizar resultados
+   - Sintaxe: @memoize function expensiveCalc(n) { ... }
+   - Benefício: Performance para funções puras
+   - Complexidade: Média
+
+4.5 TAIL CALL OPTIMIZATION
+   - Otimização para recursão em cauda
+   - Benefício: Recursão sem stack overflow
+   - Complexidade: Alta
+
+4.6 PATTERN MATCHING
+   - Pattern matching em valores
+   - Sintaxe: match (value) { case 1 => "one"; case _ => "other"; }
+   - Benefício: Substituto mais poderoso para switch
+   - Complexidade: Alta
+
+4.7 LAZY EVALUATION
+   - Suporte a lazy evaluation (generators)
+   - Sintaxe: function* gen() { yield 1; yield 2; }
+   - Benefício: Sequências infinitas, performance
+   - Complexidade: Alta
+
+4.8 PIPE OPERATOR
+   - Operador pipe para encadear operações
+   - Sintaxe: data |> filter |> map |> reduce
+   - Benefício: Pipeline de dados mais legível
+   - Complexidade: Média
+
+4.9 FUNCTION OVERLOADING
+   - Múltiplas funções com mesmo nome mas parâmetros diferentes
+   - Benefício: APIs mais intuitivas
+   - Complexidade: Média
+
+4.10 DEFAULT PARAMETERS
+   - Valores padrão para parâmetros de função
+   - Sintaxe: function greet(name = "World") { ... }
+   - Benefício: Menos código boilerplate
+   - Complexidade: Baixa
+
+4.11 REST PARAMETERS
+   - Capturar argumentos variáveis
+   - Sintaxe: function sum(...numbers) { ... }
+   - Benefício: Funções flexíveis
+   - Complexidade: Baixa
+
+4.12 NAMED PARAMETERS
+   - Passar parâmetros por nome
+   - Sintaxe: createUser(name: "John", age: 30);
+   - Benefício: APIs mais claras, ordem independente
+   - Complexidade: Média
+
+================================================================================
+5. ORIENTAÇÃO A OBJETOS
+================================================================================
+
+5.1 INTERFACES
+   - Definir contratos que classes devem implementar
+   - Sintaxe: interface Drawable { draw(); }
+   - Benefício: Design por contrato, polimorfismo
+   - Complexidade: Média
+
+5.2 ABSTRACT CLASSES
+   - Classes que não podem ser instanciadas diretamente
+   - Sintaxe: abstract class Shape { abstract area(); }
+   - Benefício: Herança com implementação parcial
+   - Complexidade: Média
+
+5.3 TRAITS / MIXINS
+   - Compartilhar comportamento entre classes sem herança
+   - Sintaxe: trait Loggable { log() { ... } }
+   - Benefício: Composição sobre herança
+   - Complexidade: Alta
+
+5.4 PROPERTIES (GETTERS/SETTERS)
+   - Propriedades computadas com validação
+   - Sintaxe: class User { get name() { return _name; } set name(v) { ... } }
+   - Benefício: Encapsulamento, validação
+   - Complexidade: Média
+
+5.5 STATIC MEMBERS
+   - Membros estáticos em classes
+   - Sintaxe: class Math { static PI = 3.14; }
+   - Benefício: Utilitários, estado compartilhado
+   - Complexidade: Baixa
+
+5.6 OPERATOR OVERLOADING
+   - Sobrecarga de operadores para classes customizadas
+   - Sintaxe: class Vector { operator+(other) { ... } }
+   - Benefício: APIs mais naturais (math, vetores)
+   - Complexidade: Alta
+
+5.7 PRIVATE FIELDS
+   - Campos privados verdadeiros (não apenas convenção)
+   - Sintaxe: class User { #privateField; }
+   - Benefício: Encapsulamento real
+   - Complexidade: Média
+
+5.8 PROTECTED MEMBERS
+   - Membros protegidos (acessíveis apenas na classe e subclasses)
+   - Benefício: Herança controlada
+   - Complexidade: Média
+
+5.9 CONSTRUCTORS COM CHAINING
+   - Múltiplos construtores com chaining
+   - Sintaxe: constructor(name) { this.name = name; } constructor() : this("default") { }
+   - Benefício: APIs mais flexíveis
+   - Complexidade: Média
+
+5.10 DESTRUCTORS
+   - Métodos chamados quando objeto é coletado
+   - Sintaxe: destructor() { cleanup(); }
+   - Benefício: Liberação de recursos
+   - Complexidade: Média
+
+5.11 METHOD CHAINING
+   - Retornar this em métodos para permitir chaining
+   - Benefício: APIs fluentes
+   - Complexidade: Baixa (pattern, não feature de linguagem)
+
+5.12 CLASS DECORATORS
+   - Decoradores para classes e métodos
+   - Sintaxe: @singleton class Database { ... }
+   - Benefício: Metaprogramação, AOP
+   - Complexidade: Alta
+
+================================================================================
+6. CONCORRÊNCIA E ASYNC
+================================================================================
+
+6.1 PROMISES
+   - Implementar Promise nativo
+   - Sintaxe: var promise = Promise((resolve, reject) => { ... });
+   - Benefício: Async/await mais robusto, chaining
+   - Complexidade: Média
+
+6.2 ASYNC/AWAIT MELHORADO
+   - Melhorar suporte async/await atual
+   - Adicionar try/catch em async, parallel execution
+   - Benefício: Código async mais limpo
+   - Complexidade: Média
+
+6.3 CHANNELS (Go-style)
+   - Canais para comunicação entre goroutines/threads
+   - Sintaxe: var ch = Channel(); ch.send(value);
+   - Benefício: Concorrência segura, CSP
+   - Complexidade: Alta
+
+6.4 ACTORS
+   - Modelo de atores para concorrência
+   - Benefício: Concorrência sem locks, message passing
+   - Complexidade: Alta
+
+6.5 ATOMIC OPERATIONS
+   - Operações atômicas para variáveis compartilhadas
+   - Sintaxe: var counter = Atomic(0); counter.increment();
+   - Benefício: Thread-safe sem locks explícitos
+   - Complexidade: Média
+
+6.6 LOCKS E MUTEXES
+   - Primitivas de sincronização
+   - Sintaxe: var lock = Mutex(); lock.acquire(); ... lock.release();
+   - Benefício: Seção crítica
+   - Complexidade: Média
+
+6.7 THREAD POOLS
+   - Pool de threads reutilizável
+   - Sintaxe: ThreadPool.run(() => { ... });
+   - Benefício: Performance, evitar criação de threads
+   - Complexidade: Média
+
+6.8 WORKER THREADS
+   - Threads isoladas com message passing
+   - Benefício: CPU-bound tasks sem bloquear main thread
+   - Complexidade: Alta
+
+6.9 COROUTINES
+   - Coroutines para multitarefa cooperativa
+   - Benefício: Concorrência leve
+   - Complexidade: Alta
+
+6.10 CANCELLATION TOKENS
+   - Mecanismo para cancelar operações async
+   - Sintaxe: var token = CancellationToken(); asyncOp(token);
+   - Benefício: Controle de operações longas
+   - Complexidade: Média
+
+================================================================================
+7. TRATAMENTO DE ERROS
+================================================================================
+
+7.1 TRY-CATCH-FINALY MELHORADO
+   - Melhorar try-catch atual (já existe finally)
+   - Adicionar catch específico por tipo
+   - Sintaxe: catch (TypeError e) { ... } catch (e) { ... }
+   - Benefício: Tratamento granular de erros
+   - Complexidade: Média
+
+7.2 CUSTOM ERROR TYPES
+   - Permitir criar classes de erro customizadas
+   - Sintaxe: class ValidationError extends Error { ... }
+   - Benefício: Erros específicos para domínio
+   - Complexidade: Baixa
+
+7.3 ERROR STACK TRACE
+   - Stack traces detalhados em erros
+   - Benefício: Debugging mais fácil
+   - Complexidade: Média
+
+7.4 ASSERTIONS
+   - Função assert para debugging
+   - Sintaxe: assert(condition, "Error message");
+   - Benefício: Debugging, contratos
+   - Complexidade: Baixa
+
+7.5 CONTRACTS / PRECONDITIONS
+   - Verificação de contratos em funções
+   - Sintaxe: require(condition, "message"); ensure(condition, "message");
+   - Benefício: Design by contract
+   - Complexidade: Média
+
+7.6 RESULT TYPES
+   - Tipo Result para erros sem exceções
+   - Sintaxe: Result<T, E> com Ok(value) e Err(error)
+   - Benefício: Tratamento funcional de erros
+   - Complexidade: Média
+
+7.7 PANIC/RECOVER
+   - Mecanismo de panic e recover (Go-style)
+   - Benefício: Recuperação de erros fatais
+   - Complexidade: Alta
+
+7.8 WARNING LOGGING
+   - Sistema de warnings não-fatais
+   - Sintaxe: warn("Deprecated function used");
+   - Benefício: Deprecação, debugging
+   - Complexidade: Baixa
+
+================================================================================
+8. MÓDULOS E PACOTES
+================================================================================
+
+8.1 NAMESPACE
+   - Namespaces para organizar código
+   - Sintaxe: namespace Utils { function helper() { ... } }
+   - Benefício: Evitar colisões de nomes
+   - Complexidade: Média
+
+8.2 PACKAGE MANAGER
+   - Gerenciador de pacotes nativo
+   - Sintaxe: spm install package-name
+   - Benefício: Ecossistema, reutilização
+   - Complexidade: Alta
+
+8.3 VERSIONED MODULES
+   - Importar versões específicas de módulos
+   - Sintaxe: import "module@1.2.0";
+   - Benefício: Estabilidade, dependências
+   - Complexidade: Alta
+
+8.4 CIRCULAR DEPENDENCY DETECTION
+   - Detectar e prevenir dependências circulares
+   - Benefício: Evitar deadlocks em imports
+   - Complexidade: Média
+
+8.5 DYNAMIC IMPORT
+   - Importar módulos dinamicamente
+   - Sintaxe: var module = await import("module-name");
+   - Benefício: Code splitting, lazy loading
+   - Complexidade: Média
+
+8.6 EXPORT/DEFAULT
+   - Export default e named exports
+   - Sintaxe: export default MyClass; export function helper();
+   - Benefício: APIs de módulos mais flexíveis
+   - Complexidade: Baixa
+
+8.7 RE-EXPORTS
+   - Re-exportar de outros módulos
+   - Sintaxe: export * from "other-module";
+   - Benefício: Barril de módulos, organização
+   - Complexidade: Baixa
+
+8.8 MODULE ALIASES
+   - Aliases para imports
+   - Sintaxe: import { longName as short } from "module";
+   - Benefício: Evitar colisões, legibilidade
+   - Complexidade: Baixa
+
+================================================================================
+9. I/O E SISTEMA DE ARQUIVOS
+================================================================================
+
+9.1 FILE SYSTEM API COMPLET
+   - API completa para sistema de arquivos
+   - Operações: read, write, append, delete, copy, move, exists, mkdir, rmdir
+   - Sintaxe: File.read("path.txt"); File.write("path.txt", "content");
+   - Benefício: Manipulação de arquivos nativa
+   - Complexidade: Baixa
+
+9.2 PATH UTILITIES
+   - Utilitários para paths (join, dirname, basename, extname)
+   - Sintaxe: Path.join("dir", "file.txt");
+   - Benefício: Cross-platform paths
+   - Complexidade: Baixa
+
+9.3 FILE WATCHING
+   - Watcher para mudanças em arquivos/diretórios
+   - Sintaxe: File.watch("dir", (event) => { ... });
+   - Benefício: Hot reload, ferramentas de build
+   - Complexidade: Média
+
+9.4 FILE STREAMING
+   - Streaming de arquivos grandes
+   - Sintaxe: var stream = File.stream("large.bin");
+   - Benefício: Memória eficiente para arquivos grandes
+   - Complexidade: Média
+
+9.5 TEMPORARY FILES
+   - Criação de arquivos temporários
+   - Sintaxe: var temp = File.temp();
+   - Benefício: Processamento intermediário
+   - Complexidade: Baixa
+
+9.6 FILE PERMISSIONS
+   - Ler/modificar permissões de arquivos
+   - Benefício: Segurança, Unix-like systems
+   - Complexidade: Média
+
+9.7 FILE INFO
+   - Metadados de arquivos (size, modified, created, permissions)
+   - Sintaxe: var info = File.info("path.txt");
+   - Benefício: Informações do sistema
+   - Complexidade: Baixa
+
+9.8 DIRECTORY TRAVERSAL
+   - Walk recursivo de diretórios
+   - Sintaxe: File.walk("dir", (path) => { ... });
+   - Benefício: Processamento em lote
+   - Complexidade: Baixa
+
+9.9 GLOB PATTERNS
+   - Matching de arquivos com glob patterns
+   - Sintaxe: var files = File.glob("src/**/*.sp");
+   - Benefício: Seleção de arquivos
+   - Complexidade: Média
+
+================================================================================
+10. REDE E INTERNET
+================================================================================
+
+10.1 HTTP CLIENT
+   - Cliente HTTP completo (GET, POST, PUT, DELETE, PATCH)
+   - Sintaxe: var response = HTTP.get("https://api.example.com");
+   - Benefício: Integração com APIs REST
+   - Complexidade: Média (já usa OpenSSL)
+
+10.2 HTTP SERVER
+   - Servidor HTTP embutido
+   - Sintaxe: var server = HTTPServer(); server.get("/", handler);
+   - Benefício: Web apps, APIs
+   - Complexidade: Alta
+
+10.3 WEBSOCKETS
+   - Suporte a WebSockets
+   - Sintaxe: var ws = WebSocket("ws://example.com");
+   - Benefício: Real-time communication
+   - Complexidade: Média
+
+10.4 DNS RESOLUTION
+   - Consultas DNS
+   - Sintaxe: var ips = DNS.resolve("example.com");
+   - Benefício: Networking tools
+   - Complexidade: Baixa
+
+10.5 TCP/UDP SOCKETS
+   - Sockets TCP e UDP de baixo nível
+   - Sintaxe: var socket = TCPSocket(); socket.connect(host, port);
+   - Benefício: Protocolos customizados
+   - Complexidade: Média
+
+10.6 FTP CLIENT
+   - Cliente FTP
+   - Benefício: Transferência de arquivos
+   - Complexidade: Média
+
+10.7 EMAIL SENDING
+   - Envio de emails via SMTP
+   - Sintaxe: SMTP.send(to, subject, body);
+   - Benefício: Notificações
+   - Complexidade: Média
+
+10.8 URL PARSING
+   - Parsing e manipulação de URLs
+   - Sintaxe: var url = URL.parse("https://example.com/path");
+   - Benefício: Web scraping, APIs
+   - Complexidade: Baixa
+
+10.9 QUERY STRING PARSING
+   - Parsing de query strings
+   - Sintaxe: var params = URL.parseQuery("a=1&b=2");
+   - Benefício: Web development
+   - Complexidade: Baixa
+
+10.10 REQUEST/RESPONSE COOKIES
+   - Manipulação de cookies HTTP
+   - Benefício: Web apps, auth
+   - Complexidade: Baixa
+
+10.11 PROXY SUPPORT
+   - Suporte a proxies HTTP/SOCKS
+   - Benefício: Corporativo, anonimato
+   - Complexidade: Média
+
+10.12 RATE LIMITING
+   - Rate limiting para requests HTTP
+   - Benefício: APIs, scraping responsivo
+   - Complexidade: Baixa
+
+================================================================================
+11. CRIPTOGRAFIA E SEGURANÇA
+================================================================================
+
+11.1 HASH FUNCTIONS
+   - Funções de hash (MD5, SHA-1, SHA-256, SHA-512)
+   - Sintaxe: var hash = Crypto.sha256("data");
+   - Benefício: Verificação de integridade, passwords
+   - Complexidade: Baixa (já usa OpenSSL)
+
+11.2 HMAC
+   - HMAC para autenticação de mensagens
+   - Sintaxe: var hmac = Crypto.hmac("key", "data", "sha256");
+   - Benefício: API signing, JWT
+   - Complexidade: Baixa
+
+11.3 ENCRYPTION/DECRYPTION
+   - Criptografia simétrica (AES, ChaCha20)
+   - Sintaxe: var encrypted = Crypto.encrypt(data, key, "aes-256-cbc");
+   - Benefício: Proteção de dados
+   - Complexidade: Média (já usa OpenSSL)
+
+11.4 ASYMMETRIC ENCRYPTION
+   - Criptografia assimétrica (RSA, ECC)
+   - Sintaxe: var encrypted = Crypto.rsaEncrypt(data, publicKey);
+   - Benefício: TLS, assinaturas
+   - Complexidade: Média (já usa OpenSSL)
+
+11.5 DIGITAL SIGNATURES
+   - Assinaturas digitais
+   - Sintaxe: var signature = Crypto.sign(data, privateKey);
+   - Benefício: Autenticidade, não-repúdio
+   - Complexidade: Média (já usa OpenSSL)
+
+11.6 RANDOM NUMBER GENERATOR
+   - Gerador de números aleatórios criptograficamente seguro
+   - Sintaxe: var bytes = Crypto.randomBytes(32);
+   - Benefício: Tokens, salts, keys
+   - Complexidade: Baixa (já usa OpenSSL)
+
+11.7 PASSWORD HASHING
+   - Password hashing com salt (bcrypt, argon2, scrypt)
+   - Sintaxe: var hash = Crypto.hashPassword("password");
+   - Benefício: Armazenamento seguro de senhas
+   - Complexidade: Média
+
+11.8 BASE ENCODINGS
+   - Base32, Base58, Base85 além de Base64
+   - Benefício: Diversos use cases
+   - Complexidade: Baixa
+
+11.9 CERTIFICATE VALIDATION
+   - Validação de certificados X.509
+   - Benefício: TLS, HTTPS
+   - Complexidade: Média (já usa OpenSSL)
+
+11.10 KEY DERIVATION
+   - PBKDF2, HKDF para derivação de chaves
+   - Benefício: Derivação de chaves de senhas
+   - Complexidade: Média (já usa OpenSSL)
+
+================================================================================
+12. DATA E HORA
+================================================================================
+
+12.1 DATETIME MODULE
+   - Módulo completo para data/hora
+   - Sintaxe: var now = DateTime.now();
+   - Operações: add, subtract, format, parse
+   - Benefício: Manipulação de datas
+   - Complexidade: Média
+
+12.2 TIMEZONES
+   - Suporte a timezones
+   - Sintaxe: var dt = DateTime.now("America/Sao_Paulo");
+   - Benefício: Aplicações globais
+   - Complexidade: Alta
+
+12.3 DURATION/TIMESPAN
+   - Representação de durações
+   - Sintaxe: var duration = Duration(hours: 2, minutes: 30);
+   - Benefício: Cálculos de tempo
+   - Complexidade: Baixa
+
+12.4 DATE PARSING
+   - Parsing de strings de data
+   - Sintaxe: var date = DateTime.parse("2026-07-15", "%Y-%m-%d");
+   - Benefício: Input de usuários, logs
+   - Complexidade: Média
+
+12.5 DATE FORMATTING
+   - Formatação de datas (locale-aware)
+   - Sintaxe: var str = date.format("%d/%m/%Y");
+   - Benefício: Display para usuários
+   - Complexidade: Média
+
+12.6 TIMERS
+   - Timers e intervals
+   - Sintaxe: Timer.setTimeout(() => { ... }, 1000);
+   - Benefício: Scheduling, delays
+   - Complexidade: Baixa
+
+12.7 CRON SCHEDULING
+   - Agendamento com expressões cron
+   - Sintaxe: Scheduler.cron("0 * * * *", () => { ... });
+   - Benefício: Tarefas periódicas
+   - Complexidade: Média
+
+12.8 STOPWATCH
+   - Medição de tempo de execução
+   - Sintaxe: var sw = Stopwatch(); sw.start(); ... sw.stop();
+   - Benefício: Benchmarking, profiling
+   - Complexidade: Baixa
+
+================================================================================
+13. MATEMÁTICA
+================================================================================
+
+13.1 BIG INTEGERS
+   - Inteiros de precisão arbitrária
+   - Sintaxe: var big = BigInt("12345678901234567890");
+   - Benefício: Criptografia, cálculos grandes
+   - Complexidade: Média
+
+13.2 DECIMAL/DECIMAL128
+   - Decimais de alta precisão (para financeiro)
+   - Sintaxe: var price = Decimal("10.99");
+   - Benefício: Cálculos financeiros precisos
+   - Complexidade: Média
+
+13.3 COMPLEX NUMBERS
+   - Números complexos
+   - Sintaxe: var c = Complex(3, 4);
+   - Benefício: Científico, engenharia
+   - Complexidade: Média
+
+13.4 FRACTIONS/RATIONALS
+   - Números racionais
+   - Sintaxe: var f = Fraction(1, 3);
+   - Benefício: Precisão exata
+   - Complexidade: Média
+
+13.5 TRIGONOMETRY
+   - Funções trigonométricas completas (sin, cos, tan, asin, acos, atan, atan2)
+   - Benefício: Gráficos, jogos, física
+   - Complexidade: Baixa
+
+13.6 LOGARITHMS
+   - Logaritmos (log, log10, log2, ln)
+   - Benefício: Cálculos científicos
+   - Complexidade: Baixa
+
+13.7 STATISTICS
+   - Funções estatísticas (mean, median, mode, std, variance)
+   - Sintaxe: var avg = Math.mean([1, 2, 3, 4, 5]);
+   - Benefício: Análise de dados
+   - Complexidade: Baixa
+
+13.8 LINEAR ALGEBRA
+   - Operações de álgebra linear (matrizes, vetores)
+   - Sintaxe: var result = Matrix.multiply(A, B);
+   - Benefício: Machine learning, gráficos 3D
+   - Complexidade: Alta
+
+13.9 RANDOM DISTRIBUTIONS
+   - Distribuições aleatórias (normal, uniform, poisson, etc.)
+   - Sintaxe: var x = Random.normal(0, 1);
+   - Benefício: Simulações, Monte Carlo
+   - Complexidade: Média
+
+13.10 CONSTANTS
+   - Constantes matemáticas (PI, E, GOLDEN_RATIO, etc.)
+   - Benefício: Cálculos científicos
+   - Complexidade: Baixa
+
+================================================================================
+14. UI E GRÁFICOS
+================================================================================
+
+14.1 UI COMPONENT LIBRARY
+   - Biblioteca de componentes UI prontos (buttons, inputs, lists, etc.)
+   - Benefício: Desenvolvimento rápido de UI
+   - Complexidade: Alta (já usa SFML)
+
+14.2 LAYOUT SYSTEM
+   - Sistema de layout (flexbox, grid)
+   - Benefício: UI responsiva
+   - Complexidade: Alta
+
+14.3 THEMING
+   - Sistema de temas (dark/light mode)
+   - Benefício: Customização
+   - Complexidade: Média
+
+14.4 ANIMATIONS
+   - Sistema de animações (já existe test_animations.sp, pode expandir)
+   - Sintaxe: Animation.easeIn(element, duration);
+   - Benefício: UI polida
+   - Complexidade: Média
+
+14.5 EVENT HANDLING MELHORADO
+   - Sistema de eventos mais robusto (delegation, bubbling)
+   - Benefício: UI interativa
+   - Complexidade: Média
+
+14.6 DRAG AND DROP
+   - Suporte nativo a drag and drop
+   - Benefício: UX melhor
+   - Complexidade: Média
+
+14.7 CLIPBOARD
+   - Acesso ao clipboard
+   - Sintaxe: Clipboard.copy("text"); var text = Clipboard.paste();
+   - Benefício: Usabilidade
+   - Complexidade: Baixa
+
+14.8 NOTIFICATIONS
+   - Sistema de notificações toast
+   - Sintaxe: Notification.show("Message");
+   - Benefício: Feedback ao usuário
+   - Complexidade: Baixa
+
+14.9 DIALOGS
+   - Diálogos comuns (alert, confirm, prompt, file picker)
+   - Sintaxe: var file = Dialog.openFile();
+   - Benefício: Interação nativa
+   - Complexidade: Média
+
+14.10 MENU BAR
+   - Menu bar nativa
+   - Benefício: Apps desktop
+   - Complexidade: Média
+
+14.11 TABS
+   - Sistema de abas
+   - Benefício: Organização de UI
+   - Complexidade: Média
+
+14.12 SPLITTERS
+   - Split panes redimensionáveis
+   - Benefício: Layouts complexos
+   - Complexidade: Média
+
+14.13 TREE VIEW
+   - Componente de árvore hierárquica
+   - Benefício: Navegação de dados
+   - Complexidade: Média
+
+14.14 TABLE/GRID
+   - Tabela com sorting, filtering, pagination
+   - Benefício: Display de dados tabulares
+   - Complexidade: Alta
+
+14.15 CHARTS
+   - Gráficos (line, bar, pie, scatter)
+   - Benefício: Visualização de dados
+   - Complexidade: Alta
+
+14.16 CANVAS API
+   - API de canvas 2D para desenho customizado
+   - Benefício: Gráficos customizados
+   - Complexidade: Média
+
+14.17 SVG RENDERING
+   - Renderização de SVG
+   - Benefício: Gráficos vetoriais
+   - Complexidade: Alta
+
+14.18 TEXT RENDERING AVANÇADO
+   - Text rendering com suporte a Unicode, RTL, wrapping
+   - Benefício: Internacionalização
+   - Complexidade: Alta
+
+================================================================================
+15. BANCO DE DADOS
+================================================================================
+
+15.1 POSTGRESQL SUPPORT
+   - Driver nativo para PostgreSQL
+   - Sintaxe: var pg = PostgreSQL(); var db = pg.connect("...");
+   - Benefício: Banco de dados enterprise
+   - Complexidade: Alta
+
+15.2 MYSQL SUPPORT
+   - Driver nativo para MySQL/MariaDB
+   - Benefício: Banco de dados popular
+   - Complexidade: Alta
+
+15.3 MONGODB SUPPORT
+   - Driver nativo para MongoDB
+   - Benefício: NoSQL document store
+   - Complexidade: Alta
+
+15.4 REDIS SUPPORT
+   - Driver nativo para Redis
+   - Benefício: Cache, message broker
+   - Complexidade: Média
+
+15.5 ORM
+   - ORM simplificado para bancos relacionais
+   - Sintaxe: var users = User.where({ age: > 18 }).all();
+   - Benefício: Abstração de SQL
+   - Complexidade: Alta
+
+15.6 QUERY BUILDER
+   - Builder para queries SQL
+   - Sintaxe: var query = Query.select("*").from("users").where("age > 18");
+   - Benefício: Queries dinâmicas type-safe
+   - Complexidade: Média
+
+15.7 MIGRATIONS
+   - Sistema de migrations para schema
+   - Benefício: Versionamento de DB
+   - Complexidade: Alta
+
+15.8 CONNECTION POOL
+   - Pool de conexões para DB
+   - Benefício: Performance
+   - Complexidade: Média
+
+15.9 TRANSACTIONS
+   - Suporte a transações (já existe parcialmente no SQLite)
+   - Benefício: Integridade de dados
+   - Complexidade: Baixa
+
+15.10 PREPARED STATEMENTS
+   - Prepared statements para segurança
+   - Benefício: Prevenção de SQL injection
+   - Complexidade: Baixa
+
+================================================================================
+16. SERIALIZAÇÃO E FORMATS
+================================================================================
+
+16.1 YAML SUPPORT
+   - Parser e serializer YAML
+   - Sintaxe: var data = YAML.parse("key: value");
+   - Benefício: Config files, Kubernetes
+   - Complexidade: Média
+
+16.2 TOML SUPPORT
+   - Parser e serializer TOML
+   - Benefício: Config files modernos
+   - Complexidade: Baixa
+
+16.3 XML SUPPORT
+   - Parser e serializer XML
+   - Sintaxe: var data = XML.parse("<root>...</root>");
+   - Benefício: Legado, SOAP, configs
+   - Complexidade: Média
+
+16.4 CSV SUPPORT
+   - Parser e serializer CSV
+   - Sintaxe: var rows = CSV.parse("a,b,c\n1,2,3");
+   - Benefício: Data exchange, Excel
+   - Complexidade: Baixa
+
+16.5 INI SUPPORT
+   - Parser e serializer INI
+   - Benefício: Config files legados
+   - Complexidade: Baixa
+
+16.6 PROTOBUF SUPPORT
+   - Suporte a Protocol Buffers
+   - Benefício: Serialização eficiente, RPC
+   - Complexidade: Alta
+
+16.7 MSGPACK SUPPORT
+   - Suporte a MessagePack
+   - Benefício: Serialização binária eficiente
+   - Complexidade: Média
+
+16.8 CBOR SUPPORT
+   - Suporte a CBOR (Concise Binary Object Representation)
+   - Benefício: IoT, embedded
+   - Complexidade: Média
+
+16.9 CUSTOM SERIALIZERS
+   - Permitir serializers customizados
+   - Benefício: Formats proprietários
+   - Complexidade: Média
+
+================================================================================
+17. LOGGING E DEBUGGING
+================================================================================
+
+17.1 LOGGING MODULE
+   - Sistema de logging completo (levels, formatters, handlers)
+   - Sintaxe: Logger.info("Message"); Logger.error("Error");
+   - Levels: debug, info, warn, error, fatal
+   - Benefício: Debugging, monitoramento
+   - Complexidade: Média
+
+17.2 STRUCTURED LOGGING
+   - Logging estruturado (JSON, key-value)
+   - Sintaxe: Logger.info("Event", { user: id, action: "login" });
+   - Benefício: Log aggregation, analysis
+   - Complexidade: Média
+
+17.3 LOG ROTATION
+   - Rotação de logs por tamanho/data
+   - Benefício: Gerenciamento de espaço
+   - Complexidade: Baixa
+
+17.4 DEBUGGER
+   - Debugger integrado (breakpoints, step, inspect)
+   - Benefício: Debugging interativo
+   - Complexidade: Alta
+
+17.5 PROFILER
+   - Profiler de performance
+   - Sintaxe: Profiler.start(); ... Profiler.stop();
+   - Benefício: Otimização
+   - Complexidade: Alta
+
+17.6 MEMORY PROFILER
+   - Profiler de memória
+   - Benefício: Detectar memory leaks
+   - Complexidade: Alta
+
+17.7 COVERAGE
+   - Code coverage para testes
+   - Benefício: Qualidade de código
+   - Complexidade: Média
+
+17.8 BENCHMARKING
+   - Framework de benchmarking
+   - Sintaxe: Benchmark.run("test", () => { ... });
+   - Benefício: Performance testing
+   - Complexidade: Média
+
+17.9 TRACING
+   - Distributed tracing
+   - Benefício: Microservices, debugging
+   - Complexidade: Alta
+
+17.10 METRICS
+   - Sistema de métricas (counters, gauges, histograms)
+   - Benefício: Monitoramento
+   - Complexidade: Média
+
+================================================================================
+18. TESTES
+================================================================================
+
+18.1 TESTING FRAMEWORK
+   - Framework de testes nativo
+   - Sintaxe: test("description", () => { assert.equal(a, b); });
+   - Benefício: Testes integrados
+   - Complexidade: Média
+
+18.2 ASSERTIONS LIBRARY
+   - Biblioteca de assertions rica
+   - Métodos: equal, notEqual, deepEqual, throws, etc.
+   - Benefício: Testes expressivos
+   - Complexidade: Baixa
+
+18.3 MOCKING
+   - Framework de mocking
+   - Sintaxe: var mock = Mock.create(); mock.expect(method).returns(value);
+   - Benefício: Testes isolados
+   - Complexidade: Alta
+
+18.4 TEST DOUBLES
+   - Stubs, spies, fakes
+   - Benefício: Testes isolados
+   - Complexidade: Média
+
+18.5 PROPERTY-BASED TESTING
+   - Property-based testing (QuickCheck-style)
+   - Benefício: Testes mais abrangentes
+   - Complexidade: Alta
+
+18.6 FUZZING
+   - Fuzzing para encontrar bugs
+   - Benefício: Segurança, robustez
+   - Complexidade: Alta
+
+18.7 TEST COVERAGE
+   - Code coverage reports
+   - Benefício: Qualidade
+   - Complexidade: Média
+
+18.8 TEST RUNNER
+   - Test runner com filtering, parallel execution
+   - Benefício: Workflow de testes
+   - Complexidade: Baixa
+
+18.9 SNAPSHOT TESTING
+   - Snapshot testing
+   - Benefício: Regressão em UI/output
+   - Complexidade: Média
+
+18.10 INTEGRATION TESTS
+   - Suporte a integration tests
+   - Benefício: Testes end-to-end
+   - Complexidade: Média
+
+================================================================================
+19. REFLEXÃO E METAPROGRAMAÇÃO
+================================================================================
+
+19.1 REFLECTION
+   - Reflexão para inspecionar tipos, métodos, propriedades
+   - Sintaxe: var methods = Class.getMethods(obj);
+   - Benefício: Frameworks, serialização
+   - Complexidade: Alta
+
+19.2 DYNAMIC METHOD CALL
+   - Chamada dinâmica de métodos
+   - Sintaxe: obj.callMethod("methodName", args);
+   - Benefício: Plugins, extensibilidade
+   - Complexidade: Média
+
+19.3 DYNAMIC PROPERTY ACCESS
+   - Acesso dinâmico a propriedades
+   - Sintaxe: obj.getProperty("propName");
+   - Benefício: Serialização, ORM
+   - Complexidade: Baixa
+
+19.4 ANNOTATIONS/ATTRIBUTES
+   - Anotações em classes, métodos, campos
+   - Sintaxe: @Serializable class User { ... }
+   - Benefício: Metadados, frameworks
+   - Complexidade: Alta
+
+19.5 MACROS
+   - Sistema de macros (compile-time metaprogramming)
+   - Sintaxe: macro repeat(n, body) { ... }
+   - Benefício: Code generation, DSLs
+   - Complexidade: Muito Alta
+
+19.6 CODE GENERATION
+   - Geração de código em runtime
+   - Benefício: DSLs, templates
+   - Complexidade: Alta
+
+19.7 EVAL
+   - Função eval para executar código dinâmico
+   - Sintaxe: eval("print('hello')");
+   - Benefício: REPL, plugins
+   - Complexidade: Média (security risk)
+
+19.8 SYMBOLS
+   - Símbolos para propriedades privadas
+   - Sintaxe: var sym = Symbol("private"); obj[sym] = value;
+   - Benefício: Metaprogramação
+   - Complexidade: Média
+
+================================================================================
+20. PERFORMANCE E OTIMIZAÇÃO
+================================================================================
+
+20.1 JIT COMPILATION
+   - Compilação JIT para hot code
+   - Benefício: Performance significativa
+   - Complexidade: Muito Alta
+
+20.2 AHEAD-OF-TIME COMPILATION
+   - Compilação AOT para executáveis nativos
+   - Benefício: Startup rápido, performance
+   - Complexidade: Alta
+
+20.3 INLINE CACHING
+   - Inline caching para property access
+   - Benefício: Performance
+   - Complexidade: Alta
+
+20.4 ESCAPE ANALYSIS
+   - Escape analysis para alocação no stack
+   - Benefício: Performance, GC
+   - Complexidade: Alta
+
+20.5 VALUE TYPES
+   - Value types (structs) para alocação no stack
+   - Sintaxe: struct Point { x: number; y: number; }
+   - Benefício: Performance, cache locality
+   - Complexidade: Alta
+
+20.6 ZERO-COPY
+   - Operações zero-copy quando possível
+   - Benefício: Performance
+   - Complexidade: Média
+
+20.7 STRING INTERNING
+   - String interning para strings duplicadas
+   - Benefício: Memória, comparações
+   - Complexidade: Baixa
+
+20.8 OBJECT POOLING
+   - Object pooling para objetos frequentes
+   - Benefício: GC pressure, performance
+   - Complexidade: Média
+
+20.9 LAZY LOADING
+   - Lazy loading para módulos e recursos
+   - Benefício: Startup time
+   - Complexidade: Baixa
+
+20.10 CACHING
+   - Caching de resultados de operações caras
+   - Benefício: Performance
+   - Complexidade: Baixa
+
+================================================================================
+21. INTERNACIONALIZAÇÃO (I18N)
+================================================================================
+
+21.1 LOCALE SUPPORT
+   - Suporte a locales
+   - Sintaxe: Locale.set("pt-BR");
+   - Benefício: Formatação regionalizada
+   - Complexidade: Média
+
+21.2 NUMBER FORMATTING
+   - Formatação de números por locale
+   - Sintaxe: Number.format(1234.56, "pt-BR"); // "1.234,56"
+   - Benefício: Display regionalizado
+   - Complexidade: Baixa
+
+21.3 CURRENCY FORMATTING
+   - Formatação de moedas
+   - Sintaxe: Currency.format(1234.56, "BRL"); // "R$ 1.234,56"
+   - Benefício: Apps financeiras
+   - Complexidade: Baixa
+
+21.4 DATE/TIME FORMATTING
+   - Formatação de datas por locale
+   - Benefício: Display regionalizado
+   - Complexidade: Média
+
+21.5 PLURALIZATION
+   - Regras de pluralização por locale
+   - Benefício: Tradução
+   - Complexidade: Média
+
+21.6 MESSAGE FORMATTING
+   - Formatação de mensagens com placeholders
+   - Sintaxe: Message.format("Hello {0}", ["World"]);
+   - Benefício: Tradução
+   - Complexidade: Baixa
+
+21.7 RTL SUPPORT
+   - Suporte a escrita right-to-left (Arabic, Hebrew)
+   - Benefício: Internacionalização
+   - Complexidade: Alta
+
+21.8 UNICODE NORMALIZATION
+   - Normalização Unicode (NFC, NFD, etc.)
+   - Benefício: Comparação de strings
+   - Complexidade: Média
+
+21.9 COLLATION
+   - Comparação de strings por locale
+   - Benefício: Sorting correto
+   - Complexidade: Média
+
+21.10 TRANSLATION
+   - Sistema de tradução simples
+   - Sintaxe: i18n.t("key");
+   - Benefício: Apps multilíngue
+   - Complexidade: Baixa
+
+================================================================================
+22. CLI E SHELL
+================================================================================
+
+22.1 ARGV PARSING
+   - Parser de argumentos de linha de comando
+   - Sintaxe: var args = Argv.parse(); var verbose = args.flag("--verbose");
+   - Benefício: CLI tools
+   - Complexidade: Baixa
+
+22.2 PROMPT
+   - Prompt interativo de linha de comando
+   - Sintaxe: var input = Prompt.prompt("Enter name: ");
+   - Benefício: CLI interativo
+   - Complexidade: Baixa
+
+22.3 PASSWORD PROMPT
+   - Prompt de senha (input oculto)
+   - Sintaxe: var pass = Prompt.password("Enter password: ");
+   - Benefício: Segurança
+   - Complexidade: Baixa
+
+22.4 PROGRESS BAR
+   - Barra de progresso para CLI
+   - Sintaxe: var bar = ProgressBar(total); bar.update(current);
+   - Benefício: UX em CLI
+   - Complexidade: Baixa
+
+22.5 SPINNER
+   - Spinner para operações longas
+   - Benefício: UX em CLI
+   - Complexidade: Baixa
+
+22.6 TABLES
+   - Display de tabelas formatadas
+   - Sintaxe: Table.print(headers, rows);
+   - Benefício: CLI output
+   - Complexidade: Baixa
+
+22.7 COLORS
+   - Cores ANSI para terminal
+   - Sintaxe: print(Color.red("Error"));
+   - Benefício: CLI visual
+   - Complexidade: Baixa
+
+22.8 CLEAR SCREEN
+   - Limpar tela
+   - Sintaxe: Console.clear();
+   - Benefício: CLI
+   - Complexidade: Baixa
+
+22.9 CURSOR CONTROL
+   - Controle de cursor (move, hide, show)
+   - Benefício: CLI avançado
+   - Complexidade: Média
+
+22.10 TUI
+   - Terminal UI (ncurses-style)
+   - Benefício: Apps CLI complexas
+   - Complexidade: Alta
+
+================================================================================
+23. COMPRESSÃO E ARQUIVOS
+================================================================================
+
+23.1 ZIP
+   - Criação e extração de ZIPs
+   - Sintaxe: Zip.create("archive.zip", files); Zip.extract("archive.zip", dir);
+   - Benefício: Distribuição, backup
+   - Complexidade: Média
+
+23.2 GZIP
+   - Compressão/descompressão GZIP
+   - Sintaxe: var compressed = Gzip.compress(data);
+   - Benefício: HTTP, logs
+   - Complexidade: Baixa
+
+23.3 TAR
+   - Criação e extração de TARs
+   - Benefício: Unix archives
+   - Complexidade: Média
+
+23.4 7Z
+   - Suporte a 7-Zip
+   - Benefício: Alta compressão
+   - Complexidade: Média
+
+23.5 RAR
+   - Leitura de RARs
+   - Benefício: Compatibilidade
+   - Complexidade: Média
+
+23.6 STREAMING COMPRESSION
+   - Compressão em streaming
+   - Benefício: Arquivos grandes
+   - Complexidade: Média
+
+23.7 CHECKSUMS
+   - Checksums de arquivos (CRC32, Adler32)
+   - Benefício: Integridade
+   - Complexidade: Baixa
+
+================================================================================
+24. MULTIMÍDIA
+================================================================================
+
+24.1 IMAGE PROCESSING
+   - Processamento de imagens (resize, crop, rotate, filters)
+   - Sintaxe: Image.resize("input.jpg", "output.jpg", 800, 600);
+   - Benefício: Apps de imagem
+   - Complexidade: Alta
+
+24.2 AUDIO PLAYBACK
+   - Playback de áudio (já existe suporte SFML, pode expandir)
+   - Sintaxe: Audio.play("file.mp3");
+   - Benefício: Apps multimídia
+   - Complexidade: Média
+
+24.3 VIDEO PLAYBACK
+   - Playback de vídeo
+   - Benefício: Apps multimídia
+   - Complexidade: Alta
+
+24.4 CAMERA CAPTURE
+   - Captura de câmera/webcam
+   - Benefício: Apps de visão
+   - Complexidade: Alta
+
+24.5 SCREEN CAPTURE
+   - Captura de tela
+   - Sintaxe: var screenshot = Screen.capture();
+   - Benefício: Ferramentas, automação
+   - Complexidade: Média
+
+24.6 GIF CREATION
+   - Criação de GIFs animados
+   - Benefício: Animações, memes
+   - Complexidade: Média
+
+24.7 ICONS
+   - Manipulação de ícones (ICO, PNG)
+   - Benefício: Apps desktop
+   - Complexidade: Baixa
+
+24.8 COLOR MANIPULATION
+   - Conversão de cores (RGB, HSL, HSV, HEX)
+   - Sintaxe: var hex = Color.rgbToHex(255, 0, 0);
+   - Benefício: Design, gráficos
+   - Complexidade: Baixa
+
+================================================================================
+25. AUTOMAÇÃO E OS
+================================================================================
+
+25.1 PROCESS SPAWNING
+   - Spawning de processos (já existe test_spawn.sp, pode expandir)
+   - Sintaxe: var proc = Process.spawn("cmd", ["/c", "dir"]);
+   - Benefício: Automação, ferramentas
+   - Complexidade: Baixa
+
+25.2 PROCESS CONTROL
+   - Controle de processos (kill, wait, pid)
+   - Benefício: Automação
+   - Complexidade: Baixa
+
+25.3 ENVIRONMENT VARIABLES
+   - Acesso a variáveis de ambiente
+   - Sintaxe: var path = Env.get("PATH"); Env.set("VAR", "value");
+   - Benefício: Configuração
+   - Complexidade: Baixa
+
+25.4 SHELL COMMANDS
+   - Execução de comandos shell
+   - Sintaxe: var output = Shell.exec("ls -la");
+   - Benefício: Automação
+   - Complexidade: Baixa
+
+25.5 REGISTRY (Windows)
+   - Acesso ao registro do Windows
+   - Sintaxe: Registry.get("HKLM\\Software\\Key");
+   - Benefício: Apps Windows
+   - Complexidade: Média
+
+25.6 SERVICES
+   - Controle de serviços Windows
+   - Sintaxe: Service.start("serviceName");
+   - Benefício: Admin de sistemas
+   - Complexidade: Média
+
+25.7 SCHEDULER
+   - Agendamento de tarefas (Windows Task Scheduler)
+   - Benefício: Automação
+   - Complexidade: Média
+
+25.8 SHORTCUTS
+   - Criação de atalhos
+   - Benefício: Instaladores
+   - Complexidade: Baixa
+
+25.9 AUTOSTART
+   - Adicionar apps ao autostart
+   - Benefício: Apps desktop
+   - Complexidade: Baixa
+
+25.10 NOTIFICATIONS (Windows)
+   - Notificações do sistema (Toast notifications)
+   - Sintaxe: WinNotify.show("Title", "Message");
+   - Benefício: Apps desktop
+   - Complexidade: Média
+
+================================================================================
+26. MACHINE LEARNING E AI
+================================================================================
+
+26.1 TENSOR OPERATIONS
+   - Operações com tensores
+   - Benefício: ML base
+   - Complexidade: Alta
+
+26.2 NEURAL NETWORKS
+   - Framework simples para redes neurais
+   - Benefício: ML apps
+   - Complexidade: Muito Alta
+
+26.3 LINEAR REGRESSION
+   - Regressão linear
+   - Benefício: Data analysis
+   - Complexidade: Média
+
+26.4 CLUSTERING
+   - Algoritmos de clustering (K-Means, etc.)
+   - Benefício: Data analysis
+   - Complexidade: Média
+
+26.5 DECISION TREES
+   - Árvores de decisão
+   - Benefício: ML, classificação
+   - Complexidade: Média
+
+26.6 MODEL LOADING
+   - Carregar modelos treinados (ONNX, etc.)
+   - Benefício: ML inference
+   - Complexidade: Alta
+
+================================================================================
+27. OUTROS
+================================================================================
+
+27.1 CONFIG LOADER
+   - Loader unificado para configs (JSON, YAML, TOML, ENV)
+   - Sintaxe: var config = Config.load("config.*");
+   - Benefício: Configuração flexível
+   - Complexidade: Baixa
+
+27.2 ENVIRONMENT-SPECIFIC CONFIGS
+   - Configs por ambiente (dev, staging, prod)
+   - Benefício: Deploy
+   - Complexidade: Baixa
+
+27.3 SECRETS MANAGEMENT
+   - Gerenciamento de secrets (env files, vault integration)
+   - Benefício: Segurança
+   - Complexidade: Média
+
+27.4 FEATURE FLAGS
+   - Sistema de feature flags
+   - Benefício: CI/CD, testing
+   - Complexidade: Baixa
+
+27.5 RATE LIMITING
+   - Rate limiting genérico
+   - Benefício: APIs, proteção
+   - Complexidade: Baixa
+
+27.6 CIRCUIT BREAKER
+   - Pattern de circuit breaker
+   - Benefício: Resiliência
+   - Complexidade: Média
+
+27.7 RETRY LOGIC
+   - Lógica de retry com backoff
+   - Sintaxe: Retry.run(() => operation(), maxAttempts: 3);
+   - Benefício: Resiliência
+   - Complexidade: Baixa
+
+27.8 TIMEOUTS
+   - Timeouts para operações
+   - Sintaxe: Timeout.run(operation, 5000);
+   - Benefício: Resiliência
+   - Complexidade: Baixa
+
+27.9 BULK OPERATIONS
+   - Operações em lote para arrays/maps
+   - Benefício: Performance
+   - Complexidade: Baixa
+
+27.10 DEBOUNCE/THROTTLE
+   - Debounce e throttle para funções
+   - Sintaxe: var debounced = Debounce(func, 300);
+   - Benefício: UX, performance
+   - Complexidade: Baixa
+
+================================================================================
+PRIORIDADES SUGERIDAS
+================================================================================
+
+ALTA PRIORIDADE (Fácil impacto, baixa complexidade):
+- File System API completo (9.1)
+- HTTP Client (10.1)
+- Logging Module (17.1)
+- DateTime Module (12.1)
+- Higher-Order Functions para Arrays (4.1)
+- Default Parameters (4.10)
+- Rest Parameters (4.11)
+- CLI Argument Parsing (22.1)
+- Hash Functions (11.1)
+- String Utilities expandidas (já existe, expandir com regex)
+
+MÉDIA PRIORIDADE (Bom impacto, complexidade média):
+- Interfaces (5.1)
+- Properties/Getters-Setters (5.4)
+- Async/Await melhorado (6.2)
+- PostgreSQL/MySQL Support (15.1, 15.2)
+- YAML/TOML Support (16.1, 16.2)
+- Testing Framework (18.1)
+- Reflection (19.1)
+- Image Processing (24.1)
+
+BAIXA PRIORIDADE (Nice to have, alta complexidade):
+- JIT Compilation (20.1)
+- Macros (19.5)
+- Neural Networks (26.2)
+- TUI (22.10)
+- Full ORM (15.5)
+
+================================================================================
+NOTAS
+================================================================================
+
+- Complexidade é estimada baseada na arquitetura atual (C++ com SFML)
+- Algumas features podem depender de bibliotecas externas (OpenSSL já usado)
+- Prioridades podem mudar baseado em necessidades do projeto
+- Features marcadas como "já existe" podem precisar de expansão/melhorias
+- Considerar backwards compatibility para mudanças breaking
+
+================================================================================

@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Array assignment semantics:** Dynamic array writes now support appending at the next index when assigning to `len(array)`, matching the behavior used by Infinitum vector helpers.
+
+### Added
+- **Mine Package Manager v2.0.0:** Complete rewrite of the Mine plugin management system with modular architecture.
+  - Interactive plugin initialization with `mine init` command
+  - Version management with `mine expand <version>` command
+  - Automatic dependency resolution and installation
+  - Plugin registry integration with GitHub
+  - Colored terminal output for better UX
+  - Automatic dependency fetching via FetchContent (httplib, nlohmann/json, miniz, termcolor)
+  - Support for local third-party libraries to speed up builds
+  - Build gate option `-DBUILD_MINE=ON` to build Mine from root CMakeLists.txt
+- **Infinitum Plugin v1.0.0:** NumPy-like library for Sapphire with comprehensive vector/matrix operations.
+  - Vector creation: `zeros()`, `ones()`, `arange()`, `linspace()`
+  - Math operations: `add()`, `sub()`, `mul()`, `div()`, `scale()`
+  - Reductions: `sum()`, `mean()`, `max()`, `min()`
+  - Statistics: `std()`, `variance()`
+  - Matrix operations: `zeros_matrix()`, `ones_matrix()`, `identity()`, `dot()`
+  - Shape manipulation: `reshape()`, `transpose()`, `flatten()`
+  - Slicing: `slice()`, `filter()` (boolean indexing)
+  - Advanced linear algebra: `matmul()`, `determinant()`, `inverse()`
+  - Broadcasting: `add_scalar()`, `sub_scalar()`, `mul_scalar()`, `div_scalar()`
+  - Random generation: `rand()`, `randn()`, `randint()`, `choice()`
+  - Utilities: `abs()`, `pow()`, `sqrt_list()`, `sort()`, `reverse()`, `print_vector()`
+
 ## [1.0.9] - 2026-07-15
 
 ### Added

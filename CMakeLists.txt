@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 3.11)
 project(sapphire C CXX)
 
+if(POLICY CMP0079)
+    cmake_policy(SET CMP0079 NEW)
+endif()
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
+
 include(FetchContent)
 
 # Fetch OpenCL Headers
@@ -132,8 +139,16 @@ target_link_libraries(sapphire_core PUBLIC OpenCL sqlite3)
 
 add_executable(sapphire src/main.cpp)
 add_executable(runner src/vm/runner.cpp)
-add_executable(mine src/mine/mine.cpp)
 add_executable(spack src/spack/main.cpp src/spack/spack.cpp src/spack/spack_ui.cpp)
+
+# Build new modular mine (v2)
+option(BUILD_MINE "Build new modular mine package manager" OFF)
+if(BUILD_MINE)
+    add_subdirectory(src/mine)
+else()
+    # Only build old mine if new mine is not being built
+    add_executable(mine src/mine/mine.cpp)
+endif()
 
 target_compile_definitions(sapphire PRIVATE SFML_STATIC)
 target_compile_definitions(runner PRIVATE SFML_STATIC)
@@ -171,6 +186,35 @@ target_link_libraries(sapphire PRIVATE ${COMMON_LIBS})
 target_link_libraries(runner PRIVATE ${COMMON_LIBS})
 target_link_libraries(mine PRIVATE ${COMMON_LIBS})
 target_link_libraries(spack PRIVATE ${COMMON_LIBS})
+
+# Optional: Build standalone mine (without Sapphire dependencies)
+option(BUILD_MINE_STANDALONE "Build mine as standalone executable (no Sapphire dependencies)" OFF)
+if(BUILD_MINE_STANDALONE)
+    add_executable(mine_standalone
+        src/mine/mine.cpp
+        src/utils/termcolor.cpp
+    )
+    target_compile_definitions(mine_standalone PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT)
+    target_include_directories(mine_standalone PRIVATE
+        src/
+        src/utils/
+        ${LIBS_DIR}
+        ${OPENSSL_INCLUDE_DIR}
+    )
+    target_link_libraries(mine_standalone PRIVATE
+        OpenSSL::SSL
+        OpenSSL::Crypto
+    )
+    if(WIN32)
+        target_link_libraries(mine_standalone PRIVATE
+            ws2_32
+            crypt32
+        )
+        if(NOT MSVC)
+            target_link_libraries(mine_standalone PRIVATE -pthread)
+        endif()
+    endif()
+endif()
 
 if(WIN32)
 #    add_custom_command(TARGET sapphire POST_BUILD

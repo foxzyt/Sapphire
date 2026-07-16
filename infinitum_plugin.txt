@@ -1,0 +1,4 @@
+name: infinitum
+author: Bernardo Alvim
+version: 1.0.0
+description: NumPy-like library for Sapphire with vector/matrix operations

@@ -810,17 +810,63 @@ void Parser::synchronize() {
 }
 
 void Parser::import_statement() {
-    consume(TokenType::TOKEN_STRING_LITERAL, "Expect a string with the module path after 'import'.");
-
-    uint16_t const_index = identifier_constant(previous);
-
-    consume(TokenType::TOKEN_SEMICOLON, "Expect ';' after module path.");
-
-    emit_byte(static_cast<uint8_t>(OP_IMPORT));
-    emit_byte((const_index >> 8) & 0xFF);
-    emit_byte(const_index & 0xFF);
-
-    emit_byte(OP_POP);
+    // Support two formats:
+    // 1. import "path/to/module.sp"  (traditional file path)
+    // 2. import infinitum@1.0.0       (plugin with version)
+    
+    if (match(TokenType::TOKEN_STRING_LITERAL)) {
+        // Traditional string literal import
+        uint16_t const_index = identifier_constant(previous);
+        
+        consume(TokenType::TOKEN_SEMICOLON, "Expect ';' after module path.");
+        
+        emit_byte(static_cast<uint8_t>(OP_IMPORT));
+        emit_byte((const_index >> 8) & 0xFF);
+        emit_byte(const_index & 0xFF);
+        
+        emit_byte(OP_POP);
+    } else if (match(TokenType::TOKEN_IDENTIFIER)) {
+        // Plugin import with optional version: infinitum@1.0.0
+        std::string plugin_name = previous.literal;
+        
+        // Check for version specifier
+        if (match(TokenType::TOKEN_AT)) {
+            consume(TokenType::TOKEN_STRING_LITERAL, "Expect version string after '@'.");
+            std::string version = previous.literal;
+            
+            // Construct the import path: plugin@version
+            std::string import_path = plugin_name + "@" + version;
+            
+            // Create a string constant for the import path
+            Token import_token(TokenType::TOKEN_STRING_LITERAL, import_path, 0, 0);
+            uint16_t const_index = identifier_constant(import_token);
+            
+            consume(TokenType::TOKEN_SEMICOLON, "Expect ';' after import statement.");
+            
+            emit_byte(static_cast<uint8_t>(OP_IMPORT));
+            emit_byte((const_index >> 8) & 0xFF);
+            emit_byte(const_index & 0xFF);
+            
+            emit_byte(OP_POP);
+        } else {
+            // Just plugin name without version (use latest)
+            std::string import_path = plugin_name + "@latest";
+            
+            // Create a string constant for the import path
+            Token import_token(TokenType::TOKEN_STRING_LITERAL, import_path, 0, 0);
+            uint16_t const_index = identifier_constant(import_token);
+            
+            consume(TokenType::TOKEN_SEMICOLON, "Expect ';' after import statement.");
+            
+            emit_byte(static_cast<uint8_t>(OP_IMPORT));
+            emit_byte((const_index >> 8) & 0xFF);
+            emit_byte(const_index & 0xFF);
+            
+            emit_byte(OP_POP);
+        }
+    } else {
+        error("Expect string literal or plugin name after 'import'.");
+    }
 }
 
 

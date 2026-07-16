@@ -196,6 +196,7 @@ Token Lexer::scan_token() {
             case ']': generated_token = make_token(TokenType::TOKEN_RIGHT_BRACKET); break;
             case ';': generated_token = make_token(TokenType::TOKEN_SEMICOLON); break;
             case ':': generated_token = make_token(TokenType::TOKEN_COLON); break;
+            case '@': generated_token = make_token(TokenType::TOKEN_AT); break;
             case '?': 
                 if (match('.')) generated_token = make_token(TokenType::TOKEN_QUESTION_DOT);
                 else if (match('?')) generated_token = make_token(TokenType::TOKEN_QUESTION_QUESTION);
