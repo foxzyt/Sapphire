@@ -1,3 +1,0 @@
-name: infinitum
-author: Bernardo Alvim
-version: 1.0.0
