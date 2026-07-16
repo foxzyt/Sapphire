@@ -3,7 +3,7 @@ function main() {
     var n = 42;
     var b = true;
     if (b == true) {
-        print("Types test passed.");
+        print("Test passed.");
     }
 }
 main();

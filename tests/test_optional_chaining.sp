@@ -25,6 +25,6 @@ function main() {
     var g = f?.name ?? "fallback";
     if (g != "Sapphire") { print("FAIL: optional chaining on valid obj"); return; }
     
-    print("Optional chaining and nullish coalescing tests passed.");
+    print("Test passed.");
 }
 main();

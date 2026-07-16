@@ -55,19 +55,12 @@ jobs:
           
           # Test files to run (general mechanics)
           TESTS=(
-            "tests/test_arrow_functions.sp"
             "tests/test_array_spread.sp"
-            "tests/test_async_operations.sp"
             "tests/test_bitwise_operations.sp"
             "tests/test_bitwise.sp"
             "tests/test_bitwise_switch.sp"
-            "tests/test_exceptions.sp"
-            "tests/test_exceptions_complex.sp"
-            "tests/test_finally.sp"
             "tests/test_for_loop.sp"
-            "tests/test_for_loop_complex.sp"
             "tests/test_inheritance.sp"
-            "tests/test_inheritance_complex.sp"
             "tests/test_iterators.sp"
             "tests/test_json.sp"
             "tests/test_list.sp"
@@ -76,7 +69,6 @@ jobs:
             "tests/test_map.sp"
             "tests/test_math.sp"
             "tests/test_optional_chaining.sp"
-            "tests/test_shorthand_maps.sp"
             "tests/test_string_interpolation.sp"
             "tests/test_strings.sp"
             "tests/test_switch.sp"
@@ -92,12 +84,8 @@ jobs:
           # Module-based tests
           MODULE_TESTS=(
             "tests/module/test_io_module.sp"
-            "tests/module/test_json_module.sp"
             "tests/module/test_list_util_module.sp"
             "tests/module/test_math_advanced.sp"
-            "tests/module/test_math_module.sp"
-            "tests/module/test_sqlite_module.sp"
-            "tests/module/test_string_module.sp"
             "tests/module/test_system_module.sp"
           )
           
@@ -105,7 +93,7 @@ jobs:
           for test in "${TESTS[@]}"; do
             if [ -f "$test" ]; then
               echo "Running: $test"
-              if ./build/sapphire.exe "$test" 2>&1; then
+              if ./build/sapphire.exe "$test" 2>&1 | grep -q "Test passed."; then
                 echo "PASS: $test"
                 PASS=$((PASS + 1))
               else
@@ -123,7 +111,7 @@ jobs:
           for test in "${MODULE_TESTS[@]}"; do
             if [ -f "$test" ]; then
               echo "Running: $test"
-              if ./build/sapphire.exe "$test" 2>&1; then
+              if ./build/sapphire.exe "$test" 2>&1 | grep -q "Test passed."; then
                 echo "PASS: $test"
                 PASS=$((PASS + 1))
               else

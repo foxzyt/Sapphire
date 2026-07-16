@@ -14,6 +14,6 @@ function main() {
     var elapsed = clock() - start;
     if (elapsed < 0.05) { print("FAIL: clock/sleep timing"); return; }
     
-    print("System module tests passed.");
+    print("Test passed.");
 }
 main();

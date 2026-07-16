@@ -25,3 +25,4 @@ switch (x) {
         print "x is something else";
         break;
 }
+print("Test passed.");

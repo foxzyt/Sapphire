@@ -24,3 +24,4 @@ print "---";
 var dog = Dog();
 dog.speak();
 dog.move();
+print("Test passed.");

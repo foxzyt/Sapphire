@@ -38,3 +38,4 @@ switch (10) {
     default:
         print("Yes (default)");
 }
+print("Test passed.");

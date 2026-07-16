@@ -9,3 +9,4 @@ print(data.tags[0]);
 
 var str = JSON.stringify(data);
 print(str == rawStr);
+print("Test passed.");

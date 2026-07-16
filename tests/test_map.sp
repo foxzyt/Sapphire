@@ -4,7 +4,7 @@ function main() {
     
     if (m["name"] == "Sapphire") {
         if (m["version"] == 1.8) {
-            print("Map test passed.");
+            print("Test passed.");
         }
     }
 }

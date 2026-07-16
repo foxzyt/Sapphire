@@ -9,7 +9,7 @@ function main() {
         System.exit(1);
     }
     
-    print("For loop test passed.");
+    print("Test passed.");
 }
 
 main();

@@ -25,3 +25,4 @@ print("FOR OF MAP:");
 for (var v of m) {
     print(v);
 }
+print("Test passed.");

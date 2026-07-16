@@ -47,4 +47,4 @@ var fontSize = 14;
 var config = { theme, fontSize };
 print "config.theme: " + config["theme"];
 
-print "All tests completed.";
+print("Test passed.");

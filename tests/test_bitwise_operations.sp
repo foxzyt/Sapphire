@@ -49,6 +49,6 @@ function main() {
     }
     if (result2 != "default") { print("FAIL: switch default"); return; }
     
-    print("Bitwise and switch tests passed.");
+    print("Test passed.");
 }
 main();

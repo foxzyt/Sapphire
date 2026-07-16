@@ -22,6 +22,6 @@ function main() {
     var [first, second, third] = [1, 2, 3];
     if (first != 1 || second != 2 || third != 3) { print("FAIL: triple destructure"); return; }
     
-    print("Array spread and destructuring tests passed.");
+    print("Test passed.");
 }
 main();

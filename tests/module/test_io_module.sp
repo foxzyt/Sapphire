@@ -31,6 +31,6 @@ function main() {
         return;
     }
     
-    print("IO module tests passed.");
+    print("Test passed.");
 }
 main();

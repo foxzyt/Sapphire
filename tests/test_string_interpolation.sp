@@ -10,6 +10,6 @@ function main() {
     if (sum != "10 + 20 = 30") { print("FAIL: f-string expression"); return; }
     
     var nested = f"Value: {f"inner {a}"}";
-    print("String interpolation tests passed.");
+    print("Test passed.");
 }
 main();

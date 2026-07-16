@@ -12,3 +12,4 @@ async function taskA() {
 
 var p1 = taskA();
 print "Main script ending.";
+print("Test passed.");

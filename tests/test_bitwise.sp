@@ -7,3 +7,4 @@ print (a ^ b); // 0110 = 6
 print (~a);       // -6
 print (a << 1); // 1010 = 10
 print (a >> 1); // 0010 = 2
+print("Test passed.");

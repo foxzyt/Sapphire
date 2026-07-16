@@ -74,7 +74,7 @@ while (outer < 3) {
 }
 // outer runs 3 times. inner runs 1 time each (0). So inner_runs = 3.
 if (inner_runs == 3) {
-    print("Nested break passed");
+    print("Test passed.");
 } else {
     print("Nested break failed: " + inner_runs);
 }

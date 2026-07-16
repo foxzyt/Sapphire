@@ -20,6 +20,6 @@ function main() {
     if (listLength(lst) != 2) { print("FAIL: listRemoveAt length"); return; }
     if (listGet(lst, 0) != 25) { print("FAIL: listRemoveAt shift"); return; }
     
-    print("ListUtil module tests passed.");
+    print("Test passed.");
 }
 main();

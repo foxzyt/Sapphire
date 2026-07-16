@@ -25,6 +25,6 @@ function main() {
     if (getValue(true) != 100) { print("FAIL: ternary in function true"); return; }
     if (getValue(false) != 200) { print("FAIL: ternary in function false"); return; }
     
-    print("Complex ternary tests passed.");
+    print("Test passed.");
 }
 main();

@@ -24,6 +24,6 @@ function main() {
     var h = lerp(0, 10, 0.5);
     if (h != 5) { print("FAIL: lerp"); return; }
     
-    print("Advanced Math tests passed.");
+    print("Test passed.");
 }
 main();

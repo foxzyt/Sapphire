@@ -3,7 +3,7 @@ function main() {
     var b = 3;
     var c = (a * b) / 5;
     if (c == 9) {
-        print("Math test passed.");
+        print("Test passed.");
     }
 }
 main();

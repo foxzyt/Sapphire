@@ -5,6 +5,6 @@ function main() {
         sum = sum + i;
         i = i + 1;
     }
-    print("Loop test passed. Sum=" + valueToString(sum));
+    print("Test passed.");
 }
 main();

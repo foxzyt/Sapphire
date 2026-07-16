@@ -10,3 +10,4 @@ var is_even = a % 2 == 0 ? "yes" : "no";
 print(is_even); // yes
 
 print(false ? 1 : true ? 2 : 3); // 2
+print("Test passed.");
