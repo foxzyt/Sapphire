@@ -20,6 +20,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatic dependency fetching via FetchContent (httplib, nlohmann/json, miniz, termcolor)
   - Support for local third-party libraries to speed up builds
   - Build gate option `-DBUILD_MINE=ON` to build Mine from root CMakeLists.txt
+- **Mine Lockfile System:** Complete lockfile implementation for dependency management.
+  - `mine.lock` files generated in plugin directories with SHA256 checksums
+  - JSON-based lockfile format using nlohmann::json for robust parsing
+  - Dependency tree tracking with direct dependencies for each locked package
+  - Source tracking (registry vs local) for each dependency
+  - Checksum verification for integrity validation
+  - `LockedDependency` struct with name, version, checksum, source, and dependencies
+  - `LockFile` class with add_dependency(), write(), read(), and verify() methods
+  - Automatic lockfile generation after successful plugin installation
+  - Lockfile path: `%APPDATA%/Sapphire/plugins/<plugin_name>/mine.lock`
+- **Version-Aware Import System:** Complete implementation of versioned imports in Sapphire language.
+  - New `TOKEN_AT` token for version specification syntax
+  - Parser support for `import plugin@version` and `import plugin@latest` syntax
+  - Lexer recognition of `@` character for version delimiting
+  - VM automatic path resolution for plugin imports
+  - Support for multiple plugin path resolution strategies:
+    - `plugins/<name>/versions/v<version>/files/main.sp`
+    - `../plugins/<name>/versions/v<version>/files/main.sp`
+    - `../../plugins/<name>/versions/v<version>/files/main.sp`
+    - `../<name>/versions/v<version>/files/main.sp`
+  - Backward compatibility with traditional string literal imports: `import "path/to/module.sp"`
+  - Import caching to prevent duplicate module loading
+- **Dependency Conflict Resolution:** Intelligent version conflict detection and management.
+  - `version_conflicts_` map tracking all required versions per plugin
+  - `check_version_conflict()` method to detect version mismatches
+  - `record_version_requirement()` method to track dependency requirements
+  - Informative error messages showing conflicting versions
+  - Support for multiple versions of the same plugin to coexist
+  - Guidance for users to use version-specific imports when conflicts occur
+  - DFS-based dependency resolution to prevent infinite loops
+- **Intelligent Caching System:** Efficient download caching for plugin management.
+  - Unique cache keys: `<plugin_name>_<version>.zip`
+  - Cache directory: `%APPDATA%/Sapphire/plugins/.cache/`
+  - Automatic cache hit detection before downloading
+  - Unique extraction directories per version: `extracted_<name>_<version>`
+  - Cache cleanup functionality with `cleanup_cache()`
+  - Significant reduction in redundant downloads
+- **Mine Command Architecture:** Modular command system for plugin management.
+  - `cmd_install()` - Install plugins with dependency resolution
+  - `cmd_list()` - List all installed plugins with versions
+  - `cmd_check()` - Verify plugin integrity and dependencies
+  - `cmd_info()` - Display detailed plugin information
+  - `cmd_expand()` - Interactive plugin version creation
+  - `cmd_init()` - Initialize new plugin projects
+- **Core Infrastructure:** Complete core system for plugin management.
+  - `DependencyResolver` class with DFS-based resolution algorithm
+  - `download_and_extract_plugin()` with GitHub ZIP URL handling
+  - `parse_dependencies_txt()` for DEPENDENCIES.txt parsing
+  - `write_dependencies_txt()` for DEPENDENCIES.txt generation
+  - `parse_plugin_txt()` for PLUGIN.txt metadata parsing
+  - `get_plugin_dir()`, `get_cache_dir()`, `get_version_dir()` utilities
+  - GitHub API integration for registry queries
+  - SSL/TLS support via httplib for secure downloads
 - **Infinitum Plugin v1.0.0:** NumPy-like library for Sapphire with comprehensive vector/matrix operations.
   - Vector creation: `zeros()`, `ones()`, `arange()`, `linspace()`
   - Math operations: `add()`, `sub()`, `mul()`, `div()`, `scale()`
@@ -32,6 +85,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Broadcasting: `add_scalar()`, `sub_scalar()`, `mul_scalar()`, `div_scalar()`
   - Random generation: `rand()`, `randn()`, `randint()`, `choice()`
   - Utilities: `abs()`, `pow()`, `sqrt_list()`, `sort()`, `reverse()`, `print_vector()`
+- **Test Infrastructure:** Comprehensive test suite for plugin management.
+  - `test_infinitum.sp` - Main test suite for Infinitum plugin
+  - `test_infinitum_local.sp` - Local variant of Infinitum tests
+  - `test_infinitum_import.sp` - Test script for version-aware imports
+  - Demonstration of import syntax: `import infinitum@"1.0.0"`
+  - Verification of automatic path resolution
+  - Integration testing with mine.lock system
 
 ## [1.0.9] - 2026-07-15
 
