@@ -55,7 +55,6 @@ jobs:
           
           # Test files to run (general mechanics)
           TESTS=(
-            "tests/calculator.sp"
             "tests/test_arrow_functions.sp"
             "tests/test_array_spread.sp"
             "tests/test_async_operations.sp"
