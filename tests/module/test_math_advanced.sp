@@ -1,5 +1,5 @@
 // Test: Advanced Math functions
-function main() void {
+function main() {
     var a = floor(3.7);
     if (a != 3) { print("FAIL: floor"); return; }
     

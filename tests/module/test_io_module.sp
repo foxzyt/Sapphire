@@ -1,5 +1,5 @@
 // Test: IO module functions
-function main() void {
+function main() {
     // Write a test file
     writeFile("_test_io_temp.txt", "Hello IO!");
     

@@ -1,5 +1,5 @@
 // Test: Optional chaining (?.) and nullish coalescing (??)
-function main() void {
+function main() {
     // Optional chaining
     var obj = nil;
     var result = obj?.property;

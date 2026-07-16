@@ -1,4 +1,4 @@
-function main() void {
+function main() {
     var m = {"name": "Sapphire", "version": 1.8};
     m["author"] = "User";
     

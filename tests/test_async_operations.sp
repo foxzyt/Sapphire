@@ -1,5 +1,5 @@
 // Test: Async operations with spawn and join
-function main() void {
+function main() {
     // Test basic spawn
     var counter = 0;
     var thread = spawn() {

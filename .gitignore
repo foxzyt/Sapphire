@@ -2,6 +2,7 @@
 bin/
 obj/
 out/
+build/
 
 # ── CMake generated files ─────────────────────────────────────────────────────
 CMakeCache.txt

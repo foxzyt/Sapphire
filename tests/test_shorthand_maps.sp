@@ -1,5 +1,5 @@
 // Test: Shorthand properties in maps and class fields
-function main() void {
+function main() {
     // Shorthand properties
     var name = "Sapphire";
     var version = 1.09;

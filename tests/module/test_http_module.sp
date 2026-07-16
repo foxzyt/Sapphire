@@ -1,5 +1,5 @@
 // Test: HTTP module functions
-function main() void {
+function main() {
     // Test ping
     var pingResult = httpPing("https://google.com");
     if (pingResult != true) { print("FAIL: httpPing google.com"); return; }

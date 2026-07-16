@@ -125,6 +125,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Array assignment semantics:** Dynamic array writes now support appending at the next index when assigning to `len(array)`, matching the behavior used by Infinitum vector helpers.
+- **Parser compatibility:** Function declarations now accept optional explicit return-type annotations such as `function main() void {}` and `function foo() string {}` while preserving the newer no-return-type syntax.
 
 ## [1.0.9] - 2026-07-15
 

@@ -1,5 +1,5 @@
 // Test: Complex for loops (C-style, for-in, foreach)
-function main() void {
+function main() {
     // C-style for loop
     var sum = 0;
     for (var i = 0; i < 5; i = i + 1) {

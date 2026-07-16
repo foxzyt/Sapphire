@@ -1,9 +1,9 @@
-async function yield_point() int {
+async function yield_point() {
     print "Yield point running!";
     return 0; 
 }
 
-async function taskA() int {
+async function taskA() {
     print "A 1";
     await yield_point();
     print "A 2";

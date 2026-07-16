@@ -59,7 +59,7 @@ inline int cmd_expand(const std::string& version, const std::filesystem::path& w
         std::ofstream main_file(main_sp);
         main_file << "// Main entry point for " << meta->name << " v" << version << "\n";
         main_file << "// Author: " << meta->author << "\n\n";
-        main_file << "function main() void {\n";
+        main_file << "function main() {\n";
         main_file << "    print(\"Hello from " << meta->name << "!\");\n";
         main_file << "}\n";
         main_file << "main();\n";

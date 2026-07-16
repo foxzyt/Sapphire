@@ -1,5 +1,5 @@
 // Test: ListUtil module functions
-function main() void {
+function main() {
     var lst = listCreate();
     listAppend(lst, 10);
     listAppend(lst, 20);

@@ -1,5 +1,5 @@
 // Test: Bitwise operations and switch statements
-function main() void {
+function main() {
     // Bitwise AND
     var a = 5 & 3;  // 0101 & 0011 = 0001
     if (a != 1) { print("FAIL: bitwise AND"); return; }

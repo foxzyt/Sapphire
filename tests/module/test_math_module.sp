@@ -1,5 +1,5 @@
 // Test: Math module functions
-function main() void {
+function main() {
     var a = Math.abs(-5);
     if (a != 5) { print("FAIL: Math.abs"); return; }
     

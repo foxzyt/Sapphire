@@ -1,29 +1,29 @@
 // Test: Complex inheritance with method overriding
 class Animal {
-    function speak() string {
+    function speak() {
         return "Generic sound";
     }
 }
 
 class Dog extends Animal {
-    function speak() string {
+    function speak() {
         return "Woof!";
     }
 }
 
 class Cat extends Animal {
-    function speak() string {
+    function speak() {
         return "Meow!";
     }
 }
 
 class Puppy extends Dog {
-    function speak() string {
+    function speak() {
         return "Yip!";
     }
 }
 
-function main() void {
+function main() {
     var animal = Animal();
     var dog = Dog();
     var cat = Cat();

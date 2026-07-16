@@ -1,5 +1,5 @@
 // Test: Complex exception handling with try/catch/finally
-function main() void {
+function main() {
     var caught = false;
     var finallyRan = false;
     

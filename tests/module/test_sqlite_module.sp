@@ -1,5 +1,5 @@
 // Test: SQLite module operations
-function main() void {
+function main() {
     var sql = SQLite();
     var db = sql.open(":memory:");
     

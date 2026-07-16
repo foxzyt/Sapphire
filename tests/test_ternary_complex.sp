@@ -1,5 +1,5 @@
 // Test: Complex ternary expressions
-function main() void {
+function main() {
     var a = 10;
     var b = 20;
     
@@ -19,7 +19,7 @@ function main() void {
     if (category2 != "large") { print("FAIL: nested ternary large"); return; }
     
     // Ternary with function calls
-    function getValue(cond) int {
+    function getValue(cond) {
         return cond ? 100 : 200;
     }
     if (getValue(true) != 100) { print("FAIL: ternary in function true"); return; }

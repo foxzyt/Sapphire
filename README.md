@@ -60,11 +60,11 @@ const pi = 3.1415
 Functions are declared using the `function` keyword and require a return type.
 
 ```javascript
-function greet(name) string {
+function greet(name) {
     return "Hello, " + name
 }
 
-function print_message() void {
+function print_message() {
     print("This function returns nothing.")
 }
 ```

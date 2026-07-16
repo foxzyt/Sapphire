@@ -1,5 +1,5 @@
 // Test: String module functions
-function main() void {
+function main() {
     var s = "   Hello World!   ";
     
     var trimmed = String.trim(s);

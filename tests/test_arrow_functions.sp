@@ -1,5 +1,5 @@
 // Test: Arrow functions
-function main() void {
+function main() {
     var square = (x) => x * x;
     var result = square(5);
     if (result != 25) { print("FAIL: arrow function basic"); return; }

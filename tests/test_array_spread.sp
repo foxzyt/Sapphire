@@ -1,5 +1,5 @@
 // Test: Array spread operator and destructuring
-function main() void {
+function main() {
     // Spread
     var arr1 = [1, 2, 3];
     var arr2 = [...arr1, 4, 5];

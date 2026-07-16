@@ -37,7 +37,7 @@ let window = Window({
     ]
 });
 
-function updateUI() bool {
+function updateUI() {
     let handler = Render(window);
     if (handler) {
         handler();

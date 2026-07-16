@@ -1,8 +1,8 @@
-async function yield_point() int {
+async function yield_point() {
     return 0; // Async function returns immediately, wrapping in promise.
 }
 
-async function taskA() string {
+async function taskA() {
     print "A 1";
     await yield_point();
     print "A 2";
@@ -11,7 +11,7 @@ async function taskA() string {
     return "A done";
 }
 
-async function taskB() string {
+async function taskB() {
     print "B 1";
     await yield_point();
     print "B 2";

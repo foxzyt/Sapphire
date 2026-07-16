@@ -1,5 +1,5 @@
 // Test: String interpolation (f-strings)
-function main() void {
+function main() {
     var name = "World";
     var greeting = f"Hello {name}!";
     if (greeting != "Hello World!") { print("FAIL: basic f-string"); return; }

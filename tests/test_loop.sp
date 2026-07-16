@@ -1,4 +1,4 @@
-function main() void {
+function main() {
     var i = 0;
     var sum = 0;
     while (i < 10) {

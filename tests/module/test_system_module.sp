@@ -1,5 +1,5 @@
 // Test: System module functions
-function main() void {
+function main() {
     var os = getOS();
     if (os == "") { print("FAIL: getOS empty"); return; }
     print("OS: " + os);

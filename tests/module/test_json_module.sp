@@ -1,5 +1,5 @@
 // Test: JSON module functions
-function main() void {
+function main() {
     // Test JSON.stringify
     var obj = {"name": "Sapphire", "version": 1.09};
     var str = JSON.stringify(obj);

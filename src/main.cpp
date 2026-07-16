@@ -366,7 +366,7 @@ void run_init(const std::string &name) {
          << "var config_window_height = window_height;\n"
          << "var config_window_title = window_title;\n"
          << "var UI = 1;\n\n"
-         << "function updateUI() bool {\n"
+         << "function updateUI() {\n"
          << "    pollEvents();\n"
          << "    if (isWindowOpen() == false) { return false; }\n"
          << "    clear();\n"
