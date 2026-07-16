@@ -4,6 +4,9 @@
 [![Latest Release](https://img.shields.io/github/v/release/foxzyt/Sapphire?color=blue&label=release)](https://github.com/foxzyt/Sapphire/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
+**[Website](https://foxzyt.github.io/Sapphire)** . **[Documentation](https://foxzyt.github.io/Sapphire/site/docs_intro.html)** . **[Avaliable Plugins](https://github.com/foxzyt/sapphire-mine)**
+
+
 Sapphire is a hybrid programming language designed for performance and clarity. It combines the speed of compiled languages with the syntax of high-level scripting, making it suitable for tools, UI-driven applications, and system-level tasks.
 
 > **Note:** Sapphire currently only supports **Windows**.
