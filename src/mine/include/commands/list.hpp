@@ -38,26 +38,64 @@ inline int cmd_list() {
             continue;
         }
         
-        // Check for PLUGIN.txt
+        // Check for PLUGIN.txt in base (for metadata only, not version)
         fs::path plugin_txt = entry.path() / "PLUGIN.txt";
-        if (!fs::exists(plugin_txt)) {
-            std::cout << plugin_name << " [INVALID: Missing PLUGIN.txt]" << std::endl;
+        std::string author = "Unknown";
+        std::string description = "";
+        
+        if (fs::exists(plugin_txt)) {
+            auto meta = parse_plugin_txt(plugin_txt);
+            if (meta) {
+                author = meta->author;
+                description = meta->description;
+            }
+        }
+        
+        // Check for versions directory
+        fs::path versions_dir = entry.path() / "versions";
+        if (!fs::exists(versions_dir) || !fs::is_directory(versions_dir)) {
+            std::cout << plugin_name << " [INVALID: No versions directory]" << std::endl;
             plugin_count++;
             continue;
         }
         
-        // Parse PLUGIN.txt
-        auto meta = parse_plugin_txt(plugin_txt);
-        if (!meta) {
-            std::cout << plugin_name << " [INVALID: Corrupted PLUGIN.txt]" << std::endl;
+        // Collect all versions
+        std::vector<std::string> versions;
+        for (const auto& version_entry : fs::directory_iterator(versions_dir)) {
+            if (fs::is_directory(version_entry.path())) {
+                std::string version_dir = version_entry.path().filename().string();
+                // Remove 'v' prefix if present
+                if (version_dir.size() > 1 && version_dir[0] == 'v') {
+                    versions.push_back(version_dir.substr(1));
+                } else {
+                    versions.push_back(version_dir);
+                }
+            }
+        }
+        
+        if (versions.empty()) {
+            std::cout << plugin_name << " [No versions installed]" << std::endl;
             plugin_count++;
             continue;
         }
         
-        // Format output: Name    Version    (By: Author)
-        std::cout << std::left << std::setw(30) << meta->name 
-                  << std::setw(12) << ("v" + meta->version)
-                  << "(By: " << meta->author << ")" << std::endl;
+        // Format output: Name    Versions    (By: Author)
+        std::cout << std::left << std::setw(30) << plugin_name;
+        
+        // Show all versions
+        std::string versions_str;
+        for (size_t i = 0; i < versions.size(); i++) {
+            versions_str += "v" + versions[i];
+            if (i < versions.size() - 1) versions_str += ", ";
+        }
+        
+        std::cout << std::setw(20) << versions_str
+                  << "(By: " << author << ")" << std::endl;
+        
+        if (!description.empty()) {
+            std::cout << std::left << std::setw(30) << "" 
+                      << std::setw(20) << description << std::endl;
+        }
         
         plugin_count++;
     }

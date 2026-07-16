@@ -67,8 +67,8 @@ inline int cmd_install(const std::string& plugin_name, const std::string& versio
     DependencyResolver resolver(fs::current_path(), plugin_name);
     resolver.resolve_and_install(plugin_name, version);
     
-    // Write lock file
-    resolver.write_lockfile();
+    // Write lock files for all versions
+    resolver.write_lockfiles();
     
     // Check if the requested plugin/version is now available
     bool success = false;

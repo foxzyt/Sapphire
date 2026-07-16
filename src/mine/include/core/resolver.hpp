@@ -9,6 +9,9 @@
 #include <unordered_set>
 #include <iostream>
 #include "termcolor.hpp"
+#include <openssl/evp.h>
+#include <iomanip>
+#include <sstream>
 
 namespace mine {
 
@@ -17,7 +20,6 @@ class DependencyResolver {
 private:
     std::unordered_set<std::string> visited_;
     int total_installed_ = 0;
-    LockFile lockfile_;
     std::string project_name_;
     fs::path project_dir_;
     
@@ -26,6 +28,35 @@ private:
     
     // Track version conflicts: plugin_name -> set of required versions
     std::unordered_map<std::string, std::set<std::string>> version_conflicts_;
+    
+    // Calculate SHA256 checksum of a file
+    std::string calculate_checksum(const fs::path& file_path) {
+        std::ifstream file(file_path, std::ios::binary);
+        if (!file.is_open()) {
+            return "";
+        }
+        
+        EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+        EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr);
+        
+        char buffer[8192];
+        while (file.read(buffer, sizeof(buffer))) {
+            EVP_DigestUpdate(ctx, buffer, file.gcount());
+        }
+        EVP_DigestUpdate(ctx, buffer, file.gcount());
+        
+        unsigned char hash[EVP_MAX_MD_SIZE];
+        unsigned int hash_len;
+        EVP_DigestFinal_ex(ctx, hash, &hash_len);
+        EVP_MD_CTX_free(ctx);
+        
+        std::stringstream ss;
+        for (unsigned int i = 0; i < hash_len; i++) {
+            ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+        }
+        
+        return ss.str();
+    }
     
     // Check for version conflicts
     bool check_version_conflict(const std::string& plugin_name, const std::string& version) {
@@ -74,8 +105,8 @@ private:
         return versions;
     }
     
-    // Install a specific version of a plugin
-    bool install_version(const std::string& plugin_name, const std::string& version) {
+    // Install a specific version and generate its lockfile
+    void install_version(const std::string& plugin_name, const std::string& version) {
         // Remove 'v' prefix if present
         std::string clean_version = version;
         if (clean_version.size() > 0 && clean_version[0] == 'v') {
@@ -93,12 +124,23 @@ private:
                 std::cerr << v << " ";
             }
             std::cerr << termcolor::reset << std::endl;
-            return false;
+            return;
         }
         
         std::cout << termcolor::cyan << "[*] Processing " << plugin_name << " v" << clean_version << termcolor::reset << std::endl;
         
-        // Read DEPENDENCIES.txt for this specific version
+        // Create lockfile for this specific version
+        LockFile version_lockfile(version_dir, plugin_name, clean_version);
+        
+        // Add this plugin itself to its lockfile
+        fs::path main_file = version_dir / "files" / "main.sp";
+        std::string checksum = calculate_checksum(main_file);
+        
+        if (!checksum.empty()) {
+            version_lockfile.add_dependency(plugin_name, clean_version, "installed");
+        }
+        
+        // Read dependencies from version-specific DEPENDENCIES.txt
         fs::path deps_path = version_dir / "DEPENDENCIES.txt";
         auto dependencies = parse_dependencies_txt(deps_path);
         
@@ -106,18 +148,20 @@ private:
             std::cout << termcolor::yellow << "[*] Resolving " << dependencies.size() << " dependencies for " << plugin_name << " v" << clean_version << termcolor::reset << std::endl;
         }
         
-        // Recursively resolve dependencies
+        // Add dependencies to lockfile and resolve them
         for (const auto& dep : dependencies) {
+            version_lockfile.add_dependency(dep.name, dep.version, "registry");
             resolve_and_install(dep.name, dep.version);
         }
         
-        return true;
+        // Write lockfile for this version
+        version_lockfile.write();
     }
     
 public:
     DependencyResolver(const fs::path& project_dir = fs::current_path(), 
                       const std::string& project_name = "sapphire-project")
-        : lockfile_(get_plugin_dir() / project_name, project_name), project_name_(project_name), project_dir_(project_dir) {}
+        : project_name_(project_name), project_dir_(project_dir) {}
     
     // Main resolution function
     void resolve_and_install(const std::string& plugin_name, const std::string& version = "latest") {
@@ -256,12 +300,15 @@ public:
         }
     }
     
-    // Write lock file after installation
-    bool write_lockfile() {
-        for (const auto& [name, version] : installed_plugins_) {
-            lockfile_.add_dependency(name, version);
+    // Write lock files for all installed versions
+    bool write_lockfiles() {
+        for (const auto& [plugin_name, version] : installed_plugins_) {
+            fs::path version_dir = get_plugin_dir() / plugin_name / "versions" / ("v" + version);
+            install_version(plugin_name, version);
         }
-        return lockfile_.write();
+        
+        std::cout << "[*] Lock files written for all installed versions" << std::endl;
+        return true;
     }
     
     int get_total_installed() const {
