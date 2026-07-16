@@ -158,10 +158,18 @@ private:
         version_lockfile.write();
     }
     
+    bool local_scope_ = false;
+    
 public:
     DependencyResolver(const fs::path& project_dir = fs::current_path(), 
-                      const std::string& project_name = "sapphire-project")
-        : project_name_(project_name), project_dir_(project_dir) {}
+                      const std::string& project_name = "sapphire-project",
+                      bool local_scope = false)
+        : project_name_(project_name), project_dir_(project_dir), local_scope_(local_scope) {}
+    
+    // Enable local scope installation
+    void set_local_scope(bool local) {
+        local_scope_ = local;
+    }
     
     // Main resolution function
     void resolve_and_install(const std::string& plugin_name, const std::string& version = "latest") {

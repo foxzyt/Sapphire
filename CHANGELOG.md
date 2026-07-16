@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Mine Package Manager v2.1.0:** Major upgrade with new commands and features.
+  - **`mine uninstall <name>` (Clean Removal):** Removes plugin folders (local and/or global) and cleans up lock files. Warns if the plugin is a dependency of other installed plugins and asks for confirmation before proceeding.
+  - **`mine update [name]` (Smart Update):** Checks GitHub releases/tags API for the latest version of each installed plugin. Compares semantic versions, downloads the differential update, and updates the PLUGIN.txt metadata. Supports updating all plugins at once or a specific one.
+  - **`mine install <name> --local` (Local Project Scope):** Plugins can now be installed into the project's `./plugins/` directory instead of globally. When inside a Sapphire project (detected by `main.sp`, `sapphire.json`, `.sapphire`, or `plugins/` directory), `mine install` defaults to local scope. Use `--global` to force global installation.
+  - **`mine list` Scope Display:** Now shows both "Global Plugins (AppData)" and "Local Plugins (./plugins/)" sections, with separate counts for each.
+  - **`mine info <name>` Scope Awareness:** Shows both global and local installation details, including lockfile presence, version list, and registry status.
+  - **Version Input Fallback (Fixed):** When the user types `mine install <name>` without a version, it now defaults to `"latest"` (always fetching the latest stable tag). The parser now properly handles flag-like arguments that were previously causing "Version not found" errors.
+  - **Local Plugin Resolution:** Updated `fs_utils.hpp` with `get_local_plugin_dir()`, `is_sapphire_project()`, `is_plugin_installed_local()`, `is_plugin_installed_anywhere()`, `get_best_plugin_dir()`, `get_plugin_base_dir()`, and `get_plugin_versions()` — all supporting local-first resolution with global fallback.
+  - **Dependency-Aware Uninstall:** `is_plugin_required_by_others()` checks both local and global scopes before allowing removal, preventing accidental breakage.
+
 ### Fixed
 - **Array assignment semantics:** Dynamic array writes now support appending at the next index when assigning to `len(array)`, matching the behavior used by Infinitum vector helpers.
 
