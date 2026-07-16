@@ -8,6 +8,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Automated Test Suite (20 new tests):** Expanded test coverage to catch failures early in CI/CD.
+  - **8 Module-based tests:**
+    - `tests/module/test_math_module.sp` - Math.abs, Math.pow, Math.sqrt, Math.max, Math.min
+    - `tests/module/test_math_advanced.sp` - floor, ceil, sin, cos, clamp, lerp
+    - `tests/module/test_string_module.sp` - String.trim, toUpperCase, toLowerCase, length, contains, replace
+    - `tests/module/test_io_module.sp` - writeFile, readFile, appendFile, deleteFile, exists
+    - `tests/module/test_list_util_module.sp` - listCreate, listAppend, listGet, listSet, listContains, listRemoveAt
+    - `tests/module/test_system_module.sp` - getOS, getCoreCount, clock, sleep
+    - `tests/module/test_json_module.sp` - JSON.stringify, JSON.parse, roundtrip with nested objects
+    - `tests/module/test_sqlite_module.sp` - SQLite open, execute, query
+  - **12 General mechanics tests:**
+    - `tests/test_arrow_functions.sp` - Arrow functions with single and block body
+    - `tests/test_string_interpolation.sp` - f-strings with expressions and nesting
+    - `tests/test_optional_chaining.sp` - ?. operator and ?? nullish coalescing combined
+    - `tests/test_array_spread.sp` - Spread operator, multiple spreads, destructuring
+    - `tests/test_shorthand_maps.sp` - Shorthand properties, mixed shorthand/explicit, class fields
+    - `tests/test_inheritance_complex.sp` - Multi-level inheritance chain with method overriding
+    - `tests/test_exceptions_complex.sp` - try/catch/finally with and without exception
+    - `tests/test_ternary_complex.sp` - Nested ternary and ternary in function returns
+    - `tests/test_for_loop_complex.sp` - C-style for, for-in, nested for loops
+    - `tests/test_async_operations.sp` - spawn/join with multiple threads
+    - `tests/test_bitwise_operations.sp` - AND, OR, XOR, shifts, switch with default
+    - `tests/module/test_http_module.sp` - httpPing, httpGet (network-dependent)
+- **GitHub Actions Test Workflow:** New `.github/workflows/test.yml` automatically runs all 40+ tests on every push to `development` and `main`, and on PRs to `main`. Provides clear PASS/FAIL/SKIP summary.
 - **Mine Package Manager v2.1.0:** Major upgrade with new commands and features.
   - **`mine uninstall <name>` (Clean Removal):** Removes plugin folders (local and/or global) and cleans up lock files. Warns if the plugin is a dependency of other installed plugins and asks for confirmation before proceeding.
   - **`mine update [name]` (Smart Update):** Checks GitHub releases/tags API for the latest version of each installed plugin. Compares semantic versions, downloads the differential update, and updates the PLUGIN.txt metadata. Supports updating all plugins at once or a specific one.
@@ -17,11 +41,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Version Input Fallback (Fixed):** When the user types `mine install <name>` without a version, it now defaults to `"latest"` (always fetching the latest stable tag). The parser now properly handles flag-like arguments that were previously causing "Version not found" errors.
   - **Local Plugin Resolution:** Updated `fs_utils.hpp` with `get_local_plugin_dir()`, `is_sapphire_project()`, `is_plugin_installed_local()`, `is_plugin_installed_anywhere()`, `get_best_plugin_dir()`, `get_plugin_base_dir()`, and `get_plugin_versions()` — all supporting local-first resolution with global fallback.
   - **Dependency-Aware Uninstall:** `is_plugin_required_by_others()` checks both local and global scopes before allowing removal, preventing accidental breakage.
-
-### Fixed
-- **Array assignment semantics:** Dynamic array writes now support appending at the next index when assigning to `len(array)`, matching the behavior used by Infinitum vector helpers.
-
-### Added
 - **Mine Package Manager v2.0.0:** Complete rewrite of the Mine plugin management system with modular architecture.
   - Interactive plugin initialization with `mine init` command
   - Version management with `mine expand <version>` command
@@ -103,6 +122,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Demonstration of import syntax: `import infinitum@"1.0.0"`
   - Verification of automatic path resolution
   - Integration testing with mine.lock system
+
+### Fixed
+- **Array assignment semantics:** Dynamic array writes now support appending at the next index when assigning to `len(array)`, matching the behavior used by Infinitum vector helpers.
 
 ## [1.0.9] - 2026-07-15
 
