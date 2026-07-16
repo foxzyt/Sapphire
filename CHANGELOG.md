@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Newton Plugin v1.0.0:** Complete rewrite of the pure-Sapphire 2D physics engine — advanced, production-ready, zero native code injection.
+  - **Broad-Phase Spatial Hashing:** O(1) per-cell collision detection using a spatial grid, replacing the previous O(n²) brute force. Configurable cell size via `cellSize` world option.
+  - **Accurate Narrow-Phase (SAT + Analytic):** Circle-vs-circle (analytic), box-vs-box (Separating Axis Theorem, 2 axes), circle-vs-box (closest-point projection) with proper contact-point and penetration depth.
+  - **Coulomb Friction Impulse:** Tangential friction impulse clamped to the Coulomb cone (`|jT| ≤ μ·|jN|`), computed at the exact contact point including angular velocity contribution (radius vectors `rA`, `rB`).
+  - **Rotational Dynamics:** Bodies carry `angle`, `angularVel`, `torque`, `inertia`, and `invInertia`. Integration updates both linear and angular state. Moment of inertia computed analytically per shape (disk: `½mr²`, rectangle: `m(w²+h²)/12`).
+  - **Joints System:** `Newton.distanceJoint()` (spring: Hooke + damping) and `Newton.pinJoint()` (fixed anchor: spring to world point), both solved every sub-step.
+  - **Sleep System:** Bodies automatically sleep when speed drops below `sleepThreshold` for `sleepTime` seconds. Sleeping bodies are excluded from integration and broad-phase. `Newton.wakeNear(world, x, y, r)` wakes all bodies within radius.
+  - **Sub-Step Integration:** `subSteps` option splits each `newton_step()` call into multiple sub-steps for high-velocity bodies.
+  - **Baumgarte Positional Correction:** Prevents sinking with configurable slop and percentage correction, applied every resolution iteration.
+  - **Material Presets:** `Newton.RUBBER`, `Newton.WOOD`, `Newton.METAL`, `Newton.ICE`, `Newton.STONE` — each with tuned restitution, friction, and density.
+  - **Body Removal:** `Newton.remove(world, body)` marks a body for removal; swept at the start of each `newton_step()`.
+  - **Raycast:** `Newton.raycast(world, ox, oy, dx, dy, maxDist)` — analytic ray-circle and slab-method ray-AABB intersection.
+  - **Layer Collision Mask:** Optional `layerMask` world option controls which layer pairs can collide.
+  - **Rendering Integration:** `Newton.render(world, opts)` uses native `drawRect` SFML global. Includes optional `showContacts` debug overlay.
+  - **Stats / Debug:** `Newton.stats(world)` returns a map with frame, body, sleeping, contact, and joint counts. `Newton.debug(world)` prints a formatted stats line.
 - **Automated Test Suite (20 new tests):** Expanded test coverage to catch failures early in CI/CD.
   - **8 Module-based tests:**
     - `tests/module/test_math_module.sp` - Math.abs, Math.pow, Math.sqrt, Math.max, Math.min
@@ -124,6 +139,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Integration testing with mine.lock system
 
 ### Fixed
+- **Global Versioned Plugin Imports:** Versioned imports now also resolve plugins
+  installed in `%APPDATA%/Sapphire/plugins`, matching Mine's global installation
+  scope.
 - **Array assignment semantics:** Dynamic array writes now support appending at the next index when assigning to `len(array)`, matching the behavior used by Infinitum vector helpers.
 - **Parser compatibility:** Function declarations now accept optional explicit return-type annotations such as `function main() void {}` and `function foo() string {}` while preserving the newer no-return-type syntax.
 

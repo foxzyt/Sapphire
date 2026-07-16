@@ -1,0 +1,4 @@
+name: newton
+author: Sapphire Team
+version: 1.0.0
+description: A 2D physics engine written entirely in Sapphire.
