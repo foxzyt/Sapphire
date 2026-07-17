@@ -4,6 +4,8 @@
 #include "core/types.hpp"
 #include "core/fs_utils.hpp"
 #include "core/parser.hpp"
+#include "core/sapphire_version.hpp"
+#include "core/semver.hpp"
 #include <iostream>
 #include <filesystem>
 #include <iomanip>
@@ -15,10 +17,46 @@ namespace commands {
 // List installed plugins (global and local scope)
 inline int cmd_list() {
     int total_plugins = 0;
-    
+
+    // -----------------------------------------------------------------------
+    // Sapphire Runtime Banner
+    // -----------------------------------------------------------------------
+    {
+        std::string active_ver = read_active_version();
+        auto installed_vers    = get_installed_sapphire_versions();
+
+        std::cout << termcolor::bold << termcolor::magenta
+                  << "=== Sapphire Runtime ==="
+                  << termcolor::reset << std::endl;
+
+        if (active_ver.empty()) {
+            std::cout << termcolor::yellow
+                      << "  Runtime: (not installed — run: mine sapphire install latest)"
+                      << termcolor::reset << std::endl;
+        } else {
+            std::cout << "  Active:  "
+                      << termcolor::green << termcolor::bold
+                      << semver::with_v(active_ver)
+                      << termcolor::reset;
+
+            if (installed_vers.size() > 1) {
+                std::cout << "  ("
+                          << installed_vers.size()
+                          << " versions installed — run: mine sapphire versions)";
+            }
+            std::cout << std::endl;
+
+            std::cout << "  Path:    "
+                      << termcolor::cyan
+                      << get_sapphire_bin_dir().string()
+                      << termcolor::reset << std::endl;
+        }
+        std::cout << std::endl;
+    }
+
     // List global plugins
     fs::path global_dir = get_plugin_dir();
-    
+
     std::cout << termcolor::bold << "=== Global Plugins (AppData) ===" << termcolor::reset << std::endl;
     std::cout << std::endl;
     

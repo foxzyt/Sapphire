@@ -1,4 +1,5 @@
 # Changelog
+# Changelog
 
 All notable changes to this project will be documented in this file.
 
@@ -8,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Mine v2.2.0 — Sapphire Runtime Version Manager (`mine sapphire`):**
+  - Novo subsistema de controle de versão dos executáveis da Sapphire integrado ao Mine.
+  - `mine sapphire list` — Lista todas as versões disponíveis na branch `mine` do repositório `foxzyt/Sapphire` via GitHub Contents API.
+  - `mine sapphire install <version>` — Baixa e instala os binários (`sapphire.exe`, `runner.exe`, `spac.exe`, `mine.exe`) de uma versão específica. Suporta constraints SemVer completas: `latest`, `1.0.6`, `^1.0`, `>=1.0.5`, `<2.0`, etc.
+  - `mine sapphire use <version>` — Ativa uma versão já instalada, copiando os binários para o diretório raiz (`%APPDATA%\Sapphire\bin\`).
+  - `mine sapphire current` — Exibe a versão ativa, o caminho de instalação e o status de cada binário.
+  - `mine sapphire versions` — Lista todas as versões instaladas localmente com tamanho e indicação da ativa.
+  - `mine sapphire uninstall <version>` — Remove uma versão instalada, com auto-switch para a versão mais recente restante.
+  - Versão ativa persistida em `%APPDATA%\Sapphire\bin\.version`.
+  - Cada versão da Sapphire instalada em `%APPDATA%\Sapphire\bin\v<version>\` (isolamento de versões).
+- **`core/semver.hpp` — Módulo SemVer centralizado:**
+  - Extração e refatoração das funções de comparação SemVer (`compare`, `satisfies`, `resolve_best`, `normalize`, `with_v`) para módulo reutilizável em `core/semver.hpp`.
+  - `commands/install.hpp` agora usa aliases para `semver.hpp`, eliminando código duplicado.
+  - O novo subsistema `sapphire_version.hpp` reutiliza o mesmo módulo SemVer para resolução de versões dos binários.
+- **`mine list` melhorado:** Exibe banner de "Sapphire Runtime" com versão ativa e caminho de instalação antes da listagem de plugins.
 - **Newton Plugin v1.0.0:** Complete rewrite of the pure-Sapphire 2D physics engine — advanced, production-ready, zero native code injection.
   - **Broad-Phase Spatial Hashing:** O(1) per-cell collision detection using a spatial grid, replacing the previous O(n²) brute force. Configurable cell size via `cellSize` world option.
   - **Accurate Narrow-Phase (SAT + Analytic):** Circle-vs-circle (analytic), box-vs-box (Separating Axis Theorem, 2 axes), circle-vs-box (closest-point projection) with proper contact-point and penetration depth.

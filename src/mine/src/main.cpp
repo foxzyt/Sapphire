@@ -9,6 +9,8 @@
 #include "core/parser.hpp"
 #include "core/downloader.hpp"
 #include "core/resolver.hpp"
+#include "core/semver.hpp"
+#include "core/sapphire_version.hpp"
 
 // Command headers
 #include "commands/init.hpp"
@@ -19,35 +21,93 @@
 #include "commands/check.hpp"
 #include "commands/list.hpp"
 #include "commands/info.hpp"
+#include "commands/sapphire_cmd.hpp"
 
 #include "termcolor.hpp"
 
 namespace mine {
 
 void print_help() {
-    std::cout << termcolor::cyan << "Mine Package Manager for Sapphire" << termcolor::reset << std::endl;
-    std::cout << "Version: 2.1.0" << std::endl;
+    std::cout << termcolor::cyan << termcolor::bold
+              << "Mine Package Manager for Sapphire"
+              << termcolor::reset << std::endl;
+    std::cout << "Version: 2.2.0" << std::endl;
     std::cout << "Repository: https://github.com/foxzyt/sapphire-mine" << std::endl;
     std::cout << std::endl;
-    
-    std::cout << termcolor::bold << "Commands:" << termcolor::reset << std::endl;
-    std::cout << "  " << termcolor::green << "mine init" << termcolor::reset << "              - Create a new plugin structure interactively" << std::endl;
-    std::cout << "  " << termcolor::green << "mine expand <version>" << termcolor::reset << "  - Add a new version to the plugin" << std::endl;
-    std::cout << "  " << termcolor::green << "mine install <name>" << termcolor::reset << "    - Install a plugin from the registry" << std::endl;
-    std::cout << "  " << termcolor::green << "mine install <name> <version>" << termcolor::reset << " - Install a specific version" << std::endl;
-    std::cout << "  " << termcolor::green << "mine install <name> --local" << termcolor::reset << " - Install into project's plugins/ folder" << std::endl;
-    std::cout << "  " << termcolor::red << "mine uninstall <name>" << termcolor::reset << "  - Remove a plugin (local and global)" << std::endl;
-    std::cout << "  " << termcolor::red << "mine uninstall <name> --local" << termcolor::reset << " - Remove only local installation" << std::endl;
-    std::cout << "  " << termcolor::yellow << "mine update" << termcolor::reset << "           - Check all plugins for updates" << std::endl;
-    std::cout << "  " << termcolor::yellow << "mine update <name>" << termcolor::reset << "     - Check a specific plugin for updates" << std::endl;
-    std::cout << "  " << termcolor::blue << "mine list" << termcolor::reset << "              - List all installed plugins" << std::endl;
-    std::cout << "  " << termcolor::blue << "mine info <name>" << termcolor::reset << "       - Show detailed information about a plugin" << std::endl;
-    std::cout << "  " << termcolor::cyan << "mine check" << termcolor::reset << "             - Run diagnostic on installed plugins" << std::endl;
-    std::cout << "  " << termcolor::cyan << "mine help" << termcolor::reset << "              - Show this help message" << std::endl;
+
+    std::cout << termcolor::bold << "Plugin Commands:" << termcolor::reset << std::endl;
+    std::cout << "  " << termcolor::green  << "mine init"
+              << termcolor::reset << "                   - Create a new plugin structure interactively" << std::endl;
+    std::cout << "  " << termcolor::green  << "mine expand <version>"
+              << termcolor::reset << "         - Add a new version to the plugin" << std::endl;
+    std::cout << "  " << termcolor::green  << "mine install <name>"
+              << termcolor::reset << "           - Install a plugin from the registry" << std::endl;
+    std::cout << "  " << termcolor::green  << "mine install <name> <version>"
+              << termcolor::reset << "  - Install a specific version" << std::endl;
+    std::cout << "  " << termcolor::green  << "mine install <name> --local"
+              << termcolor::reset << "    - Install into project's plugins/ folder" << std::endl;
+    std::cout << "  " << termcolor::red    << "mine uninstall <name>"
+              << termcolor::reset << "         - Remove a plugin (local and global)" << std::endl;
+    std::cout << "  " << termcolor::red    << "mine uninstall <name> --local"
+              << termcolor::reset << "  - Remove only local installation" << std::endl;
+    std::cout << "  " << termcolor::yellow << "mine update"
+              << termcolor::reset << "                   - Check all plugins for updates" << std::endl;
+    std::cout << "  " << termcolor::yellow << "mine update <name>"
+              << termcolor::reset << "            - Check a specific plugin for updates" << std::endl;
+    std::cout << "  " << termcolor::blue   << "mine list"
+              << termcolor::reset << "                   - List installed plugins + runtime info" << std::endl;
+    std::cout << "  " << termcolor::blue   << "mine info <name>"
+              << termcolor::reset << "              - Show detailed information about a plugin" << std::endl;
+    std::cout << "  " << termcolor::cyan   << "mine check"
+              << termcolor::reset << "                  - Run diagnostic on installed plugins" << std::endl;
+    std::cout << "  " << termcolor::cyan   << "mine help"
+              << termcolor::reset << "                   - Show this help message" << std::endl;
     std::cout << std::endl;
-    std::cout << termcolor::yellow << "Note: When inside a Sapphire project (has main.sp or plugins/ folder)," << termcolor::reset << std::endl;
-    std::cout << termcolor::yellow << "      plugins are installed locally in ./plugins/ by default." << termcolor::reset << std::endl;
-    std::cout << termcolor::yellow << "      Use --global flag to install/uninstall globally." << termcolor::reset << std::endl;
+
+    std::cout << termcolor::bold << termcolor::magenta
+              << "Sapphire Runtime Commands:"
+              << termcolor::reset << std::endl;
+    std::cout << "  " << termcolor::green  << "mine sapphire list"
+              << termcolor::reset << "            - List available Sapphire versions (remote)" << std::endl;
+    std::cout << "  " << termcolor::green  << "mine sapphire install <version>"
+              << termcolor::reset << "  - Install and activate a Sapphire release" << std::endl;
+    std::cout << "  " << termcolor::cyan   << "mine sapphire use <version>"
+              << termcolor::reset << "       - Switch to an installed version" << std::endl;
+    std::cout << "  " << termcolor::cyan   << "mine sapphire current"
+              << termcolor::reset << "         - Show the active Sapphire version" << std::endl;
+    std::cout << "  " << termcolor::blue   << "mine sapphire versions"
+              << termcolor::reset << "        - List locally installed versions" << std::endl;
+    std::cout << "  " << termcolor::red    << "mine sapphire uninstall <version>"
+              << termcolor::reset << " - Remove an installed version" << std::endl;
+    std::cout << std::endl;
+
+    std::cout << termcolor::magenta << "Version Formatting (SemVer):" << termcolor::reset << std::endl;
+    std::cout << "  " << termcolor::cyan << "latest"    << termcolor::reset
+              << "                   - Resolves to the highest available version" << std::endl;
+    std::cout << "  " << termcolor::cyan << "1.0.0"     << termcolor::reset
+              << "                    - Exact version match" << std::endl;
+    std::cout << "  " << termcolor::cyan << "\"^1.0.0\"" << termcolor::reset
+              << "                 - Compatible updates (same major version)" << std::endl;
+    std::cout << "  " << termcolor::cyan << "\">1.0.0\"" << termcolor::reset
+              << " , " << termcolor::cyan << "\"<2.0.0\""
+              << termcolor::reset << "      - Greater than / Less than a specific version" << std::endl;
+    std::cout << "  " << termcolor::cyan << "\">=1.0.0\""<< termcolor::reset
+              << ", " << termcolor::cyan << "\"<=2.0.0\""
+              << termcolor::reset << "      - Greater or equal / Less or equal" << std::endl;
+    std::cout << termcolor::red
+              << "  * Always use quotes (\"\") for >, <, ^ to avoid terminal redirection!"
+              << termcolor::reset << std::endl;
+    std::cout << std::endl;
+
+    std::cout << termcolor::yellow
+              << "Note: When inside a Sapphire project (has main.sp or plugins/ folder),"
+              << termcolor::reset << std::endl;
+    std::cout << termcolor::yellow
+              << "      plugins are installed locally in ./plugins/ by default."
+              << termcolor::reset << std::endl;
+    std::cout << termcolor::yellow
+              << "      Use --global flag to install/uninstall globally."
+              << termcolor::reset << std::endl;
 }
 
 } // namespace mine
@@ -74,6 +134,13 @@ int main(int argc, char* argv[]) {
         if (command == "help" || command == "--help" || command == "-h") {
             mine::print_help();
             return 0;
+        }
+        // -----------------------------------------------------------------
+        // "mine sapphire <subcommand>" — Runtime version manager
+        // argv[1] = "sapphire", argv[2] = subcommand, argv[3...] = args
+        // -----------------------------------------------------------------
+        else if (command == "sapphire") {
+            return mine::commands::cmd_sapphire_dispatch(argc, argv, 2);
         }
         else if (command == "init") {
             return mine::commands::cmd_init(working_dir);
