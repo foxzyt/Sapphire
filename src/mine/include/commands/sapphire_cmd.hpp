@@ -486,10 +486,10 @@ inline void print_sapphire_help() {
 
     std::cout << termcolor::magenta << "Version Constraints (SemVer):" << termcolor::reset << std::endl;
     std::cout << "  " << termcolor::cyan << "latest"    << termcolor::reset << "          Resolves to the newest available version" << std::endl;
-    std::cout << "  " << termcolor::cyan << "1.0.6"     << termcolor::reset << "           Exact version match" << std::endl;
+    std::cout << "  " << termcolor::cyan << "1.0.9"     << termcolor::reset << "           Exact version match" << std::endl;
     std::cout << "  " << termcolor::cyan << "\"^1.0\""   << termcolor::reset << "           Compatible with 1.x (same major)" << std::endl;
-    std::cout << "  " << termcolor::cyan << "\">1.0.5\"" << termcolor::reset << "          Greater than 1.0.5" << std::endl;
-    std::cout << "  " << termcolor::cyan << "\">=1.0.5\"" << termcolor::reset << "         Greater than or equal to 1.0.5" << std::endl;
+    std::cout << "  " << termcolor::cyan << "\">1.0.9\"" << termcolor::reset << "          Greater than 1.0.9" << std::endl;
+    std::cout << "  " << termcolor::cyan << "\">=1.0.9\"" << termcolor::reset << "         Greater than or equal to 1.0.9" << std::endl;
     std::cout << termcolor::red
               << "  * Use quotes for constraints with >, <, ^ to avoid terminal redirection!"
               << termcolor::reset << std::endl;
@@ -508,7 +508,7 @@ inline void print_sapphire_help() {
 // ---------------------------------------------------------------------------
 inline int cmd_sapphire_dispatch(int argc, char* argv[], int sapphire_arg_offset) {
     // sapphire_arg_offset = índice de argv onde começa o subcomando
-    // Ex: "mine sapphire install 1.0.6"  → argv[2]="install", argv[3]="1.0.6"
+    // Ex: "mine sapphire install 1.0.9"  → argv[2]="install", argv[3]="1.0.9"
 
     if (sapphire_arg_offset >= argc) {
         print_sapphire_help();

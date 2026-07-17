@@ -7,12 +7,12 @@
 // Consome a branch "mine" do repositório foxzyt/Sapphire no GitHub.
 // Estrutura esperada na branch:
 //
-//   v1.0.6/
+//   v1.0.9/
 //     sapphire.exe
 //     runner.exe
 //     spac.exe
 //     mine.exe
-//   v1.0.7/
+//   v1.1.0/
 //     ...
 //
 // Binários instalados em: %APPDATA%\Sapphire\bin\<version>\
