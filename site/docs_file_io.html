@@ -3,44 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File I/O - Sapphire Documentation</title>
+    <title>File I/O — Sapphire Docs</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body class="dark-mode">
+    <!-- Mobile Sidebar Toggle -->
+    <button class="sidebar-toggle" aria-label="Open menu">&#9776;</button>
+    <div class="sidebar-overlay"></div>
+
     <div class="docs-layout">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <button id="theme-toggle" aria-label="Toggle theme">💡</button>
-            <a href="../index.html" class="sidebar-logo">
-                <img src="assets/logo.svg" alt="Logo"> Sapphire
-            </a>
-            <nav>
-                <h4>Part 1: The Core</h4>
-                <ul>
-                    <li><a href="docs_intro.html">1. Intro & Variables</a></li>
-                    <li><a href="docs_control_flow.html">2. Control Flow & Functions</a></li>
-                    <li><a href="docs_data_structures.html">3. Lists & Maps</a></li>
-                    <li><a href="docs_std_basic.html">4. Math & System Modules</a></li>
-                </ul>
+            <div class="sidebar-inner">
+                <div class="sidebar-header">
+                    <a href="../index.html" class="sidebar-logo">
+                        <div class="logo-gem">&#x1F48E;</div>
+                        Sapphire
+                    </a>
+                    <button id="sidebar-theme-toggle" aria-label="Toggle theme">&#x1F319;</button>
+                </div>
+                <div class="sidebar-nav-body">
+                <nav>
+                    <h4>Part 1: The Core</h4>
+                    <ul>
+                        <li><a href="docs_intro.html">1. Intro &amp; Variables</a></li>
+                        <li><a href="docs_control_flow.html">2. Control Flow &amp; Functions</a></li>
+                        <li><a href="docs_data_structures.html">3. Lists &amp; Maps</a></li>
+                        <li><a href="docs_std_basic.html">4. Math &amp; System Modules</a></li>
+                    </ul>
 
-                <h4>Part 2: Advanced</h4>
-                <ul>
-                    <li><a href="docs_oop.html">5. Object-Oriented (OOP)</a></li>
-                    <li><a href="docs_exceptions.html">6. Exceptions Handling</a></li>
-                    <li><a href="docs_async.html">7. Async & Await</a></li>
-                    <li><a href="docs_threading.html">8. Multi-threading</a></li>
-                </ul>
+                    <h4>Part 2: Advanced</h4>
+                    <ul>
+                        <li><a href="docs_oop.html">5. Object-Oriented (OOP)</a></li>
+                        <li><a href="docs_exceptions.html">6. Exceptions Handling</a></li>
+                        <li><a href="docs_async.html">7. Async &amp; Await</a></li>
+                        <li><a href="docs_threading.html">8. Multi-threading</a></li>
+                    </ul>
 
-                <h4>Part 3: I/O & UI</h4>
-                <ul>
-                    <li><a href="docs_file_io.html" class="active">9. File I/O</a></li>
-                    <li><a href="docs_http.html">10. HTTP Requests</a></li>
-                    <li><a href="docs_ui_engine.html">11. UI Engine</a></li>
-                    <li><a href="docs_sqlite.html">12. SQLite Database</a></li>`n                </ul>
-            </nav>
+                    <h4>Part 3: I/O &amp; UI</h4>
+                    <ul>
+                        <li><a href="docs_file_io.html" class="active">9. File I/O</a></li>
+                        <li><a href="docs_http.html">10. HTTP Requests</a></li>
+                        <li><a href="docs_ui_engine.html">11. UI Engine</a></li>
+                        <li><a href="docs_sqlite.html">12. SQLite Database</a></li>
+                    </ul>
+                </nav>
+                </div>
+                <div class="sidebar-footer">
+                    <span class="version-badge">&#x1F48E; v1.0.6</span>
+                </div>
+            </div>
         </aside>
 
         <!-- Main Content -->
@@ -49,7 +64,7 @@
             <p>Every useful application needs to save data persistently, whether it is user preferences, save states, or system logs. Sapphire provides simple, synchronous methods for interacting with the local filesystem.</p>
 
             <h2>Reading Files</h2>
-            <p>Reading a text file is incredibly straightforward. Use <code>readFile()</code> to pull the entire contents of a file into a single string.</p>
+            <p>Reading a text file is incredibly straightforward. Use <code>readFile()</code> to pull the entire contents of a file into a single string. If the file does not exist, an error is thrown — so wrap it in a <code>try/catch</code> block.</p>
             
             <div class="snippet-container">
                 <div class="snippet-header">
@@ -68,8 +83,8 @@
     <span class="token-function">print</span>(<span class="token-string">"Failed to read file! "</span> + err)<span class="token-punctuation">;</span>
 <span class="token-punctuation">}</span></code></pre>
                 <div class="output-container">
-                    &gt; File Contents:<br>
-                    &gt; { "theme": "dark", "version": "1.0.6" }
+                    > File Contents:<br>
+                    > { "theme": "dark", "version": "1.0.6" }
                 </div>
             </div>
 
@@ -86,7 +101,7 @@
                 </div>
                 <pre><code><span class="token-keyword">var</span> myLog = <span class="token-string">"Log Entry: User logged in at 10:42 AM\n"</span><span class="token-punctuation">;</span>
 
-<span class="token-comment">// Overwrites the file</span>
+<span class="token-comment">// Overwrites the file entirely</span>
 <span class="token-function">writeFile</span>(<span class="token-string">"server.log"</span>, myLog)<span class="token-punctuation">;</span>
 
 <span class="token-comment">// Appends without deleting previous data</span>
@@ -94,7 +109,7 @@
 
 <span class="token-function">print</span>(<span class="token-string">"Logs saved successfully!"</span>)<span class="token-punctuation">;</span></code></pre>
                 <div class="output-container">
-                    &gt; Logs saved successfully!
+                    > Logs saved successfully!
                 </div>
             </div>
 
@@ -112,14 +127,69 @@
                 <pre><code><span class="token-keyword">var</span> path = <span class="token-string">"C:/windows/system32/cmd.exe"</span><span class="token-punctuation">;</span>
 
 <span class="token-keyword">if</span> (<span class="token-function">exists</span>(path)) <span class="token-punctuation">{</span>
-    <span class="token-function">print</span>(<span class="token-string">"The file exists! It is safe to use."</span>)<span class="token-punctuation">;</span>
+    <span class="token-function">print</span>(<span class="token-string">"The file exists! It is safe to read."</span>)<span class="token-punctuation">;</span>
 <span class="token-punctuation">}</span> <span class="token-keyword">else</span> <span class="token-punctuation">{</span>
     <span class="token-function">print</span>(<span class="token-string">"File not found."</span>)<span class="token-punctuation">;</span>
 <span class="token-punctuation">}</span></code></pre>
                 <div class="output-container">
-                    &gt; The file exists! It is safe to use.
+                    > The file exists! It is safe to read.
                 </div>
             </div>
+
+            <h2>Complete Example: Config Manager</h2>
+            <p>Let's build a simple config manager that saves and loads settings from a JSON file.</p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-keyword">function</span> <span class="token-function">loadConfig</span>(filePath) <span class="token-punctuation">{</span>
+    <span class="token-keyword">if</span> (<span class="token-function">exists</span>(filePath)) <span class="token-punctuation">{</span>
+        <span class="token-keyword">var</span> content = <span class="token-function">readFile</span>(filePath)<span class="token-punctuation">;</span>
+        <span class="token-function">print</span>(<span class="token-string">"Config loaded from "</span> + filePath)<span class="token-punctuation">;</span>
+        <span class="token-keyword">return</span> content<span class="token-punctuation">;</span>
+    <span class="token-punctuation">}</span> <span class="token-keyword">else</span> <span class="token-punctuation">{</span>
+        <span class="token-function">print</span>(<span class="token-string">"No config file found, using defaults."</span>)<span class="token-punctuation">;</span>
+        <span class="token-keyword">return</span> <span class="token-string">"{\"theme\": \"dark\", \"volume\": 50}"</span><span class="token-punctuation">;</span>
+    <span class="token-punctuation">}</span>
+<span class="token-punctuation">}</span>
+
+<span class="token-keyword">function</span> <span class="token-function">saveConfig</span>(filePath, configData) <span class="token-punctuation">{</span>
+    <span class="token-function">writeFile</span>(filePath, configData)<span class="token-punctuation">;</span>
+    <span class="token-function">print</span>(<span class="token-string">"Config saved to "</span> + filePath)<span class="token-punctuation">;</span>
+<span class="token-punctuation">}</span>
+
+<span class="token-comment">// Usage</span>
+<span class="token-keyword">var</span> configFile = <span class="token-string">"settings.json"</span><span class="token-punctuation">;</span>
+<span class="token-keyword">var</span> config = <span class="token-function">loadConfig</span>(configFile)<span class="token-punctuation">;</span>
+<span class="token-function">print</span>(<span class="token-string">"Current config: "</span> + config)<span class="token-punctuation">;</span>
+
+<span class="token-comment">// Modify and save</span>
+config = <span class="token-string">"{\"theme\": \"light\", \"volume\": 80}"</span><span class="token-punctuation">;</span>
+<span class="token-function">saveConfig</span>(configFile, config)<span class="token-punctuation">;</span></code></pre>
+                <div class="output-container">
+                    > No config file found, using defaults.<br>
+                    > Current config: {"theme": "dark", "volume": 50}<br>
+                    > Config saved to settings.json
+                </div>
+            </div>
+
+            <h2>File I/O Functions Reference</h2>
+            <table>
+                <thead>
+                    <tr><th>Function</th><th>Description</th><th>Example</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>readFile(path)</code></td><td>Read entire file as a string</td><td><code>var data = readFile("file.txt")</code></td></tr>
+                    <tr><td><code>writeFile(path, content)</code></td><td>Write string to file (overwrites)</td><td><code>writeFile("file.txt", "hello")</code></td></tr>
+                    <tr><td><code>appendFile(path, content)</code></td><td>Append string to end of file</td><td><code>appendFile("log.txt", "new entry\n")</code></td></tr>
+                    <tr><td><code>exists(path)</code></td><td>Check if a file or directory exists</td><td><code>if (exists("file.txt")) { ... }</code></td></tr>
+                </tbody>
+            </table>
 
             <p style="margin-top: 4rem; display: flex; justify-content: space-between;">
                 <a href="docs_threading.html" class="btn btn-outline">&larr; Previous</a>
@@ -129,18 +199,6 @@
     </div>
 
     <script src="js/main.js"></script>
-    <script>
-        const themeToggle = document.getElementById('theme-toggle');
-        themeToggle.addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-            if (document.body.classList.contains('dark-mode')) {
-                themeToggle.textContent = '🌙';
-            } else {
-                themeToggle.textContent = '💡';
-            }
-        });
-    </script>
+    
 </body>
 </html>
-
-

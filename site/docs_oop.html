@@ -3,64 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Object-Oriented (OOP) - Sapphire Documentation</title>
+    <title>Object-Oriented (OOP) — Sapphire Docs</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body class="dark-mode">
+    <!-- Mobile Sidebar Toggle -->
+    <button class="sidebar-toggle" aria-label="Open menu">&#9776;</button>
+    <div class="sidebar-overlay"></div>
+
     <div class="docs-layout">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <button id="theme-toggle" aria-label="Toggle theme">💡</button>
-            <a href="../index.html" class="sidebar-logo">
-                <img src="assets/logo.svg" alt="Logo"> Sapphire
-            </a>
-            <nav>
-                <h4>Part 1: The Core</h4>
-                <ul>
-                    <li><a href="docs_intro.html">1. Intro & Variables</a></li>
-                    <li><a href="docs_control_flow.html">2. Control Flow & Functions</a></li>
-                    <li><a href="docs_data_structures.html">3. Lists & Maps</a></li>
-                    <li><a href="docs_std_basic.html">4. Math & System Modules</a></li>
-                </ul>
+            <div class="sidebar-inner">
+                <div class="sidebar-header">
+                    <a href="../index.html" class="sidebar-logo">
+                        <div class="logo-gem">&#x1F48E;</div>
+                        Sapphire
+                    </a>
+                    <button id="sidebar-theme-toggle" aria-label="Toggle theme">&#x1F319;</button>
+                </div>
+                <div class="sidebar-nav-body">
+                <nav>
+                    <h4>Part 1: The Core</h4>
+                    <ul>
+                        <li><a href="docs_intro.html">1. Intro &amp; Variables</a></li>
+                        <li><a href="docs_control_flow.html">2. Control Flow &amp; Functions</a></li>
+                        <li><a href="docs_data_structures.html">3. Lists &amp; Maps</a></li>
+                        <li><a href="docs_std_basic.html">4. Math &amp; System Modules</a></li>
+                    </ul>
 
-                <h4>Part 2: Advanced</h4>
-                <ul>
-                    <li><a href="docs_oop.html" class="active">5. Object-Oriented (OOP)</a></li>
-                    <li><a href="docs_exceptions.html">6. Exceptions Handling</a></li>
-                    <li><a href="docs_async.html">7. Async & Await</a></li>
-                    <li><a href="docs_threading.html">8. Multi-threading</a></li>
-                </ul>
+                    <h4>Part 2: Advanced</h4>
+                    <ul>
+                        <li><a href="docs_oop.html" class="active">5. Object-Oriented (OOP)</a></li>
+                        <li><a href="docs_exceptions.html">6. Exceptions Handling</a></li>
+                        <li><a href="docs_async.html">7. Async &amp; Await</a></li>
+                        <li><a href="docs_threading.html">8. Multi-threading</a></li>
+                    </ul>
 
-                <h4>Part 3: I/O & UI</h4>
-                <ul>
-                    <li><a href="docs_file_io.html">9. File I/O</a></li>
-                    <li><a href="docs_http.html">10. HTTP Requests</a></li>
-                    <li><a href="docs_ui_engine.html">11. UI Engine</a></li>
-                    <li><a href="docs_sqlite.html">12. SQLite Database</a></li>`n                </ul>
-            </nav>
+                    <h4>Part 3: I/O &amp; UI</h4>
+                    <ul>
+                        <li><a href="docs_file_io.html">9. File I/O</a></li>
+                        <li><a href="docs_http.html">10. HTTP Requests</a></li>
+                        <li><a href="docs_ui_engine.html">11. UI Engine</a></li>
+                        <li><a href="docs_sqlite.html">12. SQLite Database</a></li>
+                    </ul>
+                </nav>
+                </div>
+                <div class="sidebar-footer">
+                    <span class="version-badge">&#x1F48E; v1.0.6</span>
+                </div>
+            </div>
         </aside>
 
-        <!-- Main Content -->
         <main class="docs-content">
             <h1>Object-Oriented Programming (OOP)</h1>
+
+            <div class="info-box">
+                <strong>📖 What You Will Learn in This Chapter:</strong>
+                <ul>
+                    <li>What Object-Oriented Programming is and why it matters</li>
+                    <li>How to define <strong>classes</strong> and create <strong>objects</strong></li>
+                    <li>How to use <strong>constructors</strong> (<code>init()</code>) to initialize objects</li>
+                    <li>How to use <strong>inheritance</strong> with <code>extends</code> to reuse code</li>
+                    <li>How to call parent methods with <code>super</code></li>
+                    <li>How to build a complete real-world OOP project</li>
+                </ul>
+            </div>
+
             <p>While Sapphire allows you to write simple procedural scripts, it truly shines when building large applications using Object-Oriented patterns. By grouping related data and functions into classes, your code becomes modular, reusable, and much easier to maintain.</p>
+
+            <h2>What Is OOP?</h2>
+            <p>Object-Oriented Programming is a way of organizing your code around <strong>objects</strong> rather than functions. Think of an object as a thing that has:</p>
+            <ul>
+                <li><strong>Properties</strong> — data about the object (e.g., a player's name, health, level)</li>
+                <li><strong>Methods</strong> — actions the object can perform (e.g., a player can take damage, heal, level up)</li>
+            </ul>
+            <p>A <strong>class</strong> is like a blueprint for creating objects. You define the blueprint once, then create as many objects from it as you need.</p>
 
             <h2>Defining Classes</h2>
             <p>You define a class using the <code>class</code> keyword. Inside a class, you can define methods (functions belonging to the class). To reference properties belonging to the current instance, use the <code>this</code> keyword.</p>
-            
+
             <div class="snippet-container">
                 <div class="snippet-header">
                     <span class="snippet-lang">sapphire</span>
-                    <div class="snippet-actions">
-                        <button class="btn-copy">Copy</button>
-                        <button class="btn-run">Run / Output</button>
-                    </div>
+                    <div class="snippet-actions"><button class="btn-copy">Copy</button><button class="btn-run">Run / Output</button></div>
                 </div>
                 <pre><code><span class="token-keyword">class</span> <span class="token-class">Animal</span> <span class="token-punctuation">{</span>
-    <span class="token-comment">// A method inside the class</span>
     <span class="token-keyword">function</span> <span class="token-function">speak</span>() <span class="token-punctuation">{</span>
         <span class="token-function">print</span>(<span class="token-keyword">this</span>.name + <span class="token-string">" makes a noise."</span>)<span class="token-punctuation">;</span>
     <span class="token-punctuation">}</span>
@@ -70,21 +101,18 @@
 <span class="token-keyword">var</span> dog = <span class="token-function">Animal</span>()<span class="token-punctuation">;</span>
 dog.name = <span class="token-string">"Rex"</span><span class="token-punctuation">;</span>
 dog.<span class="token-function">speak</span>()<span class="token-punctuation">;</span></code></pre>
-                <div class="output-container">
-                    &gt; Rex makes a noise.
-                </div>
+                <div class="output-container">> Rex makes a noise.</div>
             </div>
 
+            <p>Notice that we set the <code>name</code> property <em>after</em> creating the object. Sapphire allows you to add properties to an object at any time — you don't need to declare them in advance.</p>
+
             <h2>Constructors (Initialization)</h2>
-            <p>Often you want to set up an object's initial state as soon as it is created. You can do this by defining a special method called <code>init()</code>. The Sapphire VM will automatically call <code>init()</code> right after the object is allocated in memory.</p>
+            <p>Often you want to set up an object's initial state as soon as it is created. You can do this by defining a special method called <code>init()</code>. The Sapphire VM will automatically call <code>init()</code> right after the object is allocated in memory. Any arguments passed to the class constructor are forwarded to <code>init()</code>.</p>
 
             <div class="snippet-container">
                 <div class="snippet-header">
                     <span class="snippet-lang">sapphire</span>
-                    <div class="snippet-actions">
-                        <button class="btn-copy">Copy</button>
-                        <button class="btn-run">Run / Output</button>
-                    </div>
+                    <div class="snippet-actions"><button class="btn-copy">Copy</button><button class="btn-run">Run / Output</button></div>
                 </div>
                 <pre><code><span class="token-keyword">class</span> <span class="token-class">Player</span> <span class="token-punctuation">{</span>
     <span class="token-keyword">function</span> <span class="token-function">init</span>(playerName, startingHealth) <span class="token-punctuation">{</span>
@@ -97,48 +125,163 @@ dog.<span class="token-function">speak</span>()<span class="token-punctuation">;
         <span class="token-keyword">this</span>.health = <span class="token-keyword">this</span>.health - amount<span class="token-punctuation">;</span>
         <span class="token-function">print</span>(<span class="token-keyword">this</span>.name + <span class="token-string">" has "</span> + <span class="token-keyword">this</span>.health + <span class="token-string">" HP left."</span>)<span class="token-punctuation">;</span>
     <span class="token-punctuation">}</span>
+
+    <span class="token-keyword">function</span> <span class="token-function">heal</span>(amount) <span class="token-punctuation">{</span>
+        <span class="token-keyword">this</span>.health = <span class="token-keyword">this</span>.health + amount<span class="token-punctuation">;</span>
+        <span class="token-function">print</span>(<span class="token-keyword">this</span>.name + <span class="token-string">" healed to "</span> + <span class="token-keyword">this</span>.health + <span class="token-string">" HP."</span>)<span class="token-punctuation">;</span>
+    <span class="token-punctuation">}</span>
 <span class="token-punctuation">}</span>
 
-<span class="token-comment">// The arguments are passed directly to the init method</span>
+<span class="token-comment">// Arguments are passed directly to init()</span>
 <span class="token-keyword">var</span> p1 = <span class="token-function">Player</span>(<span class="token-string">"Hero"</span>, <span class="token-number">100</span>)<span class="token-punctuation">;</span>
-p1.<span class="token-function">takeDamage</span>(<span class="token-number">25</span>)<span class="token-punctuation">;</span></code></pre>
-                <div class="output-container">
-                    &gt; Player created: Hero<br>
-                    &gt; Hero has 75 HP left.
-                </div>
+p1.<span class="token-function">takeDamage</span>(<span class="token-number">25</span>)<span class="token-punctuation">;</span>
+p1.<span class="token-function">heal</span>(<span class="token-number">10</span>)<span class="token-punctuation">;</span></code></pre>
+                <div class="output-container">> Player created: Hero<br>> Hero has 75 HP left.<br>> Hero healed to 85 HP.</div>
+            </div>
+
+            <div class="info-box">
+                <strong>💡 Tip:</strong> The <code>init()</code> method is optional. If you don't need to set up anything when an object is created, you can omit it entirely.
             </div>
 
             <h2>Inheritance</h2>
-            <p>Sapphire supports single inheritance using the <code>extends</code> keyword. This allows a subclass to inherit all properties and methods from a parent class, saving you from writing duplicate code.</p>
+            <p>Sapphire supports single inheritance using the <code>extends</code> keyword. This allows a subclass to inherit all properties and methods from a parent class, saving you from writing duplicate code. You can also override parent methods by defining a method with the same name in the subclass.</p>
+
+            <p>To call a method from the parent class inside an overridden method, use the <code>super</code> keyword.</p>
 
             <div class="snippet-container">
                 <div class="snippet-header">
                     <span class="snippet-lang">sapphire</span>
-                    <div class="snippet-actions">
-                        <button class="btn-copy">Copy</button>
-                        <button class="btn-run">Run / Output</button>
-                    </div>
+                    <div class="snippet-actions"><button class="btn-copy">Copy</button><button class="btn-run">Run / Output</button></div>
                 </div>
-                <pre><code><span class="token-keyword">class</span> <span class="token-class">Vehicle</span> <span class="token-punctuation">{</span>
-    <span class="token-keyword">function</span> <span class="token-function">drive</span>() <span class="token-punctuation">{</span>
-        <span class="token-function">print</span>(<span class="token-string">"The vehicle is moving."</span>)<span class="token-punctuation">;</span>
+                <pre><code><span class="token-keyword">class</span> <span class="token-class">Animal</span> <span class="token-punctuation">{</span>
+    <span class="token-keyword">function</span> <span class="token-function">speak</span>() <span class="token-punctuation">{</span>
+        <span class="token-function">print</span>(<span class="token-string">"Animal speaks"</span>)<span class="token-punctuation">;</span>
+    <span class="token-punctuation">}</span>
+
+    <span class="token-keyword">function</span> <span class="token-function">move</span>() <span class="token-punctuation">{</span>
+        <span class="token-function">print</span>(<span class="token-string">"Animal moves"</span>)<span class="token-punctuation">;</span>
     <span class="token-punctuation">}</span>
 <span class="token-punctuation">}</span>
 
-<span class="token-comment">// Car inherits from Vehicle</span>
-<span class="token-keyword">class</span> <span class="token-class">Car</span> <span class="token-keyword">extends</span> <span class="token-class">Vehicle</span> <span class="token-punctuation">{</span>
-    <span class="token-keyword">function</span> <span class="token-function">honk</span>() <span class="token-punctuation">{</span>
-        <span class="token-function">print</span>(<span class="token-string">"Beep beep!"</span>)<span class="token-punctuation">;</span>
+<span class="token-keyword">class</span> <span class="token-class">Dog</span> <span class="token-keyword">extends</span> <span class="token-class">Animal</span> <span class="token-punctuation">{</span>
+    <span class="token-comment">// Override the parent's speak method</span>
+    <span class="token-keyword">function</span> <span class="token-function">speak</span>() <span class="token-punctuation">{</span>
+        <span class="token-function">print</span>(<span class="token-string">"Dog barks"</span>)<span class="token-punctuation">;</span>
+        <span class="token-comment">// Call the parent's move method using super</span>
+        <span class="token-keyword">super</span>.<span class="token-function">move</span>()<span class="token-punctuation">;</span>
     <span class="token-punctuation">}</span>
 <span class="token-punctuation">}</span>
 
-<span class="token-keyword">var</span> myCar = <span class="token-function">Car</span>()<span class="token-punctuation">;</span>
-myCar.<span class="token-function">drive</span>()<span class="token-punctuation">;</span> <span class="token-comment">// Inherited method</span>
-myCar.<span class="token-function">honk</span>()<span class="token-punctuation">;</span>  <span class="token-comment">// Subclass specific method</span></code></pre>
-                <div class="output-container">
-                    &gt; The vehicle is moving.<br>
-                    &gt; Beep beep!
+<span class="token-keyword">var</span> animal = <span class="token-function">Animal</span>()<span class="token-punctuation">;</span>
+animal.<span class="token-function">speak</span>()<span class="token-punctuation">;</span>
+animal.<span class="token-function">move</span>()<span class="token-punctuation">;</span>
+
+<span class="token-function">print</span>(<span class="token-string">"---"</span>)<span class="token-punctuation">;</span>
+
+<span class="token-keyword">var</span> dog = <span class="token-function">Dog</span>()<span class="token-punctuation">;</span>
+dog.<span class="token-function">speak</span>()<span class="token-punctuation">;</span>
+dog.<span class="token-function">move</span>()<span class="token-punctuation">;</span></code></pre>
+                <div class="output-container">> Animal speaks<br>> Animal moves<br>> ---<br>> Dog barks<br>> Animal moves</div>
+            </div>
+
+            <div class="info-box">
+                <strong>💡 Tip:</strong> <code>super</code> lets you call the parent class's methods even if you've overridden them in the child. This is useful when you want to extend the parent's behavior rather than replace it entirely.
+            </div>
+
+            <h2>Real-World Example: Bank Account System</h2>
+            <p>Let's build a complete banking system with inheritance to see how OOP works in practice.</p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions"><button class="btn-copy">Copy</button><button class="btn-run">Run / Output</button></div>
                 </div>
+                <pre><code><span class="token-comment">// Base class for all accounts</span>
+<span class="token-keyword">class</span> <span class="token-class">BankAccount</span> <span class="token-punctuation">{</span>
+    <span class="token-keyword">function</span> <span class="token-function">init</span>(owner, balance) <span class="token-punctuation">{</span>
+        <span class="token-keyword">this</span>.owner = owner<span class="token-punctuation">;</span>
+        <span class="token-keyword">this</span>.balance = balance<span class="token-punctuation">;</span>
+    <span class="token-punctuation">}</span>
+
+    <span class="token-keyword">function</span> <span class="token-function">deposit</span>(amount) <span class="token-punctuation">{</span>
+        <span class="token-keyword">this</span>.balance = <span class="token-keyword">this</span>.balance + amount<span class="token-punctuation">;</span>
+        <span class="token-function">print</span>(<span class="token-keyword">this</span>.owner + <span class="token-string">" deposited $"</span> + amount)<span class="token-punctuation">;</span>
+    <span class="token-punctuation">}</span>
+
+    <span class="token-keyword">function</span> <span class="token-function">withdraw</span>(amount) <span class="token-punctuation">{</span>
+        <span class="token-keyword">if</span> (<span class="token-keyword">this</span>.balance >= amount) <span class="token-punctuation">{</span>
+            <span class="token-keyword">this</span>.balance = <span class="token-keyword">this</span>.balance - amount<span class="token-punctuation">;</span>
+            <span class="token-function">print</span>(<span class="token-keyword">this</span>.owner + <span class="token-string">" withdrew $"</span> + amount)<span class="token-punctuation">;</span>
+        <span class="token-punctuation">}</span> <span class="token-keyword">else</span> <span class="token-punctuation">{</span>
+            <span class="token-function">print</span>(<span class="token-string">"Insufficient funds!"</span>)<span class="token-punctuation">;</span>
+        <span class="token-punctuation">}</span>
+    <span class="token-punctuation">}</span>
+
+    <span class="token-keyword">function</span> <span class="token-function">displayBalance</span>() <span class="token-punctuation">{</span>
+        <span class="token-function">print</span>(<span class="token-keyword">this</span>.owner + <span class="token-string">"'s balance: $"</span> + <span class="token-keyword">this</span>.balance)<span class="token-punctuation">;</span>
+    <span class="token-punctuation">}</span>
+<span class="token-punctuation">}</span>
+
+<span class="token-comment">// Savings account — adds interest rate</span>
+<span class="token-keyword">class</span> <span class="token-class">SavingsAccount</span> <span class="token-keyword">extends</span> <span class="token-class">BankAccount</span> <span class="token-punctuation">{</span>
+    <span class="token-keyword">function</span> <span class="token-function">init</span>(owner, balance, interestRate) <span class="token-punctuation">{</span>
+        <span class="token-keyword">super</span>.<span class="token-function">init</span>(owner, balance)<span class="token-punctuation">;</span>
+        <span class="token-keyword">this</span>.interestRate = interestRate<span class="token-punctuation">;</span>
+    <span class="token-punctuation">}</span>
+
+    <span class="token-keyword">function</span> <span class="token-function">applyInterest</span>() <span class="token-punctuation">{</span>
+        <span class="token-keyword">var</span> interest = <span class="token-keyword">this</span>.balance * (<span class="token-keyword">this</span>.interestRate / <span class="token-number">100</span>)<span class="token-punctuation">;</span>
+        <span class="token-keyword">this</span>.balance = <span class="token-keyword">this</span>.balance + interest<span class="token-punctuation">;</span>
+        <span class="token-function">print</span>(<span class="token-string">"Interest applied: $"</span> + interest)<span class="token-punctuation">;</span>
+    <span class="token-punctuation">}</span>
+<span class="token-punctuation">}</span>
+
+<span class="token-comment">// Checking account — adds an overdraft limit</span>
+<span class="token-keyword">class</span> <span class="token-class">CheckingAccount</span> <span class="token-keyword">extends</span> <span class="token-class">BankAccount</span> <span class="token-punctuation">{</span>
+    <span class="token-keyword">function</span> <span class="token-function">init</span>(owner, balance, overdraftLimit) <span class="token-punctuation">{</span>
+        <span class="token-keyword">super</span>.<span class="token-function">init</span>(owner, balance)<span class="token-punctuation">;</span>
+        <span class="token-keyword">this</span>.overdraftLimit = overdraftLimit<span class="token-punctuation">;</span>
+    <span class="token-punctuation">}</span>
+
+    <span class="token-comment">// Override withdraw to allow overdraft</span>
+    <span class="token-keyword">function</span> <span class="token-function">withdraw</span>(amount) <span class="token-punctuation">{</span>
+        <span class="token-keyword">if</span> (<span class="token-keyword">this</span>.balance + <span class="token-keyword">this</span>.overdraftLimit >= amount) <span class="token-punctuation">{</span>
+            <span class="token-keyword">this</span>.balance = <span class="token-keyword">this</span>.balance - amount<span class="token-punctuation">;</span>
+            <span class="token-function">print</span>(<span class="token-keyword">this</span>.owner + <span class="token-string">" withdrew $"</span> + amount + <span class="token-string">" (using overdraft)"</span>)<span class="token-punctuation">;</span>
+        <span class="token-punctuation">}</span> <span class="token-keyword">else</span> <span class="token-punctuation">{</span>
+            <span class="token-function">print</span>(<span class="token-string">"Overdraft limit exceeded!"</span>)<span class="token-punctuation">;</span>
+        <span class="token-punctuation">}</span>
+    <span class="token-punctuation">}</span>
+<span class="token-punctuation">}</span>
+
+<span class="token-comment">// Test the system</span>
+<span class="token-keyword">var</span> savings = <span class="token-function">SavingsAccount</span>(<span class="token-string">"Alice"</span>, <span class="token-number">1000</span>, <span class="token-number">5.0</span>)<span class="token-punctuation">;</span>
+savings.<span class="token-function">deposit</span>(<span class="token-number">500</span>)<span class="token-punctuation">;</span>
+savings.<span class="token-function">applyInterest</span>()<span class="token-punctuation">;</span>
+savings.<span class="token-function">displayBalance</span>()<span class="token-punctuation">;</span>
+
+<span class="token-function">print</span>(<span class="token-string">"---"</span>)<span class="token-punctuation">;</span>
+
+<span class="token-keyword">var</span> checking = <span class="token-function">CheckingAccount</span>(<span class="token-string">"Bob"</span>, <span class="token-number">500</span>, <span class="token-number">200</span>)<span class="token-punctuation">;</span>
+checking.<span class="token-function">withdraw</span>(<span class="token-number">600</span>)<span class="token-punctuation">;</span>  <span class="token-comment">// Uses overdraft</span>
+checking.<span class="token-function">withdraw</span>(<span class="token-number">200</span>)<span class="token-punctuation">;</span>  <span class="token-comment">// Exceeds overdraft limit</span>
+checking.<span class="token-function">displayBalance</span>()<span class="token-punctuation">;</span></code></pre>
+                <div class="output-container">> Alice deposited $500<br>> Interest applied: $75.0<br>> Alice's balance: $1575.0<br>> ---<br>> Bob withdrew $600 (using overdraft)<br>> Overdraft limit exceeded!<br>> Bob's balance: $-100</div>
+            </div>
+
+            <h2>Overview — What You Learned</h2>
+            <div class="info-box">
+                <strong>✅ Chapter Summary:</strong>
+                <ul>
+                    <li><strong>Classes</strong> are blueprints for creating objects using the <code>class</code> keyword</li>
+                    <li><strong>Objects</strong> are created by calling the class like a function: <code>ClassName()</code></li>
+                    <li><strong>Properties</strong> are set with dot notation: <code>object.property = value</code></li>
+                    <li><strong>Methods</strong> are functions inside a class that use <code>this</code> to access the current object</li>
+                    <li><strong>Constructors</strong> are defined with <code>init()</code> and are called automatically when an object is created</li>
+                    <li><strong>Inheritance</strong> with <code>extends</code> lets a child class reuse code from a parent class</li>
+                    <li><strong>super</strong> calls the parent class's methods from an overridden method</li>
+                    <li>OOP helps organize code into reusable, modular components for larger applications</li>
+                </ul>
             </div>
 
             <p style="margin-top: 4rem; display: flex; justify-content: space-between;">
@@ -149,18 +292,5 @@ myCar.<span class="token-function">honk</span>()<span class="token-punctuation">
     </div>
 
     <script src="js/main.js"></script>
-    <script>
-        const themeToggle = document.getElementById('theme-toggle');
-        themeToggle.addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-            if (document.body.classList.contains('dark-mode')) {
-                themeToggle.textContent = '🌙';
-            } else {
-                themeToggle.textContent = '💡';
-            }
-        });
-    </script>
 </body>
 </html>
-
-

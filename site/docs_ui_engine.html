@@ -3,44 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UI Engine - Sapphire Documentation</title>
+    <title>UI Engine — Sapphire Docs</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body class="dark-mode">
+    <!-- Mobile Sidebar Toggle -->
+    <button class="sidebar-toggle" aria-label="Open menu">&#9776;</button>
+    <div class="sidebar-overlay"></div>
+
     <div class="docs-layout">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <button id="theme-toggle" aria-label="Toggle theme">💡</button>
-            <a href="../index.html" class="sidebar-logo">
-                <img src="assets/logo.svg" alt="Logo"> Sapphire
-            </a>
-            <nav>
-                <h4>Part 1: The Core</h4>
-                <ul>
-                    <li><a href="docs_intro.html">1. Intro & Variables</a></li>
-                    <li><a href="docs_control_flow.html">2. Control Flow & Functions</a></li>
-                    <li><a href="docs_data_structures.html">3. Lists & Maps</a></li>
-                    <li><a href="docs_std_basic.html">4. Math & System Modules</a></li>
-                </ul>
+            <div class="sidebar-inner">
+                <div class="sidebar-header">
+                    <a href="../index.html" class="sidebar-logo">
+                        <div class="logo-gem">&#x1F48E;</div>
+                        Sapphire
+                    </a>
+                    <button id="sidebar-theme-toggle" aria-label="Toggle theme">&#x1F319;</button>
+                </div>
+                <div class="sidebar-nav-body">
+                <nav>
+                    <h4>Part 1: The Core</h4>
+                    <ul>
+                        <li><a href="docs_intro.html">1. Intro &amp; Variables</a></li>
+                        <li><a href="docs_control_flow.html">2. Control Flow &amp; Functions</a></li>
+                        <li><a href="docs_data_structures.html">3. Lists &amp; Maps</a></li>
+                        <li><a href="docs_std_basic.html">4. Math &amp; System Modules</a></li>
+                    </ul>
 
-                <h4>Part 2: Advanced</h4>
-                <ul>
-                    <li><a href="docs_oop.html">5. Object-Oriented (OOP)</a></li>
-                    <li><a href="docs_exceptions.html">6. Exceptions Handling</a></li>
-                    <li><a href="docs_async.html">7. Async & Await</a></li>
-                    <li><a href="docs_threading.html">8. Multi-threading</a></li>
-                </ul>
+                    <h4>Part 2: Advanced</h4>
+                    <ul>
+                        <li><a href="docs_oop.html">5. Object-Oriented (OOP)</a></li>
+                        <li><a href="docs_exceptions.html">6. Exceptions Handling</a></li>
+                        <li><a href="docs_async.html">7. Async &amp; Await</a></li>
+                        <li><a href="docs_threading.html">8. Multi-threading</a></li>
+                    </ul>
 
-                <h4>Part 3: I/O & UI</h4>
-                <ul>
-                    <li><a href="docs_file_io.html">9. File I/O</a></li>
-                    <li><a href="docs_http.html">10. HTTP Requests</a></li>
-                    <li><a href="docs_ui_engine.html" class="active">11. UI Engine</a></li>
-                    <li><a href="docs_sqlite.html">12. SQLite Database</a></li>`n                </ul>
-            </nav>
+                    <h4>Part 3: I/O &amp; UI</h4>
+                    <ul>
+                        <li><a href="docs_file_io.html">9. File I/O</a></li>
+                        <li><a href="docs_http.html">10. HTTP Requests</a></li>
+                        <li><a href="docs_ui_engine.html" class="active">11. UI Engine</a></li>
+                        <li><a href="docs_sqlite.html">12. SQLite Database</a></li>
+                    </ul>
+                </nav>
+                </div>
+                <div class="sidebar-footer">
+                    <span class="version-badge">&#x1F48E; v1.0.6</span>
+                </div>
+            </div>
         </aside>
 
         <!-- Main Content -->
@@ -329,17 +344,7 @@ spack.exe my_app.sbc --no-console</code></pre>
     </div>
 
     <script src="js/main.js"></script>
-    <script>
-        const themeToggle = document.getElementById('theme-toggle');
-        themeToggle.addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-            if (document.body.classList.contains('dark-mode')) {
-                themeToggle.textContent = '🌙';
-            } else {
-                themeToggle.textContent = '💡';
-            }
-        });
-    </script>
+    
 </body>
 </html>
 

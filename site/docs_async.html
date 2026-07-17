@@ -3,116 +3,174 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Async & Await - Sapphire Documentation</title>
+    <title>Async & Await — Sapphire Docs</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body class="dark-mode">
+    <!-- Mobile Sidebar Toggle -->
+    <button class="sidebar-toggle" aria-label="Open menu">&#9776;</button>
+    <div class="sidebar-overlay"></div>
+
     <div class="docs-layout">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <button id="theme-toggle" aria-label="Toggle theme">💡</button>
-            <a href="../index.html" class="sidebar-logo">
-                <img src="assets/logo.svg" alt="Logo"> Sapphire
-            </a>
-            <nav>
-                <h4>Part 1: The Core</h4>
-                <ul>
-                    <li><a href="docs_intro.html">1. Intro & Variables</a></li>
-                    <li><a href="docs_control_flow.html">2. Control Flow & Functions</a></li>
-                    <li><a href="docs_data_structures.html">3. Lists & Maps</a></li>
-                    <li><a href="docs_std_basic.html">4. Math & System Modules</a></li>
-                </ul>
+            <div class="sidebar-inner">
+                <div class="sidebar-header">
+                    <a href="../index.html" class="sidebar-logo">
+                        <div class="logo-gem">&#x1F48E;</div>
+                        Sapphire
+                    </a>
+                    <button id="sidebar-theme-toggle" aria-label="Toggle theme">&#x1F319;</button>
+                </div>
+                <div class="sidebar-nav-body">
+                <nav>
+                    <h4>Part 1: The Core</h4>
+                    <ul>
+                        <li><a href="docs_intro.html">1. Intro &amp; Variables</a></li>
+                        <li><a href="docs_control_flow.html">2. Control Flow &amp; Functions</a></li>
+                        <li><a href="docs_data_structures.html">3. Lists &amp; Maps</a></li>
+                        <li><a href="docs_std_basic.html">4. Math &amp; System Modules</a></li>
+                    </ul>
 
-                <h4>Part 2: Advanced</h4>
-                <ul>
-                    <li><a href="docs_oop.html">5. Object-Oriented (OOP)</a></li>
-                    <li><a href="docs_exceptions.html">6. Exceptions Handling</a></li>
-                    <li><a href="docs_async.html" class="active">7. Async & Await</a></li>
-                    <li><a href="docs_threading.html">8. Multi-threading</a></li>
-                </ul>
+                    <h4>Part 2: Advanced</h4>
+                    <ul>
+                        <li><a href="docs_oop.html">5. Object-Oriented (OOP)</a></li>
+                        <li><a href="docs_exceptions.html">6. Exceptions Handling</a></li>
+                        <li><a href="docs_async.html" class="active">7. Async &amp; Await</a></li>
+                        <li><a href="docs_threading.html">8. Multi-threading</a></li>
+                    </ul>
 
-                <h4>Part 3: I/O & UI</h4>
-                <ul>
-                    <li><a href="docs_file_io.html">9. File I/O</a></li>
-                    <li><a href="docs_http.html">10. HTTP Requests</a></li>
-                    <li><a href="docs_ui_engine.html">11. UI Engine</a></li>
-                    <li><a href="docs_sqlite.html">12. SQLite Database</a></li>`n                </ul>
-            </nav>
+                    <h4>Part 3: I/O &amp; UI</h4>
+                    <ul>
+                        <li><a href="docs_file_io.html">9. File I/O</a></li>
+                        <li><a href="docs_http.html">10. HTTP Requests</a></li>
+                        <li><a href="docs_ui_engine.html">11. UI Engine</a></li>
+                        <li><a href="docs_sqlite.html">12. SQLite Database</a></li>
+                    </ul>
+                </nav>
+                </div>
+                <div class="sidebar-footer">
+                    <span class="version-badge">&#x1F48E; v1.0.6</span>
+                </div>
+            </div>
         </aside>
 
-        <!-- Main Content -->
         <main class="docs-content">
             <h1>Asynchronous Programming</h1>
+
+            <div class="info-box">
+                <strong>📖 What You Will Learn in This Chapter:</strong>
+                <ul>
+                    <li>What asynchronous programming is and why it prevents freezing</li>
+                    <li>How to define <strong>async functions</strong> with the <code>async</code> keyword</li>
+                    <li>How to <strong>await</strong> promises to get results without blocking</li>
+                    <li>How the <strong>event loop</strong> lets multiple tasks run concurrently</li>
+                    <li>How to handle errors in async functions with <code>try/catch</code></li>
+                </ul>
+            </div>
+
             <p>Modern applications frequently perform tasks that take an unknown amount of time: downloading a file, reading a large database, or waiting for a user input. If you block the main execution thread while waiting for these tasks, your application will freeze. Sapphire solves this beautifully with Coroutines and the <code>async / await</code> pattern.</p>
 
+            <h2>What Is Asynchronous Programming?</h2>
+            <p>In traditional (synchronous) programming, each line of code waits for the previous one to finish. If you call a function that takes 5 seconds, your entire program freezes for 5 seconds.</p>
+            <p>Asynchronous programming allows your program to start a long-running task, move on to do other things while waiting, and come back to the result when it's ready. Think of it like ordering food at a restaurant: instead of standing at the counter staring at the chef (blocking), you sit down, read a book, and the waiter brings you the food when it's ready (non-blocking).</p>
+
             <h2>Defining Async Functions</h2>
-            <p>By prepending the <code>async</code> keyword to a function, you tell the Virtual Machine that this function might pause its execution at some point. When an async function is called, it returns a <strong>Promise</strong> instead of the actual return value.</p>
-            
+            <p>By prepending the <code>async</code> keyword to a function, you tell the Virtual Machine that this function might pause its execution at some point. When an async function is called, it returns a <strong>Promise</strong> instead of the actual return value. The function doesn't start executing until the event loop picks it up.</p>
+
             <div class="snippet-container">
                 <div class="snippet-header">
                     <span class="snippet-lang">sapphire</span>
-                    <div class="snippet-actions">
-                        <button class="btn-copy">Copy</button>
-                        <button class="btn-run">Run / Output</button>
-                    </div>
+                    <div class="snippet-actions"><button class="btn-copy">Copy</button><button class="btn-run">Run / Output</button></div>
                 </div>
-                <pre><code><span class="token-keyword">async function</span> <span class="token-function">fetchData</span>() <span class="token-punctuation">{</span>
+                <pre><code><span class="token-comment">// An async function returns a Promise immediately</span>
+<span class="token-keyword">async function</span> <span class="token-function">fetchData</span>() <span class="token-punctuation">{</span>
     <span class="token-function">print</span>(<span class="token-string">"Fetching data from server..."</span>)<span class="token-punctuation">;</span>
     <span class="token-comment">// System.sleep pauses ONLY this coroutine, not the whole app!</span>
-    <span class="token-function">System.sleep</span>(<span class="token-number">2000</span>)<span class="token-punctuation">;</span> 
+    <span class="token-function">System.sleep</span>(<span class="token-number">2000</span>)<span class="token-punctuation">;</span>
     <span class="token-keyword">return</span> <span class="token-string">"Server Response: Status 200 OK"</span><span class="token-punctuation">;</span>
 <span class="token-punctuation">}</span>
 
-<span class="token-comment">// This will print out that it is a Promise object</span>
+<span class="token-comment">// Calling an async function returns a Promise object</span>
 <span class="token-keyword">var</span> myPromise = <span class="token-function">fetchData</span>()<span class="token-punctuation">;</span>
 <span class="token-function">print</span>(myPromise)<span class="token-punctuation">;</span></code></pre>
-                <div class="output-container">
-                    &gt; Fetching data from server...<br>
-                    &gt; &lt;Promise Object&gt;
-                </div>
+                <div class="output-container">> Fetching data from server...<br>> <Promise Object></div>
             </div>
 
-            <h2>Using Await</h2>
-            <p>To actually get the result out of a Promise, you must use the <code>await</code> keyword. This tells Sapphire to yield control back to the event loop, letting other parts of the application run, until the Promise is resolved.</p>
+            <div class="info-box">
+                <strong>💡 Key Insight:</strong> The async function starts running immediately when called, but the <code>print("Fetching data...")</code> runs before the <code>System.sleep</code> pauses it. The function will resume later to return the result.
+            </div>
+
+            <h2>The Event Loop</h2>
+            <p>Sapphire uses an <strong>event loop</strong> to manage async functions. When an async function calls <code>await</code> (or <code>System.sleep</code>), it yields control back to the event loop, which then runs other tasks that are waiting. This allows multiple async functions to make progress concurrently without using multiple threads.</p>
 
             <div class="snippet-container">
                 <div class="snippet-header">
                     <span class="snippet-lang">sapphire</span>
-                    <div class="snippet-actions">
-                        <button class="btn-copy">Copy</button>
-                        <button class="btn-run">Run / Output</button>
-                    </div>
+                    <div class="snippet-actions"><button class="btn-copy">Copy</button><button class="btn-run">Run / Output</button></div>
+                </div>
+                <pre><code><span class="token-keyword">async function</span> <span class="token-function">yield_point</span>() <span class="token-punctuation">{</span>
+    <span class="token-keyword">return</span> <span class="token-number">0</span><span class="token-punctuation">;</span> <span class="token-comment">// Async function returns immediately, wrapping in promise.</span>
+<span class="token-punctuation">}</span>
+
+<span class="token-keyword">async function</span> <span class="token-function">taskA</span>() <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"A 1"</span>)<span class="token-punctuation">;</span>
+    <span class="token-keyword">await</span> <span class="token-function">yield_point</span>()<span class="token-punctuation">;</span>
+    <span class="token-function">print</span>(<span class="token-string">"A 2"</span>)<span class="token-punctuation">;</span>
+    <span class="token-keyword">await</span> <span class="token-function">yield_point</span>()<span class="token-punctuation">;</span>
+    <span class="token-function">print</span>(<span class="token-string">"A 3"</span>)<span class="token-punctuation">;</span>
+    <span class="token-keyword">return</span> <span class="token-string">"A done"</span><span class="token-punctuation">;</span>
+<span class="token-punctuation">}</span>
+
+<span class="token-keyword">async function</span> <span class="token-function">taskB</span>() <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"B 1"</span>)<span class="token-punctuation">;</span>
+    <span class="token-keyword">await</span> <span class="token-function">yield_point</span>()<span class="token-punctuation">;</span>
+    <span class="token-function">print</span>(<span class="token-string">"B 2"</span>)<span class="token-punctuation">;</span>
+    <span class="token-keyword">await</span> <span class="token-function">yield_point</span>()<span class="token-punctuation">;</span>
+    <span class="token-function">print</span>(<span class="token-string">"B 3"</span>)<span class="token-punctuation">;</span>
+    <span class="token-keyword">return</span> <span class="token-string">"B done"</span><span class="token-punctuation">;</span>
+<span class="token-punctuation">}</span>
+
+<span class="token-keyword">var</span> p1 = <span class="token-function">taskA</span>()<span class="token-punctuation">;</span>
+<span class="token-keyword">var</span> p2 = <span class="token-function">taskB</span>()<span class="token-punctuation">;</span>
+
+<span class="token-function">print</span>(<span class="token-string">"Main script ending. Event loop should take over!"</span>)<span class="token-punctuation">;</span></code></pre>
+                <div class="output-container">> A 1<br>> B 1<br>> Main script ending. Event loop should take over!<br>> A 2<br>> B 2<br>> A 3<br>> B 3</div>
+            </div>
+
+            <p>Notice how <code>taskA</code> and <code>taskB</code> interleave their execution. After <code>taskA</code> prints "A 1" and yields, <code>taskB</code> runs and prints "B 1". Then they alternate. This is the power of the event loop!</p>
+
+            <h2>Using Await</h2>
+            <p>To actually get the result out of a Promise, you must use the <code>await</code> keyword. This tells Sapphire to yield control back to the event loop, letting other parts of the application run, until the Promise is resolved. You can only use <code>await</code> inside an <code>async</code> function.</p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions"><button class="btn-copy">Copy</button><button class="btn-run">Run / Output</button></div>
                 </div>
                 <pre><code><span class="token-keyword">async function</span> <span class="token-function">main</span>() <span class="token-punctuation">{</span>
     <span class="token-function">print</span>(<span class="token-string">"Starting main process..."</span>)<span class="token-punctuation">;</span>
-    
+
     <span class="token-comment">// The code waits here for 2 seconds without freezing the app</span>
     <span class="token-keyword">var</span> result = <span class="token-keyword">await</span> <span class="token-function">fetchData</span>()<span class="token-punctuation">;</span>
-    
+
     <span class="token-function">print</span>(<span class="token-string">"Received: "</span> + result)<span class="token-punctuation">;</span>
 <span class="token-punctuation">}</span>
 
 <span class="token-function">main</span>()<span class="token-punctuation">;</span></code></pre>
-                <div class="output-container">
-                    &gt; Starting main process...<br>
-                    &gt; Fetching data from server...<br>
-                    &gt; Received: Server Response: Status 200 OK
-                </div>
+                <div class="output-container">> Starting main process...<br>> Fetching data from server...<br>> Received: Server Response: Status 200 OK</div>
             </div>
 
             <h2>Error Handling in Async</h2>
-            <p>If an asynchronous function encounters an error, the Promise is "rejected". You can safely handle rejected Promises using the standard <code>try / catch</code> block around the <code>await</code> call!</p>
+            <p>If an asynchronous function encounters an error, the Promise is "rejected". You can safely handle rejected Promises using the standard <code>try / catch</code> block around the <code>await</code> call. This works exactly like synchronous exception handling.</p>
 
             <div class="snippet-container">
                 <div class="snippet-header">
                     <span class="snippet-lang">sapphire</span>
-                    <div class="snippet-actions">
-                        <button class="btn-copy">Copy</button>
-                        <button class="btn-run">Run / Output</button>
-                    </div>
+                    <div class="snippet-actions"><button class="btn-copy">Copy</button><button class="btn-run">Run / Output</button></div>
                 </div>
                 <pre><code><span class="token-keyword">async function</span> <span class="token-function">failingTask</span>() <span class="token-punctuation">{</span>
     <span class="token-function">System.sleep</span>(<span class="token-number">1000</span>)<span class="token-punctuation">;</span>
@@ -128,9 +186,21 @@
 <span class="token-punctuation">}</span>
 
 <span class="token-function">testError</span>()<span class="token-punctuation">;</span></code></pre>
-                <div class="output-container">
-                    &gt; Caught Async Error: Network Disconnected!
-                </div>
+                <div class="output-container">> Caught Async Error: Network Disconnected!</div>
+            </div>
+
+            <h2>Overview — What You Learned</h2>
+            <div class="info-box">
+                <strong>✅ Chapter Summary:</strong>
+                <ul>
+                    <li><strong>Asynchronous programming</strong> prevents your app from freezing during long operations</li>
+                    <li><strong>async function</strong> defines a function that can pause and resume: <code>async function foo() { ... }</code></li>
+                    <li><strong>await</strong> pauses the async function until a Promise resolves: <code>var result = await someAsync()</code></li>
+                    <li>The <strong>event loop</strong> automatically interleaves multiple async functions, giving them all a chance to run</li>
+                    <li><strong>System.sleep(milliseconds)</strong> pauses only the current coroutine, not the whole application</li>
+                    <li><strong>try/catch</strong> works with <code>await</code> to handle errors in async code</li>
+                    <li>Async is ideal for I/O-bound tasks like network requests, file operations, and timers</li>
+                </ul>
             </div>
 
             <p style="margin-top: 4rem; display: flex; justify-content: space-between;">
@@ -141,18 +211,6 @@
     </div>
 
     <script src="js/main.js"></script>
-    <script>
-        const themeToggle = document.getElementById('theme-toggle');
-        themeToggle.addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-            if (document.body.classList.contains('dark-mode')) {
-                themeToggle.textContent = '🌙';
-            } else {
-                themeToggle.textContent = '💡';
-            }
-        });
-    </script>
+    
 </body>
 </html>
-
-

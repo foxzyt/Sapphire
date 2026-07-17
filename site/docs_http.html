@@ -3,61 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HTTP Requests - Sapphire Documentation</title>
+    <title>HTTP Requests — Sapphire Docs</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body class="dark-mode">
+    <!-- Mobile Sidebar Toggle -->
+    <button class="sidebar-toggle" aria-label="Open menu">&#9776;</button>
+    <div class="sidebar-overlay"></div>
+
     <div class="docs-layout">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <button id="theme-toggle" aria-label="Toggle theme">💡</button>
-            <a href="../index.html" class="sidebar-logo">
-                <img src="assets/logo.svg" alt="Logo"> Sapphire
-            </a>
-            <nav>
-                <h4>Part 1: The Core</h4>
-                <ul>
-                    <li><a href="docs_intro.html">1. Intro & Variables</a></li>
-                    <li><a href="docs_control_flow.html">2. Control Flow & Functions</a></li>
-                    <li><a href="docs_data_structures.html">3. Lists & Maps</a></li>
-                    <li><a href="docs_std_basic.html">4. Math & System Modules</a></li>
-                </ul>
+            <div class="sidebar-inner">
+                <div class="sidebar-header">
+                    <a href="../index.html" class="sidebar-logo">
+                        <div class="logo-gem">&#x1F48E;</div>
+                        Sapphire
+                    </a>
+                    <button id="sidebar-theme-toggle" aria-label="Toggle theme">&#x1F319;</button>
+                </div>
+                <div class="sidebar-nav-body">
+                <nav>
+                    <h4>Part 1: The Core</h4>
+                    <ul>
+                        <li><a href="docs_intro.html">1. Intro &amp; Variables</a></li>
+                        <li><a href="docs_control_flow.html">2. Control Flow &amp; Functions</a></li>
+                        <li><a href="docs_data_structures.html">3. Lists &amp; Maps</a></li>
+                        <li><a href="docs_std_basic.html">4. Math &amp; System Modules</a></li>
+                    </ul>
 
-                <h4>Part 2: Advanced</h4>
-                <ul>
-                    <li><a href="docs_oop.html">5. Object-Oriented (OOP)</a></li>
-                    <li><a href="docs_exceptions.html">6. Exceptions Handling</a></li>
-                    <li><a href="docs_async.html">7. Async & Await</a></li>
-                    <li><a href="docs_threading.html">8. Multi-threading</a></li>
-                </ul>
+                    <h4>Part 2: Advanced</h4>
+                    <ul>
+                        <li><a href="docs_oop.html">5. Object-Oriented (OOP)</a></li>
+                        <li><a href="docs_exceptions.html">6. Exceptions Handling</a></li>
+                        <li><a href="docs_async.html">7. Async &amp; Await</a></li>
+                        <li><a href="docs_threading.html">8. Multi-threading</a></li>
+                    </ul>
 
-                <h4>Part 3: I/O & UI</h4>
-                <ul>
-                    <li><a href="docs_file_io.html">9. File I/O</a></li>
-                    <li><a href="docs_http.html" class="active">10. HTTP Requests</a></li>
-                    <li><a href="docs_ui_engine.html">11. UI Engine</a></li>
-                    <li><a href="docs_sqlite.html">12. SQLite Database</a></li>`n                </ul>
-            </nav>
+                    <h4>Part 3: I/O &amp; UI</h4>
+                    <ul>
+                        <li><a href="docs_file_io.html">9. File I/O</a></li>
+                        <li><a href="docs_http.html" class="active">10. HTTP Requests</a></li>
+                        <li><a href="docs_ui_engine.html">11. UI Engine</a></li>
+                        <li><a href="docs_sqlite.html">12. SQLite Database</a></li>
+                    </ul>
+                </nav>
+                </div>
+                <div class="sidebar-footer">
+                    <span class="version-badge">&#x1F48E; v1.0.6</span>
+                </div>
+            </div>
         </aside>
 
-        <!-- Main Content -->
         <main class="docs-content">
+
+            <div class="article-toc">
+                <strong>📑 On this page</strong>
+                <ul>
+                    <li><a href="#what-is-http">1. What Is HTTP?</a></li>
+                    <li><a href="#get-request">2. GET Request</a></li>
+                    <li><a href="#json-parsing">3. JSON Parsing</a></li>
+                    <li><a href="#async-http">4. Async HTTP</a></li>
+                    <li><a href="#error-handling">5. Error Handling</a></li>
+                    <li><a href="#weather-app">6. Weather App</a></li>
+                    <li><a href="#async-weather">7. Async Weather</a></li>
+                    <li><a href="#overview">8. Overview</a></li>
+                </ul>
+            </div>
+
             <h1>HTTP Requests</h1>
+
+            <div class="card card-info">
+                <div class="card-title">📖 What You Will Learn in This Chapter</div>
+                <ul>
+                    <li>What HTTP is and how the web works (for beginners)</li>
+                    <li>How to perform <strong>GET</strong> requests to fetch data from APIs</li>
+                    <li>How to use <strong>async/await</strong> with HTTP to prevent freezing</li>
+                    <li>How to parse JSON responses into Sapphire Maps</li>
+                    <li>How to handle errors and timeouts gracefully</li>
+                    <li>How to build a real-world weather app using a public API</li>
+                </ul>
+            </div>
+
             <p>Connecting to external APIs, downloading resources, or interacting with a backend server are core requirements of any modern programming language. Sapphire ships with an extremely fast HTTP Client module natively backed by libcurl.</p>
 
-            <h2>Performing a GET Request</h2>
-            <p>The simplest way to interact with the web is by performing a GET request to a URL. The <code>httpGet()</code> method synchronously fetches the URL and returns the raw response body.</p>
-            
+            <div class="card card-warning">
+                <div class="card-title">⚠️ Part 3 Disclaimer</div>
+                <p>This chapter is part of <strong>Part 3: I/O & UI</strong>. All chapters in this section are comprehensive and contain a large amount of content. Take your time to read through each section — these are the most practical chapters in the entire documentation, as they teach you how to make your applications interact with the outside world. The HTTP module, File I/O, UI Engine, and SQLite are all production-ready tools that you will use in every real Sapphire project.</p>
+            </div>
+
+            <h2 id="what-is-http">1. What Is HTTP? (For Beginners)</h2>
+
+            <p><strong>HTTP</strong> stands for <strong>Hypertext Transfer Protocol</strong>. It is the language that web browsers and servers use to talk to each other. When you visit a website, your browser sends an HTTP request to a server, and the server sends back an HTTP response (usually HTML, JSON, or an image).</p>
+
+            <p>Think of HTTP like ordering at a restaurant:</p>
+            <ul>
+                <li>You (the client) look at the menu and decide what you want</li>
+                <li>You tell the waiter your order — that's an <strong>HTTP request</strong></li>
+                <li>The kitchen (the server) prepares your food</li>
+                <li>The waiter brings it back to you — that's the <strong>HTTP response</strong></li>
+            </ul>
+
+            <p>Sapphire lets your programs act as HTTP clients, meaning you can send requests to any web server and use the response data in your code.</p>
+
+            <h3>HTTP Methods</h3>
+            <p>The most common HTTP methods are:</p>
+            <ul>
+                <li><strong>GET</strong> — Fetch data from a server (like reading a webpage)</li>
+                <li><strong>POST</strong> — Send data to a server to create something (like submitting a form)</li>
+                <li><strong>PUT</strong> — Update existing data on a server</li>
+                <li><strong>DELETE</strong> — Remove data from a server</li>
+            </ul>
+            <p>In Sapphire, you'll primarily use <code>httpGet()</code> for fetching data. The response is always returned as a string.</p>
+
+            <h2 id="get-request">2. Performing a GET Request</h2>
+            <p>The simplest way to interact with the web is by performing a GET request to a URL. The <code>httpGet()</code> function synchronously fetches the URL and returns the raw response body as a string.</p>
+
             <div class="snippet-container">
                 <div class="snippet-header">
                     <span class="snippet-lang">sapphire</span>
-                    <div class="snippet-actions">
-                        <button class="btn-copy">Copy</button>
-                        <button class="btn-run">Run / Output</button>
-                    </div>
+                    <div class="snippet-actions"><button class="btn-copy">Copy</button><button class="btn-run">Run / Output</button></div>
                 </div>
                 <pre><code><span class="token-function">print</span>(<span class="token-string">"Fetching JSON placeholder..."</span>)<span class="token-punctuation">;</span>
 
@@ -65,45 +133,190 @@
 
 <span class="token-function">print</span>(<span class="token-string">"Server Response:"</span>)<span class="token-punctuation">;</span>
 <span class="token-function">print</span>(response)<span class="token-punctuation">;</span></code></pre>
-                <div class="output-container">
-                    &gt; Fetching JSON placeholder...<br>
-                    &gt; Server Response:<br>
-                    &gt; {<br>
-                    &gt;   "userId": 1,<br>
-                    &gt;   "id": 1,<br>
-                    &gt;   "title": "delectus aut autem",<br>
-                    &gt;   "completed": false<br>
-                    &gt; }
-                </div>
+                <div class="output-container">> Fetching JSON placeholder...<br>> Server Response:<br>> {<br>>   "userId": 1,<br>>   "id": 1,<br>>   "title": "delectus aut autem",<br>>   "completed": false<br>> }</div>
             </div>
 
-            <h2>Using HTTP with Async</h2>
-            <p>Because HTTP requests are strictly I/O bound and can take several seconds depending on network latency, it is highly recommended to wrap your HTTP calls in an <code>async</code> function and use <code>await</code> or a background Thread so your application (especially the UI) doesn't freeze.</p>
+            <div class="info-box">
+                <strong>💡 Note:</strong> <code>httpGet()</code> is synchronous — it will pause your program until the server responds. For network requests, this could take several seconds. See the next section on how to make it non-blocking with async.
+            </div>
+
+            <h2 id="json-parsing">3. Parsing JSON Responses</h2>
+            <p>Most modern APIs return data in JSON format (JavaScript Object Notation). In Sapphire, you can use the <code>jsonParse()</code> function to convert a JSON string into a Sapphire Map that you can work with directly.</p>
 
             <div class="snippet-container">
                 <div class="snippet-header">
                     <span class="snippet-lang">sapphire</span>
-                    <div class="snippet-actions">
-                        <button class="btn-copy">Copy</button>
-                        <button class="btn-run">Run / Output</button>
-                    </div>
+                    <div class="snippet-actions"><button class="btn-copy">Copy</button><button class="btn-run">Run / Output</button></div>
+                </div>
+                <pre><code><span class="token-keyword">var</span> response = <span class="token-function">httpGet</span>(<span class="token-string">"https://jsonplaceholder.typicode.com/todos/1"</span>)<span class="token-punctuation">;</span>
+
+<span class="token-comment">// Parse the JSON string into a Sapphire map</span>
+<span class="token-keyword">var</span> data = <span class="token-function">jsonParse</span>(response)<span class="token-punctuation">;</span>
+
+<span class="token-comment">// Now we can access the data using bracket notation</span>
+<span class="token-function">print</span>(<span class="token-string">"Title: "</span> + data[<span class="token-string">"title"</span>])<span class="token-punctuation">;</span>
+<span class="token-function">print</span>(<span class="token-string">"Completed: "</span> + data[<span class="token-string">"completed"</span>])<span class="token-punctuation">;</span></code></pre>
+                <div class="output-container">> Title: delectus aut autem<br>> Completed: false</div>
+            </div>
+
+            <h2 id="async-http">4. Using HTTP with Async (Recommended)</h2>
+            <p>Because HTTP requests are I/O bound and can take several seconds depending on network latency, it is highly recommended to wrap your HTTP calls in an <code>async</code> function and use <code>await</code>. This way your application (especially the UI) doesn't freeze while waiting for the network.</p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions"><button class="btn-copy">Copy</button><button class="btn-run">Run / Output</button></div>
                 </div>
                 <pre><code><span class="token-keyword">async function</span> <span class="token-function">downloadData</span>(url) <span class="token-punctuation">{</span>
     <span class="token-keyword">try</span> <span class="token-punctuation">{</span>
-        <span class="token-comment">// Wait for the network...</span>
+        <span class="token-comment">// Wait for the network without freezing the app</span>
         <span class="token-keyword">var</span> body = <span class="token-keyword">await</span> <span class="token-function">httpGet</span>(url)<span class="token-punctuation">;</span>
         <span class="token-function">print</span>(<span class="token-string">"Downloaded "</span> + <span class="token-function">String.length</span>(body) + <span class="token-string">" bytes successfully!"</span>)<span class="token-punctuation">;</span>
+        <span class="token-keyword">return</span> body<span class="token-punctuation">;</span>
     <span class="token-punctuation">}</span> <span class="token-keyword">catch</span> (e) <span class="token-punctuation">{</span>
         <span class="token-function">print</span>(<span class="token-string">"Failed to download: "</span> + e)<span class="token-punctuation">;</span>
+        <span class="token-keyword">return</span> <span class="token-keyword">nil</span><span class="token-punctuation">;</span>
     <span class="token-punctuation">}</span>
 <span class="token-punctuation">}</span>
 
 <span class="token-function">print</span>(<span class="token-string">"Starting download..."</span>)<span class="token-punctuation">;</span>
 <span class="token-function">downloadData</span>(<span class="token-string">"https://example.com"</span>)<span class="token-punctuation">;</span></code></pre>
-                <div class="output-container">
-                    &gt; Starting download...<br>
-                    &gt; Downloaded 1256 bytes successfully!
+                <div class="output-container">> Starting download...<br>> Downloaded 1256 bytes successfully!</div>
+            </div>
+
+            <h2 id="error-handling">5. Error Handling</h2>
+            <p>Network requests can fail for many reasons: the server might be down, the URL might be wrong, or your internet connection might be lost. Always wrap HTTP calls in <code>try/catch</code> blocks.</p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions"><button class="btn-copy">Copy</button><button class="btn-run">Run / Output</button></div>
                 </div>
+                <pre><code><span class="token-keyword">function</span> <span class="token-function">safeFetch</span>(url) <span class="token-punctuation">{</span>
+    <span class="token-keyword">try</span> <span class="token-punctuation">{</span>
+        <span class="token-function">print</span>(<span class="token-string">"Fetching: "</span> + url)<span class="token-punctuation">;</span>
+        <span class="token-keyword">var</span> result = <span class="token-function">httpGet</span>(url)<span class="token-punctuation">;</span>
+        <span class="token-function">print</span>(<span class="token-string">"Success! Response length: "</span> + <span class="token-function">len</span>(result))<span class="token-punctuation">;</span>
+        <span class="token-keyword">return</span> result<span class="token-punctuation">;</span>
+    <span class="token-punctuation">}</span> <span class="token-keyword">catch</span> (e) <span class="token-punctuation">{</span>
+        <span class="token-function">print</span>(<span class="token-string">"Error fetching URL: "</span> + e)<span class="token-punctuation">;</span>
+        <span class="token-keyword">return</span> <span class="token-keyword">nil</span><span class="token-punctuation">;</span>
+    <span class="token-punctuation">}</span>
+<span class="token-punctuation">}</span>
+
+<span class="token-comment">// Test with a valid URL</span>
+<span class="token-keyword">var</span> data = <span class="token-function">safeFetch</span>(<span class="token-string">"https://jsonplaceholder.typicode.com/todos/1"</span>)<span class="token-punctuation">;</span>
+
+<span class="token-comment">// Test with an invalid URL</span>
+<span class="token-keyword">var</span> badData = <span class="token-function">safeFetch</span>(<span class="token-string">"https://thisdoesnotexist.fake"</span>)<span class="token-punctuation">;</span>
+
+<span class="token-keyword">if</span> (badData == <span class="token-keyword">nil</span>) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"Using cached data instead."</span>)<span class="token-punctuation">;</span>
+<span class="token-punctuation">}</span></code></pre>
+                <div class="output-container">> Fetching: https://jsonplaceholder.typicode.com/todos/1<br>> Success! Response length: 83<br>> Fetching: https://thisdoesnotexist.fake<br>> Error fetching URL: Could not resolve host<br>> Using cached data instead.</div>
+            </div>
+
+            <h2 id="weather-app">6. Real-World Example: Weather App</h2>
+            <p>Let's build a complete weather application that fetches data from a public API, parses the JSON response, and displays the information in a readable format.</p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions"><button class="btn-copy">Copy</button><button class="btn-run">Run / Output</button></div>
+                </div>
+                <pre><code><span class="token-comment">// =========================================</span>
+<span class="token-comment">//  WEATHER APP — fetches live weather data</span>
+<span class="token-comment">// =========================================</span>
+
+<span class="token-comment">// Note: You need a free API key from openweathermap.org</span>
+<span class="token-comment">// Replace "YOUR_API_KEY" with your actual key</span>
+
+<span class="token-keyword">var</span> API_KEY = <span class="token-string">"YOUR_API_KEY"</span><span class="token-punctuation">;</span>
+<span class="token-keyword">var</span> CITY = <span class="token-string">"London"</span><span class="token-punctuation">;</span>
+
+<span class="token-keyword">function</span> <span class="token-function">getWeather</span>(city) <span class="token-punctuation">{</span>
+    <span class="token-keyword">var</span> url = <span class="token-string">"https://api.openweathermap.org/data/2.5/weather?q="</span> + city + <span class="token-string">"&appid="</span> + API_KEY + <span class="token-string">"&units=metric"</span><span class="token-punctuation">;</span>
+
+    <span class="token-keyword">try</span> <span class="token-punctuation">{</span>
+        <span class="token-function">print</span>(<span class="token-string">"Fetching weather for "</span> + city + <span class="token-string">"..."</span>)<span class="token-punctuation">;</span>
+        <span class="token-keyword">var</span> response = <span class="token-function">httpGet</span>(url)<span class="token-punctuation">;</span>
+
+        <span class="token-comment">// Parse the JSON response</span>
+        <span class="token-keyword">var</span> data = <span class="token-function">jsonParse</span>(response)<span class="token-punctuation">;</span>
+
+        <span class="token-comment">// Check if the API returned an error</span>
+        <span class="token-keyword">if</span> (data[<span class="token-string">"cod"</span>] != <span class="token-number">200</span>) <span class="token-punctuation">{</span>
+            <span class="token-function">print</span>(<span class="token-string">"Error: "</span> + data[<span class="token-string">"message"</span>])<span class="token-punctuation">;</span>
+            <span class="token-keyword">return</span> <span class="token-keyword">nil</span><span class="token-punctuation">;</span>
+        <span class="token-punctuation">}</span>
+
+        <span class="token-comment">// Extract the data we need</span>
+        <span class="token-keyword">var</span> main = data[<span class="token-string">"main"</span>]<span class="token-punctuation">;</span>
+        <span class="token-keyword">var</span> weather = data[<span class="token-string">"weather"</span>][<span class="token-number">0</span>]<span class="token-punctuation">;</span>
+        <span class="token-keyword">var</span> wind = data[<span class="token-string">"wind"</span>]<span class="token-punctuation">;</span>
+
+        <span class="token-function">print</span>(<span class="token-string">"\n=== Weather in "</span> + city + <span class="token-string">" ==="</span>)<span class="token-punctuation">;</span>
+        <span class="token-function">print</span>(<span class="token-string">"Condition: "</span> + weather[<span class="token-string">"description"</span>])<span class="token-punctuation">;</span>
+        <span class="token-function">print</span>(<span class="token-string">"Temperature: "</span> + main[<span class="token-string">"temp"</span>] + <span class="token-string">"°C"</span>)<span class="token-punctuation">;</span>
+        <span class="token-function">print</span>(<span class="token-string">"Feels like: "</span> + main[<span class="token-string">"feels_like"</span>] + <span class="token-string">"°C"</span>)<span class="token-punctuation">;</span>
+        <span class="token-function">print</span>(<span class="token-string">"Humidity: "</span> + main[<span class="token-string">"humidity"</span>] + <span class="token-string">"%"</span>)<span class="token-punctuation">;</span>
+        <span class="token-function">print</span>(<span class="token-string">"Wind: "</span> + wind[<span class="token-string">"speed"</span>] + <span class="token-string">" m/s"</span>)<span class="token-punctuation">;</span>
+
+        <span class="token-keyword">return</span> data<span class="token-punctuation">;</span>
+    <span class="token-punctuation">}</span> <span class="token-keyword">catch</span> (e) <span class="token-punctuation">{</span>
+        <span class="token-function">print</span>(<span class="token-string">"Failed to get weather: "</span> + e)<span class="token-punctuation">;</span>
+        <span class="token-keyword">return</span> <span class="token-keyword">nil</span><span class="token-punctuation">;</span>
+    <span class="token-punctuation">}</span>
+<span class="token-punctuation">}</span>
+
+<span class="token-comment">// Run the function</span>
+<span class="token-function">getWeather</span>(CITY)<span class="token-punctuation">;</span></code></pre>
+                <div class="output-container">> Fetching weather for London...<br>> <br>> === Weather in London ===<br>> Condition: broken clouds<br>> Temperature: 15.3°C<br>> Feels like: 14.8°C<br>> Humidity: 72%<br>> Wind: 4.5 m/s</div>
+            </div>
+
+            <h2 id="async-weather">7. Real-World Example: Fetching with Async</h2>
+            <p>Here's the same weather app using async/await so it doesn't block the main thread — perfect for use with the UI Engine.</p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions"><button class="btn-copy">Copy</button><button class="btn-run">Run / Output</button></div>
+                </div>
+                <pre><code><span class="token-keyword">async function</span> <span class="token-function">fetchWeatherAsync</span>(city) <span class="token-punctuation">{</span>
+    <span class="token-keyword">var</span> url = <span class="token-string">"https://api.openweathermap.org/data/2.5/weather?q="</span> + city + <span class="token-string">"&appid="</span> + API_KEY + <span class="token-string">"&units=metric"</span><span class="token-punctuation">;</span>
+
+    <span class="token-keyword">try</span> <span class="token-punctuation">{</span>
+        <span class="token-keyword">var</span> response = <span class="token-keyword">await</span> <span class="token-function">httpGet</span>(url)<span class="token-punctuation">;</span>
+        <span class="token-keyword">var</span> data = <span class="token-function">jsonParse</span>(response)<span class="token-punctuation">;</span>
+
+        <span class="token-keyword">if</span> (data[<span class="token-string">"cod"</span>] == <span class="token-number">200</span>) <span class="token-punctuation">{</span>
+            <span class="token-function">print</span>(<span class="token-string">f"Weather: {data["main"]["temp"]}°C"</span>)<span class="token-punctuation">;</span>
+        <span class="token-punctuation">}</span> <span class="token-keyword">else</span> <span class="token-punctuation">{</span>
+            <span class="token-function">print</span>(<span class="token-string">"API Error: "</span> + data[<span class="token-string">"message"</span>])<span class="token-punctuation">;</span>
+        <span class="token-punctuation">}</span>
+    <span class="token-punctuation">}</span> <span class="token-keyword">catch</span> (e) <span class="token-punctuation">{</span>
+        <span class="token-function">print</span>(<span class="token-string">"Network error: "</span> + e)<span class="token-punctuation">;</span>
+    <span class="token-punctuation">}</span>
+<span class="token-punctuation">}</span>
+
+<span class="token-function">print</span>(<span class="token-string">"Starting async weather fetch..."</span>)<span class="token-punctuation">;</span>
+<span class="token-function">fetchWeatherAsync</span>(<span class="token-string">"Tokyo"</span>)<span class="token-punctuation">;</span>
+<span class="token-function">print</span>(<span class="token-string">"Main thread is still free while waiting!"</span>)<span class="token-punctuation">;</span></code></pre>
+                <div class="output-container">> Starting async weather fetch...<br>> Main thread is still free while waiting!<br>> Weather: 22.1°C</div>
+            </div>
+
+            <h2 id="overview">8. Overview — What You Learned</h2>
+            <div class="info-box">
+                <strong>✅ Chapter Summary:</strong>
+                <ul>
+                    <li><strong>HTTP</strong> is the protocol used to communicate with web servers</li>
+                    <li><strong>httpGet(url)</strong> fetches data from a URL and returns it as a string</li>
+                    <li><strong>jsonParse(string)</strong> converts a JSON response into a Sapphire Map for easy access</li>
+                    <li>Always wrap HTTP calls in <strong>try/catch</strong> to handle network errors gracefully</li>
+                    <li>Use <strong>async/await</strong> with <code>httpGet</code> to prevent your application from freezing</li>
+                    <li>Check the response status code (e.g., <code>cod == 200</code>) to verify the request succeeded</li>
+                    <li>Real-world APIs like OpenWeatherMap return nested JSON that you can traverse with bracket notation</li>
+                </ul>
             </div>
 
             <p style="margin-top: 4rem; display: flex; justify-content: space-between;">
@@ -114,18 +327,6 @@
     </div>
 
     <script src="js/main.js"></script>
-    <script>
-        const themeToggle = document.getElementById('theme-toggle');
-        themeToggle.addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-            if (document.body.classList.contains('dark-mode')) {
-                themeToggle.textContent = '🌙';
-            } else {
-                themeToggle.textContent = '💡';
-            }
-        });
-    </script>
+    
 </body>
 </html>
-
-

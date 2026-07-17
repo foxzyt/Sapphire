@@ -3,87 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SQLite Database - Sapphire Documentation</title>
+    <title>SQLite Database — Sapphire Docs</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body class="dark-mode">
+    <!-- Mobile Sidebar Toggle -->
+    <button class="sidebar-toggle" aria-label="Open menu">&#9776;</button>
+    <div class="sidebar-overlay"></div>
+
     <div class="docs-layout">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <button id="theme-toggle" aria-label="Toggle theme">💡</button>
-            <a href="../index.html" class="sidebar-logo">
-                <img src="assets/logo.svg" alt="Logo"> Sapphire
-            </a>
-            <nav>
-                <h4>Part 1: The Core</h4>
-                <ul>
-                    <li><a href="docs_intro.html">1. Intro & Variables</a></li>
-                    <li><a href="docs_control_flow.html">2. Control Flow & Functions</a></li>
-                    <li><a href="docs_data_structures.html">3. Lists & Maps</a></li>
-                    <li><a href="docs_std_basic.html">4. Math & System Modules</a></li>
-                </ul>
+            <div class="sidebar-inner">
+                <div class="sidebar-header">
+                    <a href="../index.html" class="sidebar-logo">
+                        <div class="logo-gem">&#x1F48E;</div>
+                        Sapphire
+                    </a>
+                    <button id="sidebar-theme-toggle" aria-label="Toggle theme">&#x1F319;</button>
+                </div>
+                <div class="sidebar-nav-body">
+                <nav>
+                    <h4>Part 1: The Core</h4>
+                    <ul>
+                        <li><a href="docs_intro.html">1. Intro &amp; Variables</a></li>
+                        <li><a href="docs_control_flow.html">2. Control Flow &amp; Functions</a></li>
+                        <li><a href="docs_data_structures.html">3. Lists &amp; Maps</a></li>
+                        <li><a href="docs_std_basic.html">4. Math &amp; System Modules</a></li>
+                    </ul>
 
-                <h4>Part 2: Advanced</h4>
-                <ul>
-                    <li><a href="docs_oop.html">5. Object-Oriented (OOP)</a></li>
-                    <li><a href="docs_exceptions.html">6. Exceptions Handling</a></li>
-                    <li><a href="docs_async.html">7. Async & Await</a></li>
-                    <li><a href="docs_threading.html">8. Multi-threading</a></li>
-                </ul>
+                    <h4>Part 2: Advanced</h4>
+                    <ul>
+                        <li><a href="docs_oop.html">5. Object-Oriented (OOP)</a></li>
+                        <li><a href="docs_exceptions.html">6. Exceptions Handling</a></li>
+                        <li><a href="docs_async.html">7. Async &amp; Await</a></li>
+                        <li><a href="docs_threading.html">8. Multi-threading</a></li>
+                    </ul>
 
-                <h4>Part 3: I/O & UI</h4>
-                <ul>
-                    <li><a href="docs_file_io.html">9. File I/O</a></li>
-                    <li><a href="docs_http.html">10. HTTP Requests</a></li>
-                    <li><a href="docs_ui_engine.html">11. UI Engine</a></li>
-                    <li><a href="docs_sqlite.html" class="active">12. SQLite Database</a></li>
-                </ul>
-            </nav>
+                    <h4>Part 3: I/O &amp; UI</h4>
+                    <ul>
+                        <li><a href="docs_file_io.html">9. File I/O</a></li>
+                        <li><a href="docs_http.html">10. HTTP Requests</a></li>
+                        <li><a href="docs_ui_engine.html">11. UI Engine</a></li>
+                        <li><a href="docs_sqlite.html" class="active">12. SQLite Database</a></li>
+                    </ul>
+                </nav>
+                </div>
+                <div class="sidebar-footer">
+                    <span class="version-badge">&#x1F48E; v1.0.6</span>
+                </div>
+            </div>
         </aside>
 
         <!-- Main Content -->
         <main class="docs-content">
+
+            <div class="article-toc">
+                <strong>📑 On this page</strong>
+                <ul>
+                    <li><a href="#what-is-sqlite">1. What Is SQLite?</a></li>
+                    <li><a href="#how-databases-work">2. How Databases Work</a></li>
+                    <li><a href="#creating-connecting">3. Creating & Connecting</a></li>
+                    <li><a href="#tables">4. Understanding Tables</a></li>
+                    <li><a href="#crud">5. CRUD Operations</a></li>
+                    <li><a href="#selecting">6. SELECT Statement</a></li>
+                    <li><a href="#where">7. Filtering with WHERE</a></li>
+                    <li><a href="#data-types">8. Data Types</a></li>
+                    <li><a href="#relationships">9. Relationships</a></li>
+                    <li><a href="#joins">10. JOINs</a></li>
+                    <li><a href="#transactions">11. Transactions</a></li>
+                    <li><a href="#prepared">12. Prepared Statements</a></li>
+                    <li><a href="#error-handling">13. Error Handling</a></li>
+                    <li><a href="#real-world">14. Real-World Project</a></li>
+                    <li><a href="#reference">15. API Reference</a></li>
+                </ul>
+            </div>
+
             <h1>SQLite Database</h1>
-            <p>Sapphire comes with a native, built-in SQLite3 engine. You can create local, serverless databases without installing any external database management system.</p>
 
-            <h2>Creating and Connecting</h2>
-            <p>You interact with SQLite by initializing the <code>SQLite</code> object and opening a file. If the file doesn't exist, it will be automatically created.</p>
-            
+            <!-- ============================================ -->
+            <!-- SECTION 1: What Is SQLite?                   -->
+            <!-- ============================================ -->
+            <h2 id="what-is-sqlite">1. What Is SQLite? (For Beginners)</h2>
+
+            <p>
+                <strong>SQLite</strong> is a <em>database engine</em> — a piece of software that lets you
+                store, organize, and retrieve data on your computer without needing a separate server
+                or a database administrator. When you hear about "databases" like MySQL, PostgreSQL,
+                or SQL Server, those are <em>server-based</em> databases: you install a server program,
+                it runs in the background, and your application talks to it over the network.
+            </p>
+
+            <p>
+                SQLite is different. It is <strong>serverless</strong> and <strong>embedded</strong>.
+                The entire database is just a single file on your hard drive (for example,
+                <code>myapp.db</code>). Your program reads and writes directly to that file, no
+                server required. This makes SQLite the most widely deployed database engine in the
+                world — it's in every smartphone, every browser, many game consoles, and Sapphire
+                itself!
+            </p>
+
             <div class="snippet-container">
                 <div class="snippet-header">
-                    <span class="snippet-lang">sapphire</span>
+                    <span class="snippet-lang">text</span>
                     <div class="snippet-actions">
                         <button class="btn-copy">Copy</button>
-                        <button class="btn-run">Run / Output</button>
                     </div>
                 </div>
-                <pre><code><span class="token-keyword">var</span> db = SQLite.<span class="token-function">open</span>(<span class="token-string">"test.db"</span>)<span class="token-punctuation">;</span>
-<span class="token-function">print</span>(<span class="token-string">"Database connected successfully!"</span>)<span class="token-punctuation">;</span>
-</code></pre>
+                <pre><code>SQLite vs Server-Based Databases (MySQL, PostgreSQL):
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  SQLite                          │  MySQL / PostgreSQL             │
+├─────────────────────────────────────────────────────────────────────┤
+│  Single file (e.g. data.db)      │  Multiple files, server process │
+│  No setup, no passwords          │  Requires installation & config │
+│  Great for small/medium apps     │  Built for large-scale apps     │
+│  Perfect for local storage       │  Designed for network access    │
+│  Embedded in your program        │  Runs as a separate service     │
+└─────────────────────────────────────────────────────────────────────┘</code></pre>
             </div>
 
-            <h2>Executing Queries</h2>
-            <p>To run SQL statements like <code>CREATE TABLE</code>, <code>INSERT</code>, <code>UPDATE</code>, or <code>DELETE</code>, use the <code>execute</code> method.</p>
+            <p>
+                In Sapphire, SQLite is <strong>built-in</strong>. You don't need to install anything
+                extra. Just create a <code>SQLite</code> object and start using it.
+            </p>
+
+            <!-- ============================================ -->
+            <!-- SECTION 2: How Databases Work                -->
+            <!-- ============================================ -->
+            <h2 id="how-databases-work">2. How Databases Work — A Simple Analogy</h2>
+
+            <p>
+                Imagine you have a <strong>filing cabinet</strong> in your office. Inside the
+                cabinet, you have several <strong>folders</strong>. Inside each folder, you have
+                <strong>sheets of paper</strong> with information written in rows and columns.
+            </p>
+
+            <ul>
+                <li><strong>Database</strong> = the entire filing cabinet (the <code>.db</code> file)</li>
+                <li><strong>Table</strong> = a specific folder in the cabinet (e.g., "Customers", "Orders")</li>
+                <li><strong>Row</strong> = a single sheet of paper in that folder (a single record)</li>
+                <li><strong>Column</strong> = a specific field on every sheet (e.g., "Name", "Email")</li>
+            </ul>
+
+            <p>
+                When you ask SQLite a question like "find all customers named Alice", it's like
+                opening the "Customers" folder, scanning every sheet, and pulling out only the ones
+                where the Name field says "Alice". SQLite does this incredibly fast, even with
+                thousands or millions of records.
+            </p>
 
             <div class="snippet-container">
                 <div class="snippet-header">
-                    <span class="snippet-lang">sapphire</span>
+                    <span class="snippet-lang">text</span>
                     <div class="snippet-actions">
                         <button class="btn-copy">Copy</button>
-                        <button class="btn-run">Run / Output</button>
                     </div>
                 </div>
-                <pre><code><span class="token-keyword">var</span> db = SQLite.<span class="token-function">open</span>(<span class="token-string">"test.db"</span>)<span class="token-punctuation">;</span>
-db.<span class="token-function">execute</span>(<span class="token-string">"CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT)"</span>)<span class="token-punctuation">;</span>
-db.<span class="token-function">execute</span>(<span class="token-string">"INSERT INTO users (name) VALUES ('Sapphire')"</span>)<span class="token-punctuation">;</span>
-<span class="token-function">print</span>(<span class="token-string">"Record inserted!"</span>)<span class="token-punctuation">;</span></code></pre>
+                <pre><code>Filing Cabinet (Database)           SQLite Table
+─────────────────────────────────────────────────────
+Cabinet      → database.db file
+Folder       → "users" table
+Sheet        → one row (one user)
+Column       → name, email, age
+Tab label    → PRIMARY KEY (unique ID)</code></pre>
             </div>
 
-            <h2>Fetching Data</h2>
-            <p>To retrieve data, use the <code>query</code> method. It returns an array of maps, where each map represents a row from the database.</p>
+            <!-- ============================================ -->
+            <!-- SECTION 3: Creating and Connecting           -->
+            <!-- ============================================ -->
+            <h2 id="creating-connecting">3. Creating and Connecting to a Database</h2>
+
+            <p>
+                To work with SQLite in Sapphire, you first create a <code>SQLite</code> instance,
+                then call <code>open()</code> with a filename. If the file doesn't exist, SQLite
+                <strong>creates it automatically</strong>. You can also use the special name
+                <code>":memory:"</code> to create a database that lives only in RAM (it disappears
+                when your program ends).
+            </p>
 
             <div class="snippet-container">
                 <div class="snippet-header">
@@ -93,33 +193,1609 @@ db.<span class="token-function">execute</span>(<span class="token-string">"INSER
                         <button class="btn-run">Run / Output</button>
                     </div>
                 </div>
-                <pre><code><span class="token-keyword">var</span> db = SQLite.<span class="token-function">open</span>(<span class="token-string">"test.db"</span>)<span class="token-punctuation">;</span>
-<span class="token-keyword">var</span> rows = db.<span class="token-function">query</span>(<span class="token-string">"SELECT * FROM users"</span>)<span class="token-punctuation">;</span>
+                <pre><code><span class="token-comment">// Create a SQLite instance</span>
+<span class="token-keyword">var</span> sql = <span class="token-function">SQLite</span>();
 
+<span class="token-comment">// Open a file-based database (creates 'shop.db' if it doesn't exist)</span>
+<span class="token-keyword">var</span> db = sql.<span class="token-function">open</span>(<span class="token-string">"shop.db"</span>);
+
+<span class="token-comment">// Check if it worked</span>
+<span class="token-keyword">if</span> (db == -1) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"Failed to open database!"</span>);
+<span class="token-punctuation">}</span> <span class="token-keyword">else</span> <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"Database connected successfully!"</span>);
+<span class="token-punctuation">}</span></code></pre>
+                <div class="output-container">
+                    > Database connected successfully!
+                </div>
+            </div>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// In-memory database — fast, temporary, perfect for testing</span>
+<span class="token-keyword">var</span> sql = <span class="token-function">SQLite</span>();
+<span class="token-keyword">var</span> db = sql.<span class="token-function">open</span>(<span class="token-string">":memory:"</span>);
+<span class="token-function">print</span>(<span class="token-string">"In-memory database created!"</span>);</code></pre>
+                <div class="output-container">
+                    > In-memory database created!
+                </div>
+            </div>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// Alternative: object-style API (no manual db handle)</span>
+<span class="token-keyword">var</span> sqlite = <span class="token-function">SQLite</span>();
+sqlite.<span class="token-function">open</span>(<span class="token-string">":memory:"</span>);
+
+<span class="token-comment">// Now you can call execute/query directly on the object</span>
+sqlite.<span class="token-function">execute</span>(<span class="token-string">"CREATE TABLE test (id INTEGER, value TEXT)"</span>);
+<span class="token-function">print</span>(<span class="token-string">"Table created via object-style API!"</span>);</code></pre>
+                <div class="output-container">
+                    > Table created via object-style API!
+                </div>
+            </div>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// Always close the database when you're done!</span>
+sql.<span class="token-function">close</span>(db);
+<span class="token-function">print</span>(<span class="token-string">"Database closed."</span>);</code></pre>
+                <div class="output-container">
+                    > Database closed.
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>💡 Tip:</strong> Use <code>":memory:"</code> while you're developing and
+                testing. Once you're ready to save data permanently, switch to a file name like
+                <code>"myapp.db"</code>.
+            </div>
+
+            <!-- ============================================ -->
+            <!-- SECTION 4: Understanding Tables              -->
+            <!-- ============================================ -->
+            <h2 id="tables">4. Understanding Tables — The Heart of SQL</h2>
+
+            <p>
+                A <strong>table</strong> is where your data actually lives. Think of it like a
+                spreadsheet: it has columns (the categories of information) and rows (the actual
+                data entries). You define the structure of a table with the
+                <code>CREATE TABLE</code> SQL statement.
+            </p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sql</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">-- This is how you think about a table visually:</span>
+
+<span class="token-comment">-- TABLE: users</span>
+<span class="token-comment">-- ┌────┬──────────┬──────────┬───────┐</span>
+<span class="token-comment">-- │ id │ username  │ email    │  age  │  ← column names</span>
+<span class="token-comment">-- ├────┼──────────┼──────────┼───────┤</span>
+<span class="token-comment">-- │ 1  │ alice    │ a@x.com  │  30   │  ← one row</span>
+<span class="token-comment">-- │ 2  │ bob      │ b@x.com  │  25   │  ← another row</span>
+<span class="token-comment">-- │ 3  │ carol    │ c@x.com  │  28   │  ← another row</span>
+<span class="token-comment">-- └────┴──────────┴──────────┴───────┘</span></code></pre>
+            </div>
+
+            <p>Here's how you create that table in Sapphire:</p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-keyword">var</span> sql = <span class="token-function">SQLite</span>();
+<span class="token-keyword">var</span> db = sql.<span class="token-function">open</span>(<span class="token-string">":memory:"</span>);
+
+<span class="token-comment">// Create a table with columns: id, username, email, age</span>
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"CREATE TABLE users (
+    id INTEGER PRIMARY KEY,
+    username TEXT,
+    email TEXT,
+    age INTEGER
+)"</span>);
+
+<span class="token-function">print</span>(<span class="token-string">"Table 'users' created!"</span>);</code></pre>
+                <div class="output-container">
+                    > Table 'users' created!
+                </div>
+            </div>
+
+            <h3>4.1 What Does <code>INTEGER PRIMARY KEY</code> Mean?</h3>
+
+            <p>
+                <strong>PRIMARY KEY</strong> is a special marker that tells SQLite: "this column
+                uniquely identifies each row." No two rows can have the same value in this column.
+                When you combine <code>INTEGER PRIMARY KEY</code> with SQLite, it becomes
+                <strong>auto-incrementing</strong> — SQLite automatically assigns the next available
+                number (1, 2, 3, ...) if you don't provide one.
+            </p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// The PRIMARY KEY auto-increments — we don't specify 'id'</span>
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO users (username, email, age) VALUES ('alice', 'a@x.com', 30)"</span>);
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO users (username, email, age) VALUES ('bob', 'b@x.com', 25)"</span>);
+
+<span class="token-keyword">var</span> rows = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM users"</span>);
 <span class="token-keyword">for</span> (<span class="token-keyword">var</span> row <span class="token-keyword">of</span> rows) <span class="token-punctuation">{</span>
-    <span class="token-function">print</span>(<span class="token-string">"User ID: "</span> + row.<span class="token-property">id</span> + <span class="token-string">" Name: "</span> + row.<span class="token-property">name</span>)<span class="token-punctuation">;</span>
+    <span class="token-function">print</span>(<span class="token-string">"ID: "</span> + row.id + <span class="token-string">" | Username: "</span> + row.username);
+<span class="token-punctuation">}</span></code></pre>
+                <div class="output-container">
+                    > ID: 1 | Username: alice<br>
+                    > ID: 2 | Username: bob
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>💡 Tip:</strong> Always use <code>INTEGER PRIMARY KEY</code> for your ID
+                columns. It makes your life easier because SQLite handles the numbering for you.
+            </div>
+
+            <h3>4.2 The <code>IF NOT EXISTS</code> Safety Net</h3>
+
+            <p>
+                If you run <code>CREATE TABLE</code> twice on the same table, SQLite will throw an
+                error. To avoid this, always add <code>IF NOT EXISTS</code> — it tells SQLite:
+                "only create this table if it doesn't already exist."
+            </p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// Safe — runs only once, ignores subsequent calls</span>
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"CREATE TABLE IF NOT EXISTS products (
+    id INTEGER PRIMARY KEY,
+    name TEXT,
+    price REAL
+)"</span>);
+
+<span class="token-function">print</span>(<span class="token-string">"Table created (or already existed)."</span>);</code></pre>
+                <div class="output-container">
+                    > Table created (or already existed).
+                </div>
+            </div>
+
+            <h3>4.3 Dropping a Table</h3>
+
+            <p>
+                To remove a table entirely (including all its data), use <code>DROP TABLE</code>.
+                Be careful — this is permanent!
+            </p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code>sql.<span class="token-function">execute</span>(db, <span class="token-string">"DROP TABLE IF EXISTS products"</span>);
+<span class="token-function">print</span>(<span class="token-string">"Table 'products' deleted."</span>);</code></pre>
+                <div class="output-container">
+                    > Table 'products' deleted.
+                </div>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- SECTION 5: CRUD Operations                   -->
+            <!-- ============================================ -->
+            <h2 id="crud">5. CRUD Operations (Create, Read, Update, Delete)</h2>
+
+            <p>
+                In any database application, you'll perform four basic operations, often called
+                <strong>CRUD</strong>:
+            </p>
+
+            <ul>
+                <li><strong>C</strong>reate — <code>INSERT</code> new records</li>
+                <li><strong>R</strong>ead — <code>SELECT</code> (query) existing records</li>
+                <li><strong>U</strong>pdate — <code>UPDATE</code> existing records</li>
+                <li><strong>D</strong>elete — <code>DELETE</code> records</li>
+            </ul>
+
+            <p>Let's build a complete example that demonstrates all four operations.</p>
+
+            <h3>5.1 Create (INSERT)</h3>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-keyword">var</span> sql = <span class="token-function">SQLite</span>();
+<span class="token-keyword">var</span> db = sql.<span class="token-function">open</span>(<span class="token-string">":memory:"</span>);
+
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"CREATE TABLE IF NOT EXISTS products (
+    id INTEGER PRIMARY KEY,
+    name TEXT,
+    price REAL,
+    quantity INTEGER
+)"</span>);
+
+<span class="token-comment">// INSERT single row</span>
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO products (name, price, quantity) VALUES ('Laptop', 999.99, 10)"</span>);
+
+<span class="token-comment">// INSERT multiple rows</span>
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO products (name, price, quantity) VALUES ('Mouse', 29.99, 50)"</span>);
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO products (name, price, quantity) VALUES ('Keyboard', 79.99, 30)"</span>);
+
+<span class="token-function">print</span>(<span class="token-string">"3 products inserted!"</span>);</code></pre>
+                <div class="output-container">
+                    > 3 products inserted!
+                </div>
+            </div>
+
+            <h3>5.2 Read (SELECT)</h3>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// Select all products</span>
+<span class="token-keyword">var</span> allProducts = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM products"</span>);
+
+<span class="token-function">print</span>(<span class="token-string">"--- All Products ---"</span>);
+<span class="token-keyword">for</span> (<span class="token-keyword">var</span> p <span class="token-keyword">of</span> allProducts) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(p.id + <span class="token-string">". "</span> + p.name + <span class="token-string">" - $"</span> + p.price + <span class="token-string">" (Qty: "</span> + p.quantity + <span class="token-string">")"</span>);
+<span class="token-punctuation">}</span></code></pre>
+                <div class="output-container">
+                    > --- All Products ---<br>
+                    > 1. Laptop - $999.99 (Qty: 10)<br>
+                    > 2. Mouse - $29.99 (Qty: 50)<br>
+                    > 3. Keyboard - $79.99 (Qty: 30)
+                </div>
+            </div>
+
+            <h3>5.3 Update (UPDATE)</h3>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// Update the price of the Laptop</span>
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"UPDATE products SET price = 899.99 WHERE name = 'Laptop'"</span>);
+
+<span class="token-comment">// Verify the update</span>
+<span class="token-keyword">var</span> laptop = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM products WHERE name = 'Laptop'"</span>);
+<span class="token-function">print</span>(<span class="token-string">"Updated: "</span> + laptop[0].name + <span class="token-string">" now costs $"</span> + laptop[0].price);</code></pre>
+                <div class="output-container">
+                    > Updated: Laptop now costs $899.99
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>⚠️ Warning:</strong> If you run <code>UPDATE products SET price = 0</code>
+                <strong>without</strong> a <code>WHERE</code> clause, it will update <em>every</em>
+                row in the table! Always double-check your WHERE clause before running an UPDATE.
+            </div>
+
+            <h3>5.4 Delete (DELETE)</h3>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// Delete the Mouse product</span>
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"DELETE FROM products WHERE name = 'Mouse'"</span>);
+
+<span class="token-comment">// Verify — only 2 products remain</span>
+<span class="token-keyword">var</span> remaining = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM products"</span>);
+<span class="token-function">print</span>(<span class="token-string">"Remaining products: "</span> + <span class="token-function">len</span>(remaining));</code></pre>
+                <div class="output-container">
+                    > Remaining products: 2
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>⚠️ Warning:</strong> Same as UPDATE — <code>DELETE FROM products</code>
+                without a <code>WHERE</code> clause deletes <strong>everything</strong> in the table!
+            </div>
+
+            <h3>5.5 Complete CRUD Example</h3>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-keyword">function</span> <span class="token-function">crudDemo</span>() <span class="token-punctuation">{</span>
+    <span class="token-keyword">var</span> sql = <span class="token-function">SQLite</span>();
+    <span class="token-keyword">var</span> db = sql.<span class="token-function">open</span>(<span class="token-string">":memory:"</span>);
+
+    <span class="token-comment">// --- CREATE ---</span>
+    sql.<span class="token-function">execute</span>(db, <span class="token-string">"CREATE TABLE IF NOT EXISTS tasks (
+        id INTEGER PRIMARY KEY,
+        title TEXT,
+        done INTEGER DEFAULT 0
+    )"</span>);
+
+    sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO tasks (title) VALUES ('Buy groceries')"</span>);
+    sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO tasks (title) VALUES ('Read a book')"</span>);
+    sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO tasks (title) VALUES ('Write code')"</span>);
+    <span class="token-function">print</span>(<span class="token-string">"Created 3 tasks."</span>);
+
+    <span class="token-comment">// --- READ ---</span>
+    <span class="token-keyword">var</span> tasks = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM tasks"</span>);
+    <span class="token-function">print</span>(<span class="token-string">"\n--- All Tasks ---"</span>);
+    <span class="token-keyword">for</span> (<span class="token-keyword">var</span> t <span class="token-keyword">of</span> tasks) <span class="token-punctuation">{</span>
+        <span class="token-function">print</span>(t.id + <span class="token-string">". "</span> + t.title + <span class="token-string">" [done: "</span> + t.done + <span class="token-string">"]"</span>);
+    <span class="token-punctuation">}</span>
+
+    <span class="token-comment">// --- UPDATE ---</span>
+    sql.<span class="token-function">execute</span>(db, <span class="token-string">"UPDATE tasks SET done = 1 WHERE title = 'Buy groceries'"</span>);
+    <span class="token-function">print</span>(<span class="token-string">"\nMarked 'Buy groceries' as done."</span>);
+
+    <span class="token-comment">// --- DELETE ---</span>
+    sql.<span class="token-function">execute</span>(db, <span class="token-string">"DELETE FROM tasks WHERE done = 1"</span>);
+    <span class="token-function">print</span>(<span class="token-string">"Deleted completed tasks.\n"</span>);
+
+    <span class="token-comment">// --- FINAL STATE ---</span>
+    <span class="token-keyword">var</span> finalTasks = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM tasks"</span>);
+    <span class="token-function">print</span>(<span class="token-string">"--- Remaining Tasks ---"</span>);
+    <span class="token-keyword">for</span> (<span class="token-keyword">var</span> t <span class="token-keyword">of</span> finalTasks) <span class="token-punctuation">{</span>
+        <span class="token-function">print</span>(t.id + <span class="token-string">". "</span> + t.title);
+    <span class="token-punctuation">}</span>
+
+    sql.<span class="token-function">close</span>(db);
+<span class="token-punctuation">}</span>
+
+<span class="token-function">crudDemo</span>();</code></pre>
+                <div class="output-container">
+                    > Created 3 tasks.<br>
+                    > <br>
+                    > --- All Tasks ---<br>
+                    > 1. Buy groceries [done: 0]<br>
+                    > 2. Read a book [done: 0]<br>
+                    > 3. Write code [done: 0]<br>
+                    > <br>
+                    > Marked 'Buy groceries' as done.<br>
+                    > Deleted completed tasks.<br>
+                    > <br>
+                    > --- Remaining Tasks ---<br>
+                    > 2. Read a book<br>
+                    > 3. Write code
+                </div>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- SECTION 6: Selecting Data                    -->
+            <!-- ============================================ -->
+            <h2 id="selecting">6. Selecting Data — The SELECT Statement</h2>
+
+            <p>
+                <code>SELECT</code> is how you <strong>read</strong> data from a table. It's the
+                most commonly used SQL command. The basic structure is:
+            </p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sql</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                    </div>
+                </div>
+                <pre><code>SELECT column1, column2, ... FROM table_name WHERE condition ORDER BY column;</code></pre>
+            </div>
+
+            <h3>6.1 Selecting Specific Columns</h3>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// Instead of SELECT *, pick only the columns you need</span>
+<span class="token-keyword">var</span> names = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT name, price FROM products"</span>);
+
+<span class="token-keyword">for</span> (<span class="token-keyword">var</span> item <span class="token-keyword">of</span> names) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(item.name + <span class="token-string">" costs $"</span> + item.price);
+<span class="token-punctuation">}</span></code></pre>
+                <div class="output-container">
+                    > Laptop costs $899.99<br>
+                    > Keyboard costs $79.99
+                </div>
+            </div>
+
+            <h3>6.2 Ordering Results</h3>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// Sort by price from lowest to highest (ASC = ascending)</span>
+<span class="token-keyword">var</span> cheapest = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM products ORDER BY price ASC"</span>);
+<span class="token-function">print</span>(<span class="token-string">"Cheapest first:"</span>);
+<span class="token-keyword">for</span> (<span class="token-keyword">var</span> p <span class="token-keyword">of</span> cheapest) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"  $"</span> + p.price + <span class="token-string">" - "</span> + p.name);
+<span class="token-punctuation">}</span>
+
+<span class="token-comment">// Sort by price from highest to lowest (DESC = descending)</span>
+<span class="token-keyword">var</span> expensive = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM products ORDER BY price DESC"</span>);
+<span class="token-function">print</span>(<span class="token-string">"Most expensive first:"</span>);
+<span class="token-keyword">for</span> (<span class="token-keyword">var</span> p <span class="token-keyword">of</span> expensive) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"  $"</span> + p.price + <span class="token-string">" - "</span> + p.name);
+<span class="token-punctuation">}</span></code></pre>
+                <div class="output-container">
+                    > Cheapest first:<br>
+                    >   $79.99 - Keyboard<br>
+                    >   $899.99 - Laptop<br>
+                    > Most expensive first:<br>
+                    >   $899.99 - Laptop<br>
+                    >   $79.99 - Keyboard
+                </div>
+            </div>
+
+            <h3>6.3 Limiting Results</h3>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// Get only the top 2 cheapest products</span>
+<span class="token-keyword">var</span> top2 = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM products ORDER BY price ASC LIMIT 2"</span>);
+<span class="token-function">print</span>(<span class="token-string">"Top 2 cheapest:"</span>);
+<span class="token-keyword">for</span> (<span class="token-keyword">var</span> p <span class="token-keyword">of</span> top2) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"  "</span> + p.name + <span class="token-string">" - $"</span> + p.price);
+<span class="token-punctuation">}</span></code></pre>
+                <div class="output-container">
+                    > Top 2 cheapest:<br>
+                    >   Keyboard - $79.99<br>
+                    >   Laptop - $899.99
+                </div>
+            </div>
+
+            <h3>6.4 Counting Rows</h3>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// COUNT returns the number of rows matching the query</span>
+<span class="token-keyword">var</span> countResult = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT COUNT(*) as total FROM products"</span>);
+<span class="token-function">print</span>(<span class="token-string">"Total products: "</span> + countResult[0].total);
+
+<span class="token-comment">// You can also use it with WHERE</span>
+<span class="token-keyword">var</span> cheapCount = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT COUNT(*) as cnt FROM products WHERE price < 100"</span>);
+<span class="token-function">print</span>(<span class="token-string">"Products under $100: "</span> + cheapCount[0].cnt);</code></pre>
+                <div class="output-container">
+                    > Total products: 2<br>
+                    > Products under $100: 1
+                </div>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- SECTION 7: Filtering with WHERE              -->
+            <!-- ============================================ -->
+            <h2 id="where">7. Filtering Data with WHERE</h2>
+
+            <p>
+                The <code>WHERE</code> clause is how you filter data. It's like saying "only give
+                me the rows that match this condition." You can combine conditions with
+                <code>AND</code> and <code>OR</code>.
+            </p>
+
+            <h3>7.1 Comparison Operators</h3>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sql</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                    </div>
+                </div>
+                <pre><code>-- Common operators you can use in WHERE:
+--   =    equal to
+--   !=   not equal to
+--   >    greater than
+--   <    less than
+--   >=   greater than or equal
+--   <=   less than or equal
+--   LIKE pattern matching (% = wildcard)
+--   IN    check if value is in a list</code></pre>
+            </div>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// Equal to</span>
+<span class="token-keyword">var</span> result = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM products WHERE name = 'Laptop'"</span>);
+
+<span class="token-comment">// Greater than</span>
+<span class="token-keyword">var</span> expensive = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM products WHERE price > 100"</span>);
+
+<span class="token-comment">// AND — both conditions must be true</span>
+<span class="token-keyword">var</span> specific = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM products WHERE price > 50 AND quantity > 20"</span>);
+
+<span class="token-comment">// OR — at least one condition must be true</span>
+<span class="token-keyword">var</span> either = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM products WHERE name = 'Laptop' OR name = 'Mouse'"</span>);
+
+<span class="token-comment">// LIKE — pattern matching (% matches any characters)</span>
+<span class="token-keyword">var</span> startsWithK = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM products WHERE name LIKE 'K%'"</span>);
+<span class="token-function">print</span>(<span class="token-string">"Products starting with 'K': "</span> + <span class="token-function">len</span>(startsWithK));
+
+<span class="token-comment">// IN — check if value is in a list</span>
+<span class="token-keyword">var</span> inList = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM products WHERE name IN ('Laptop', 'Mouse')"</span>);</code></pre>
+                <div class="output-container">
+                    > Products starting with 'K': 1
+                </div>
+            </div>
+
+            <h3>7.2 WHERE with NULL</h3>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// Insert a product with no quantity specified</span>
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO products (name, price) VALUES ('Headphones', 149.99)"</span>);
+
+<span class="token-comment">// Find products where quantity is NULL (was never set)</span>
+<span class="token-keyword">var</span> nullQty = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM products WHERE quantity IS NULL"</span>);
+<span class="token-function">print</span>(<span class="token-string">"Products with NULL quantity:"</span>);
+<span class="token-keyword">for</span> (<span class="token-keyword">var</span> p <span class="token-keyword">of</span> nullQty) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"  "</span> + p.name);
+<span class="token-punctuation">}</span>
+
+<span class="token-comment">// NOT NULL — find products that DO have a quantity</span>
+<span class="token-keyword">var</span> hasQty = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM products WHERE quantity IS NOT NULL"</span>);
+<span class="token-function">print</span>(<span class="token-string">"Products with quantity set: "</span> + <span class="token-function">len</span>(hasQty));</code></pre>
+                <div class="output-container">
+                    > Products with NULL quantity:<br>
+                    >   Headphones<br>
+                    > Products with quantity set: 2
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>⚠️ Important:</strong> In SQL, <code>NULL</code> is not the same as 0 or
+                an empty string. <code>NULL</code> means "unknown" or "not set." You cannot use
+                <code>= NULL</code> — you must use <code>IS NULL</code> or <code>IS NOT NULL</code>.
+            </div>
+
+            <!-- ============================================ -->
+            <!-- SECTION 8: Data Types                        -->
+            <!-- ============================================ -->
+            <h2 id="data-types">8. SQLite Data Types</h2>
+
+            <p>
+                SQLite uses a flexible type system. Unlike other databases that enforce strict
+                typing, SQLite will try to store whatever value you give it. But it's best to
+                use the right type for each column. Here are the main types:
+            </p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sql</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                    </div>
+                </div>
+                <pre><code>-- SQLite Data Types
+
+-- INTEGER: Whole numbers (no decimal point)
+--   Examples: 0, 1, 42, -7, 999999
+CREATE TABLE example_integers (id INTEGER, age INTEGER, count INTEGER);
+
+-- REAL: Decimal numbers (floating point)
+--   Examples: 3.14, 99.99, -0.5, 1.0
+CREATE TABLE example_reals (id INTEGER, price REAL, rating REAL);
+
+-- TEXT: Strings of characters
+--   Examples: 'hello', 'Alice', '2024-01-15', 'user@email.com'
+CREATE TABLE example_texts (id INTEGER, name TEXT, email TEXT);
+
+-- BLOB: Binary data (images, files, etc.)
+--   Usually not needed for beginners
+CREATE TABLE example_blobs (id INTEGER, image BLOB);
+
+-- NULL: Represents "no value" or "unknown"
+--   Any column can be NULL unless you say NOT NULL</code></pre>
+            </div>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// A practical example using all common types</span>
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"CREATE TABLE IF NOT EXISTS employees (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    salary REAL,
+    department TEXT,
+    is_active INTEGER,   -- 1 = true, 0 = false
+    joined_date TEXT     -- store dates as TEXT in YYYY-MM-DD format
+)"</span>);
+
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO employees VALUES (1, 'Alice', 75000.50, 'Engineering', 1, '2023-01-15')"</span>);
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO employees VALUES (2, 'Bob', 62000.00, 'Marketing', 1, '2023-06-01')"</span>);
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO employees VALUES (3, 'Carol', 82000.00, 'Engineering', 0, '2022-03-20')"</span>);
+
+<span class="token-keyword">var</span> emps = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM employees"</span>);
+<span class="token-keyword">for</span> (<span class="token-keyword">var</span> e <span class="token-keyword">of</span> emps) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(e.name + <span class="token-string">" | $"</span> + e.salary + <span class="token-string">" | "</span> + e.department + <span class="token-string">" | Active: "</span> + e.is_active);
+<span class="token-punctuation">}</span></code></pre>
+                <div class="output-container">
+                    > Alice | $75000.5 | Engineering | Active: 1<br>
+                    > Bob | $62000 | Marketing | Active: 1<br>
+                    > Carol | $82000 | Engineering | Active: 0
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>💡 Tip:</strong> For boolean values (true/false), use <code>INTEGER</code>
+                with 0 for false and 1 for true. For dates, store them as <code>TEXT</code> in the
+                format <code>YYYY-MM-DD</code> — this allows sorting and comparison to work correctly.
+            </div>
+
+            <!-- ============================================ -->
+            <!-- SECTION 9: Multiple Tables & Relationships   -->
+            <!-- ============================================ -->
+            <h2 id="relationships">9. Multiple Tables & Relationships</h2>
+
+            <p>
+                Real applications rarely use a single table. Most of the time, you'll have
+                <strong>multiple related tables</strong>. For example, a blog might have a
+                <code>users</code> table and a <code>posts</code> table, where each post
+                <strong>belongs to</strong> a user. This is called a <strong>relationship</strong>.
+            </p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sql</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                    </div>
+                </div>
+                <pre><code>-- THE RELATIONSHIP PICTURE:
+--
+-- users table                          posts table
+-- ┌────┬──────────┐                    ┌────┬──────────────────────┬────────┐
+-- │ id │ username  │                    │ id │ title                │ user_id│
+-- ├────┼──────────┤                    ├────┼──────────────────────┼────────┤
+-- │ 1  │ alice    │◄───────────────────│ 1  │ My First Post        │ 1      │
+-- │ 2  │ bob      │◄───────────────────│ 2  │ Learning SQLite      │ 1      │
+-- └────┴──────────┘                    │ 3  │ Bob's Adventure      │ 2      │
+--                                      └────┴──────────────────────┴────────┘
+--
+-- The user_id column in posts "references" the id column in users.
+-- This is called a FOREIGN KEY.</code></pre>
+            </div>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-keyword">var</span> sql = <span class="token-function">SQLite</span>();
+<span class="token-keyword">var</span> db = sql.<span class="token-function">open</span>(<span class="token-string">":memory:"</span>);
+
+<span class="token-comment">// Create the users table</span>
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY,
+    username TEXT NOT NULL,
+    email TEXT
+)"</span>);
+
+<span class="token-comment">// Create the posts table with a FOREIGN KEY</span>
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"CREATE TABLE IF NOT EXISTS posts (
+    id INTEGER PRIMARY KEY,
+    title TEXT NOT NULL,
+    content TEXT,
+    user_id INTEGER,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+)"</span>);
+
+<span class="token-comment">// Insert some users</span>
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO users (username, email) VALUES ('alice', 'alice@example.com')"</span>);
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO users (username, email) VALUES ('bob', 'bob@example.com')"</span>);
+
+<span class="token-comment">// Insert posts — notice how we link user_id to the user's id</span>
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO posts (title, content, user_id) VALUES ('My First Post', 'Hello world!', 1)"</span>);
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO posts (title, content, user_id) VALUES ('Learning SQLite', 'Databases are fun!', 1)"</span>);
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO posts (title, content, user_id) VALUES ('Bob''s Adventure', 'Went hiking today.', 2)"</span>);
+
+<span class="token-function">print</span>(<span class="token-string">"Users and posts created with relationships!"</span>);</code></pre>
+                <div class="output-container">
+                    > Users and posts created with relationships!
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>💡 Note:</strong> In the <code>INSERT</code> for Bob's Adventure, we used
+                two single quotes (<code>''</code>) inside the string. In SQL, to include a literal
+                single quote character in a string, you escape it by doubling it: <code>'Bob''s'</code>.
+            </div>
+
+            <!-- ============================================ -->
+            <!-- SECTION 10: JOINs                            -->
+            <!-- ============================================ -->
+            <h2 id="joins">10. JOINs — Combining Tables</h2>
+
+            <p>
+                When you have data spread across multiple tables, you use <code>JOIN</code> to
+                combine them in a single query. The most common type is
+                <code>INNER JOIN</code>, which returns only rows that have matching values in
+                both tables.
+            </p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// INNER JOIN: get posts with their author's username</span>
+<span class="token-keyword">var</span> postsWithAuthors = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT
+    posts.title,
+    posts.content,
+    users.username
+FROM posts
+INNER JOIN users ON posts.user_id = users.id"</span>);
+
+<span class="token-function">print</span>(<span class="token-string">"--- Posts with Authors ---"</span>);
+<span class="token-keyword">for</span> (<span class="token-keyword">var</span> row <span class="token-keyword">of</span> postsWithAuthors) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"'"</span> + row.title + <span class="token-string">"' by "</span> + row.username);
+    <span class="token-function">print</span>(<span class="token-string">"  "</span> + row.content);
+<span class="token-punctuation">}</span></code></pre>
+                <div class="output-container">
+                    > --- Posts with Authors ---<br>
+                    > 'My First Post' by alice<br>
+                    >   Hello world!<br>
+                    > 'Learning SQLite' by alice<br>
+                    >   Databases are fun!<br>
+                    > 'Bob's Adventure' by bob<br>
+                    >   Went hiking today.
+                </div>
+            </div>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// LEFT JOIN: get ALL users, even if they have no posts</span>
+<span class="token-keyword">var</span> allUsersWithPosts = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT
+    users.username,
+    posts.title
+FROM users
+LEFT JOIN posts ON users.id = posts.user_id"</span>);
+
+<span class="token-function">print</span>(<span class="token-string">"--- All Users and Their Posts ---"</span>);
+<span class="token-keyword">for</span> (<span class="token-keyword">var</span> row <span class="token-keyword">of</span> allUsersWithPosts) <span class="token-punctuation">{</span>
+    <span class="token-keyword">if</span> (row.title == <span class="token-keyword">nil</span>) <span class="token-punctuation">{</span>
+        <span class="token-function">print</span>(row.username + <span class="token-string">" has no posts yet."</span>);
+    <span class="token-punctuation">}</span> <span class="token-keyword">else</span> <span class="token-punctuation">{</span>
+        <span class="token-function">print</span>(row.username + <span class="token-string">" wrote: "</span> + row.title);
+    <span class="token-punctuation">}</span>
+<span class="token-punctuation">}</span></code></pre>
+                <div class="output-container">
+                    > --- All Users and Their Posts ---<br>
+                    > alice wrote: My First Post<br>
+                    > alice wrote: Learning SQLite<br>
+                    > bob wrote: Bob's Adventure
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>💡 JOIN Types:</strong><br>
+                <strong>INNER JOIN</strong> — Only rows that match in both tables.<br>
+                <strong>LEFT JOIN</strong> — All rows from the left table, plus matching rows from
+                the right table (or NULL if no match).<br>
+                <strong>RIGHT JOIN</strong> — Opposite of LEFT JOIN (not directly supported in
+                SQLite, but you can swap the table order).<br>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- SECTION 11: Transactions                     -->
+            <!-- ============================================ -->
+            <h2 id="transactions">11. Transactions — Keeping Data Safe</h2>
+
+            <p>
+                A <strong>transaction</strong> is a group of operations that must all succeed
+                together. If any one of them fails, <strong>all</strong> of them are rolled back
+                (undone). This is crucial for data integrity.
+            </p>
+
+            <p>
+                Imagine you're building a banking app. Transferring money from Alice to Bob
+                requires two steps: subtract from Alice's account, then add to Bob's account.
+                If your program crashes after the subtraction but before the addition, money
+                would disappear! Transactions prevent this.
+            </p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-keyword">var</span> sql = <span class="token-function">SQLite</span>();
+<span class="token-keyword">var</span> db = sql.<span class="token-function">open</span>(<span class="token-string">":memory:"</span>);
+
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"CREATE TABLE IF NOT EXISTS accounts (
+    id INTEGER PRIMARY KEY,
+    name TEXT,
+    balance REAL
+)"</span>);
+
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO accounts VALUES (1, 'Alice', 1000.00)"</span>);
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO accounts VALUES (2, 'Bob', 500.00)"</span>);
+
+<span class="token-function">print</span>(<span class="token-string">"Before transfer:"</span>);
+<span class="token-keyword">var</span> before = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM accounts"</span>);
+<span class="token-keyword">for</span> (<span class="token-keyword">var</span> a <span class="token-keyword">of</span> before) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"  "</span> + a.name + <span class="token-string">": $"</span> + a.balance);
+<span class="token-punctuation">}</span>
+
+<span class="token-comment">// BEGIN TRANSACTION — start the atomic operation</span>
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"BEGIN TRANSACTION"</span>);
+
+<span class="token-comment">// Step 1: Subtract $200 from Alice</span>
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"UPDATE accounts SET balance = balance - 200 WHERE name = 'Alice'"</span>);
+
+<span class="token-comment">// Step 2: Add $200 to Bob</span>
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"UPDATE accounts SET balance = balance + 200 WHERE name = 'Bob'"</span>);
+
+<span class="token-comment">// If both steps worked, COMMIT — save the changes permanently</span>
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"COMMIT"</span>);
+
+<span class="token-function">print</span>(<span class="token-string">"\nAfter transfer:"</span>);
+<span class="token-keyword">var</span> after = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM accounts"</span>);
+<span class="token-keyword">for</span> (<span class="token-keyword">var</span> a <span class="token-keyword">of</span> after) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"  "</span> + a.name + <span class="token-string">": $"</span> + a.balance);
+<span class="token-punctuation">}</span></code></pre>
+                <div class="output-container">
+                    > Before transfer:<br>
+                    >   Alice: $1000<br>
+                    >   Bob: $500<br>
+                    > <br>
+                    > After transfer:<br>
+                    >   Alice: $800<br>
+                    >   Bob: $700
+                </div>
+            </div>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// Example: ROLLBACK if something goes wrong</span>
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"BEGIN TRANSACTION"</span>);
+
+<span class="token-comment">// Oops — we tried to give more money than exists</span>
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"UPDATE accounts SET balance = balance - 999999 WHERE name = 'Alice'"</span>);
+
+<span class="token-comment">// The balance would go negative. Let's undo it!</span>
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"ROLLBACK"</span>);
+
+<span class="token-comment">// Verify — everything is back to normal</span>
+<span class="token-keyword">var</span> check = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM accounts WHERE name = 'Alice'"</span>);
+<span class="token-function">print</span>(<span class="token-string">"Alice's balance after rollback: $"</span> + check[0].balance);</code></pre>
+                <div class="output-container">
+                    > Alice's balance after rollback: $800
+                </div>
+            </div>
+
+            <!-- ============================================ -->
+            <!-- SECTION 12: Prepared Statements              -->
+            <!-- ============================================ -->
+            <h2 id="prepared">12. Prepared Statements</h2>
+
+            <p>
+                When you build SQL queries by concatenating strings, you open yourself up to
+                <strong>SQL injection</strong> attacks — a security vulnerability where a user
+                can trick your database into running malicious commands. For example:
+            </p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// ❌ DANGEROUS — never do this!</span>
+<span class="token-keyword">var</span> userInput = <span class="token-string">"Alice'; DROP TABLE users; --"</span>;
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"SELECT * FROM users WHERE name = '"</span> + userInput + <span class="token-string">"'"</span>);</code></pre>
+            </div>
+
+            <p>
+                <strong>Prepared statements</strong> (also called parameterized queries) solve this
+                by separating the SQL code from the data. You write the SQL with placeholders
+                (<code>?</code>), then provide the values separately. SQLite handles the escaping
+                for you.
+            </p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// ✅ SAFE — use prepared statements with ? placeholders</span>
+<span class="token-keyword">var</span> userName = <span class="token-string">"Alice"</span>;
+<span class="token-keyword">var</span> userAge = 30;
+
+<span class="token-comment">// Execute with parameters</span>
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO users (name, age) VALUES (?, ?)"</span>, userName, userAge);
+
+<span class="token-comment">// Query with parameters</span>
+<span class="token-keyword">var</span> results = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM users WHERE name = ?"</span>, userName);
+
+<span class="token-keyword">for</span> (<span class="token-keyword">var</span> row <span class="token-keyword">of</span> results) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(row.name + <span class="token-string">" is "</span> + row.age + <span class="token-string">" years old"</span>);
+<span class="token-punctuation">}</span></code></pre>
+                <div class="output-container">
+                    > Alice is 30 years old
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>🔒 Security Best Practice:</strong> Always use prepared statements when
+                your SQL query includes data from user input, files, API responses, or any other
+                external source. It's the #1 way to prevent SQL injection attacks.
+            </div>
+
+            <!-- ============================================ -->
+            <!-- SECTION 13: Error Handling                   -->
+            <!-- ============================================ -->
+            <h2 id="error-handling">13. Error Handling</h2>
+
+            <p>
+                Database operations can fail for many reasons — a table might not exist, you might
+                try to insert duplicate data, or the SQL syntax might be wrong. Always wrap your
+                database code in <code>try/catch</code> blocks.
+            </p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-keyword">var</span> sql = <span class="token-function">SQLite</span>();
+<span class="token-keyword">var</span> db = sql.<span class="token-function">open</span>(<span class="token-string">":memory:"</span>);
+
+<span class="token-keyword">try</span> <span class="token-punctuation">{</span>
+    <span class="token-comment">// This will fail — the table doesn't exist</span>
+    <span class="token-keyword">var</span> rows = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM nonexistent_table"</span>);
+    <span class="token-function">print</span>(<span class="token-string">"Query succeeded."</span>);
+<span class="token-punctuation">}</span> <span class="token-keyword">catch</span> (e) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"Error caught: "</span> + e);
+<span class="token-punctuation">}</span></code></pre>
+                <div class="output-container">
+                    > Error caught: no such table: nonexistent_table
+                </div>
+            </div>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// A robust pattern: create table, then safely operate</span>
+<span class="token-keyword">function</span> <span class="token-function">safeInsertUser</span>(db, sql, name, email) <span class="token-punctuation">{</span>
+    <span class="token-keyword">try</span> <span class="token-punctuation">{</span>
+        <span class="token-comment">// Ensure table exists first</span>
+        sql.<span class="token-function">execute</span>(db, <span class="token-string">"CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY,
+            name TEXT,
+            email TEXT
+        )"</span>);
+
+        sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO users (name, email) VALUES (?, ?)"</span>, name, email);
+        <span class="token-function">print</span>(<span class="token-string">"User '"</span> + name + <span class="token-string">"' inserted successfully!"</span>);
+        <span class="token-keyword">return</span> <span class="token-keyword">true</span>;
+    <span class="token-punctuation">}</span> <span class="token-keyword">catch</span> (e) <span class="token-punctuation">{</span>
+        <span class="token-function">print</span>(<span class="token-string">"Failed to insert user: "</span> + e);
+        <span class="token-keyword">return</span> <span class="token-keyword">false</span>;
+    <span class="token-punctuation">}</span>
+<span class="token-punctuation">}</span>
+
+<span class="token-function">safeInsertUser</span>(db, sql, <span class="token-string">"Alice"</span>, <span class="token-string">"alice@test.com"</span>);
+<span class="token-function">safeInsertUser</span>(db, sql, <span class="token-string">"Bob"</span>, <span class="token-string">"bob@test.com"</span>);</code></pre>
+                <div class="output-container">
+                    > User 'Alice' inserted successfully!<br>
+                    > User 'Bob' inserted successfully!
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>⚠️ Important:</strong> Always check if <code>sql.open()</code> returns
+                <code>-1</code> (failure). If the database can't be opened, none of your other
+                operations will work either.
+            </div>
+
+            <!-- ============================================ -->
+            <!-- SECTION 14: Real-World Example               -->
+            <!-- ============================================ -->
+            <h2 id="real-world">14. Real-World Project Example</h2>
+
+            <p>
+                Let's build a complete <strong>mini inventory system</strong> that demonstrates
+                everything we've learned in a practical, real-world scenario.
+            </p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// =========================================</span>
+<span class="token-comment">//  MINI INVENTORY MANAGEMENT SYSTEM</span>
+<span class="token-comment">// =========================================</span>
+
+<span class="token-keyword">function</span> <span class="token-function">initDatabase</span>(sql, db) <span class="token-punctuation">{</span>
+    <span class="token-comment">// Create all tables we need</span>
+    sql.<span class="token-function">execute</span>(db, <span class="token-string">"CREATE TABLE IF NOT EXISTS categories (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL UNIQUE
+    )"</span>);
+
+    sql.<span class="token-function">execute</span>(db, <span class="token-string">"CREATE TABLE IF NOT EXISTS products (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        price REAL NOT NULL,
+        stock INTEGER NOT NULL DEFAULT 0,
+        category_id INTEGER,
+        FOREIGN KEY (category_id) REFERENCES categories(id)
+    )"</span>);
+
+    sql.<span class="token-function">execute</span>(db, <span class="token-string">"CREATE TABLE IF NOT EXISTS sales (
+        id INTEGER PRIMARY KEY,
+        product_id INTEGER NOT NULL,
+        quantity INTEGER NOT NULL,
+        total_price REAL NOT NULL,
+        sale_date TEXT NOT NULL,
+        FOREIGN KEY (product_id) REFERENCES products(id)
+    )"</span>);
+<span class="token-punctuation">}</span>
+
+<span class="token-keyword">function</span> <span class="token-function">addCategory</span>(sql, db, name) <span class="token-punctuation">{</span>
+    <span class="token-keyword">try</span> <span class="token-punctuation">{</span>
+        sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO categories (name) VALUES (?)"</span>, name);
+        <span class="token-function">print</span>(<span class="token-string">"Category '"</span> + name + <span class="token-string">"' added."</span>);
+    <span class="token-punctuation">}</span> <span class="token-keyword">catch</span> (e) <span class="token-punctuation">{</span>
+        <span class="token-function">print</span>(<span class="token-string">"Category '"</span> + name + <span class="token-string">"' already exists."</span>);
+    <span class="token-punctuation">}</span>
+<span class="token-punctuation">}</span>
+
+<span class="token-keyword">function</span> <span class="token-function">addProduct</span>(sql, db, name, price, stock, categoryName) <span class="token-punctuation">{</span>
+    <span class="token-comment">// Get the category ID</span>
+    <span class="token-keyword">var</span> cat = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT id FROM categories WHERE name = ?"</span>, categoryName);
+    <span class="token-keyword">if</span> (cat == <span class="token-keyword">nil</span> || <span class="token-function">len</span>(cat) == 0) <span class="token-punctuation">{</span>
+        <span class="token-function">print</span>(<span class="token-string">"Category '"</span> + categoryName + <span class="token-string">"' not found!"</span>);
+        <span class="token-keyword">return</span>;
+    <span class="token-punctuation">}</span>
+
+    sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO products (name, price, stock, category_id) VALUES (?, ?, ?, ?)"</span>,
+        name, price, stock, cat[0].id);
+    <span class="token-function">print</span>(<span class="token-string">"Product '"</span> + name + <span class="token-string">"' added."</span>);
+<span class="token-punctuation">}</span>
+
+<span class="token-keyword">function</span> <span class="token-function">recordSale</span>(sql, db, productName, quantity) <span class="token-punctuation">{</span>
+    <span class="token-keyword">try</span> <span class="token-punctuation">{</span>
+        <span class="token-comment">// Start a transaction</span>
+        sql.<span class="token-function">execute</span>(db, <span class="token-string">"BEGIN TRANSACTION"</span>);
+
+        <span class="token-comment">// Get the product</span>
+        <span class="token-keyword">var</span> prod = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM products WHERE name = ?"</span>, productName);
+        <span class="token-keyword">if</span> (prod == <span class="token-keyword">nil</span> || <span class="token-function">len</span>(prod) == 0) <span class="token-punctuation">{</span>
+            <span class="token-function">print</span>(<span class="token-string">"Product '"</span> + productName + <span class="token-string">"' not found!"</span>);
+            sql.<span class="token-function">execute</span>(db, <span class="token-string">"ROLLBACK"</span>);
+            <span class="token-keyword">return</span>;
+        <span class="token-punctuation">}</span>
+
+        <span class="token-keyword">var</span> product = prod[0];
+        <span class="token-keyword">if</span> (product.stock < quantity) <span class="token-punctuation">{</span>
+            <span class="token-function">print</span>(<span class="token-string">"Not enough stock! Only "</span> + product.stock + <span class="token-string">" available."</span>);
+            sql.<span class="token-function">execute</span>(db, <span class="token-string">"ROLLBACK"</span>);
+            <span class="token-keyword">return</span>;
+        <span class="token-punctuation">}</span>
+
+        <span class="token-comment">// Calculate total price</span>
+        <span class="token-keyword">var</span> total = product.price * quantity;
+
+        <span class="token-comment">// Update stock</span>
+        sql.<span class="token-function">execute</span>(db, <span class="token-string">"UPDATE products SET stock = stock - ? WHERE id = ?"</span>,
+            quantity, product.id);
+
+        <span class="token-comment">// Record the sale</span>
+        <span class="token-keyword">var</span> today = <span class="token-string">"2024-07-16"</span>;
+        sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO sales (product_id, quantity, total_price, sale_date) VALUES (?, ?, ?, ?)"</span>,
+            product.id, quantity, total, today);
+
+        <span class="token-comment">// All good — commit</span>
+        sql.<span class="token-function">execute</span>(db, <span class="token-string">"COMMIT"</span>);
+        <span class="token-function">print</span>(<span class="token-string">"Sale recorded: "</span> + quantity + <span class="token-string">" x "</span> + productName + <span class="token-string">" = $"</span> + total);
+
+    <span class="token-punctuation">}</span> <span class="token-keyword">catch</span> (e) <span class="token-punctuation">{</span>
+        sql.<span class="token-function">execute</span>(db, <span class="token-string">"ROLLBACK"</span>);
+        <span class="token-function">print</span>(<span class="token-string">"Sale failed: "</span> + e);
+    <span class="token-punctuation">}</span>
+<span class="token-punctuation">}</span>
+
+<span class="token-keyword">function</span> <span class="token-function">showInventoryReport</span>(sql, db) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"\n========== INVENTORY REPORT =========="</span>);
+
+    <span class="token-comment">// JOIN to show products with their categories</span>
+    <span class="token-keyword">var</span> products = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT
+        p.id, p.name, p.price, p.stock, c.name as category
+    FROM products p
+    INNER JOIN categories c ON p.category_id = c.id
+    ORDER BY c.name, p.name"</span>);
+
+    <span class="token-keyword">var</span> totalValue = 0.0;
+    <span class="token-keyword">for</span> (<span class="token-keyword">var</span> p <span class="token-keyword">of</span> products) <span class="token-punctuation">{</span>
+        <span class="token-keyword">var</span> value = p.price * p.stock;
+        totalValue = totalValue + value;
+        <span class="token-function">print</span>(p.category + <span class="token-string">" | "</span> + p.name + <span class="token-string">" | $"</span> + p.price + <span class="token-string">" | Stock: "</span> + p.stock + <span class="token-string">" | Value: $"</span> + value);
+    <span class="token-punctuation">}</span>
+
+    <span class="token-function">print</span>(<span class="token-string">"\nTotal inventory value: $"</span> + totalValue);
+
+    <span class="token-comment">// Show recent sales</span>
+    <span class="token-function">print</span>(<span class="token-string">"\n--- Recent Sales ---"</span>);
+    <span class="token-keyword">var</span> sales = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT
+        s.quantity, s.total_price, s.sale_date, p.name as product
+    FROM sales s
+    INNER JOIN products p ON s.product_id = p.id
+    ORDER BY s.id DESC
+    LIMIT 5"</span>);
+
+    <span class="token-keyword">for</span> (<span class="token-keyword">var</span> s <span class="token-keyword">of</span> sales) <span class="token-punctuation">{</span>
+        <span class="token-function">print</span>(s.sale_date + <span class="token-string">" | "</span> + s.product + <span class="token-string">" x"</span> + s.quantity + <span class="token-string">" = $"</span> + s.total_price);
+    <span class="token-punctuation">}</span>
+<span class="token-punctuation">}</span>
+
+<span class="token-comment">// =========================================</span>
+<span class="token-comment">//  RUN THE SYSTEM</span>
+<span class="token-comment">// =========================================</span>
+<span class="token-keyword">var</span> sql = <span class="token-function">SQLite</span>();
+<span class="token-keyword">var</span> db = sql.<span class="token-function">open</span>(<span class="token-string">":memory:"</span>);
+
+<span class="token-function">initDatabase</span>(sql, db);
+
+<span class="token-comment">// Add categories</span>
+<span class="token-function">addCategory</span>(sql, db, <span class="token-string">"Electronics"</span>);
+<span class="token-function">addCategory</span>(sql, db, <span class="token-string">"Office Supplies"</span>);
+<span class="token-function">addCategory</span>(sql, db, <span class="token-string">"Food & Drinks"</span>);
+
+<span class="token-comment">// Add products</span>
+<span class="token-function">addProduct</span>(sql, db, <span class="token-string">"Laptop"</span>, 999.99, 10, <span class="token-string">"Electronics"</span>);
+<span class="token-function">addProduct</span>(sql, db, <span class="token-string">"Mouse"</span>, 29.99, 50, <span class="token-string">"Electronics"</span>);
+<span class="token-function">addProduct</span>(sql, db, <span class="token-string">"Notebook"</span>, 4.99, 200, <span class="token-string">"Office Supplies"</span>);
+<span class="token-function">addProduct</span>(sql, db, <span class="token-string">"Coffee"</span>, 3.50, 100, <span class="token-string">"Food & Drinks"</span>);
+
+<span class="token-comment">// Record some sales</span>
+<span class="token-function">recordSale</span>(sql, db, <span class="token-string">"Laptop"</span>, 2);
+<span class="token-function">recordSale</span>(sql, db, <span class="token-string">"Mouse"</span>, 5);
+<span class="token-function">recordSale</span>(sql, db, <span class="token-string">"Coffee"</span>, 10);
+<span class="token-function">recordSale</span>(sql, db, <span class="token-string">"Laptop"</span>, 20);  <span class="token-comment">// Should fail — only 8 left!</span>
+
+<span class="token-comment">// Show the full report</span>
+<span class="token-function">showInventoryReport</span>(sql, db);
+
+sql.<span class="token-function">close</span>(db);</code></pre>
+                <div class="output-container">
+                    > Category 'Electronics' added.<br>
+                    > Category 'Office Supplies' added.<br>
+                    > Category 'Food & Drinks' added.<br>
+                    > Product 'Laptop' added.<br>
+                    > Product 'Mouse' added.<br>
+                    > Product 'Notebook' added.<br>
+                    > Product 'Coffee' added.<br>
+                    > Sale recorded: 2 x Laptop = $1999.98<br>
+                    > Sale recorded: 5 x Mouse = $149.95<br>
+                    > Sale recorded: 10 x Coffee = $35.00<br>
+                    > Not enough stock! Only 8 available.<br>
+                    > <br>
+                    > ========== INVENTORY REPORT ==========<br>
+                    > Electronics | Laptop | $999.99 | Stock: 8 | Value: $7999.92<br>
+                    > Electronics | Mouse | $29.99 | Stock: 45 | Value: $1349.55<br>
+                    > Food & Drinks | Coffee | $3.50 | Stock: 90 | Value: $315.00<br>
+                    > Office Supplies | Notebook | $4.99 | Stock: 200 | Value: $998.00<br>
+                    > <br>
+                    > Total inventory value: $10662.47<br>
+                    > <br>
+                    > --- Recent Sales ---<br>
+                    > 2024-07-16 | Coffee x10 = $35.00<br>
+                    > 2024-07-16 | Mouse x5 = $149.95<br>
+                    > 2024-07-16 | Laptop x2 = $1999.98
+                </div>
+            </div>
+
+            <p>
+                This example demonstrates:
+            </p>
+            <ul>
+                <li><strong>Multiple tables</strong> with relationships (categories &rarr; products &rarr; sales)</li>
+                <li><strong>Transactions</strong> to ensure data integrity during sales</li>
+                <li><strong>JOINs</strong> to combine data from different tables</li>
+                <li><strong>Error handling</strong> with try/catch and rollback</li>
+                <li><strong>Prepared statements</strong> with <code>?</code> placeholders</li>
+                <li><strong>Business logic</strong> like checking stock before recording a sale</li>
+                <li><strong>Reporting</strong> with calculated values (total inventory value)</li>
+            </ul>
+
+            <!-- ============================================ -->
+            <!-- SECTION 15: Complete API Reference           -->
+            <!-- ============================================ -->
+            <h2 id="reference">15. Complete API Reference</h2>
+
+            <p>Here is every method available in the Sapphire SQLite module, with full descriptions.</p>
+
+            <h3>15.1 <code>SQLite()</code></h3>
+            <p>
+                Creates a new SQLite handler instance. You must call this before any other
+                SQLite operations. You can create multiple instances to work with multiple
+                databases simultaneously.
+            </p>
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-keyword">var</span> sql = <span class="token-function">SQLite</span>();
+<span class="token-keyword">var</span> sql2 = <span class="token-function">SQLite</span>();  <span class="token-comment">// A second, independent instance</span></code></pre>
+            </div>
+
+            <h3>15.2 <code>sql.open(filename)</code></h3>
+            <p>
+                Opens a connection to a database file. If the file doesn't exist, it is created
+                automatically. Returns a database handle (integer) on success, or <code>-1</code>
+                on failure.
+            </p>
+            <table>
+                <thead>
+                    <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>filename</code></td><td>String</td><td>Path to the .db file, or <code>":memory:"</code> for RAM-only</td></tr>
+                </tbody>
+            </table>
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-keyword">var</span> db = sql.<span class="token-function">open</span>(<span class="token-string">"data.db"</span>);
+<span class="token-keyword">if</span> (db == -1) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"Failed to open database!"</span>);
 <span class="token-punctuation">}</span></code></pre>
             </div>
 
+            <h3>15.3 <code>sql.execute(db, sql, ...params)</code></h3>
+            <p>
+                Executes a SQL statement that does <strong>not</strong> return rows (e.g.,
+                <code>CREATE TABLE</code>, <code>INSERT</code>, <code>UPDATE</code>,
+                <code>DELETE</code>). Returns the result code.
+            </p>
+            <table>
+                <thead>
+                    <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>db</code></td><td>Integer</td><td>The database handle from <code>open()</code></td></tr>
+                    <tr><td><code>sql</code></td><td>String</td><td>The SQL statement to execute</td></tr>
+                    <tr><td><code>...params</code></td><td>Any (optional)</td><td>Values for <code>?</code> placeholders (prepared statements)</td></tr>
+                </tbody>
+            </table>
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// Without parameters</span>
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"CREATE TABLE IF NOT EXISTS test (id INTEGER)"</span>);
+
+<span class="token-comment">// With parameters (prepared statement)</span>
+sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO test VALUES (?)"</span>, 42);</code></pre>
+            </div>
+
+            <h3>15.4 <code>sql.execute(sql, ...params)</code> (object-style)</h3>
+            <p>
+                If you used the object-style API (called <code>open()</code> without capturing
+                the return value), you can call <code>execute</code> directly on the SQLite object.
+                It uses the internally stored database handle.
+            </p>
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-keyword">var</span> sqlite = <span class="token-function">SQLite</span>();
+sqlite.<span class="token-function">open</span>(<span class="token-string">":memory:"</span>);
+sqlite.<span class="token-function">execute</span>(<span class="token-string">"CREATE TABLE test (id INTEGER)"</span>);</code></pre>
+            </div>
+
+            <h3>15.5 <code>sql.query(db, sql, ...params)</code></h3>
+            <p>
+                Executes a SQL statement that <strong>returns rows</strong> (typically
+                <code>SELECT</code>). Returns an array of maps, where each map represents a row
+                with column names as keys. Returns <code>nil</code> on failure.
+            </p>
+            <table>
+                <thead>
+                    <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>db</code></td><td>Integer</td><td>The database handle from <code>open()</code></td></tr>
+                    <tr><td><code>sql</code></td><td>String</td><td>The SQL SELECT statement to execute</td></tr>
+                    <tr><td><code>...params</code></td><td>Any (optional)</td><td>Values for <code>?</code> placeholders</td></tr>
+                </tbody>
+            </table>
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// Without parameters</span>
+<span class="token-keyword">var</span> all = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM users"</span>);
+
+<span class="token-comment">// With parameters</span>
+<span class="token-keyword">var</span> filtered = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM users WHERE age > ?"</span>, 18);
+
+<span class="token-comment">// Access row data</span>
+<span class="token-keyword">for</span> (<span class="token-keyword">var</span> row <span class="token-keyword">of</span> filtered) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(row.name + <span class="token-string">" is "</span> + row.age);
+<span class="token-punctuation">}</span></code></pre>
+            </div>
+
+            <h3>15.6 <code>sql.query(sql, ...params)</code> (object-style)</h3>
+            <p>
+                Object-style version of <code>query</code> that uses the internally stored database handle.
+            </p>
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-keyword">var</span> sqlite = <span class="token-function">SQLite</span>();
+sqlite.<span class="token-function">open</span>(<span class="token-string">":memory:"</span>);
+sqlite.<span class="token-function">execute</span>(<span class="token-string">"CREATE TABLE t (v INTEGER)"</span>);
+sqlite.<span class="token-function">execute</span>(<span class="token-string">"INSERT INTO t VALUES (1), (2), (3)"</span>);
+<span class="token-keyword">var</span> rows = sqlite.<span class="token-function">query</span>(<span class="token-string">"SELECT * FROM t"</span>);
+<span class="token-function">print</span>(<span class="token-string">"Row count: "</span> + <span class="token-function">len</span>(rows));</code></pre>
+                <div class="output-container">
+                    > Row count: 3
+                </div>
+            </div>
+
+            <h3>15.7 <code>sql.close(db)</code></h3>
+            <p>
+                Closes the database connection. Always call this when you're done to free
+                system resources and ensure all data is written to disk.
+            </p>
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                    </div>
+                </div>
+                <pre><code>sql.<span class="token-function">close</span>(db);
+<span class="token-function">print</span>(<span class="token-string">"Database connection closed."</span>);</code></pre>
+                <div class="output-container">
+                    > Database connection closed.
+                </div>
+            </div>
+
+            <h3>15.8 Method Summary Table</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Description</th>
+                        <th>Returns</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>SQLite()</code></td>
+                        <td>Create a new SQLite handler instance</td>
+                        <td>Object</td>
+                    </tr>
+                    <tr>
+                        <td><code>sql.open(filename)</code></td>
+                        <td>Open (or create) a database file</td>
+                        <td>Integer handle, or -1 on failure</td>
+                    </tr>
+                    <tr>
+                        <td><code>sql.execute(db, sql, ...)</code></td>
+                        <td>Execute a non-query SQL statement</td>
+                        <td>Result code</td>
+                    </tr>
+                    <tr>
+                        <td><code>sql.execute(sql, ...)</code></td>
+                        <td>Object-style: execute on the internal handle</td>
+                        <td>Result code</td>
+                    </tr>
+                    <tr>
+                        <td><code>sql.query(db, sql, ...)</code></td>
+                        <td>Execute a SELECT query and return rows</td>
+                        <td>Array of maps, or nil on failure</td>
+                    </tr>
+                    <tr>
+                        <td><code>sql.query(sql, ...)</code></td>
+                        <td>Object-style: query on the internal handle</td>
+                        <td>Array of maps, or nil on failure</td>
+                    </tr>
+                    <tr>
+                        <td><code>sql.close(db)</code></td>
+                        <td>Close the database connection</td>
+                        <td>—</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>15.9 Common SQL Statements Cheat Sheet</h3>
+
+            <table>
+                <thead>
+                    <tr><th>Operation</th><th>SQL Statement</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Create table</td><td><code>CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT)</code></td></tr>
+                    <tr><td>Insert row</td><td><code>INSERT INTO users (name) VALUES ('Alice')</code></td></tr>
+                    <tr><td>Insert with params</td><td><code>INSERT INTO users (name) VALUES (?)</code></td></tr>
+                    <tr><td>Select all</td><td><code>SELECT * FROM users</code></td></tr>
+                    <tr><td>Select specific columns</td><td><code>SELECT id, name FROM users</code></td></tr>
+                    <tr><td>Filter</td><td><code>SELECT * FROM users WHERE age > 18</code></td></tr>
+                    <tr><td>Sort ascending</td><td><code>SELECT * FROM users ORDER BY name ASC</code></td></tr>
+                    <tr><td>Sort descending</td><td><code>SELECT * FROM users ORDER BY age DESC</code></td></tr>
+                    <tr><td>Limit results</td><td><code>SELECT * FROM users LIMIT 10</code></td></tr>
+                    <tr><td>Count rows</td><td><code>SELECT COUNT(*) as total FROM users</code></td></tr>
+                    <tr><td>Update rows</td><td><code>UPDATE users SET age = 31 WHERE name = 'Alice'</code></td></tr>
+                    <tr><td>Delete rows</td><td><code>DELETE FROM users WHERE name = 'Bob'</code></td></tr>
+                    <tr><td>Drop table</td><td><code>DROP TABLE IF EXISTS users</code></td></tr>
+                    <tr><td>Inner join</td><td><code>SELECT * FROM posts INNER JOIN users ON posts.user_id = users.id</code></td></tr>
+                    <tr><td>Left join</td><td><code>SELECT * FROM users LEFT JOIN posts ON users.id = posts.user_id</code></td></tr>
+                    <tr><td>Pattern match</td><td><code>SELECT * FROM users WHERE name LIKE 'A%'</code></td></tr>
+                    <tr><td>In list</td><td><code>SELECT * FROM users WHERE id IN (1, 3, 5)</code></td></tr>
+                    <tr><td>Start transaction</td><td><code>BEGIN TRANSACTION</code></td></tr>
+                    <tr><td>Commit changes</td><td><code>COMMIT</code></td></tr>
+                    <tr><td>Undo changes</td><td><code>ROLLBACK</code></td></tr>
+                </tbody>
+            </table>
+
+            <div class="info-box">
+                <strong>📚 Next Steps:</strong> Now that you've mastered SQLite, try building
+                a real project! A to-do list app, a blog engine, or a personal expense tracker
+                are all great ways to practice. Combine SQLite with the <a href="docs_ui_engine.html">UI Engine</a>
+                to create applications with a graphical interface and persistent storage.
+            </div>
+
             <p style="margin-top: 4rem; display: flex; justify-content: space-between;">
-                <a href="docs_ui_engine.html" class="btn btn-outline">&larr; Previous</a>
-                <a href="docs_sqlite.html" class="btn" style="visibility: hidden">Next: Something &rarr;</a>
+                <a href="docs_ui_engine.html" class="btn btn-outline">&larr; Previous: UI Engine</a>
+                <a href="docs_sqlite.html" class="btn" style="visibility: hidden">Next &rarr;</a>
             </p>
         </main>
     </div>
 
     <script src="js/main.js"></script>
-    <script>
-        const themeToggle = document.getElementById('theme-toggle');
-        themeToggle.addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-            if (document.body.classList.contains('dark-mode')) {
-                themeToggle.textContent = '🌙';
-            } else {
-                themeToggle.textContent = '💡';
-            }
-        });
-    </script>
+    
 </body>
 </html>
-

@@ -4,508 +4,951 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sapphire - A New Programming Language</title>
+    <title>Sapphire — A Modern Programming Language</title>
+    <meta name="description" content="Sapphire is a high-performance, expressive programming language built in C++. Batteries included: UI, networking, SQLite, threading and more.">
 
     <link rel="icon" href="site/assets/logo.svg">
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-        rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
     <style>
+        /* ============================================================
+           DESIGN TOKENS
+        ============================================================ */
         :root {
-            --primary-color: #0d6efd;
-            --primary-hover: #0b5ed7;
-            --bg-color: #ffffff;
-            --bg-light-gray: #f8f9fa;
-            --text-dark: #212529;
-            --text-light: #6c757d;
-            --border-color: #dee2e6;
-            --card-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
-            --font-primary: 'Poppins', sans-serif;
+            --bg:           #060b14;
+            --bg-2:         #0c1220;
+            --bg-3:         #111827;
+            --surface:      rgba(255,255,255,0.04);
+            --surface-hover:rgba(255,255,255,0.08);
+            --border:       rgba(255,255,255,0.08);
+            --border-hover: rgba(100,160,255,0.35);
+
+            --blue-1:  #3b82f6;
+            --blue-2:  #60a5fa;
+            --blue-3:  #93c5fd;
+            --indigo:  #6366f1;
+            --cyan:    #22d3ee;
+            --purple:  #a855f7;
+
+            --text-1:  #f1f5f9;
+            --text-2:  #94a3b8;
+            --text-3:  #64748b;
+
+            --font:      'Inter', sans-serif;
             --font-code: 'JetBrains Mono', monospace;
+
+            --glow-blue:   0 0 40px rgba(59,130,246,0.25);
+            --glow-strong: 0 0 80px rgba(59,130,246,0.4);
+            --radius:   14px;
+            --radius-lg:20px;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        body.dark-mode {
-            --bg-color: #1a1a1a;
-            --bg-light-gray: #2c2c2c;
-            --text-dark: #f0f0f0;
-            --text-light: #b0b0b0;
-            --border-color: #444;
-            --card-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        }
+        /* ============================================================
+           RESET & BASE
+        ============================================================ */
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
+        html { scroll-behavior: smooth; font-size: 16px; }
 
         body {
-            font-family: var(--font-primary);
-            background-color: var(--bg-color);
-            color: var(--text-dark);
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text-1);
             line-height: 1.7;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        ::selection { background: rgba(59,130,246,0.35); color: #fff; }
+
+        img { display:block; max-width:100%; }
+        a { text-decoration:none; }
+
+        /* ============================================================
+           CUSTOM SCROLLBAR
+        ============================================================ */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-2); }
+        ::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.4); border-radius: 99px; }
+
+        /* ============================================================
+           CANVAS PARTICLES
+        ============================================================ */
+        #particles-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.5;
+        }
+
+        /* ============================================================
+           NAVBAR
+        ============================================================ */
+        .navbar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 1000;
+            padding: 0 2rem;
+            height: 68px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(6, 11, 20, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            transition: all var(--transition);
+        }
+
+        .navbar.scrolled {
+            background: rgba(6, 11, 20, 0.92);
+            box-shadow: 0 1px 40px rgba(0,0,0,0.5);
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-1);
+            font-weight: 700;
+            font-size: 1.2rem;
+            letter-spacing: -0.02em;
+        }
+
+        .nav-logo img { height: 34px; width: 34px; }
+
+        .nav-logo .logo-gem {
+            width: 34px; height: 34px;
+            background: linear-gradient(135deg, var(--blue-1), var(--indigo));
+            border-radius: 8px;
+            display: flex; align-items:center; justify-content:center;
+            font-size: 18px;
+            box-shadow: 0 0 20px rgba(99,102,241,0.5);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-2);
+            font-size: 0.9rem;
+            font-weight: 500;
+            padding: 0.5rem 0.9rem;
+            border-radius: 8px;
+            transition: all var(--transition);
+        }
+
+        .nav-links a:hover {
+            color: var(--text-1);
+            background: var(--surface-hover);
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .btn-nav-ghost {
+            display: flex; align-items:center; gap: 6px;
+            color: var(--text-2);
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 0.45rem 0.9rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all var(--transition);
+            background: transparent;
+            cursor: pointer;
+            font-family: var(--font);
+        }
+        .btn-nav-ghost:hover { color: var(--text-1); border-color: var(--border-hover); background: var(--surface); }
+
+        .btn-nav-primary {
+            display: flex; align-items:center; gap: 6px;
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 0.5rem 1.1rem;
+            border-radius: 8px;
+            border: none;
+            background: linear-gradient(135deg, var(--blue-1), var(--indigo));
+            cursor: pointer;
+            font-family: var(--font);
+            transition: all var(--transition);
+            box-shadow: 0 0 20px rgba(59,130,246,0.3);
+        }
+        .btn-nav-primary:hover { transform: translateY(-1px); box-shadow: 0 0 30px rgba(59,130,246,0.5); }
+
+        /* ============================================================
+           HERO
+        ============================================================ */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 8rem 2rem 5rem;
+            overflow: hidden;
+        }
+
+        /* Animated mesh gradient */
+        .hero-bg {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+        }
+
+        .hero-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.15;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .hero-orb-1 {
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, var(--blue-1), transparent);
+            top: -100px; left: -100px;
+            animation-delay: 0s;
+        }
+
+        .hero-orb-2 {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, var(--indigo), transparent);
+            top: 20%; right: -100px;
+            animation-delay: -3s;
+        }
+
+        .hero-orb-3 {
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, var(--cyan), transparent);
+            bottom: 0; left: 40%;
+            animation-delay: -6s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50%       { transform: translateY(-30px) scale(1.05); }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            background: rgba(59,130,246,0.1);
+            border: 1px solid rgba(59,130,246,0.3);
+            border-radius: 99px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--blue-2);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+            animation: fadeInDown 0.8s ease-out forwards;
+        }
+
+        .hero-badge-dot {
+            width: 6px; height: 6px;
+            background: var(--blue-1);
+            border-radius: 50%;
+            animation: pulse 2s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%       { opacity: 0.5; transform: scale(1.4); }
+        }
+
+        .hero-title {
+            font-size: clamp(3rem, 8vw, 5.5rem);
+            font-weight: 900;
+            line-height: 1.05;
+            letter-spacing: -0.04em;
+            margin-bottom: 1.5rem;
+            animation: fadeInDown 0.8s ease-out 0.15s both;
+        }
+
+        .hero-title-line { display: block; }
+
+        .hero-title .grad {
+            background: linear-gradient(135deg, var(--blue-2) 0%, var(--indigo) 50%, var(--purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-2);
+            max-width: 600px;
+            margin: 0 auto 3rem;
+            font-weight: 400;
+            animation: fadeInUp 0.8s ease-out 0.3s both;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            animation: fadeInUp 0.8s ease-out 0.45s both;
+        }
+
+        .btn-primary {
+            display: inline-flex; align-items:center; gap: 8px;
+            padding: 0.9rem 2rem;
+            background: linear-gradient(135deg, var(--blue-1), var(--indigo));
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: var(--radius);
+            border: none;
+            cursor: pointer;
+            font-family: var(--font);
+            transition: all var(--transition);
+            box-shadow: 0 0 30px rgba(59,130,246,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 50px rgba(59,130,246,0.6), inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+
+        .btn-secondary {
+            display: inline-flex; align-items:center; gap: 8px;
+            padding: 0.9rem 2rem;
+            background: var(--surface);
+            color: var(--text-1);
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            font-family: var(--font);
+            transition: all var(--transition);
+        }
+        .btn-secondary:hover {
+            background: var(--surface-hover);
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+        }
+
+        /* Hero code window */
+        .hero-code {
+            max-width: 700px;
+            margin: 4rem auto 0;
+            animation: fadeInUp 0.8s ease-out 0.6s both;
+        }
+
+        .code-window {
+            background: rgba(12,18,32,0.8);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.04),
+                        0 40px 80px rgba(0,0,0,0.5),
+                        var(--glow-blue);
+            backdrop-filter: blur(20px);
+        }
+
+        .code-window-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 1rem 1.25rem;
+            background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .code-dot {
+            width: 12px; height: 12px;
+            border-radius: 50%;
+        }
+        .code-dot-red    { background: #ff5f57; }
+        .code-dot-yellow { background: #febc2e; }
+        .code-dot-green  { background: #28c840; }
+
+        .code-window-title {
+            flex: 1;
+            text-align: center;
+            font-family: var(--font-code);
+            font-size: 0.78rem;
+            color: var(--text-3);
+        }
+
+        .code-window pre {
+            padding: 1.75rem;
+            text-align: left;
+            overflow-x: auto;
+            line-height: 1.65;
+        }
+
+        .code-window code {
+            font-family: var(--font-code);
+            font-size: 0.9rem;
+        }
+
+        /* ============================================================
+           STATS
+        ============================================================ */
+        .stats-section {
+            position: relative;
+            z-index: 2;
+            padding: 4rem 2rem;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stats-inner {
+            max-width: 900px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+            text-align: center;
+        }
+
+        .stat-item { padding: 1rem; }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            background: linear-gradient(135deg, var(--blue-2), var(--indigo));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-3);
+            margin-top: 0.25rem;
+            font-weight: 500;
+        }
+
+        /* ============================================================
+           SECTIONS
+        ============================================================ */
+        .section {
+            position: relative;
+            z-index: 2;
+            padding: 8rem 2rem;
+        }
+
+        .section-alt {
+            background: linear-gradient(180deg, transparent, rgba(12,18,32,0.6), transparent);
         }
 
         .container {
             max-width: 1140px;
             margin: 0 auto;
-            padding: 0 20px;
         }
 
-        .navbar {
-            background-color: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--border-color);
-            padding: 1rem 0;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        body.dark-mode .navbar {
-            background-color: rgba(26, 26, 26, 0.85);
-            border-color: #444;
-        }
-
-        .navbar .container {
-            display: flex;
-            justify-content: space-between;
+        .section-label {
+            display: inline-flex;
             align-items: center;
-        }
-
-        .logo-link {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-        }
-
-        .logo-img {
-            height: 40px;
-            animation: bounceIn 1s ease-out;
-        }
-
-        .logo-text {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--text-dark);
-        }
-
-        .main-nav {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-        }
-
-        .main-nav a {
-            text-decoration: none;
-            color: var(--text-light);
-            font-weight: 500;
-            transition: color 0.3s ease;
-        }
-
-        .main-nav a:hover {
-            color: var(--primary-color);
-        }
-
-        .hero {
-            text-align: center;
-            padding: 6rem 0;
-            background: linear-gradient(135deg, var(--bg-color) 0%, var(--bg-light-gray) 100%);
-            position: relative;
-            overflow: hidden;
-            border-radius: 0 0 16px 16px;
-        }
-
-        .bubbles {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            overflow: hidden;
-        }
-
-        .bubble {
-            position: absolute;
-            background: var(--primary-color);
-            border-radius: 50%;
-            animation: bubble-rise 15s infinite ease-in;
-        }
-
-        @keyframes bubble-rise {
-            0% {
-                transform: translateY(0);
-                opacity: 0;
-            }
-
-            10% {
-                opacity: 1;
-            }
-
-            90% {
-                opacity: 1;
-            }
-
-            100% {
-                transform: translateY(-100vh);
-                opacity: 0;
-            }
-        }
-
-        .hero-text {
-            position: relative;
-            z-index: 10;
-        }
-
-        .hero-text h1 {
-            font-size: 3.2rem;
+            gap: 8px;
+            font-size: 0.75rem;
             font-weight: 700;
-            line-height: 1.3;
-            max-width: 800px;
-            margin: 0 auto 1rem auto;
-            animation: fadeInDown 1s ease-out;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--blue-2);
+            margin-bottom: 1rem;
         }
 
-        .hero-text .highlight {
-            color: var(--primary-color);
-        }
-
-        .hero-text .subtitle {
-            font-size: 1.2rem;
-            color: var(--text-light);
-            max-width: 700px;
-            margin: 0 auto 2.5rem auto;
-            animation: fadeInUp 1s ease-out 0.3s forwards;
-            opacity: 0;
-        }
-
-        .cta-button {
-            display: inline-block;
-            background-color: var(--primary-color);
-            color: white;
-            padding: 12px 28px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            animation: zoomIn 1s ease-out 0.6s forwards;
-            opacity: 0;
-        }
-
-        .cta-button:hover {
-            background-color: var(--primary-hover);
-            transform: translateY(-2px);
-        }
-
-        .section {
-            padding: 6rem 0;
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-
-        .section-gray {
-            background-color: var(--bg-light-gray);
+        .section-label::before {
+            content: '';
+            width: 20px; height: 2px;
+            background: var(--blue-1);
+            border-radius: 99px;
         }
 
         .section-title {
-            font-size: 2.5rem;
-            text-align: center;
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.15;
             margin-bottom: 1rem;
         }
 
         .section-subtitle {
-            font-size: 1.1rem;
-            color: var(--text-light);
-            text-align: center;
-            max-width: 700px;
-            margin: 0 auto 4rem auto;
+            font-size: 1.05rem;
+            color: var(--text-2);
+            max-width: 600px;
+            line-height: 1.7;
         }
 
-        .features-grid,
-        .roadmap-grid,
-        .modules-grid {
+        .section-header {
+            margin-bottom: 4rem;
+        }
+
+        .section-header-center {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-header-center .section-label { justify-content: center; }
+        .section-header-center .section-subtitle { margin: 0 auto; }
+
+        /* ============================================================
+           FEATURES
+        ============================================================ */
+        .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
         }
 
-        .feature-card,
-        .roadmap-card,
-        .module-card {
-            background-color: var(--bg-color);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 2rem;
-            text-align: center;
-            box-shadow: var(--card-shadow);
-            transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
-        }
-
-        .feature-card:hover,
-        .roadmap-card:hover,
-        .module-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-        }
-
-        body.dark-mode .feature-card,
-        body.dark-mode .roadmap-card,
-        body.dark-mode .module-card {
-            background-color: #333;
-            border-color: #555;
-        }
-
-        .feature-card h3,
-        .roadmap-card h3,
-        .module-card h3 {
-            font-size: 1.4rem;
-            margin-bottom: 1rem;
-            color: var(--text-dark);
-        }
-
-        .roadmap-card .icon,
-        .module-card .icon {
-            font-size: 2.5rem;
-            color: var(--primary-color);
-            margin-bottom: 1rem;
-        }
-
-        .code-section-header {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-        }
-
-        .code-tab-button {
-            background-color: var(--bg-color);
-            border: 1px solid var(--border-color);
-            color: var(--text-dark);
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-        }
-
-        .code-tab-button.active,
-        .code-tab-button:hover {
-            background-color: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-        }
-
-        body.dark-mode .code-tab-button {
-            background-color: #222;
-            border-color: #555;
-            color: #f0f0f0;
-        }
-
-        body.dark-mode .code-tab-button.active,
-        body.dark-mode .code-tab-button:hover {
-            background-color: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-        }
-
-        .code-container {
-            max-width: 800px;
-            margin: 0 auto;
-            background-color: #282c34;
-            border-radius: 8px;
-            box-shadow: var(--card-shadow);
-            text-align: left;
+        .feature-card {
             position: relative;
+            padding: 2rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
             overflow: hidden;
-            transition: box-shadow 0.3s ease;
+            transition: all var(--transition);
+            cursor: default;
         }
 
-        .code-header {
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(59,130,246,0.06), transparent);
+            opacity: 0;
+            transition: opacity var(--transition);
+        }
+
+        .feature-card:hover {
+            border-color: var(--border-hover);
+            background: var(--surface-hover);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 30px rgba(59,130,246,0.1);
+        }
+
+        .feature-card:hover::before { opacity: 1; }
+
+        .feature-icon {
+            width: 48px; height: 48px;
+            border-radius: 12px;
+            display: flex; align-items:center; justify-content:center;
+            font-size: 22px;
+            margin-bottom: 1.25rem;
+            position: relative;
+        }
+
+        .feature-icon-blue   { background: rgba(59,130,246,0.15); box-shadow: 0 0 20px rgba(59,130,246,0.2); }
+        .feature-icon-indigo { background: rgba(99,102,241,0.15); box-shadow: 0 0 20px rgba(99,102,241,0.2); }
+        .feature-icon-cyan   { background: rgba(34,211,238,0.15); box-shadow: 0 0 20px rgba(34,211,238,0.2); }
+        .feature-icon-purple { background: rgba(168,85,247,0.15); box-shadow: 0 0 20px rgba(168,85,247,0.2); }
+        .feature-icon-green  { background: rgba(34,197,94,0.15);  box-shadow: 0 0 20px rgba(34,197,94,0.2); }
+        .feature-icon-orange { background: rgba(249,115,22,0.15); box-shadow: 0 0 20px rgba(249,115,22,0.2); }
+
+        .feature-card h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 0.6rem;
+            color: var(--text-1);
+        }
+
+        .feature-card p {
+            font-size: 0.9rem;
+            color: var(--text-2);
+            line-height: 1.65;
+        }
+
+        .feature-card .feature-arrow {
+            position: absolute;
+            top: 2rem; right: 2rem;
+            color: var(--text-3);
+            font-size: 1rem;
+            opacity: 0;
+            transform: translate(-4px, 4px);
+            transition: all var(--transition);
+        }
+
+        .feature-card:hover .feature-arrow {
+            opacity: 1;
+            transform: translate(0, 0);
+        }
+
+        /* ============================================================
+           CODE SHOWCASE
+        ============================================================ */
+        .code-showcase {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 1.5rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .code-tabs-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            min-width: 180px;
+        }
+
+        .code-tab {
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-3);
+            font-size: 0.85rem;
+            font-weight: 500;
+            font-family: var(--font);
+            cursor: pointer;
+            text-align: left;
+            transition: all var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .code-tab:hover {
+            color: var(--text-2);
+            background: var(--surface);
+        }
+
+        .code-tab.active {
+            color: var(--text-1);
+            background: rgba(59,130,246,0.12);
+            border-color: rgba(59,130,246,0.3);
+        }
+
+        .code-tab .tab-icon { font-size: 16px; }
+
+        .code-panel {
+            background: rgba(12,18,32,0.9);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+        }
+
+        .code-panel-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.8rem 1.5rem;
-            background-color: #21252b;
-            border-bottom: 1px solid #3c4049;
-            border-top-left-radius: 8px;
-            border-top-right-radius: 8px;
+            padding: 0.9rem 1.25rem;
+            background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
         }
 
-        .code-header .filename {
+        .code-panel-file {
             font-family: var(--font-code);
-            color: #abb2bf;
+            font-size: 0.8rem;
+            color: var(--text-3);
+            display: flex; align-items:center; gap: 8px;
         }
 
-        .copy-button {
-            background: #3c4049;
-            border: 1px solid #4d535e;
-            color: #abb2bf;
-            padding: 6px 12px;
-            border-radius: 5px;
+        .code-panel-file .file-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--blue-1);
+        }
+
+        .btn-copy {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-3);
+            padding: 4px 12px;
+            border-radius: 6px;
             cursor: pointer;
-            font-family: var(--font-primary);
-            transition: background-color 0.2s;
+            font-size: 0.78rem;
+            font-family: var(--font);
+            transition: all var(--transition);
         }
 
-        .copy-button:hover {
-            background-color: #4d535e;
-        }
+        .btn-copy:hover { background: rgba(255,255,255,0.1); color: var(--text-1); }
+        .btn-copy.copied { color: #22c55e; border-color: rgba(34,197,94,0.3); }
 
-        .code-snippet {
+        .code-panel pre {
             padding: 1.5rem;
             overflow-x: auto;
-            line-height: 1.5;
-            color: #abb2bf;
-            display: none;
-            animation: fadeIn 0.5s ease-out;
+            line-height: 1.65;
         }
 
-        .code-snippet.active {
-            display: block;
-        }
-
-        code {
+        .code-panel code {
             font-family: var(--font-code);
-            font-size: 1rem;
+            font-size: 0.875rem;
         }
 
-        .token-keyword {
-            color: #c678dd;
+        .snippet-hidden { display: none; }
+        .snippet-active { display: block; animation: fadeIn 0.25s ease; }
+
+        /* ============================================================
+           GET STARTED (STEPS)
+        ============================================================ */
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
         }
 
-        .token-function {
-            color: #61afef;
-        }
-
-        .token-string {
-            color: #98c379;
-        }
-
-        .token-number {
-            color: #d19a66;
-        }
-
-        .token-comment {
-            color: #7f848e;
-            font-style: italic;
-        }
-
-        .token-operator {
-            color: #56b6c2;
-        }
-
-        .token-variable {
-            color: #e06c75;
-        }
-
-        .token-punctuation {
-            color: #abb2bf;
-        }
-
-        .token-type {
-            color: #e6c07b;
-        }
-
-        .token-class {
-            color: #e6c07b;
-        }
-
-        .module-card-content {
-            max-height: 0;
+        .step-card {
+            position: relative;
+            padding: 2rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            transition: all var(--transition);
             overflow: hidden;
-            transition: max-height 0.5s ease-out;
         }
 
-        .module-card-content.expanded {
-            max-height: 500px;
+        .step-card:hover {
+            border-color: var(--border-hover);
+            background: var(--surface-hover);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
         }
 
-        .module-card-toggle {
-            cursor: pointer;
-            color: var(--primary-color);
-            font-weight: 600;
-            margin-top: 1rem;
-            display: block;
+        .step-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--blue-1), var(--indigo));
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 800;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 0 20px rgba(59,130,246,0.4);
         }
 
-        .license-box {
-            max-width: 800px;
+        .step-card h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 0.6rem;
+            color: var(--text-1);
+        }
+
+        .step-card p {
+            font-size: 0.9rem;
+            color: var(--text-2);
+            line-height: 1.65;
+        }
+
+        .step-card code {
+            font-family: var(--font-code);
+            font-size: 0.82rem;
+            color: var(--blue-2);
+            background: rgba(59,130,246,0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* ============================================================
+           MODULES
+        ============================================================ */
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .module-card {
+            padding: 1.5rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            text-align: center;
+            transition: all var(--transition);
+        }
+
+        .module-card:hover {
+            border-color: var(--border-hover);
+            background: var(--surface-hover);
+            transform: translateY(-3px);
+            box-shadow: var(--glow-blue);
+        }
+
+        .module-card .module-icon {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .module-card h3 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-1);
+            margin-bottom: 0.3rem;
+        }
+
+        .module-card p {
+            font-size: 0.8rem;
+            color: var(--text-3);
+        }
+
+        /* ============================================================
+           COMMUNITY
+        ============================================================ */
+        .community-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        /* ============================================================
+           LICENSE
+        ============================================================ */
+        .license-card {
+            max-width: 700px;
             margin: 0 auto;
             padding: 2.5rem;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background-color: var(--bg-color);
-            box-shadow: var(--card-shadow);
-            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            position: relative;
+            overflow: hidden;
         }
 
-        body.dark-mode .license-box {
-            background-color: #333;
-            border-color: #555;
+        .license-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--blue-1), var(--indigo), var(--purple));
         }
 
-        .license-box h3 {
-            text-align: center;
-            margin-bottom: 1.5rem;
-            color: var(--text-dark);
-        }
-
-        .license-box p {
+        .license-card h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
             margin-bottom: 1rem;
-            color: var(--text-dark);
+            color: var(--text-1);
         }
 
-        .license-box a {
+        .license-card p {
+            font-size: 0.9rem;
+            color: var(--text-2);
+            line-height: 1.7;
+            margin-bottom: 0.75rem;
+        }
+
+        .license-card a {
+            color: var(--blue-2);
             font-weight: 600;
-            color: var(--primary-color);
         }
 
+        .license-card a:hover { text-decoration: underline; }
+
+        /* ============================================================
+           FOOTER
+        ============================================================ */
         .footer {
-            text-align: center;
-            padding: 3rem 0;
-            background-color: var(--bg-color);
-            border-top: 1px solid var(--border-color);
-            transition: background-color 0.3s ease, border-color 0.3s ease;
+            position: relative;
+            z-index: 2;
+            padding: 4rem 2rem 2.5rem;
+            border-top: 1px solid var(--border);
+            background: var(--bg-2);
         }
 
-        body.dark-mode .footer {
-            background-color: #2c2c2c;
-            border-color: #444;
+        .footer-inner {
+            max-width: 1140px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.5fr repeat(3, 1fr);
+            gap: 3rem;
         }
 
-        .footer p {
-            color: var(--text-light);
-            margin-bottom: 0.5rem;
+        .footer-brand .nav-logo {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
         }
 
-        .footer a {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-weight: 500;
+        .footer-brand p {
+            font-size: 0.85rem;
+            color: var(--text-3);
+            line-height: 1.7;
+            max-width: 240px;
         }
 
-        .footer a:hover {
-            text-decoration: underline;
+        .footer-col h4 {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-2);
+            margin-bottom: 1rem;
+        }
+
+        .footer-col ul { list-style: none; }
+        .footer-col ul li { margin-bottom: 0.5rem; }
+
+        .footer-col ul li a {
+            font-size: 0.875rem;
+            color: var(--text-3);
+            transition: color var(--transition);
+        }
+
+        .footer-col ul li a:hover { color: var(--blue-2); }
+
+        .footer-bottom {
+            max-width: 1140px;
+            margin: 2.5rem auto 0;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-bottom p {
+            font-size: 0.82rem;
+            color: var(--text-3);
+        }
+
+        .footer-bottom a {
+            color: var(--blue-2);
+            font-weight: 600;
+        }
+
+        /* ============================================================
+           ANIMATIONS
+        ============================================================ */
+        @keyframes fadeInDown {
+            from { opacity:0; transform: translateY(-20px); }
+            to   { opacity:1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity:0; transform: translateY(20px); }
+            to   { opacity:1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity:0; }
+            to   { opacity:1; }
         }
 
         .reveal {
             opacity: 0;
-            transform: translateY(30px);
-            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+            transform: translateY(28px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
         }
 
         .reveal.visible {
@@ -513,499 +956,754 @@
             transform: translateY(0);
         }
 
-        #theme-toggle {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: var(--text-dark);
-            margin-left: 1rem;
-            transition: color 0.3s ease;
+        .reveal-delay-1 { transition-delay: 0.1s; }
+        .reveal-delay-2 { transition-delay: 0.2s; }
+        .reveal-delay-3 { transition-delay: 0.3s; }
+        .reveal-delay-4 { transition-delay: 0.4s; }
+        .reveal-delay-5 { transition-delay: 0.5s; }
+
+        /* ============================================================
+           SYNTAX TOKEN COLORS
+        ============================================================ */
+        .tk-kw  { color: #c678dd; }
+        .tk-fn  { color: #61afef; }
+        .tk-str { color: #98c379; }
+        .tk-num { color: #d19a66; }
+        .tk-cm  { color: #5c6370; font-style: italic; }
+        .tk-op  { color: #56b6c2; }
+        .tk-cl  { color: #e5c07b; }
+        .tk-vr  { color: #e06c75; }
+        .tk-pn  { color: #abb2bf; }
+
+        /* ============================================================
+           SCROLL PROGRESS
+        ============================================================ */
+        #scroll-progress {
+            position: fixed;
+            top: 0; left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--blue-1), var(--indigo), var(--purple));
+            z-index: 9999;
+            transition: width 0.1s linear;
         }
 
-        #theme-toggle:hover {
-            color: var(--primary-color);
+        /* ============================================================
+           DIVIDER
+        ============================================================ */
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border), transparent);
+            margin: 0;
         }
 
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes zoomIn {
-            from {
-                opacity: 0;
-                transform: scale(0.9);
-            }
-
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        @keyframes bounceIn {
-            0% {
-                opacity: 0;
-                transform: scale(0.3);
-            }
-
-            50% {
-                opacity: 1;
-                transform: scale(1.05);
-            }
-
-            70% {
-                transform: scale(0.9);
-            }
-
-            100% {
-                transform: scale(1);
-            }
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-
-            to {
-                opacity: 1;
+        /* ============================================================
+           RESPONSIVE
+        ============================================================ */
+        @media (max-width: 1024px) {
+            .features-grid { grid-template-columns: repeat(2, 1fr); }
+            .modules-grid  { grid-template-columns: repeat(2, 1fr); }
+            .footer-inner  { grid-template-columns: 1fr 1fr; gap: 2rem; }
+            .code-showcase { grid-template-columns: 1fr; }
+            .code-tabs-vertical {
+                flex-direction: row;
+                overflow-x: auto;
+                min-width: unset;
             }
         }
 
         @media (max-width: 768px) {
-            .hero-text h1 {
-                font-size: 2.5rem;
-            }
-
-            .hero-text .subtitle {
-                font-size: 1rem;
-            }
-
-            .section-title {
-                font-size: 2rem;
-            }
-
-            .section-subtitle {
-                font-size: 1rem;
-            }
-
-            .features-grid,
-            .roadmap-grid,
-            .modules-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .code-section-header {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .code-tab-button {
-                width: 90%;
-            }
+            .hero-title { font-size: 2.8rem; }
+            .nav-links { display: none; }
+            .features-grid { grid-template-columns: 1fr; }
+            .steps-grid { grid-template-columns: 1fr; }
+            .community-grid { grid-template-columns: 1fr; }
+            .modules-grid { grid-template-columns: repeat(2, 1fr); }
+            .footer-inner { grid-template-columns: 1fr; }
+            .footer-bottom { flex-direction: column; gap: 0.5rem; text-align: center; }
+            .stats-inner { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
 </head>
 
-<body class="dark-mode">
+<body>
+    <!-- Scroll Progress -->
+    <div id="scroll-progress"></div>
 
-    <header class="navbar">
-        <div class="container">
-            <a href="#" class="logo-link">
-                <img src="site/assets/logo.svg" alt="Sapphire Logo" class="logo-img">
-                <span class="logo-text">Sapphire</span>
+    <!-- Particle Canvas -->
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- ============================================================
+         NAVBAR
+    ============================================================ -->
+    <nav class="navbar" id="navbar">
+        <a href="#" class="nav-logo">
+            <div class="logo-gem">💎</div>
+            <span>Sapphire</span>
+        </a>
+
+        <ul class="nav-links">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#syntax">Syntax</a></li>
+            <li><a href="#modules">Modules</a></li>
+            <li><a href="#get-started">Get Started</a></li>
+            <li><a href="site/docs_intro.html">Docs</a></li>
+        </ul>
+
+        <div class="nav-actions">
+            <a href="https://github.com/foxzyt/Sapphire" target="_blank" class="btn-nav-ghost" id="github-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
+                </svg>
+                GitHub
             </a>
-            <nav class="main-nav">
-                <a href="#why-sapphire">Why Sapphire?</a>
-                <a href="#syntax">Syntax</a>
-                <a href="#get-started">Get Started</a>
-                <a href="site/docs_intro.html">Documentation</a>
-                <a href="https://github.com/foxzyt/Sapphire" target="_blank">GitHub</a>
-                <button id="theme-toggle" aria-label="Toggle theme">💡</button>
-            </nav>
+            <a href="site/docs_intro.html" class="btn-nav-primary">
+                Read Docs
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+            </a>
         </div>
-    </header>
+    </nav>
 
-    <main>
-        <section class="hero">
-            <div class="bubbles" id="bubble-container"></div>
-            <div class="container hero-container">
-                <div class="hero-text">
-                    <h1>A programming language focused on <span class="highlight">performance</span> and <span
-                            class="highlight">simplicity</span>.</h1>
-                    <p class="subtitle">Sapphire is designed for developers who value efficiency, clear syntax, and a
-                        comprehensive built-in ecosystem, minimizing external dependencies.</p>
-                    <a href="site/docs_intro.html" class="cta-button">Read Documentation</a>
+    <!-- ============================================================
+         HERO
+    ============================================================ -->
+    <section class="hero">
+        <div class="hero-bg">
+            <div class="hero-orb hero-orb-1"></div>
+            <div class="hero-orb hero-orb-2"></div>
+            <div class="hero-orb hero-orb-3"></div>
+        </div>
+
+        <div class="hero-content">
+            <div class="hero-badge">
+                <span class="hero-badge-dot"></span>
+                Now at v1.0.6 — Stable Release
+            </div>
+
+            <h1 class="hero-title">
+                <span class="hero-title-line">Code faster.</span>
+                <span class="hero-title-line grad">Build anything.</span>
+            </h1>
+
+            <p class="hero-subtitle">
+                Sapphire is a high-performance programming language crafted in C++. Clean syntax, batteries-included ecosystem — from native UI to SQLite, HTTP, and threading.
+            </p>
+
+            <div class="hero-actions">
+                <a href="site/docs_intro.html" class="btn-primary">
+                    Get Started
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                </a>
+                <a href="https://github.com/foxzyt/Sapphire" target="_blank" class="btn-secondary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                    View on GitHub
+                </a>
+            </div>
+
+            <div class="hero-code">
+                <div class="code-window">
+                    <div class="code-window-bar">
+                        <span class="code-dot code-dot-red"></span>
+                        <span class="code-dot code-dot-yellow"></span>
+                        <span class="code-dot code-dot-green"></span>
+                        <span class="code-window-title">hello_world.sp</span>
+                    </div>
+                    <pre><code><span class="tk-cm">// A taste of Sapphire — simple, expressive, powerful</span>
+<span class="tk-kw">var</span> <span class="tk-vr">name</span> <span class="tk-op">=</span> <span class="tk-str">"World"</span><span class="tk-pn">;</span>
+<span class="tk-fn">print</span><span class="tk-pn">(</span><span class="tk-str">f"Hello, {name}!"</span><span class="tk-pn">);</span>
+
+<span class="tk-cm">// Arrow functions &amp; closures</span>
+<span class="tk-kw">var</span> <span class="tk-fn">square</span> <span class="tk-op">=</span> <span class="tk-pn">(</span><span class="tk-vr">x</span><span class="tk-pn">)</span> <span class="tk-op">=></span> <span class="tk-vr">x</span> <span class="tk-op">*</span> <span class="tk-vr">x</span><span class="tk-pn">;</span>
+<span class="tk-fn">print</span><span class="tk-pn">(</span><span class="tk-str">f"5² = {square(5)}"</span><span class="tk-pn">);</span>
+
+<span class="tk-cm">// Native UI — no external libs needed</span>
+<span class="tk-kw">var</span> <span class="tk-vr">app</span> <span class="tk-op">=</span> <span class="tk-fn">Window</span><span class="tk-pn">({</span>
+    <span class="tk-str">"title"</span><span class="tk-op">:</span> <span class="tk-str">"My App"</span><span class="tk-pn">,</span> <span class="tk-str">"width"</span><span class="tk-op">:</span> <span class="tk-num">800</span><span class="tk-pn">,</span> <span class="tk-str">"height"</span><span class="tk-op">:</span> <span class="tk-num">600</span>
+<span class="tk-pn">});</span></code></pre>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <section id="why-sapphire" class="section">
-            <div class="container">
-                <h2 class="section-title reveal">Why Choose Sapphire?</h2>
-                <p class="section-subtitle reveal">Sapphire isn't just another language; it's a philosophy. We believe
-                    in providing a powerful, yet intuitive, development experience from the ground up.</p>
-                <div class="features-grid">
-                    <div class="feature-card reveal">
-                        <h3>High-Performance Core</h3>
-                        <p>Sapphire's main interpreter is meticulously crafted in C++ to ensure your applications run
-                            with exceptional speed and efficiency, leveraging low-level power.</p>
-                    </div>
-                    <div class="feature-card reveal">
-                        <h3>Batteries Included Ecosystem</h3>
-                        <p>Forget dependency hell. Sapphire aims to provide a comprehensive set of built-in
-                            functionalities, from UI to networking, so you can focus on building, not configuring.</p>
-                    </div>
-                    <div class="feature-card reveal">
-                        <h3>Clear and Expressive Syntax</h3>
-                        <p>Designed for readability and developer ergonomics. Sapphire's syntax is clean, minimizing
-                            boilerplate and allowing your logic to shine through effortlessly.</p>
-                    </div>
-                </div>
+    <!-- ============================================================
+         STATS
+    ============================================================ -->
+    <div class="stats-section">
+        <div class="stats-inner">
+            <div class="stat-item reveal">
+                <div class="stat-number">C++</div>
+                <div class="stat-label">Core Interpreter</div>
             </div>
+            <div class="stat-item reveal reveal-delay-1">
+                <div class="stat-number">12+</div>
+                <div class="stat-label">Built-in Modules</div>
             </div>
-        </section>
-
-        <section id="syntax" class="section section-gray">
-            <div class="container">
-                <h2 class="section-title reveal">Get to Know the Syntax</h2>
-                <p class="section-subtitle reveal">Explore various Sapphire code examples, from basic operations and
-                    data types to complex UI interactions and system calls. Our syntax is designed to be intuitive and
-                    powerful.</p>
-
-                <div class="code-section-header reveal">
-                    <button class="code-tab-button active" data-tab="basic">Basic Syntax</button>
-                    <button class="code-tab-button" data-tab="functions">Functions</button>
-                    <button class="code-tab-button" data-tab="classes">Classes & UI</button>
-                    <button class="code-tab-button" data-tab="system">System & Data</button>
-                </div>
-
-                <div class="code-container reveal">
-                    <div class="code-header">
-                        <span class="filename" id="current-filename">basic_syntax.sp</span>
-                        <button class="copy-button" data-target="code-snippet-basic">Copy</button>
-                    </div>
-                    <pre class="code-snippet active" id="code-snippet-basic"><code><span class="token-comment">// Basic variable declaration and arithmetic operations</span>
-<span class="token-keyword">var</span> <span class="token-variable">a</span> <span class="token-operator">=</span> <span class="token-number">20</span><span class="token-punctuation">;</span>
-<span class="token-keyword">var</span> <span class="token-variable">b</span> <span class="token-operator">=</span> <span class="token-number">10</span><span class="token-punctuation">;</span>
-<span class="token-keyword">var</span> <span class="token-variable">c</span> <span class="token-operator">=</span> <span class="token-number">25.5</span><span class="token-punctuation">;</span>
-
-<span class="token-comment">// Mixed-type arithmetic</span>
-<span class="token-keyword">var</span> <span class="token-variable">result</span> <span class="token-operator">=</span> <span class="token-variable">a</span> <span class="token-operator">-</span> <span class="token-variable">b</span> <span class="token-operator">*</span> <span class="token-variable">c</span><span class="token-punctuation">;</span>
-
-<span class="token-function">print</span>(<span class="token-string">"Result: "</span> <span class="token-operator">+</span> <span class="token-variable">result</span>)<span class="token-punctuation">;</span>
-
-<span class="token-comment">// Boolean logic and type inference</span>
-<span class="token-keyword">var</span> <span class="token-variable">isTrue</span> <span class="token-operator">=</span> <span class="token-keyword">true</span><span class="token-punctuation">;</span>
-<span class="token-keyword">var</span> <span class="token-variable">isFalse</span> <span class="token-operator">=</span> <span class="token-keyword">false</span><span class="token-punctuation">;</span>
-<span class="token-function">print</span>(<span class="token-variable">isTrue</span> <span class="token-operator">&&</span> <span class="token-variable">isFalse</span>)<span class="token-punctuation">;</span>
-
-<span class="token-comment">// String concatenation and Interpolation (f-strings)</span>
-<span class="token-keyword">var</span> <span class="token-variable">greeting</span> <span class="token-operator">=</span> <span class="token-string">"Hello"</span><span class="token-punctuation">;</span>
-<span class="token-keyword">var</span> <span class="token-variable">target</span> <span class="token-operator">=</span> <span class="token-string">"World"</span><span class="token-punctuation">;</span>
-<span class="token-function">print</span>(<span class="token-variable">greeting</span> <span class="token-operator">+</span> <span class="token-string">", "</span> <span class="token-operator">+</span> <span class="token-variable">target</span> <span class="token-operator">+</span> <span class="token-string">"!"</span>)<span class="token-punctuation">;</span>
-<span class="token-function">print</span>(<span class="token-string">f"Or simpler: {greeting}, {target}!"</span>)<span class="token-punctuation">;</span>
-
-<span class="token-comment">// Nullish Coalescing (??)</span>
-<span class="token-keyword">var</span> <span class="token-variable">userInput</span> <span class="token-operator">=</span> <span class="token-keyword">nil</span><span class="token-punctuation">;</span>
-<span class="token-keyword">var</span> <span class="token-variable">username</span> <span class="token-operator">=</span> <span class="token-variable">userInput</span> <span class="token-operator">??</span> <span class="token-string">"Guest"</span><span class="token-punctuation">;</span>
-<span class="token-function">print</span>(<span class="token-string">"Welcome "</span> <span class="token-operator">+</span> <span class="token-variable">username</span>)<span class="token-punctuation">;</span>
-</code></pre>
-
-                    <pre class="code-snippet" id="code-snippet-functions"><code><span class="token-comment">// Function declaration with parameters</span>
-<span class="token-keyword">function</span> <span class="token-function">calculateArea</span>(<span class="token-variable">length</span><span class="token-punctuation">,</span> <span class="token-variable">width</span>) <span class="token-punctuation">{</span>
-    <span class="token-keyword">return</span> <span class="token-variable">length</span> <span class="token-operator">*</span> <span class="token-variable">width</span><span class="token-punctuation">;</span>
-<span class="token-punctuation">}</span>
-
-<span class="token-comment">// Concise Arrow Functions</span>
-<span class="token-keyword">var</span> <span class="token-function">square</span> <span class="token-operator">=</span> (<span class="token-variable">x</span>) <span class="token-operator">=></span> <span class="token-variable">x</span> <span class="token-operator">*</span> <span class="token-variable">x</span><span class="token-punctuation">;</span>
-<span class="token-function">print</span>(<span class="token-string">"Square of 5: "</span> <span class="token-operator">+</span> <span class="token-function">square</span>(<span class="token-number">5</span>))<span class="token-punctuation">;</span>
-
-<span class="token-comment">// Function returning void</span>
-<span class="token-keyword">function</span> <span class="token-function">greet</span>(<span class="token-variable">name</span>) <span class="token-punctuation">{</span>
-    <span class="token-function">print</span>(<span class="token-string">"Hello, "</span> <span class="token-operator">+</span> <span class="token-variable">name</span> <span class="token-operator">+</span> <span class="token-string">"!"</span>)<span class="token-punctuation">;</span>
-<span class="token-punctuation">}</span>
-
-<span class="token-comment">// Recursive function example (Factorial)</span>
-<span class="token-keyword">function</span> <span class="token-function">factorial</span>(<span class="token-variable">n</span>) <span class="token-punctuation">{</span>
-    <span class="token-keyword">if</span> (<span class="token-variable">n</span> <span class="token-operator">==</span> <span class="token-number">0</span>) <span class="token-punctuation">{</span>
-        <span class="token-keyword">return</span> <span class="token-number">1</span><span class="token-punctuation">;</span>
-    <span class="token-punctuation">}</span>
-    <span class="token-keyword">return</span> <span class="token-variable">n</span> <span class="token-operator">*</span> <span class="token-function">factorial</span>(<span class="token-variable">n</span> <span class="token-operator">-</span> <span class="token-number">1</span>)<span class="token-punctuation">;</span>
-<span class="token-punctuation">}</span>
-
-<span class="token-comment">// Function call and variable assignment</span>
-<span class="token-keyword">var</span> <span class="token-variable">roomArea</span> <span class="token-operator">=</span> <span class="token-function">calculateArea</span>(<span class="token-number">10.5</span><span class="token-punctuation">,</span> <span class="token-number">8.0</span>)<span class="token-punctuation">;</span>
-<span class="token-function">print</span>(<span class="token-string">"Room area: "</span> <span class="token-operator">+</span> <span class="token-variable">roomArea</span>)<span class="token-punctuation">;</span>
-
-<span class="token-function">greet</span>(<span class="token-string">"Sapphire User"</span>)<span class="token-punctuation">;</span>
-
-<span class="token-function">print</span>(<span class="token-string">"Factorial of 5: "</span> <span class="token-operator">+</span> <span class="token-function">factorial</span>(<span class="token-number">5</span>))<span class="token-punctuation">;</span>
-</code></pre>
-
-                    <pre class="code-snippet" id="code-snippet-classes"><code><span class="token-comment">// Class declaration with methods</span>
-<span class="token-keyword">class</span> <span class="token-class">ButtonClass</span> <span class="token-punctuation">{</span>
-    <span class="token-keyword">function</span> <span class="token-function">click</span>() <span class="token-punctuation">{</span>
-        <span class="token-function">print</span>(<span class="token-string">"Button was clicked!"</span>)<span class="token-punctuation">;</span>
-    <span class="token-punctuation">}</span>
-<span class="token-punctuation">}</span>
-
-<span class="token-keyword">var</span> <span class="token-variable">myButton</span> <span class="token-operator">=</span> <span class="token-function">ButtonClass</span>()<span class="token-punctuation">;</span>
-
-<span class="token-comment">// The powerful Native UI Engine (Retained-Mode)</span>
-<span class="token-keyword">var</span> <span class="token-variable">app</span> <span class="token-operator">=</span> <span class="token-function">Window</span>(<span class="token-punctuation">{</span>
-    <span class="token-string">"title"</span><span class="token-operator">:</span> <span class="token-string">"My App"</span><span class="token-punctuation">,</span>
-    <span class="token-string">"width"</span><span class="token-operator">:</span> <span class="token-number">400</span><span class="token-punctuation">,</span>
-    <span class="token-string">"height"</span><span class="token-operator">:</span> <span class="token-number">300</span><span class="token-punctuation">,</span>
-    <span class="token-string">"children"</span><span class="token-operator">:</span> <span class="token-punctuation">[</span>
-        <span class="token-function">Text</span>(<span class="token-punctuation">{</span> <span class="token-string">"text"</span><span class="token-operator">:</span> <span class="token-string">"Welcome to Sapphire UI!"</span> <span class="token-punctuation">}</span>)<span class="token-punctuation">,</span>
-        <span class="token-function">Button</span>(<span class="token-punctuation">{</span> 
-            <span class="token-string">"label"</span><span class="token-operator">:</span> <span class="token-string">"Click Me!"</span><span class="token-punctuation">,</span> 
-            <span class="token-string">"onClick"</span><span class="token-operator">:</span> <span class="token-variable">myButton</span><span class="token-punctuation">.</span><span class="token-function">click</span> 
-        <span class="token-punctuation">}</span>)
-    <span class="token-punctuation">]</span>
-<span class="token-punctuation">}</span>)<span class="token-punctuation">;</span>
-
-<span class="token-comment">// Start the Event Loop</span>
-<span class="token-keyword">while</span> (<span class="token-function">updateUI</span>()) <span class="token-punctuation">{</span>
-    <span class="token-function">Render</span>(<span class="token-variable">app</span>)<span class="token-punctuation">;</span>
-<span class="token-punctuation">}</span>
-</code></pre>
-
-                    <pre class="code-snippet" id="code-snippet-system"><code><span class="token-comment">// Working with dynamic arrays (Lists)</span>
-<span class="token-keyword">var</span> <span class="token-variable">myList</span> <span class="token-operator">=</span> <span class="token-function">listCreate</span>()<span class="token-punctuation">;</span>
-<span class="token-function">listAppend</span>(<span class="token-variable">myList</span><span class="token-punctuation">,</span> <span class="token-string">"apple"</span>)<span class="token-punctuation">;</span>
-<span class="token-function">listAppend</span>(<span class="token-variable">myList</span><span class="token-punctuation">,</span> <span class="token-string">"banana"</span>)<span class="token-punctuation">;</span>
-<span class="token-function">listAppend</span>(<span class="token-variable">myList</span><span class="token-punctuation">,</span> <span class="token-number">123</span>)<span class="token-punctuation">;</span>
-
-<span class="token-comment">// Array spread operator and destructuring</span>
-<span class="token-keyword">var</span> <span class="token-variable">extendedList</span> <span class="token-operator">=</span> <span class="token-punctuation">[</span><span class="token-operator">...</span><span class="token-variable">myList</span><span class="token-punctuation">,</span> <span class="token-string">"cherry"</span><span class="token-punctuation">]</span><span class="token-punctuation">;</span>
-<span class="token-keyword">var</span> <span class="token-punctuation">[</span><span class="token-variable">first</span><span class="token-punctuation">,</span> <span class="token-variable">second</span><span class="token-punctuation">]</span> <span class="token-operator">=</span> <span class="token-variable">extendedList</span><span class="token-punctuation">;</span>
-<span class="token-function">print</span>(<span class="token-string">"First element: "</span> <span class="token-operator">+</span> <span class="token-variable">first</span>)<span class="token-punctuation">;</span>
-
-<span class="token-comment">// Shorthand properties and Optional Chaining</span>
-<span class="token-keyword">var</span> <span class="token-variable">name</span> <span class="token-operator">=</span> <span class="token-string">"Fox"</span><span class="token-punctuation">;</span>
-<span class="token-keyword">var</span> <span class="token-variable">score</span> <span class="token-operator">=</span> <span class="token-number">999</span><span class="token-punctuation">;</span>
-<span class="token-keyword">var</span> <span class="token-variable">player</span> <span class="token-operator">=</span> <span class="token-punctuation">{</span> <span class="token-variable">name</span><span class="token-punctuation">,</span> <span class="token-variable">score</span> <span class="token-punctuation">}</span><span class="token-punctuation">;</span>
-
-<span class="token-function">print</span>(<span class="token-string">"Player Name: "</span> <span class="token-operator">+</span> <span class="token-variable">player</span><span class="token-punctuation">[</span><span class="token-string">"name"</span><span class="token-punctuation">]</span>)<span class="token-punctuation">;</span>
-<span class="token-function">print</span>(<span class="token-string">"Guild: "</span> <span class="token-operator">+</span> (<span class="token-variable">player</span><span class="token-operator">?.</span><span class="token-variable">guild</span><span class="token-operator">?.</span><span class="token-variable">name</span> <span class="token-operator">??</span> <span class="token-string">"None"</span>))<span class="token-punctuation">;</span> <span class="token-comment">// Safely handles missing properties</span>
-</code></pre>
-                </div>
+            <div class="stat-item reveal reveal-delay-2">
+                <div class="stat-number">MIT</div>
+                <div class="stat-label">Open Source License</div>
             </div>
-        </section>
-
-
-
-        <section id="get-started" class="section section-gray">
-            <div class="container">
-                <h2 class="section-title reveal">Get Started</h2>
-                <p class="section-subtitle reveal">Ready to write your first Sapphire program? Follow these simple steps
-                    to get the compiler running on your machine.</p>
-
-                <div class="features-grid">
-                    <div class="feature-card reveal">
-                        <h3>1. Download the Compiler</h3>
-                        <p>Head over to our GitHub Releases page and download the latest Windows executable for the
-                            Sapphire Compiler.</p>
-                    </div>
-                    <div class="feature-card reveal">
-                        <h3>2. Write your Code</h3>
-                        <p>Create a file named <code>main.sp</code> in any text editor and write your first lines of
-                            Sapphire code.</p>
-                    </div>
-                    <div class="feature-card reveal">
-                        <h3>3. Run and Pack</h3>
-                        <p>Use the command line to run your script with <code>sapphire.exe main.sp</code> or pack it
-                            into a standalone executable using our built-in packaging tool.</p>
-                    </div>
-                </div>
-
-                <div class="text-center mt-8 reveal" style="text-align: center; margin-top: 3rem;">
-                    <a href="https://github.com/foxzyt/Sapphire/releases" target="_blank" class="cta-button">Download
-                        Latest Release</a>
-                </div>
+            <div class="stat-item reveal reveal-delay-3">
+                <div class="stat-number">v1.0</div>
+                <div class="stat-label">Stable Release</div>
             </div>
-        </section>
+        </div>
+    </div>
 
-        <section id="license" class="section">
-            <div class="container">
-                <h2 class="section-title reveal">License</h2>
-                <div class="license-box reveal">
-                    <h3>MIT License</h3>
-                    <p>Sapphire is open-source software released under the <strong>MIT License</strong>. This permissive
-                        license allows you to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-                        copies of the software.</p>
-                    <p>For more details, please read the <a href="https://opensource.org/licenses/MIT"
-                            target="_blank">full MIT License on Open Source Initiative</a>.</p>
-                </div>
-            </div>
-        </section>
-
-        <section id="community" class="section section-gray">
-            <div class="container">
-                <h2 class="section-title reveal">Join Our Community</h2>
-                <p class="section-subtitle reveal">Sapphire is a community-driven project. Your contributions, feedback,
-                    and ideas are invaluable as we grow and evolve the language.</p>
-                <div class="features-grid">
-                    <div class="feature-card reveal">
-                        <h3>Contribute Code</h3>
-                        <p>Help us improve the core language, build new native modules, or enhance the tooling. Check
-                            out our GitHub for open issues.</p>
-                    </div>
-                    <div class="feature-card reveal">
-                        <h3>Share Your Ideas</h3>
-                        <p>Have a feature request or a new use case for Sapphire? Join our discussions and share your
-                            vision for the language's future.</p>
-                    </div>
-                    <div class="feature-card reveal">
-                        <h3>Report Bugs</h3>
-                        <p>Found an issue? Your bug reports help us make Sapphire more stable and reliable for everyone.
-                            Submit them on our GitHub repository.</p>
-                    </div>
-                </div>
-                <div class="text-center mt-8 reveal">
-                    <a href="https://github.com/foxzyt/Sapphire" target="_blank" class="cta-button">Visit GitHub
-                        Repository</a>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <footer class="footer">
+    <!-- ============================================================
+         FEATURES
+    ============================================================ -->
+    <section class="section" id="features">
         <div class="container">
-            <p>Sapphire Project &copy; 2026. Released under the MIT License.</p>
-            <p>Maintained by <a href="https://github.com/foxzyt" target="_blank">@foxzyt</a>.</p>
+            <div class="section-header-center">
+                <div class="section-label reveal">Why Sapphire</div>
+                <h2 class="section-title reveal reveal-delay-1">Everything you need.<br>Nothing you don't.</h2>
+                <p class="section-subtitle reveal reveal-delay-2">Sapphire is built around a simple idea: a language should be both fast to run and fast to write.</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card reveal">
+                    <div class="feature-icon feature-icon-blue">⚡</div>
+                    <span class="feature-arrow">↗</span>
+                    <h3>C++ Performance Core</h3>
+                    <p>The interpreter is meticulously crafted in C++, giving your programs native-level execution speed without the complexity.</p>
+                </div>
+                <div class="feature-card reveal reveal-delay-1">
+                    <div class="feature-icon feature-icon-indigo">🧰</div>
+                    <span class="feature-arrow">↗</span>
+                    <h3>Batteries Included</h3>
+                    <p>HTTP, SQLite, threading, native UI, file I/O — all built-in. Focus on building your product, not managing dependencies.</p>
+                </div>
+                <div class="feature-card reveal reveal-delay-2">
+                    <div class="feature-icon feature-icon-cyan">✨</div>
+                    <span class="feature-arrow">↗</span>
+                    <h3>Expressive Syntax</h3>
+                    <p>Clean, readable code that feels familiar from day one. Arrow functions, f-strings, optional chaining, nullish coalescing and more.</p>
+                </div>
+                <div class="feature-card reveal reveal-delay-1">
+                    <div class="feature-icon feature-icon-purple">🖥️</div>
+                    <span class="feature-arrow">↗</span>
+                    <h3>Native UI Engine</h3>
+                    <p>Build real desktop windows and GUI applications using Sapphire's retained-mode UI engine — powered by SFML under the hood.</p>
+                </div>
+                <div class="feature-card reveal reveal-delay-2">
+                    <div class="feature-icon feature-icon-green">🔀</div>
+                    <span class="feature-arrow">↗</span>
+                    <h3>Async &amp; Threads</h3>
+                    <p>First-class async/await semantics and multi-threading primitives make concurrent programming simple and predictable.</p>
+                </div>
+                <div class="feature-card reveal reveal-delay-3">
+                    <div class="feature-icon feature-icon-orange">📦</div>
+                    <span class="feature-arrow">↗</span>
+                    <h3>Standalone Executables</h3>
+                    <p>Package your Sapphire scripts into single self-contained executables with the built-in <code>runner</code> tool. Ship anywhere.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============================================================
+         SYNTAX SHOWCASE
+    ============================================================ -->
+    <section class="section section-alt" id="syntax">
+        <div class="container">
+            <div class="section-header-center">
+                <div class="section-label reveal">Syntax</div>
+                <h2 class="section-title reveal reveal-delay-1">Elegant by design.</h2>
+                <p class="section-subtitle reveal reveal-delay-2">Explore Sapphire's clean, expressive syntax across multiple domains.</p>
+            </div>
+
+            <div class="code-showcase reveal reveal-delay-1">
+                <div class="code-tabs-vertical" id="code-tabs">
+                    <button class="code-tab active" data-tab="basic">
+                        <span class="tab-icon">📝</span> Basics
+                    </button>
+                    <button class="code-tab" data-tab="functions">
+                        <span class="tab-icon">⚙️</span> Functions
+                    </button>
+                    <button class="code-tab" data-tab="oop">
+                        <span class="tab-icon">🏗️</span> Classes
+                    </button>
+                    <button class="code-tab" data-tab="async">
+                        <span class="tab-icon">⏳</span> Async
+                    </button>
+                    <button class="code-tab" data-tab="ui">
+                        <span class="tab-icon">🖥️</span> UI
+                    </button>
+                </div>
+
+                <div class="code-panel">
+                    <div class="code-panel-header">
+                        <span class="code-panel-file">
+                            <span class="file-dot"></span>
+                            <span id="tab-filename">basic_syntax.sp</span>
+                        </span>
+                        <button class="btn-copy" id="main-copy-btn">Copy</button>
+                    </div>
+
+                    <!-- BASIC -->
+                    <pre class="snippet-active" id="snippet-basic"><code><span class="tk-cm">// Variables &amp; type inference</span>
+<span class="tk-kw">var</span> <span class="tk-vr">name</span>  <span class="tk-op">=</span> <span class="tk-str">"Sapphire"</span><span class="tk-pn">;</span>
+<span class="tk-kw">var</span> <span class="tk-vr">value</span> <span class="tk-op">=</span> <span class="tk-num">42</span><span class="tk-pn">;</span>
+<span class="tk-kw">var</span> <span class="tk-vr">pi</span>    <span class="tk-op">=</span> <span class="tk-num">3.14159</span><span class="tk-pn">;</span>
+<span class="tk-kw">var</span> <span class="tk-vr">flag</span>  <span class="tk-op">=</span> <span class="tk-kw">true</span><span class="tk-pn">;</span>
+
+<span class="tk-cm">// f-string interpolation</span>
+<span class="tk-fn">print</span><span class="tk-pn">(</span><span class="tk-str">f"Language: {name}, Value: {value}"</span><span class="tk-pn">);</span>
+
+<span class="tk-cm">// Nullish coalescing (??)</span>
+<span class="tk-kw">var</span> <span class="tk-vr">input</span>    <span class="tk-op">=</span> <span class="tk-kw">nil</span><span class="tk-pn">;</span>
+<span class="tk-kw">var</span> <span class="tk-vr">username</span> <span class="tk-op">=</span> <span class="tk-vr">input</span> <span class="tk-op">??</span> <span class="tk-str">"Guest"</span><span class="tk-pn">;</span>
+<span class="tk-fn">print</span><span class="tk-pn">(</span><span class="tk-str">f"Welcome, {username}!"</span><span class="tk-pn">);</span>
+
+<span class="tk-cm">// Optional chaining (?.)  </span>
+<span class="tk-kw">var</span> <span class="tk-vr">guild</span> <span class="tk-op">=</span> <span class="tk-vr">player</span><span class="tk-op">?.</span><span class="tk-vr">guild</span><span class="tk-op">?.</span><span class="tk-vr">name</span> <span class="tk-op">??</span> <span class="tk-str">"None"</span><span class="tk-pn">;</span></code></pre>
+
+                    <!-- FUNCTIONS -->
+                    <pre class="snippet-hidden" id="snippet-functions"><code><span class="tk-cm">// Named functions</span>
+<span class="tk-kw">function</span> <span class="tk-fn">calculateArea</span><span class="tk-pn">(</span><span class="tk-vr">w</span><span class="tk-pn">,</span> <span class="tk-vr">h</span><span class="tk-pn">)</span> <span class="tk-pn">{</span>
+    <span class="tk-kw">return</span> <span class="tk-vr">w</span> <span class="tk-op">*</span> <span class="tk-vr">h</span><span class="tk-pn">;</span>
+<span class="tk-pn">}</span>
+
+<span class="tk-cm">// Concise arrow functions</span>
+<span class="tk-kw">var</span> <span class="tk-fn">square</span>  <span class="tk-op">=</span> <span class="tk-pn">(</span><span class="tk-vr">x</span><span class="tk-pn">)</span> <span class="tk-op">=></span> <span class="tk-vr">x</span> <span class="tk-op">*</span> <span class="tk-vr">x</span><span class="tk-pn">;</span>
+<span class="tk-kw">var</span> <span class="tk-fn">greet</span>   <span class="tk-op">=</span> <span class="tk-pn">(</span><span class="tk-vr">n</span><span class="tk-pn">)</span> <span class="tk-op">=></span> <span class="tk-fn">print</span><span class="tk-pn">(</span><span class="tk-str">f"Hi, {n}!"</span><span class="tk-pn">);</span>
+
+<span class="tk-cm">// Recursion (factorial)</span>
+<span class="tk-kw">function</span> <span class="tk-fn">factorial</span><span class="tk-pn">(</span><span class="tk-vr">n</span><span class="tk-pn">)</span> <span class="tk-pn">{</span>
+    <span class="tk-kw">if</span> <span class="tk-pn">(</span><span class="tk-vr">n</span> <span class="tk-op">==</span> <span class="tk-num">0</span><span class="tk-pn">)</span> <span class="tk-kw">return</span> <span class="tk-num">1</span><span class="tk-pn">;</span>
+    <span class="tk-kw">return</span> <span class="tk-vr">n</span> <span class="tk-op">*</span> <span class="tk-fn">factorial</span><span class="tk-pn">(</span><span class="tk-vr">n</span> <span class="tk-op">-</span> <span class="tk-num">1</span><span class="tk-pn">);</span>
+<span class="tk-pn">}</span>
+
+<span class="tk-fn">print</span><span class="tk-pn">(</span><span class="tk-str">f"10! = {factorial(10)}"</span><span class="tk-pn">);</span>
+<span class="tk-fn">greet</span><span class="tk-pn">(</span><span class="tk-str">"Sapphire User"</span><span class="tk-pn">);</span></code></pre>
+
+                    <!-- OOP -->
+                    <pre class="snippet-hidden" id="snippet-oop"><code><span class="tk-kw">class</span> <span class="tk-cl">Animal</span> <span class="tk-pn">{</span>
+    <span class="tk-kw">function</span> <span class="tk-fn">speak</span><span class="tk-pn">()</span> <span class="tk-pn">{</span>
+        <span class="tk-fn">print</span><span class="tk-pn">(</span><span class="tk-str">"..."</span><span class="tk-pn">);</span>
+    <span class="tk-pn">}</span>
+<span class="tk-pn">}</span>
+
+<span class="tk-kw">class</span> <span class="tk-cl">Dog</span> <span class="tk-kw">extends</span> <span class="tk-cl">Animal</span> <span class="tk-pn">{</span>
+    <span class="tk-kw">function</span> <span class="tk-fn">init</span><span class="tk-pn">(</span><span class="tk-vr">name</span><span class="tk-pn">)</span> <span class="tk-pn">{</span>
+        <span class="tk-kw">this</span><span class="tk-pn">.</span><span class="tk-vr">name</span> <span class="tk-op">=</span> <span class="tk-vr">name</span><span class="tk-pn">;</span>
+    <span class="tk-pn">}</span>
+    <span class="tk-kw">function</span> <span class="tk-fn">speak</span><span class="tk-pn">()</span> <span class="tk-pn">{</span>
+        <span class="tk-fn">print</span><span class="tk-pn">(</span><span class="tk-str">f"{this.name} says: Woof!"</span><span class="tk-pn">);</span>
+    <span class="tk-pn">}</span>
+<span class="tk-pn">}</span>
+
+<span class="tk-kw">var</span> <span class="tk-vr">buddy</span> <span class="tk-op">=</span> <span class="tk-fn">Dog</span><span class="tk-pn">(</span><span class="tk-str">"Buddy"</span><span class="tk-pn">);</span>
+<span class="tk-vr">buddy</span><span class="tk-pn">.</span><span class="tk-fn">speak</span><span class="tk-pn">();</span> <span class="tk-cm">// Buddy says: Woof!</span></code></pre>
+
+                    <!-- ASYNC -->
+                    <pre class="snippet-hidden" id="snippet-async"><code><span class="tk-kw">import</span> <span class="tk-str">"http"</span><span class="tk-pn">;</span>
+
+<span class="tk-cm">// Async function with await</span>
+<span class="tk-kw">async function</span> <span class="tk-fn">fetchData</span><span class="tk-pn">(</span><span class="tk-vr">url</span><span class="tk-pn">)</span> <span class="tk-pn">{</span>
+    <span class="tk-kw">var</span> <span class="tk-vr">res</span> <span class="tk-op">=</span> <span class="tk-kw">await</span> <span class="tk-fn">http_get</span><span class="tk-pn">(</span><span class="tk-vr">url</span><span class="tk-pn">);</span>
+    <span class="tk-fn">print</span><span class="tk-pn">(</span><span class="tk-str">f"Status: {res.status}"</span><span class="tk-pn">);</span>
+    <span class="tk-kw">return</span> <span class="tk-vr">res</span><span class="tk-pn">.</span><span class="tk-vr">body</span><span class="tk-pn">;</span>
+<span class="tk-pn">}</span>
+
+<span class="tk-cm">// Parallel async calls</span>
+<span class="tk-kw">async function</span> <span class="tk-fn">main</span><span class="tk-pn">()</span> <span class="tk-pn">{</span>
+    <span class="tk-kw">var</span> <span class="tk-vr">data</span> <span class="tk-op">=</span> <span class="tk-kw">await</span> <span class="tk-fn">fetchData</span><span class="tk-pn">(</span>
+        <span class="tk-str">"https://api.example.com/users"</span>
+    <span class="tk-pn">);</span>
+    <span class="tk-fn">print</span><span class="tk-pn">(</span><span class="tk-vr">data</span><span class="tk-pn">);</span>
+<span class="tk-pn">}</span>
+<span class="tk-fn">main</span><span class="tk-pn">();</span></code></pre>
+
+                    <!-- UI -->
+                    <pre class="snippet-hidden" id="snippet-ui"><code><span class="tk-cm">// Native Desktop UI — no frameworks needed!</span>
+<span class="tk-kw">var</span> <span class="tk-vr">count</span> <span class="tk-op">=</span> <span class="tk-num">0</span><span class="tk-pn">;</span>
+
+<span class="tk-kw">var</span> <span class="tk-fn">onIncrement</span> <span class="tk-op">=</span> <span class="tk-pn">()</span> <span class="tk-op">=></span> <span class="tk-pn">{</span>
+    <span class="tk-vr">count</span> <span class="tk-op">=</span> <span class="tk-vr">count</span> <span class="tk-op">+</span> <span class="tk-num">1</span><span class="tk-pn">;</span>
+    <span class="tk-fn">print</span><span class="tk-pn">(</span><span class="tk-str">f"Count: {count}"</span><span class="tk-pn">);</span>
+<span class="tk-pn">};</span>
+
+<span class="tk-kw">var</span> <span class="tk-vr">app</span> <span class="tk-op">=</span> <span class="tk-fn">Window</span><span class="tk-pn">({</span>
+    <span class="tk-str">"title"</span><span class="tk-op">:</span> <span class="tk-str">"Counter"</span><span class="tk-pn">,</span>
+    <span class="tk-str">"width"</span><span class="tk-op">:</span> <span class="tk-num">400</span><span class="tk-pn">,</span> <span class="tk-str">"height"</span><span class="tk-op">:</span> <span class="tk-num">300</span><span class="tk-pn">,</span>
+    <span class="tk-str">"children"</span><span class="tk-op">:</span> <span class="tk-pn">[</span>
+        <span class="tk-fn">Text</span><span class="tk-pn">({</span> <span class="tk-str">"text"</span><span class="tk-op">:</span> <span class="tk-str">"Sapphire Counter!"</span> <span class="tk-pn">}),</span>
+        <span class="tk-fn">Button</span><span class="tk-pn">({</span>
+            <span class="tk-str">"label"</span><span class="tk-op">:</span> <span class="tk-str">"Increment"</span><span class="tk-pn">,</span>
+            <span class="tk-str">"onClick"</span><span class="tk-op">:</span> <span class="tk-vr">onIncrement</span>
+        <span class="tk-pn">})</span>
+    <span class="tk-pn">]</span>
+<span class="tk-pn">});</span>
+<span class="tk-kw">while</span> <span class="tk-pn">(</span><span class="tk-fn">updateUI</span><span class="tk-pn">())</span> <span class="tk-fn">Render</span><span class="tk-pn">(</span><span class="tk-vr">app</span><span class="tk-pn">);</span></code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============================================================
+         MODULES
+    ============================================================ -->
+    <section class="section" id="modules">
+        <div class="container">
+            <div class="section-header-center">
+                <div class="section-label reveal">Built-in Modules</div>
+                <h2 class="section-title reveal reveal-delay-1">A complete ecosystem.</h2>
+                <p class="section-subtitle reveal reveal-delay-2">Every module you need is already included — no package manager required.</p>
+            </div>
+
+            <div class="modules-grid">
+                <div class="module-card reveal">
+                    <div class="module-icon">🖥️</div>
+                    <h3>UI Engine</h3>
+                    <p>Desktop windows & widgets</p>
+                </div>
+                <div class="module-card reveal reveal-delay-1">
+                    <div class="module-icon">🌐</div>
+                    <h3>HTTP</h3>
+                    <p>REST requests & responses</p>
+                </div>
+                <div class="module-card reveal reveal-delay-2">
+                    <div class="module-icon">🗄️</div>
+                    <h3>SQLite</h3>
+                    <p>Full database support</p>
+                </div>
+                <div class="module-card reveal reveal-delay-3">
+                    <div class="module-icon">🔀</div>
+                    <h3>Threading</h3>
+                    <p>Native multi-threading</p>
+                </div>
+                <div class="module-card reveal">
+                    <div class="module-icon">📁</div>
+                    <h3>File I/O</h3>
+                    <p>Read, write, append</p>
+                </div>
+                <div class="module-card reveal reveal-delay-1">
+                    <div class="module-icon">⏳</div>
+                    <h3>Async/Await</h3>
+                    <p>Non-blocking operations</p>
+                </div>
+                <div class="module-card reveal reveal-delay-2">
+                    <div class="module-icon">🏗️</div>
+                    <h3>OOP</h3>
+                    <p>Classes & inheritance</p>
+                </div>
+                <div class="module-card reveal reveal-delay-3">
+                    <div class="module-icon">🛡️</div>
+                    <h3>Exceptions</h3>
+                    <p>Try/catch/finally</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============================================================
+         GET STARTED
+    ============================================================ -->
+    <section class="section section-alt" id="get-started">
+        <div class="container">
+            <div class="section-header-center">
+                <div class="section-label reveal">Quick Start</div>
+                <h2 class="section-title reveal reveal-delay-1">Up and running in minutes.</h2>
+                <p class="section-subtitle reveal reveal-delay-2">Three simple steps to write and run your first Sapphire program.</p>
+            </div>
+
+            <div class="steps-grid">
+                <div class="step-card reveal">
+                    <div class="step-num">1</div>
+                    <h3>Download the Compiler</h3>
+                    <p>Head to our GitHub Releases page and download the latest <code>sapphire.exe</code> for Windows. No installation required — just drop it anywhere.</p>
+                </div>
+                <div class="step-card reveal reveal-delay-1">
+                    <div class="step-num">2</div>
+                    <h3>Write Your Code</h3>
+                    <p>Create a file named <code>main.sp</code> in any text editor. Write your first lines of Sapphire — the syntax will feel immediately familiar.</p>
+                </div>
+                <div class="step-card reveal reveal-delay-2">
+                    <div class="step-num">3</div>
+                    <h3>Run &amp; Ship</h3>
+                    <p>Execute with <code>sapphire.exe main.sp</code>. When ready to ship, pack into a self-contained binary with the built-in packaging tool.</p>
+                </div>
+            </div>
+
+            <div style="text-align:center; margin-top: 3.5rem;" class="reveal reveal-delay-2">
+                <a href="https://github.com/foxzyt/Sapphire/releases" target="_blank" class="btn-primary" style="display:inline-flex;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                    </svg>
+                    Download Latest Release
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============================================================
+         COMMUNITY
+    ============================================================ -->
+    <section class="section" id="community">
+        <div class="container">
+            <div class="section-header-center">
+                <div class="section-label reveal">Community</div>
+                <h2 class="section-title reveal reveal-delay-1">Built together, for everyone.</h2>
+                <p class="section-subtitle reveal reveal-delay-2">Sapphire is open source and community-driven. Every contribution makes it better.</p>
+            </div>
+
+            <div class="community-grid">
+                <div class="feature-card reveal">
+                    <div class="feature-icon feature-icon-blue">🛠️</div>
+                    <h3>Contribute Code</h3>
+                    <p>Help improve the core interpreter, write new built-in modules, or enhance the standard tooling. PRs are always welcome.</p>
+                </div>
+                <div class="feature-card reveal reveal-delay-1">
+                    <div class="feature-icon feature-icon-indigo">💡</div>
+                    <h3>Share Ideas</h3>
+                    <p>Have a feature request or a new use-case in mind? Open a discussion on GitHub and help shape the language's future.</p>
+                </div>
+                <div class="feature-card reveal reveal-delay-2">
+                    <div class="feature-icon feature-icon-purple">🐛</div>
+                    <h3>Report Bugs</h3>
+                    <p>Found an issue? Detailed bug reports help us make Sapphire more stable and reliable for every developer using it.</p>
+                </div>
+            </div>
+
+            <div style="text-align:center; margin-top: 3.5rem;" class="reveal reveal-delay-2">
+                <a href="https://github.com/foxzyt/Sapphire" target="_blank" class="btn-secondary" style="display:inline-flex;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                    Visit GitHub Repository
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ============================================================
+         LICENSE
+    ============================================================ -->
+    <section class="section" id="license">
+        <div class="container">
+            <div class="section-header-center">
+                <div class="section-label reveal">Open Source</div>
+                <h2 class="section-title reveal reveal-delay-1">MIT Licensed</h2>
+            </div>
+            <div class="license-card reveal reveal-delay-1">
+                <h3>🔓 Free to use, forever.</h3>
+                <p>Sapphire is open-source software released under the <strong>MIT License</strong>. Use it, fork it, build products with it — commercially or personally — no strings attached.</p>
+                <p>For the full legal text, see the <a href="https://opensource.org/licenses/MIT" target="_blank">MIT License on the Open Source Initiative</a>.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================
+         FOOTER
+    ============================================================ -->
+    <footer class="footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <div class="nav-logo" style="margin-bottom:1rem;">
+                    <div class="logo-gem">💎</div>
+                    <span>Sapphire</span>
+                </div>
+                <p>A high-performance, expressive programming language built for modern developers.</p>
+            </div>
+
+            <div class="footer-col">
+                <h4>Documentation</h4>
+                <ul>
+                    <li><a href="site/docs_intro.html">Introduction</a></li>
+                    <li><a href="site/docs_control_flow.html">Control Flow</a></li>
+                    <li><a href="site/docs_oop.html">Classes & OOP</a></li>
+                    <li><a href="site/docs_async.html">Async & Await</a></li>
+                    <li><a href="site/docs_ui_engine.html">UI Engine</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Modules</h4>
+                <ul>
+                    <li><a href="site/docs_http.html">HTTP Requests</a></li>
+                    <li><a href="site/docs_sqlite.html">SQLite</a></li>
+                    <li><a href="site/docs_threading.html">Threading</a></li>
+                    <li><a href="site/docs_file_io.html">File I/O</a></li>
+                    <li><a href="site/docs_exceptions.html">Exceptions</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Project</h4>
+                <ul>
+                    <li><a href="https://github.com/foxzyt/Sapphire" target="_blank">GitHub</a></li>
+                    <li><a href="https://github.com/foxzyt/Sapphire/releases" target="_blank">Releases</a></li>
+                    <li><a href="https://github.com/foxzyt/Sapphire/issues" target="_blank">Issues</a></li>
+                    <li><a href="CHANGELOG.md" target="_blank">Changelog</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>© 2026 Sapphire Project. Released under the MIT License.</p>
+            <p>Made with ❤️ by <a href="https://github.com/foxzyt" target="_blank">@foxzyt</a></p>
         </div>
     </footer>
 
+    <!-- ============================================================
+         JAVASCRIPT
+    ============================================================ -->
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const allCopyButtons = document.querySelectorAll('.copy-button');
-            allCopyButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const targetId = button.getAttribute('data-target');
-                    const codeSnippet = document.getElementById(targetId);
+    (function() {
+        // ─── Scroll Progress ───────────────────────────────────────────
+        const progress = document.getElementById('scroll-progress');
+        window.addEventListener('scroll', () => {
+            const total = document.documentElement.scrollHeight - window.innerHeight;
+            const pct   = (window.scrollY / total) * 100;
+            progress.style.width = pct + '%';
+        }, { passive: true });
 
-                    if (codeSnippet) {
-                        navigator.clipboard.writeText(codeSnippet.innerText).then(() => {
-                            const originalText = button.innerHTML;
-                            button.innerHTML = 'Copied!';
-                            button.style.backgroundColor = '#28a745';
+        // ─── Navbar Scrolled State ─────────────────────────────────────
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            navbar.classList.toggle('scrolled', window.scrollY > 40);
+        }, { passive: true });
 
-                            setTimeout(() => {
-                                button.innerHTML = 'Copy';
-                                button.style.backgroundColor = '';
-                            }, 2000);
-                        }).catch(err => {
-                            console.error('Failed to copy code: ', err);
-                            button.innerHTML = 'Error!';
-                        });
-                    }
-                });
+        // ─── Reveal on Scroll ──────────────────────────────────────────
+        const io = new IntersectionObserver((entries) => {
+            entries.forEach(e => {
+                if (e.isIntersecting) {
+                    e.target.classList.add('visible');
+                    io.unobserve(e.target);
+                }
             });
+        }, { threshold: 0.08 });
 
-            const revealElements = document.querySelectorAll('.reveal');
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('visible');
-                        observer.unobserve(entry.target);
-                    }
-                });
-            }, {
-                threshold: 0.1
+        document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+        // ─── Code Tabs ─────────────────────────────────────────────────
+        const tabs = document.querySelectorAll('.code-tab');
+        const filenames = {
+            basic:     'basic_syntax.sp',
+            functions: 'functions.sp',
+            oop:       'classes.sp',
+            async:     'async_http.sp',
+            ui:        'desktop_app.sp'
+        };
+
+        function switchTab(name) {
+            tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+            document.querySelectorAll('[id^="snippet-"]').forEach(s => {
+                const isActive = s.id === `snippet-${name}`;
+                s.className = isActive ? 'snippet-active' : 'snippet-hidden';
             });
+            document.getElementById('tab-filename').textContent = filenames[name] || name + '.sp';
+        }
 
-            revealElements.forEach(element => {
-                observer.observe(element);
-            });
+        tabs.forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
 
-            const codeTabButtons = document.querySelectorAll('.code-tab-button');
-            const codeSnippets = document.querySelectorAll('.code-snippet');
-            const currentFilenameSpan = document.getElementById('current-filename');
-            const copyButton = document.querySelector('.code-container .copy-button');
-
-            const codeFilenames = {
-                'basic': 'basic_syntax.sp',
-                'functions': 'functions.sp',
-                'classes': 'ui_app.sp',
-                'system': 'system_and_arrays.sp'
-            };
-
-            function showCodeTab(tabName) {
-                codeTabButtons.forEach(button => {
-                    button.classList.remove('active');
-                });
-                codeSnippets.forEach(snippet => {
-                    snippet.classList.remove('active');
-                });
-
-                document.querySelector(`.code-tab-button[data-tab="${tabName}"]`).classList.add('active');
-                document.getElementById(`code-snippet-${tabName}`).classList.add('active');
-                currentFilenameSpan.textContent = codeFilenames[tabName];
-                copyButton.setAttribute('data-target', `code-snippet-${tabName}`);
-            }
-
-            codeTabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    showCodeTab(button.getAttribute('data-tab'));
-                });
-            });
-
-            showCodeTab('basic');
-
-            const bubbleContainer = document.getElementById('bubble-container');
-            function createBubble() {
-                const bubble = document.createElement('div');
-                bubble.classList.add('bubble');
-                const size = 10;
-                bubble.style.width = `${size}px`;
-                bubble.style.height = `${size}px`;
-                bubble.style.left = `${Math.random() * 100}%`;
-                bubble.style.bottom = `-20px`;
-                bubble.style.animationDuration = `${Math.random() * 15 + 10}s`;
-                bubble.style.animationDelay = `${Math.random() * 5}s`;
-                bubbleContainer.appendChild(bubble);
+        // ─── Copy Button ───────────────────────────────────────────────
+        document.getElementById('main-copy-btn').addEventListener('click', function() {
+            const active = document.querySelector('[id^="snippet-"].snippet-active');
+            if (!active) return;
+            navigator.clipboard.writeText(active.innerText).then(() => {
+                this.textContent = '✓ Copied!';
+                this.classList.add('copied');
                 setTimeout(() => {
-                    bubble.remove();
-                }, parseFloat(bubble.style.animationDuration) * 1000);
-            }
-            setInterval(createBubble, 500);
+                    this.textContent = 'Copy';
+                    this.classList.remove('copied');
+                }, 2000);
+            });
+        });
 
-            const themeToggle = document.getElementById('theme-toggle');
-            themeToggle.addEventListener('click', () => {
-                document.body.classList.toggle('dark-mode');
-                if (document.body.classList.contains('dark-mode')) {
-                    themeToggle.textContent = '🌙';
-                } else {
-                    themeToggle.textContent = '💡';
+        // ─── Particle Canvas ───────────────────────────────────────────
+        const canvas = document.getElementById('particles-canvas');
+        const ctx    = canvas.getContext('2d');
+
+        let W, H, particles = [];
+
+        function resize() {
+            W = canvas.width  = window.innerWidth;
+            H = canvas.height = window.innerHeight;
+        }
+
+        function Particle() {
+            this.x    = Math.random() * W;
+            this.y    = Math.random() * H;
+            this.vx   = (Math.random() - 0.5) * 0.3;
+            this.vy   = (Math.random() - 0.5) * 0.3;
+            this.r    = Math.random() * 1.5 + 0.5;
+            this.a    = Math.random() * 0.6 + 0.1;
+        }
+
+        function initParticles(n) {
+            particles = Array.from({ length: n }, () => new Particle());
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, W, H);
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                if (p.x < 0) p.x = W;
+                if (p.x > W) p.x = 0;
+                if (p.y < 0) p.y = H;
+                if (p.y > H) p.y = 0;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(96,165,250,${p.a})`;
+                ctx.fill();
+            });
+
+            // Connections
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx   = particles[i].x - particles[j].x;
+                    const dy   = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 120) {
+                        const a = (1 - dist / 120) * 0.15;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.strokeStyle = `rgba(99,102,241,${a})`;
+                        ctx.lineWidth = 0.8;
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        resize();
+        initParticles(70);
+        animate();
+        window.addEventListener('resize', () => { resize(); initParticles(70); });
+
+        // ─── Counter Animation ─────────────────────────────────────────
+        const counters = document.querySelectorAll('.stat-number');
+        const counterIo = new IntersectionObserver((entries) => {
+            entries.forEach(e => {
+                if (e.isIntersecting) {
+                    e.target.style.animationPlayState = 'running';
+                    counterIo.unobserve(e.target);
                 }
             });
         });
+        counters.forEach(c => counterIo.observe(c));
+
+    })();
     </script>
 </body>
-
 </html>

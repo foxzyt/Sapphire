@@ -3,101 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-threading - Sapphire Documentation</title>
+    <title>Multi-threading — Sapphire Docs</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body class="dark-mode">
+    <!-- Mobile Sidebar Toggle -->
+    <button class="sidebar-toggle" aria-label="Open menu">&#9776;</button>
+    <div class="sidebar-overlay"></div>
+
     <div class="docs-layout">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <button id="theme-toggle" aria-label="Toggle theme">💡</button>
-            <a href="../index.html" class="sidebar-logo">
-                <img src="assets/logo.svg" alt="Logo"> Sapphire
-            </a>
-            <nav>
-                <h4>Part 1: The Core</h4>
-                <ul>
-                    <li><a href="docs_intro.html">1. Intro & Variables</a></li>
-                    <li><a href="docs_control_flow.html">2. Control Flow & Functions</a></li>
-                    <li><a href="docs_data_structures.html">3. Lists & Maps</a></li>
-                    <li><a href="docs_std_basic.html">4. Math & System Modules</a></li>
-                </ul>
+            <div class="sidebar-inner">
+                <div class="sidebar-header">
+                    <a href="../index.html" class="sidebar-logo">
+                        <div class="logo-gem">&#x1F48E;</div>
+                        Sapphire
+                    </a>
+                    <button id="sidebar-theme-toggle" aria-label="Toggle theme">&#x1F319;</button>
+                </div>
+                <div class="sidebar-nav-body">
+                <nav>
+                    <h4>Part 1: The Core</h4>
+                    <ul>
+                        <li><a href="docs_intro.html">1. Intro &amp; Variables</a></li>
+                        <li><a href="docs_control_flow.html">2. Control Flow &amp; Functions</a></li>
+                        <li><a href="docs_data_structures.html">3. Lists &amp; Maps</a></li>
+                        <li><a href="docs_std_basic.html">4. Math &amp; System Modules</a></li>
+                    </ul>
 
-                <h4>Part 2: Advanced</h4>
-                <ul>
-                    <li><a href="docs_oop.html">5. Object-Oriented (OOP)</a></li>
-                    <li><a href="docs_exceptions.html">6. Exceptions Handling</a></li>
-                    <li><a href="docs_async.html">7. Async & Await</a></li>
-                    <li><a href="docs_threading.html" class="active">8. Multi-threading</a></li>
-                </ul>
+                    <h4>Part 2: Advanced</h4>
+                    <ul>
+                        <li><a href="docs_oop.html">5. Object-Oriented (OOP)</a></li>
+                        <li><a href="docs_exceptions.html">6. Exceptions Handling</a></li>
+                        <li><a href="docs_async.html">7. Async &amp; Await</a></li>
+                        <li><a href="docs_threading.html" class="active">8. Multi-threading</a></li>
+                    </ul>
 
-                <h4>Part 3: I/O & UI</h4>
-                <ul>
-                    <li><a href="docs_file_io.html">9. File I/O</a></li>
-                    <li><a href="docs_http.html">10. HTTP Requests</a></li>
-                    <li><a href="docs_ui_engine.html">11. UI Engine</a></li>
-                    <li><a href="docs_sqlite.html">12. SQLite Database</a></li>`n                </ul>
-            </nav>
+                    <h4>Part 3: I/O &amp; UI</h4>
+                    <ul>
+                        <li><a href="docs_file_io.html">9. File I/O</a></li>
+                        <li><a href="docs_http.html">10. HTTP Requests</a></li>
+                        <li><a href="docs_ui_engine.html">11. UI Engine</a></li>
+                        <li><a href="docs_sqlite.html">12. SQLite Database</a></li>
+                    </ul>
+                </nav>
+                </div>
+                <div class="sidebar-footer">
+                    <span class="version-badge">&#x1F48E; v1.0.6</span>
+                </div>
+            </div>
         </aside>
 
-        <!-- Main Content -->
         <main class="docs-content">
             <h1>Multi-threading</h1>
-            <p>While <code>async/await</code> is perfect for I/O bound tasks (like waiting for the network), it still runs on a single thread. If you need to perform heavy mathematical calculations (CPU-bound tasks), you need true concurrency. Sapphire provides access to OS-level threads via the <code>Thread</code> class.</p>
+
+            <div class="info-box">
+                <strong>📖 What You Will Learn in This Chapter:</strong>
+                <ul>
+                    <li>The difference between <strong>async</strong> (concurrency) and <strong>threading</strong> (parallelism)</li>
+                    <li>How to spawn background threads with <code>Thread.spawn()</code></li>
+                    <li>How to wait for threads to finish with <code>join()</code></li>
+                    <li>What <strong>race conditions</strong> are and how to prevent them with <code>Mutex</code></li>
+                    <li>How to create CPU-heavy applications without freezing the UI</li>
+                </ul>
+            </div>
+
+            <p>While <code>async/await</code> is perfect for I/O bound tasks (like waiting for the network), it still runs on a single thread. If you need to perform heavy mathematical calculations (CPU-bound tasks), you need true parallelism. Sapphire provides access to OS-level threads via the <code>Thread</code> class and the <code>spawn</code> keyword.</p>
+
+            <h2>Async vs Threading</h2>
+            <p>It's important to understand the difference:</p>
+            <ul>
+                <li><strong>Async/await</strong>: Runs multiple tasks on a single thread by switching between them when they wait. Great for I/O (network, files, timers).</li>
+                <li><strong>Threading</strong>: Runs multiple tasks on <em>separate CPU cores</em> simultaneously. Great for CPU-heavy calculations (math, physics, image processing).</li>
+            </ul>
 
             <h2>Creating and Spawning Threads</h2>
-            <p>You can spawn a new thread by passing a function into <code>Thread.spawn()</code>. The Virtual Machine will immediately schedule this function to run on a completely separate CPU core if available!</p>
-            
+            <p>You can spawn a new thread by passing a function into <code>Thread.spawn()</code> or using the <code>spawn</code> keyword. The Virtual Machine will immediately schedule this function to run on a completely separate CPU core if available.</p>
+
             <div class="snippet-container">
                 <div class="snippet-header">
                     <span class="snippet-lang">sapphire</span>
-                    <div class="snippet-actions">
-                        <button class="btn-copy">Copy</button>
-                        <button class="btn-run">Run / Output</button>
-                    </div>
+                    <div class="snippet-actions"><button class="btn-copy">Copy</button><button class="btn-run">Run / Output</button></div>
                 </div>
                 <pre><code><span class="token-keyword">function</span> <span class="token-function">heavyCalculation</span>() <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"Thread working..."</span>)<span class="token-punctuation">;</span>
+    <span class="token-keyword">var</span> sum = <span class="token-number">0</span><span class="token-punctuation">;</span>
+    <span class="token-keyword">for</span> (<span class="token-keyword">var</span> i = <span class="token-number">0</span><span class="token-punctuation">;</span> i < <span class="token-number">10000</span><span class="token-punctuation">;</span> i = i + <span class="token-number">1</span>) <span class="token-punctuation">{</span>
+        sum = sum + i<span class="token-punctuation">;</span>
+    <span class="token-punctuation">}</span>
+    <span class="token-function">print</span>(<span class="token-string">"Thread sum: "</span> + sum)<span class="token-punctuation">;</span>
+<span class="token-punctuation">}</span>
+
+<span class="token-comment">// Method 1: Using spawn keyword</span>
+<span class="token-function">print</span>(<span class="token-string">"Before spawn"</span>)<span class="token-punctuation">;</span>
+<span class="token-keyword">spawn</span> heavyCalculation<span class="token-punctuation">;</span>
+<span class="token-function">print</span>(<span class="token-string">"After spawn"</span>)<span class="token-punctuation">;</span>
+
+<span class="token-comment">// Wait a bit so the thread can finish</span>
+<span class="token-keyword">var</span> x = <span class="token-number">0</span><span class="token-punctuation">;</span>
+<span class="token-keyword">for</span> (<span class="token-keyword">var</span> i = <span class="token-number">0</span><span class="token-punctuation">;</span> i < <span class="token-number">500000</span><span class="token-punctuation">;</span> i = i + <span class="token-number">1</span>) <span class="token-punctuation">{</span>
+    x = x + <span class="token-number">1</span><span class="token-punctuation">;</span>
+<span class="token-punctuation">}</span>
+<span class="token-function">print</span>(<span class="token-string">"Done waiting. Main thread exiting."</span>)<span class="token-punctuation">;</span></code></pre>
+                <div class="output-container">> Before spawn<br>> After spawn<br>> Thread working...<br>> Thread sum: 49995000<br>> Done waiting. Main thread exiting.</div>
+            </div>
+
+            <p>Notice that "After spawn" prints <em>before</em> the thread's output. This is because the thread runs in parallel — the main thread continues immediately without waiting for the spawned function to finish.</p>
+
+            <h2>Using Thread.spawn() with join()</h2>
+            <p>For more control, use <code>Thread.spawn()</code> which returns a thread object. You can call <code>join()</code> on it to wait for the thread to complete before continuing.</p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions"><button class="btn-copy">Copy</button><button class="btn-run">Run / Output</button></div>
+                </div>
+                <pre><code><span class="token-keyword">function</span> <span class="token-function">work</span>() <span class="token-punctuation">{</span>
     <span class="token-function">print</span>(<span class="token-string">"Thread ID "</span> + <span class="token-function">Thread.currentId</span>() + <span class="token-string">" is working..."</span>)<span class="token-punctuation">;</span>
     <span class="token-keyword">var</span> sum = <span class="token-number">0</span><span class="token-punctuation">;</span>
-    <span class="token-keyword">for</span> (<span class="token-keyword">var</span> i = <span class="token-number">0</span><span class="token-punctuation">;</span> i &lt; <span class="token-number">10000000</span><span class="token-punctuation">;</span> i = i + <span class="token-number">1</span>) <span class="token-punctuation">{</span>
+    <span class="token-keyword">for</span> (<span class="token-keyword">var</span> i = <span class="token-number">0</span><span class="token-punctuation">;</span> i < <span class="token-number">10000000</span><span class="token-punctuation">;</span> i = i + <span class="token-number">1</span>) <span class="token-punctuation">{</span>
         sum = sum + i<span class="token-punctuation">;</span>
     <span class="token-punctuation">}</span>
     <span class="token-function">print</span>(<span class="token-string">"Thread finished with sum: "</span> + sum)<span class="token-punctuation">;</span>
 <span class="token-punctuation">}</span>
 
-<span class="token-comment">// Spawns the thread in the background</span>
-<span class="token-keyword">var</span> worker = <span class="token-function">Thread.spawn</span>(heavyCalculation)<span class="token-punctuation">;</span>
+<span class="token-comment">// Spawns the thread and returns a handle</span>
+<span class="token-keyword">var</span> worker = <span class="token-function">Thread.spawn</span>(work)<span class="token-punctuation">;</span>
 
 <span class="token-function">print</span>(<span class="token-string">"Main thread is still free to do other things!"</span>)<span class="token-punctuation">;</span>
 
-<span class="token-comment">// Wait for the worker thread to finish before closing the app</span>
-worker.<span class="token-function">join</span>()<span class="token-punctuation">;</span></code></pre>
-                <div class="output-container">
-                    &gt; Main thread is still free to do other things!<br>
-                    &gt; Thread ID 2 is working...<br>
-                    &gt; Thread finished with sum: 49999995000000
-                </div>
+<span class="token-comment">// Wait for the worker thread to finish before closing</span>
+worker.<span class="token-function">join</span>()<span class="token-punctuation">;</span>
+<span class="token-function">print</span>(<span class="token-string">"Worker has finished. Main thread exiting."</span>)<span class="token-punctuation">;</span></code></pre>
+                <div class="output-container">> Main thread is still free to do other things!<br>> Thread ID 2 is working...<br>> Thread finished with sum: 49999995000000<br>> Worker has finished. Main thread exiting.</div>
             </div>
 
             <h2>Thread Safety and Mutexes</h2>
-            <p>When multiple threads try to read and write to the same variable at the exact same time, you encounter a <strong>Race Condition</strong>, which causes data corruption. To solve this, Sapphire provides <code>Mutex</code> (Mutual Exclusion) objects to lock data access.</p>
+            <p>When multiple threads try to read and write to the same variable at the exact same time, you encounter a <strong>Race Condition</strong>, which causes data corruption. To solve this, Sapphire provides <code>Mutex</code> (Mutual Exclusion) objects to lock data access. Only one thread can hold the lock at a time.</p>
 
             <div class="snippet-container">
                 <div class="snippet-header">
                     <span class="snippet-lang">sapphire</span>
-                    <div class="snippet-actions">
-                        <button class="btn-copy">Copy</button>
-                        <button class="btn-run">Run / Output</button>
-                    </div>
+                    <div class="snippet-actions"><button class="btn-copy">Copy</button><button class="btn-run">Run / Output</button></div>
                 </div>
                 <pre><code><span class="token-keyword">var</span> sharedCounter = <span class="token-number">0</span><span class="token-punctuation">;</span>
 <span class="token-keyword">var</span> lock = <span class="token-function">Mutex</span>()<span class="token-punctuation">;</span>
 
 <span class="token-keyword">function</span> <span class="token-function">incrementCounter</span>() <span class="token-punctuation">{</span>
-    <span class="token-keyword">for</span> (<span class="token-keyword">var</span> i = <span class="token-number">0</span><span class="token-punctuation">;</span> i &lt; <span class="token-number">100</span><span class="token-punctuation">;</span> i = i + <span class="token-number">1</span>) <span class="token-punctuation">{</span>
+    <span class="token-keyword">for</span> (<span class="token-keyword">var</span> i = <span class="token-number">0</span><span class="token-punctuation">;</span> i < <span class="token-number">100</span><span class="token-punctuation">;</span> i = i + <span class="token-number">1</span>) <span class="token-punctuation">{</span>
         lock.<span class="token-function">acquire</span>()<span class="token-punctuation">;</span>
         <span class="token-comment">// Now we safely own the counter</span>
         sharedCounter = sharedCounter + <span class="token-number">1</span><span class="token-punctuation">;</span>
@@ -112,9 +169,25 @@ t1.<span class="token-function">join</span>()<span class="token-punctuation">;</
 t2.<span class="token-function">join</span>()<span class="token-punctuation">;</span>
 
 <span class="token-function">print</span>(<span class="token-string">"Final Counter: "</span> + sharedCounter)<span class="token-punctuation">;</span></code></pre>
-                <div class="output-container">
-                    &gt; Final Counter: 200
-                </div>
+                <div class="output-container">> Final Counter: 200</div>
+            </div>
+
+            <div class="info-box">
+                <strong>⚠️ Important:</strong> Without the <code>Mutex</code>, the counter would likely end up with a value less than 200 because two threads might read the same value simultaneously, increment it, and write back the same result — effectively losing an increment. Always use <code>lock.acquire()</code> and <code>lock.release()</code> when sharing data between threads.
+            </div>
+
+            <h2>Overview — What You Learned</h2>
+            <div class="info-box">
+                <strong>✅ Chapter Summary:</strong>
+                <ul>
+                    <li><strong>Async</strong> is for I/O-bound tasks (single-thread concurrency)</li>
+                    <li><strong>Threading</strong> is for CPU-bound tasks (true parallelism on multiple cores)</li>
+                    <li><strong>spawn</strong> keyword launches a function on a new thread: <code>spawn myFunction;</code></li>
+                    <li><strong>Thread.spawn(function)</strong> returns a handle you can <code>join()</code> to wait for completion</li>
+                    <li><strong>Race conditions</strong> happen when multiple threads access shared data simultaneously</li>
+                    <li><strong>Mutex</strong> prevents race conditions: <code>lock.acquire()</code> / <code>lock.release()</code></li>
+                    <li>Always <code>join()</code> your threads before the program exits to ensure they finish</li>
+                </ul>
             </div>
 
             <p style="margin-top: 4rem; display: flex; justify-content: space-between;">
@@ -125,18 +198,6 @@ t2.<span class="token-function">join</span>()<span class="token-punctuation">;</
     </div>
 
     <script src="js/main.js"></script>
-    <script>
-        const themeToggle = document.getElementById('theme-toggle');
-        themeToggle.addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-            if (document.body.classList.contains('dark-mode')) {
-                themeToggle.textContent = '🌙';
-            } else {
-                themeToggle.textContent = '💡';
-            }
-        });
-    </script>
+    
 </body>
 </html>
-
-

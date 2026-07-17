@@ -3,53 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Introduction & Variables - Sapphire Documentation</title>
+    <title>Introduction & Variables — Sapphire Docs</title>
+    <meta name="description" content="Introduction to Sapphire: variables, data types, nil, arithmetic and your first program.">
+    <link rel="icon" href="assets/logo.svg">
     <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body class="dark-mode">
+    <!-- Mobile Sidebar Toggle -->
+    <button class="sidebar-toggle" aria-label="Open menu">☰</button>
+    <div class="sidebar-overlay"></div>
+
     <div class="docs-layout">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <button id="theme-toggle" aria-label="Toggle theme">💡</button>
-            <a href="../index.html" class="sidebar-logo">
-                <img src="assets/logo.svg" alt="Logo"> Sapphire
-            </a>
-            <nav>
-                <h4>Part 1: The Core</h4>
-                <ul>
-                    <li><a href="docs_intro.html" class="active">1. Intro & Variables</a></li>
-                    <li><a href="docs_control_flow.html">2. Control Flow & Functions</a></li>
-                    <li><a href="docs_data_structures.html">3. Lists & Maps</a></li>
-                    <li><a href="docs_std_basic.html">4. Math & System Modules</a></li>
-                </ul>
+            <div class="sidebar-inner">
+                <div class="sidebar-header">
+                    <a href="../index.html" class="sidebar-logo">
+                        <div class="logo-gem">💎</div>
+                        Sapphire
+                    </a>
+                    <button id="sidebar-theme-toggle" aria-label="Toggle theme">🌙</button>
+                </div>
+                <div class="sidebar-nav-body">
+                <nav>
+                    <h4>Part 1: The Core</h4>
+                    <ul>
+                        <li><a href="docs_intro.html" class="active">1. Intro & Variables</a></li>
+                        <li><a href="docs_control_flow.html">2. Control Flow & Functions</a></li>
+                        <li><a href="docs_data_structures.html">3. Lists & Maps</a></li>
+                        <li><a href="docs_std_basic.html">4. Math & System Modules</a></li>
+                    </ul>
 
-                <h4>Part 2: Advanced</h4>
-                <ul>
-                    <li><a href="docs_oop.html">5. Object-Oriented (OOP)</a></li>
-                    <li><a href="docs_exceptions.html">6. Exceptions Handling</a></li>
-                    <li><a href="docs_async.html">7. Async & Await</a></li>
-                    <li><a href="docs_threading.html">8. Multi-threading</a></li>
-                </ul>
+                    <h4>Part 2: Advanced</h4>
+                    <ul>
+                        <li><a href="docs_oop.html">5. Object-Oriented (OOP)</a></li>
+                        <li><a href="docs_exceptions.html">6. Exceptions Handling</a></li>
+                        <li><a href="docs_async.html">7. Async & Await</a></li>
+                        <li><a href="docs_threading.html">8. Multi-threading</a></li>
+                    </ul>
 
-                <h4>Part 3: I/O & UI</h4>
-                <ul>
-                    <li><a href="docs_file_io.html">9. File I/O</a></li>
-                    <li><a href="docs_http.html">10. HTTP Requests</a></li>
-                    <li><a href="docs_ui_engine.html">11. UI Engine</a></li>
-                    <li><a href="docs_sqlite.html">12. SQLite Database</a></li>`n                </ul>
-            </nav>
+                    <h4>Part 3: I/O & UI</h4>
+                    <ul>
+                        <li><a href="docs_file_io.html">9. File I/O</a></li>
+                        <li><a href="docs_http.html">10. HTTP Requests</a></li>
+                        <li><a href="docs_ui_engine.html">11. UI Engine</a></li>
+                        <li><a href="docs_sqlite.html">12. SQLite Database</a></li>
+                    </ul>
+                </nav>
+                </div>
+                <div class="sidebar-footer">
+                    <span class="version-badge">💎 v1.0.6</span>
+                </div>
+            </div>
         </aside>
 
         <!-- Main Content -->
         <main class="docs-content">
+
+            <div class="article-toc">
+                <strong>📑 On this page</strong>
+                <ul>
+                    <li><a href="#hello-world">Hello, World!</a></li>
+                    <li><a href="#variables">Variables & Data Types</a></li>
+                    <li><a href="#nil">Understanding nil</a></li>
+                    <li><a href="#comments">Comments</a></li>
+                    <li><a href="#arithmetic">Arithmetic</a></li>
+                    <li><a href="#comparison">Comparison Operators</a></li>
+                    <li><a href="#nullish">Nullish Coalescing</a></li>
+                    <li><a href="#first-program">Your First Program</a></li>
+                </ul>
+            </div>
+
             <h1>Introduction to Sapphire</h1>
             <p>Welcome to Sapphire! This tutorial will guide you through the absolute basics of the language. Sapphire was born out of a desire for a language that is as fast as C++, but as easy to write as Python or JavaScript. It features an incredibly clean syntax, an intuitive standard library, and built-in native UI rendering capabilities.</p>
             <p>Whether you are building command-line tools, high-performance background services, or desktop applications with graphical interfaces, Sapphire has you covered.</p>
 
-            <h2>Hello, World!</h2>
+            <h2 id="hello-world">Hello, World!</h2>
             <p>Every journey begins with a single step. In Sapphire, outputting text to the console is done using the built-in <code>print()</code> function. It automatically appends a newline at the end, so you don't have to worry about formatting it manually.</p>
             
             <div class="snippet-container">
@@ -62,11 +94,12 @@
                 </div>
                 <pre><code><span class="token-function">print</span>(<span class="token-string">"Hello, World!"</span>)<span class="token-punctuation">;</span></code></pre>
                 <div class="output-container">
-                    &gt; Hello, World!
+                    <div class="output-label">Output</div>
+                    <span>Hello, World!</span>
                 </div>
             </div>
             
-            <p>You can also print multiple arguments by concatenating them with the <code>+</code> operator. Since Sapphire dynamically resolves types for standard output, concatenating strings and numbers is completely safe!</p>
+            <p>You can also print multiple values by concatenating them with the <code>+</code> operator. Since Sapphire dynamically resolves types for standard output, concatenating strings and numbers is completely safe!</p>
 
             <h3>String Interpolation (f-strings)</h3>
             <p>For a cleaner way to format strings with variables, you can use <b>f-strings</b> (added in v1.0.9). Simply prefix the string with <code>f</code> and use curly braces <code>{}</code> to insert variables or expressions directly.</p>
@@ -76,10 +109,16 @@
                     <span class="snippet-lang">sapphire</span>
                     <div class="snippet-actions">
                         <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
                     </div>
                 </div>
                 <pre><code><span class="token-keyword">var</span> name = <span class="token-string">"Developer"</span><span class="token-punctuation">;</span>
-<span class="token-function">print</span>(<span class="token-string">f"Welcome, {name}!"</span>)<span class="token-punctuation">;</span></code></pre>
+<span class="token-function">print</span>(<span class="token-string">f"Welcome, {name}!"</span>)<span class="token-punctuation">;</span>
+<span class="token-function">print</span>(<span class="token-string">f"2 + 2 = {2 + 2}"</span>)<span class="token-punctuation">;</span></code></pre>
+                <div class="output-container">
+                    <div class="output-label">Output</div>
+                    <span>Welcome, Developer!<br>2 + 2 = 4</span>
+                </div>
             </div>
 
             <h2>Variables and Data Types</h2>
@@ -100,7 +139,50 @@
 
 <span class="token-function">print</span>(name + <span class="token-string">" version "</span> + version + <span class="token-string">" is awesome: "</span> + isAwesome)<span class="token-punctuation">;</span></code></pre>
                 <div class="output-container">
-                    &gt; Sapphire version 1.0 is awesome: true
+                    > Sapphire version 1.0 is awesome: true
+                </div>
+            </div>
+
+            <p>The available data types in Sapphire are:</p>
+            <table>
+                <thead>
+                    <tr><th>Type</th><th>Examples</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>Number</code></td><td><code>42</code>, <code>3.14</code>, <code>-10</code></td><td>Both integers and decimals</td></tr>
+                    <tr><td><code>String</code></td><td><code>"hello"</code>, <code>'world'</code></td><td>Text enclosed in quotes</td></tr>
+                    <tr><td><code>Bool</code></td><td><code>true</code>, <code>false</code></td><td>Logical true/false values</td></tr>
+                    <tr><td><code>nil</code></td><td><code>nil</code></td><td>Represents "no value" or null</td></tr>
+                    <tr><td><code>List</code></td><td><code>[1, 2, 3]</code></td><td>Ordered collection of values</td></tr>
+                    <tr><td><code>Map</code></td><td><code>{"key": "value"}</code></td><td>Key-value dictionary</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Understanding <code>nil</code></h3>
+            <p>The value <code>nil</code> means "nothing" or "no value." It's different from <code>0</code> or an empty string. Functions often return <code>nil</code> to indicate failure or the absence of a result. You can check for <code>nil</code> using <code>== nil</code> or <code>!= nil</code>.</p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-keyword">var</span> result = <span class="token-keyword">nil</span><span class="token-punctuation">;</span>
+
+<span class="token-keyword">if</span> (result == <span class="token-keyword">nil</span>) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"No result yet."</span>)<span class="token-punctuation">;</span>
+<span class="token-punctuation">}</span>
+
+result = <span class="token-number">42</span><span class="token-punctuation">;</span>
+
+<span class="token-keyword">if</span> (result != <span class="token-keyword">nil</span>) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"Now we have a value: "</span> + result)<span class="token-punctuation">;</span>
+<span class="token-punctuation">}</span></code></pre>
+                <div class="output-container">
+                    > No result yet.<br>
+                    > Now we have a value: 42
                 </div>
             </div>
 
@@ -122,9 +204,26 @@
 data = <span class="token-string">"Now I am a string!"</span><span class="token-punctuation">;</span>
 <span class="token-function">print</span>(<span class="token-string">"Data changed: "</span> + data)<span class="token-punctuation">;</span></code></pre>
                 <div class="output-container">
-                    &gt; Data is a number: 42<br>
-                    &gt; Data changed: Now I am a string!
+                    > Data is a number: 42<br>
+                    > Data changed: Now I am a string!
                 </div>
+            </div>
+
+            <h2>Comments</h2>
+            <p>Comments are notes you leave in your code for yourself and other programmers. They are ignored by the compiler. Sapphire supports single-line comments with <code>//</code>.</p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// This is a comment explaining what the next line does</span>
+<span class="token-keyword">var</span> score = <span class="token-number">100</span><span class="token-punctuation">;</span>
+
+<span class="token-comment">// You can also add comments at the end of a line</span>
+<span class="token-function">print</span>(score)<span class="token-punctuation">;</span>  <span class="token-comment">// Prints: 100</span></code></pre>
             </div>
 
             <h2>Basic Arithmetic</h2>
@@ -149,13 +248,39 @@ data = <span class="token-string">"Now I am a string!"</span><span class="token-
 <span class="token-keyword">var</span> complex = (a * b) + (<span class="token-number">100</span> / <span class="token-number">2</span>)<span class="token-punctuation">;</span>
 <span class="token-function">print</span>(<span class="token-string">"Complex Result: "</span> + complex)<span class="token-punctuation">;</span></code></pre>
                 <div class="output-container">
-                    &gt; Addition: 13<br>
-                    &gt; Division: 3.333333<br>
-                    &gt; Modulo: 1<br>
-                    &gt; Complex Result: 80
+                    > Addition: 13<br>
+                    > Division: 3.333333<br>
+                    > Modulo: 1<br>
+                    > Complex Result: 80
                 </div>
             </div>
 
+            <h2>Comparison Operators</h2>
+            <p>You use comparison operators to compare values. They always return <code>true</code> or <code>false</code>.</p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-keyword">var</span> x = <span class="token-number">5</span><span class="token-punctuation">;</span>
+<span class="token-keyword">var</span> y = <span class="token-number">10</span><span class="token-punctuation">;</span>
+
+<span class="token-function">print</span>(<span class="token-string">"x == y: "</span> + (x == y))<span class="token-punctuation">;</span>  <span class="token-comment">// false</span>
+<span class="token-function">print</span>(<span class="token-string">"x != y: "</span> + (x != y))<span class="token-punctuation">;</span>  <span class="token-comment">// true</span>
+<span class="token-function">print</span>(<span class="token-string">"x < y:  "</span> + (x < y))<span class="token-punctuation">;</span>   <span class="token-comment">// true</span>
+<span class="token-function">print</span>(<span class="token-string">"x > y:  "</span> + (x > y))<span class="token-punctuation">;</span>   <span class="token-comment">// false</span>
+<span class="token-function">print</span>(<span class="token-string">"x >= 5: "</span> + (x >= <span class="token-number">5</span>))<span class="token-punctuation">;</span>  <span class="token-comment">// true</span></code></pre>
+                <div class="output-container">
+                    > x == y: false<br>
+                    > x != y: true<br>
+                    > x < y:  true<br>
+                    > x > y:  false<br>
+                    > x >= 5: true
+                </div>
             </div>
 
             <h2>Nullish Coalescing & Optional Chaining</h2>
@@ -170,6 +295,7 @@ data = <span class="token-string">"Now I am a string!"</span><span class="token-
                     <span class="snippet-lang">sapphire</span>
                     <div class="snippet-actions">
                         <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
                     </div>
                 </div>
                 <pre><code><span class="token-keyword">var</span> input = <span class="token-keyword">nil</span><span class="token-punctuation">;</span>
@@ -177,30 +303,58 @@ data = <span class="token-string">"Now I am a string!"</span><span class="token-
 <span class="token-function">print</span>(username)<span class="token-punctuation">;</span> <span class="token-comment">// Prints: Guest</span>
 
 <span class="token-keyword">var</span> user = <span class="token-keyword">nil</span><span class="token-punctuation">;</span>
-<span class="token-function">print</span>(user<span class="token-operator">?.</span>profile<span class="token-operator">?.</span>email)<span class="token-punctuation">;</span> <span class="token-comment">// Safely prints nil</span></code></pre>
+<span class="token-function">print</span>(user<span class="token-operator">?.</span>profile<span class="token-operator">?.</span>email)<span class="token-punctuation">;</span> <span class="token-comment">// Safely prints nil, no crash!</span></code></pre>
+                <div class="output-container">
+                    > Guest<br>
+                    > nil
+                </div>
             </div>
 
-            <p style="margin-top: 4rem; display: flex; justify-content: space-between;">
+            <h2>Your First Program</h2>
+            <p>Here's a complete Sapphire program that brings together everything we've learned:</p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// A simple greeting program</span>
+<span class="token-function">print</span>(<span class="token-string">"What is your name?"</span>)<span class="token-punctuation">;</span>
+
+<span class="token-comment">// Variables and arithmetic</span>
+<span class="token-keyword">var</span> year = <span class="token-number">2024</span><span class="token-punctuation">;</span>
+<span class="token-keyword">var</span> birthYear = <span class="token-number">1990</span><span class="token-punctuation">;</span>
+<span class="token-keyword">var</span> age = year - birthYear<span class="token-punctuation">;</span>
+
+<span class="token-comment">// String interpolation</span>
+<span class="token-function">print</span>(<span class="token-string">f"You are approximately {age} years old."</span>)<span class="token-punctuation">;</span>
+
+<span class="token-comment">// Using nil and nullish coalescing</span>
+<span class="token-keyword">var</span> nickname = <span class="token-keyword">nil</span><span class="token-punctuation">;</span>
+<span class="token-keyword">var</span> displayName = nickname <span class="token-operator">??</span> <span class="token-string">"Anonymous"</span><span class="token-punctuation">;</span>
+<span class="token-function">print</span>(<span class="token-string">"Hello, "</span> + displayName + <span class="token-string">"!"</span>)<span class="token-punctuation">;</span></code></pre>
+                <div class="output-container">
+                    > What is your name?<br>
+                    > You are approximately 34 years old.<br>
+                    > Hello, Anonymous!
+                </div>
+            </div>
+
+            </div>
+
+            <nav class="page-nav">
                 <span></span>
-                <a href="docs_control_flow.html" class="btn">Next: Control Flow & Functions &rarr;</a>
-            </p>
+                <a href="docs_control_flow.html" class="page-nav-item next">
+                    <span class="page-nav-dir">Next →</span>
+                    <span class="page-nav-title">Control Flow & Functions</span>
+                </a>
+            </nav>
         </main>
     </div>
 
     <script src="js/main.js"></script>
-    <script>
-        // Custom Theme Toggle Logic for Docs
-        const themeToggle = document.getElementById('theme-toggle');
-        themeToggle.addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-            if (document.body.classList.contains('dark-mode')) {
-                themeToggle.textContent = '🌙';
-            } else {
-                themeToggle.textContent = '💡';
-            }
-        });
-    </script>
 </body>
 </html>
-
-

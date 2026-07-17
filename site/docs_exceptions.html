@@ -3,92 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Exceptions Handling - Sapphire Documentation</title>
+    <title>Exceptions Handling — Sapphire Docs</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body class="dark-mode">
+    <!-- Mobile Sidebar Toggle -->
+    <button class="sidebar-toggle" aria-label="Open menu">&#9776;</button>
+    <div class="sidebar-overlay"></div>
+
     <div class="docs-layout">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <button id="theme-toggle" aria-label="Toggle theme">💡</button>
-            <a href="../index.html" class="sidebar-logo">
-                <img src="assets/logo.svg" alt="Logo"> Sapphire
-            </a>
-            <nav>
-                <h4>Part 1: The Core</h4>
-                <ul>
-                    <li><a href="docs_intro.html">1. Intro & Variables</a></li>
-                    <li><a href="docs_control_flow.html">2. Control Flow & Functions</a></li>
-                    <li><a href="docs_data_structures.html">3. Lists & Maps</a></li>
-                    <li><a href="docs_std_basic.html">4. Math & System Modules</a></li>
-                </ul>
+            <div class="sidebar-inner">
+                <div class="sidebar-header">
+                    <a href="../index.html" class="sidebar-logo">
+                        <div class="logo-gem">&#x1F48E;</div>
+                        Sapphire
+                    </a>
+                    <button id="sidebar-theme-toggle" aria-label="Toggle theme">&#x1F319;</button>
+                </div>
+                <div class="sidebar-nav-body">
+                <nav>
+                    <h4>Part 1: The Core</h4>
+                    <ul>
+                        <li><a href="docs_intro.html">1. Intro &amp; Variables</a></li>
+                        <li><a href="docs_control_flow.html">2. Control Flow &amp; Functions</a></li>
+                        <li><a href="docs_data_structures.html">3. Lists &amp; Maps</a></li>
+                        <li><a href="docs_std_basic.html">4. Math &amp; System Modules</a></li>
+                    </ul>
 
-                <h4>Part 2: Advanced</h4>
-                <ul>
-                    <li><a href="docs_oop.html">5. Object-Oriented (OOP)</a></li>
-                    <li><a href="docs_exceptions.html" class="active">6. Exceptions Handling</a></li>
-                    <li><a href="docs_async.html">7. Async & Await</a></li>
-                    <li><a href="docs_threading.html">8. Multi-threading</a></li>
-                </ul>
+                    <h4>Part 2: Advanced</h4>
+                    <ul>
+                        <li><a href="docs_oop.html">5. Object-Oriented (OOP)</a></li>
+                        <li><a href="docs_exceptions.html" class="active">6. Exceptions Handling</a></li>
+                        <li><a href="docs_async.html">7. Async &amp; Await</a></li>
+                        <li><a href="docs_threading.html">8. Multi-threading</a></li>
+                    </ul>
 
-                <h4>Part 3: I/O & UI</h4>
-                <ul>
-                    <li><a href="docs_file_io.html">9. File I/O</a></li>
-                    <li><a href="docs_http.html">10. HTTP Requests</a></li>
-                    <li><a href="docs_ui_engine.html">11. UI Engine</a></li>
-                    <li><a href="docs_sqlite.html">12. SQLite Database</a></li>`n                </ul>
-            </nav>
+                    <h4>Part 3: I/O &amp; UI</h4>
+                    <ul>
+                        <li><a href="docs_file_io.html">9. File I/O</a></li>
+                        <li><a href="docs_http.html">10. HTTP Requests</a></li>
+                        <li><a href="docs_ui_engine.html">11. UI Engine</a></li>
+                        <li><a href="docs_sqlite.html">12. SQLite Database</a></li>
+                    </ul>
+                </nav>
+                </div>
+                <div class="sidebar-footer">
+                    <span class="version-badge">&#x1F48E; v1.0.6</span>
+                </div>
+            </div>
         </aside>
 
-        <!-- Main Content -->
         <main class="docs-content">
             <h1>Exceptions Handling</h1>
+
+            <div class="info-box">
+                <strong>📖 What You Will Learn in This Chapter:</strong>
+                <ul>
+                    <li>What exceptions are and why programs crash</li>
+                    <li>How to <strong>catch</strong> errors with <code>try/catch</code> to prevent crashes</li>
+                    <li>How to <strong>throw</strong> your own custom errors</li>
+                    <li>How to use <strong>finally</strong> for cleanup code that always runs</li>
+                    <li>How to build robust applications that handle failures gracefully</li>
+                </ul>
+            </div>
+
             <p>Errors happen. The network might drop, a file might be missing, or a user might enter invalid input. If left unhandled, an error crashes the Sapphire Virtual Machine. To build resilient applications, you must use Exception Handling.</p>
+
+            <h2>What Are Exceptions?</h2>
+            <p>An <strong>exception</strong> is an event that disrupts the normal flow of your program. When something goes wrong (like dividing by zero or trying to read a file that doesn't exist), Sapphire "throws" an exception. If you don't catch it, the program stops entirely.</p>
+
+            <p>Think of it like a fire alarm: something went wrong (the alarm goes off / an exception is thrown), and you need to handle it (evacuate / catch the exception) before continuing with your day.</p>
 
             <h2>Try and Catch</h2>
             <p>The <code>try / catch</code> block allows you to "attempt" to run dangerous code. If that code throws an error, the VM immediately aborts the <code>try</code> block and jumps into the <code>catch</code> block without crashing the entire program.</p>
-            
+
             <div class="snippet-container">
                 <div class="snippet-header">
                     <span class="snippet-lang">sapphire</span>
-                    <div class="snippet-actions">
-                        <button class="btn-copy">Copy</button>
-                        <button class="btn-run">Run / Output</button>
-                    </div>
+                    <div class="snippet-actions"><button class="btn-copy">Copy</button><button class="btn-run">Run / Output</button></div>
                 </div>
-                <pre><code><span class="token-keyword">try</span> <span class="token-punctuation">{</span>
-    <span class="token-function">print</span>(<span class="token-string">"Attempting risky operation..."</span>)<span class="token-punctuation">;</span>
-    <span class="token-comment">// Attempting to divide by zero!</span>
-    <span class="token-keyword">var</span> badMath = <span class="token-number">100</span> / <span class="token-number">0</span><span class="token-punctuation">;</span>
-    <span class="token-function">print</span>(<span class="token-string">"This line will never run."</span>)<span class="token-punctuation">;</span>
+                <pre><code><span class="token-function">print</span>(<span class="token-string">"Testing handled exception..."</span>)<span class="token-punctuation">;</span>
+
+<span class="token-keyword">try</span> <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"Inside try block"</span>)<span class="token-punctuation">;</span>
+    <span class="token-keyword">throw</span> <span class="token-string">"Deu ruim!"</span><span class="token-punctuation">;</span>
+    <span class="token-function">print</span>(<span class="token-string">"This should not be printed"</span>)<span class="token-punctuation">;</span>
 <span class="token-punctuation">}</span> <span class="token-keyword">catch</span> (e) <span class="token-punctuation">{</span>
-    <span class="token-function">print</span>(<span class="token-string">"Caught an error! "</span> + e)<span class="token-punctuation">;</span>
+    <span class="token-function">print</span>(<span class="token-string">"Caught an exception!"</span>)<span class="token-punctuation">;</span>
+    <span class="token-function">print</span>(e)<span class="token-punctuation">;</span>
 <span class="token-punctuation">}</span>
 
-<span class="token-function">print</span>(<span class="token-string">"Program continues normally."</span>)<span class="token-punctuation">;</span></code></pre>
-                <div class="output-container">
-                    &gt; Attempting risky operation...<br>
-                    &gt; Caught an error! Division by zero.<br>
-                    &gt; Program continues normally.
-                </div>
+<span class="token-function">print</span>(<span class="token-string">"After try/catch block"</span>)<span class="token-punctuation">;</span></code></pre>
+                <div class="output-container">> Testing handled exception...<br>> Inside try block<br>> Caught an exception!<br>> Deu ruim!<br>> After try/catch block</div>
+            </div>
+
+            <div class="info-box">
+                <strong>💡 Note:</strong> The line <code>print("This should not be printed")</code> never executes because <code>throw</code> immediately jumps to the <code>catch</code> block. This is how exceptions work — they interrupt the normal flow.
             </div>
 
             <h2>Throwing Custom Exceptions</h2>
-            <p>You are not limited to catching VM errors. You can also throw your own custom errors using the <code>throw</code> keyword. This is extremely useful for input validation in functions.</p>
+            <p>You are not limited to catching VM errors. You can also throw your own custom errors using the <code>throw</code> keyword. This is extremely useful for input validation in functions. You can throw strings, numbers, or any value.</p>
 
             <div class="snippet-container">
                 <div class="snippet-header">
                     <span class="snippet-lang">sapphire</span>
-                    <div class="snippet-actions">
-                        <button class="btn-copy">Copy</button>
-                        <button class="btn-run">Run / Output</button>
-                    </div>
+                    <div class="snippet-actions"><button class="btn-copy">Copy</button><button class="btn-run">Run / Output</button></div>
                 </div>
                 <pre><code><span class="token-keyword">function</span> <span class="token-function">setAge</span>(age) <span class="token-punctuation">{</span>
-    <span class="token-keyword">if</span> (age &lt; <span class="token-number">0</span>) <span class="token-punctuation">{</span>
+    <span class="token-keyword">if</span> (age < <span class="token-number">0</span>) <span class="token-punctuation">{</span>
         <span class="token-keyword">throw</span> <span class="token-string">"Age cannot be negative!"</span><span class="token-punctuation">;</span>
     <span class="token-punctuation">}</span>
     <span class="token-function">print</span>(<span class="token-string">"Age set to: "</span> + age)<span class="token-punctuation">;</span>
@@ -98,36 +125,101 @@
     <span class="token-function">setAge</span>(-<span class="token-number">5</span>)<span class="token-punctuation">;</span>
 <span class="token-punctuation">}</span> <span class="token-keyword">catch</span> (err) <span class="token-punctuation">{</span>
     <span class="token-function">print</span>(<span class="token-string">"Validation Failed: "</span> + err)<span class="token-punctuation">;</span>
+<span class="token-punctuation">}</span>
+
+<span class="token-comment">// You can throw numbers too</span>
+<span class="token-keyword">function</span> <span class="token-function">foo</span>() <span class="token-punctuation">{</span>
+    <span class="token-keyword">throw</span> <span class="token-number">404</span><span class="token-punctuation">;</span>
+<span class="token-punctuation">}</span>
+
+<span class="token-keyword">try</span> <span class="token-punctuation">{</span>
+    <span class="token-function">foo</span>()<span class="token-punctuation">;</span>
+<span class="token-punctuation">}</span> <span class="token-keyword">catch</span> (err) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"Error code: "</span> + err)<span class="token-punctuation">;</span>
 <span class="token-punctuation">}</span></code></pre>
-                <div class="output-container">
-                    &gt; Validation Failed: Age cannot be negative!
-                </div>
+                <div class="output-container">> Validation Failed: Age cannot be negative!<br>> Error code: 404</div>
             </div>
 
             <h2>Using Finally</h2>
-            <p>Sometimes you need to ensure that certain cleanup code runs whether an error occurred or not (e.g., closing an open file or a network socket). The <code>finally</code> block executes after <code>try</code> and <code>catch</code>, regardless of the outcome.</p>
+            <p>Sometimes you need to ensure that certain cleanup code runs whether an error occurred or not (e.g., closing an open file or a database connection). The <code>finally</code> block executes after <code>try</code> and <code>catch</code>, regardless of the outcome. Even if no exception was thrown, the <code>finally</code> block still runs.</p>
 
             <div class="snippet-container">
                 <div class="snippet-header">
                     <span class="snippet-lang">sapphire</span>
-                    <div class="snippet-actions">
-                        <button class="btn-copy">Copy</button>
-                        <button class="btn-run">Run / Output</button>
-                    </div>
+                    <div class="snippet-actions"><button class="btn-copy">Copy</button><button class="btn-run">Run / Output</button></div>
                 </div>
-                <pre><code><span class="token-keyword">try</span> <span class="token-punctuation">{</span>
-    <span class="token-function">print</span>(<span class="token-string">"Opening Database Connection..."</span>)<span class="token-punctuation">;</span>
-    <span class="token-keyword">throw</span> <span class="token-string">"Database Timeout!"</span><span class="token-punctuation">;</span>
+                <pre><code><span class="token-function">print</span>(<span class="token-string">"Case 1: No exception"</span>)<span class="token-punctuation">;</span>
+<span class="token-keyword">try</span> <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"  Inside try"</span>)<span class="token-punctuation">;</span>
 <span class="token-punctuation">}</span> <span class="token-keyword">catch</span> (e) <span class="token-punctuation">{</span>
-    <span class="token-function">print</span>(<span class="token-string">"Error: "</span> + e)<span class="token-punctuation">;</span>
+    <span class="token-function">print</span>(<span class="token-string">"  Inside catch: this should not print"</span>)<span class="token-punctuation">;</span>
 <span class="token-punctuation">}</span> <span class="token-keyword">finally</span> <span class="token-punctuation">{</span>
-    <span class="token-function">print</span>(<span class="token-string">"Closing Database Connection. Cleanup complete."</span>)<span class="token-punctuation">;</span>
-<span class="token-punctuation">}</span></code></pre>
-                <div class="output-container">
-                    &gt; Opening Database Connection...<br>
-                    &gt; Error: Database Timeout!<br>
-                    &gt; Closing Database Connection. Cleanup complete.
+    <span class="token-function">print</span>(<span class="token-string">"  Inside finally: this should print!"</span>)<span class="token-punctuation">;</span>
+<span class="token-punctuation">}</span>
+
+<span class="token-function">print</span>(<span class="token-string">"---"</span>)<span class="token-punctuation">;</span>
+
+<span class="token-function">print</span>(<span class="token-string">"Case 2: With exception"</span>)<span class="token-punctuation">;</span>
+<span class="token-keyword">try</span> <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"  Inside try 2"</span>)<span class="token-punctuation">;</span>
+    <span class="token-keyword">throw</span> <span class="token-string">"Oops!"</span><span class="token-punctuation">;</span>
+<span class="token-punctuation">}</span> <span class="token-keyword">catch</span> (e) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"  Inside catch 2: "</span>)<span class="token-punctuation">;</span>
+    <span class="token-function">print</span>(e)<span class="token-punctuation">;</span>
+<span class="token-punctuation">}</span> <span class="token-keyword">finally</span> <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"  Inside finally 2: this should print!"</span>)<span class="token-punctuation">;</span>
+<span class="token-punctuation">}</span>
+
+<span class="token-function">print</span>(<span class="token-string">"Done!"</span>)<span class="token-punctuation">;</span></code></pre>
+                <div class="output-container">> Case 1: No exception<br>>   Inside try<br>>   Inside finally: this should print!<br>> ---<br>> Case 2: With exception<br>>   Inside try 2<br>>   Inside catch 2:<br>> Oops!<br>>   Inside finally 2: this should print!<br>> Done!</div>
+            </div>
+
+            <div class="info-box">
+                <strong>💡 Important:</strong> The <code>finally</code> block runs <strong>regardless</strong> of whether an exception was thrown or caught. Use it for cleanup operations like closing files, database connections, or releasing resources.
+            </div>
+
+            <h2>Real-World Example: Safe File Reader</h2>
+            <p>Here's a practical example that combines everything we've learned into a robust file-reading function.</p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions"><button class="btn-copy">Copy</button><button class="btn-run">Run / Output</button></div>
                 </div>
+                <pre><code><span class="token-keyword">function</span> <span class="token-function">safeReadFile</span>(path) <span class="token-punctuation">{</span>
+    <span class="token-keyword">try</span> <span class="token-punctuation">{</span>
+        <span class="token-function">print</span>(<span class="token-string">"Opening file: "</span> + path)<span class="token-punctuation">;</span>
+        <span class="token-keyword">var</span> content = <span class="token-function">readFile</span>(path)<span class="token-punctuation">;</span>
+        <span class="token-function">print</span>(<span class="token-string">"File read successfully!"</span>)<span class="token-punctuation">;</span>
+        <span class="token-keyword">return</span> content<span class="token-punctuation">;</span>
+    <span class="token-punctuation">}</span> <span class="token-keyword">catch</span> (e) <span class="token-punctuation">{</span>
+        <span class="token-function">print</span>(<span class="token-string">"Error reading file: "</span> + e)<span class="token-punctuation">;</span>
+        <span class="token-keyword">return</span> <span class="token-keyword">nil</span><span class="token-punctuation">;</span>
+    <span class="token-punctuation">}</span> <span class="token-keyword">finally</span> <span class="token-punctuation">{</span>
+        <span class="token-function">print</span>(<span class="token-string">"Cleanup: file handle closed."</span>)<span class="token-punctuation">;</span>
+    <span class="token-punctuation">}</span>
+<span class="token-punctuation">}</span>
+
+<span class="token-keyword">var</span> data = <span class="token-function">safeReadFile</span>(<span class="token-string">"config.json"</span>)<span class="token-punctuation">;</span>
+<span class="token-keyword">if</span> (data != <span class="token-keyword">nil</span>) <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"Data length: "</span> + <span class="token-function">len</span>(data))<span class="token-punctuation">;</span>
+<span class="token-punctuation">}</span> <span class="token-keyword">else</span> <span class="token-punctuation">{</span>
+    <span class="token-function">print</span>(<span class="token-string">"Using default configuration."</span>)<span class="token-punctuation">;</span>
+<span class="token-punctuation">}</span></code></pre>
+                <div class="output-container">> Opening file: config.json<br>> Error reading file: File not found<br>> Cleanup: file handle closed.<br>> Using default configuration.</div>
+            </div>
+
+            <h2>Overview — What You Learned</h2>
+            <div class="info-box">
+                <strong>✅ Chapter Summary:</strong>
+                <ul>
+                    <li><strong>Exceptions</strong> are errors that disrupt normal program flow</li>
+                    <li><strong>try/catch</strong> catches errors and prevents crashes: <code>try { risky } catch (e) { handle }</code></li>
+                    <li><strong>throw</strong> creates your own errors: <code>throw "error message"</code> or <code>throw 404</code></li>
+                    <li><strong>finally</strong> runs cleanup code no matter what — even if no error occurred</li>
+                    <li>Always use <code>try/catch</code> around file operations, network requests, and user input validation</li>
+                    <li>Check for <code>nil</code> returns after a caught error to handle failures gracefully</li>
+                </ul>
             </div>
 
             <p style="margin-top: 4rem; display: flex; justify-content: space-between;">
@@ -138,18 +230,6 @@
     </div>
 
     <script src="js/main.js"></script>
-    <script>
-        const themeToggle = document.getElementById('theme-toggle');
-        themeToggle.addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-            if (document.body.classList.contains('dark-mode')) {
-                themeToggle.textContent = '🌙';
-            } else {
-                themeToggle.textContent = '💡';
-            }
-        });
-    </script>
+    
 </body>
 </html>
-
-

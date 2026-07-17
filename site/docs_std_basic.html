@@ -3,44 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Math & System - Sapphire Documentation</title>
+    <title>Math & System — Sapphire Docs</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body class="dark-mode">
+    <!-- Mobile Sidebar Toggle -->
+    <button class="sidebar-toggle" aria-label="Open menu">&#9776;</button>
+    <div class="sidebar-overlay"></div>
+
     <div class="docs-layout">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <button id="theme-toggle" aria-label="Toggle theme">💡</button>
-            <a href="../index.html" class="sidebar-logo">
-                <img src="assets/logo.svg" alt="Logo"> Sapphire
-            </a>
-            <nav>
-                <h4>Part 1: The Core</h4>
-                <ul>
-                    <li><a href="docs_intro.html">1. Intro & Variables</a></li>
-                    <li><a href="docs_control_flow.html">2. Control Flow & Functions</a></li>
-                    <li><a href="docs_data_structures.html">3. Lists & Maps</a></li>
-                    <li><a href="docs_std_basic.html" class="active">4. Math & System Modules</a></li>
-                </ul>
+            <div class="sidebar-inner">
+                <div class="sidebar-header">
+                    <a href="../index.html" class="sidebar-logo">
+                        <div class="logo-gem">&#x1F48E;</div>
+                        Sapphire
+                    </a>
+                    <button id="sidebar-theme-toggle" aria-label="Toggle theme">&#x1F319;</button>
+                </div>
+                <div class="sidebar-nav-body">
+                <nav>
+                    <h4>Part 1: The Core</h4>
+                    <ul>
+                        <li><a href="docs_intro.html">1. Intro &amp; Variables</a></li>
+                        <li><a href="docs_control_flow.html">2. Control Flow &amp; Functions</a></li>
+                        <li><a href="docs_data_structures.html">3. Lists &amp; Maps</a></li>
+                        <li><a href="docs_std_basic.html" class="active">4. Math &amp; System Modules</a></li>
+                    </ul>
 
-                <h4>Part 2: Advanced</h4>
-                <ul>
-                    <li><a href="docs_oop.html">5. Object-Oriented (OOP)</a></li>
-                    <li><a href="docs_exceptions.html">6. Exceptions Handling</a></li>
-                    <li><a href="docs_async.html">7. Async & Await</a></li>
-                    <li><a href="docs_threading.html">8. Multi-threading</a></li>
-                </ul>
+                    <h4>Part 2: Advanced</h4>
+                    <ul>
+                        <li><a href="docs_oop.html">5. Object-Oriented (OOP)</a></li>
+                        <li><a href="docs_exceptions.html">6. Exceptions Handling</a></li>
+                        <li><a href="docs_async.html">7. Async &amp; Await</a></li>
+                        <li><a href="docs_threading.html">8. Multi-threading</a></li>
+                    </ul>
 
-                <h4>Part 3: I/O & UI</h4>
-                <ul>
-                    <li><a href="docs_file_io.html">9. File I/O</a></li>
-                    <li><a href="docs_http.html">10. HTTP Requests</a></li>
-                    <li><a href="docs_ui_engine.html">11. UI Engine</a></li>
-                    <li><a href="docs_sqlite.html">12. SQLite Database</a></li>`n                </ul>
-            </nav>
+                    <h4>Part 3: I/O &amp; UI</h4>
+                    <ul>
+                        <li><a href="docs_file_io.html">9. File I/O</a></li>
+                        <li><a href="docs_http.html">10. HTTP Requests</a></li>
+                        <li><a href="docs_ui_engine.html">11. UI Engine</a></li>
+                        <li><a href="docs_sqlite.html">12. SQLite Database</a></li>
+                    </ul>
+                </nav>
+                </div>
+                <div class="sidebar-footer">
+                    <span class="version-badge">&#x1F48E; v1.0.6</span>
+                </div>
+            </div>
         </aside>
 
         <!-- Main Content -->
@@ -49,8 +64,10 @@
             <p>A programming language is only as powerful as its standard library. Sapphire ships with a highly optimized set of core modules directly bound to C++ functions for maximum performance. This page covers two essential native modules: <code>Math</code> and <code>System</code>.</p>
 
             <h2>The Math Module</h2>
-            <p>The Math module provides static functions for complex mathematical operations beyond simple arithmetic.</p>
-            
+            <p>The Math module provides static functions for complex mathematical operations beyond simple arithmetic. All functions are accessed via <code>Math.functionName()</code>.</p>
+
+            <h3>Basic Math Operations</h3>
+
             <div class="snippet-container">
                 <div class="snippet-header">
                     <span class="snippet-lang">sapphire</span>
@@ -59,26 +76,30 @@
                         <button class="btn-run">Run / Output</button>
                     </div>
                 </div>
-                <pre><code><span class="token-comment">// Basic Math operations</span>
+                <pre><code><span class="token-comment">// Power and square root</span>
 <span class="token-keyword">var</span> p = Math.<span class="token-function">pow</span>(<span class="token-number">2</span>, <span class="token-number">8</span>)<span class="token-punctuation">;</span>
 <span class="token-function">print</span>(<span class="token-string">"2 to the power of 8 is: "</span> + p)<span class="token-punctuation">;</span>
 
 <span class="token-keyword">var</span> sq = Math.<span class="token-function">sqrt</span>(<span class="token-number">144</span>)<span class="token-punctuation">;</span>
 <span class="token-function">print</span>(<span class="token-string">"Square root of 144 is: "</span> + sq)<span class="token-punctuation">;</span>
 
-<span class="token-comment">// Rounding</span>
+<span class="token-comment">// Rounding: floor (round down) and ceil (round up)</span>
 <span class="token-function">print</span>(<span class="token-string">"Floor of 4.9: "</span> + Math.<span class="token-function">floor</span>(<span class="token-number">4.9</span>))<span class="token-punctuation">;</span>
-<span class="token-function">print</span>(<span class="token-string">"Ceil of 4.1: "</span> + Math.<span class="token-function">ceil</span>(<span class="token-number">4.1</span>))<span class="token-punctuation">;</span></code></pre>
+<span class="token-function">print</span>(<span class="token-string">"Ceil of 4.1: "</span> + Math.<span class="token-function">ceil</span>(<span class="token-number">4.1</span>))<span class="token-punctuation">;</span>
+
+<span class="token-comment">// Absolute value</span>
+<span class="token-function">print</span>(<span class="token-string">"Absolute of -5: "</span> + Math.<span class="token-function">abs</span>(-<span class="token-number">5</span>))<span class="token-punctuation">;</span></code></pre>
                 <div class="output-container">
-                    &gt; 2 to the power of 8 is: 256<br>
-                    &gt; Square root of 144 is: 12<br>
-                    &gt; Floor of 4.9: 4<br>
-                    &gt; Ceil of 4.1: 5
+                    > 2 to the power of 8 is: 256<br>
+                    > Square root of 144 is: 12<br>
+                    > Floor of 4.9: 4<br>
+                    > Ceil of 4.1: 5<br>
+                    > Absolute of -5: 5
                 </div>
             </div>
 
-            <h3>Trigonometry and Randomness</h3>
-            <p>You can also compute sine, cosine, tangent, and generate random numbers.</p>
+            <h3>Trigonometry</h3>
+            <p>You can compute sine, cosine, and tangent of angles (in radians).</p>
 
             <div class="snippet-container">
                 <div class="snippet-header">
@@ -88,17 +109,59 @@
                         <button class="btn-run">Run / Output</button>
                     </div>
                 </div>
-                <pre><code><span class="token-keyword">var</span> s = Math.<span class="token-function">sin</span>(<span class="token-number">3.14159</span> / <span class="token-number">2</span>)<span class="token-punctuation">;</span>
-<span class="token-function">print</span>(<span class="token-string">"Sin of PI/2 is: "</span> + s)<span class="token-punctuation">;</span>
+                <pre><code><span class="token-keyword">var</span> angle = <span class="token-number">3.14159</span> / <span class="token-number">2</span><span class="token-punctuation">;</span>  <span class="token-comment">// PI/2 radians = 90 degrees</span>
 
-<span class="token-comment">// Generate a random number between 0 and 1</span>
-<span class="token-keyword">var</span> r = Math.<span class="token-function">rand</span>()<span class="token-punctuation">;</span>
-<span class="token-function">print</span>(<span class="token-string">"Random seed: "</span> + r)<span class="token-punctuation">;</span></code></pre>
+<span class="token-function">print</span>(<span class="token-string">"Sin of PI/2: "</span> + Math.<span class="token-function">sin</span>(angle))<span class="token-punctuation">;</span>
+<span class="token-function">print</span>(<span class="token-string">"Cos of PI/2: "</span> + Math.<span class="token-function">cos</span>(angle))<span class="token-punctuation">;</span>
+<span class="token-function">print</span>(<span class="token-string">"Tan of PI/4: "</span> + Math.<span class="token-function">tan</span>(<span class="token-number">3.14159</span> / <span class="token-number">4</span>))<span class="token-punctuation">;</span></code></pre>
                 <div class="output-container">
-                    &gt; Sin of PI/2 is: 1.0<br>
-                    &gt; Random seed: 0.827364
+                    > Sin of PI/2: 1.0<br>
+                    > Cos of PI/2: 0.0<br>
+                    > Tan of PI/4: 1.0
                 </div>
             </div>
+
+            <h3>Random Numbers</h3>
+            <p>Generate random numbers between 0 and 1 using <code>Math.rand()</code>.</p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// Generate a random number between 0 and 1</span>
+<span class="token-keyword">var</span> r = Math.<span class="token-function">rand</span>()<span class="token-punctuation">;</span>
+<span class="token-function">print</span>(<span class="token-string">"Random number: "</span> + r)<span class="token-punctuation">;</span>
+
+<span class="token-comment">// Simulate a dice roll (1 to 6)</span>
+<span class="token-keyword">var</span> dice = Math.<span class="token-function">floor</span>(Math.<span class="token-function">rand</span>() * <span class="token-number">6</span>) + <span class="token-number">1</span><span class="token-punctuation">;</span>
+<span class="token-function">print</span>(<span class="token-string">"Dice roll: "</span> + dice)<span class="token-punctuation">;</span></code></pre>
+                <div class="output-container">
+                    > Random number: 0.827364<br>
+                    > Dice roll: 4
+                </div>
+            </div>
+
+            <h3>Math Functions Reference</h3>
+            <table>
+                <thead>
+                    <tr><th>Function</th><th>Description</th><th>Example</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>Math.pow(x, y)</code></td><td>x raised to the power of y</td><td><code>Math.pow(2, 8) → 256</code></td></tr>
+                    <tr><td><code>Math.sqrt(x)</code></td><td>Square root of x</td><td><code>Math.sqrt(144) → 12</code></td></tr>
+                    <tr><td><code>Math.floor(x)</code></td><td>Round down to nearest integer</td><td><code>Math.floor(4.9) → 4</code></td></tr>
+                    <tr><td><code>Math.ceil(x)</code></td><td>Round up to nearest integer</td><td><code>Math.ceil(4.1) → 5</code></td></tr>
+                    <tr><td><code>Math.abs(x)</code></td><td>Absolute value</td><td><code>Math.abs(-5) → 5</code></td></tr>
+                    <tr><td><code>Math.sin(x)</code></td><td>Sine of x (radians)</td><td><code>Math.sin(0) → 0</code></td></tr>
+                    <tr><td><code>Math.cos(x)</code></td><td>Cosine of x (radians)</td><td><code>Math.cos(0) → 1</code></td></tr>
+                    <tr><td><code>Math.tan(x)</code></td><td>Tangent of x (radians)</td><td><code>Math.tan(0) → 0</code></td></tr>
+                    <tr><td><code>Math.rand()</code></td><td>Random number between 0 and 1</td><td><code>Math.rand() → 0.42</code></td></tr>
+                </tbody>
+            </table>
 
             <h2>The System Module</h2>
             <p>The System module lets your Sapphire scripts communicate with the Operating System, allowing you to fetch environment variables, execute shell commands, and measure precise time intervals.</p>
@@ -118,19 +181,19 @@
     <span class="token-function">print</span>(<span class="token-string">"PATH variable found!"</span>)<span class="token-punctuation">;</span>
 <span class="token-punctuation">}</span>
 
-<span class="token-comment">// Executing a shell command</span>
+<span class="token-comment">// Executing a shell command (platform-dependent)</span>
 <span class="token-function">print</span>(<span class="token-string">"Pinging localhost..."</span>)<span class="token-punctuation">;</span>
 System.<span class="token-function">exec</span>(<span class="token-string">"ping 127.0.0.1 -n 2"</span>)<span class="token-punctuation">;</span></code></pre>
                 <div class="output-container">
-                    &gt; PATH variable found!<br>
-                    &gt; Pinging localhost...<br>
-                    &gt; Pinging 127.0.0.1 with 32 bytes of data:<br>
-                    &gt; Reply from 127.0.0.1: bytes=32 time&lt;1ms TTL=128
+                    > PATH variable found!<br>
+                    > Pinging localhost...<br>
+                    > Pinging 127.0.0.1 with 32 bytes of data:<br>
+                    > Reply from 127.0.0.1: bytes=32 time<1ms TTL=128
                 </div>
             </div>
             
             <h3>High-Resolution Timers</h3>
-            <p>When measuring performance or creating animations, you need a very precise timer. Sapphire offers a millisecond-precision clock via the System module.</p>
+            <p>When measuring performance or creating animations, you need a very precise timer. Sapphire offers a millisecond-precision clock via the <code>System.clock()</code> function.</p>
 
             <div class="snippet-container">
                 <div class="snippet-header">
@@ -143,7 +206,7 @@ System.<span class="token-function">exec</span>(<span class="token-string">"ping
                 <pre><code><span class="token-keyword">var</span> start = System.<span class="token-function">clock</span>()<span class="token-punctuation">;</span>
 
 <span class="token-keyword">var</span> i = <span class="token-number">0</span><span class="token-punctuation">;</span>
-<span class="token-keyword">while</span> (i &lt; <span class="token-number">100000</span>) <span class="token-punctuation">{</span>
+<span class="token-keyword">while</span> (i < <span class="token-number">100000</span>) <span class="token-punctuation">{</span>
     i = i + <span class="token-number">1</span><span class="token-punctuation">;</span>
 <span class="token-punctuation">}</span>
 
@@ -151,39 +214,21 @@ System.<span class="token-function">exec</span>(<span class="token-string">"ping
 <span class="token-keyword">var</span> diff = end - start<span class="token-punctuation">;</span>
 <span class="token-function">print</span>(<span class="token-string">"Counted to 100k in: "</span> + diff + <span class="token-string">" seconds."</span>)<span class="token-punctuation">;</span></code></pre>
                 <div class="output-container">
-                    &gt; Counted to 100k in: 0.002 seconds.
+                    > Counted to 100k in: 0.002 seconds.
                 </div>
             </div>
-            
-            <h2>The SQLite Module</h2>
-            <p>For data persistence, Sapphire provides a native module for SQLite3, allowing you to easily create, query, and manipulate SQL databases directly from your scripts without needing heavy ORMs or external drivers.</p>
 
-            <div class="snippet-container">
-                <div class="snippet-header">
-                    <span class="snippet-lang">sapphire</span>
-                    <div class="snippet-actions">
-                        <button class="btn-copy">Copy</button>
-                    </div>
-                </div>
-                <pre><code><span class="token-comment">// Instantiate the SQLite object</span>
-<span class="token-keyword">var</span> sql = <span class="token-function">SQLite</span>()<span class="token-punctuation">;</span>
-
-<span class="token-comment">// Open a database (creates it if it doesn't exist)</span>
-<span class="token-keyword">var</span> db = sql.<span class="token-function">open</span>(<span class="token-string">"my_database.db"</span>)<span class="token-punctuation">;</span>
-
-<span class="token-comment">// Execute DDL and DML statements</span>
-sql.<span class="token-function">execute</span>(db, <span class="token-string">"CREATE TABLE IF NOT EXISTS inventory (id INTEGER PRIMARY KEY, item TEXT, qty INTEGER);"</span>)<span class="token-punctuation">;</span>
-sql.<span class="token-function">execute</span>(db, <span class="token-string">"INSERT INTO inventory (item, qty) VALUES ('Potions', 99);"</span>)<span class="token-punctuation">;</span>
-
-<span class="token-comment">// Query results directly into Sapphire Maps!</span>
-<span class="token-keyword">var</span> results = sql.<span class="token-function">query</span>(db, <span class="token-string">"SELECT * FROM inventory;"</span>)<span class="token-punctuation">;</span>
-<span class="token-keyword">foreach</span> (<span class="token-keyword">var</span> row <span class="token-keyword">in</span> results) <span class="token-punctuation">{</span>
-    <span class="token-function">print</span>(<span class="token-string">"Item: "</span> + row.item + <span class="token-string">", Quantity: "</span> + row.qty)<span class="token-punctuation">;</span>
-<span class="token-punctuation">}</span>
-
-<span class="token-comment">// Always close the connection</span>
-sql.<span class="token-function">close</span>(db)<span class="token-punctuation">;</span></code></pre>
-            </div>
+            <h3>System Functions Reference</h3>
+            <table>
+                <thead>
+                    <tr><th>Function</th><th>Description</th><th>Example</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>System.getEnv(name)</code></td><td>Get environment variable value</td><td><code>System.getEnv("PATH")</code></td></tr>
+                    <tr><td><code>System.exec(command)</code></td><td>Execute a shell command</td><td><code>System.exec("dir")</code></td></tr>
+                    <tr><td><code>System.clock()</code></td><td>Get high-resolution time (seconds)</td><td><code>System.clock()</code></td></tr>
+                </tbody>
+            </table>
 
             <p style="margin-top: 4rem; display: flex; justify-content: space-between;">
                 <a href="docs_data_structures.html" class="btn btn-outline">&larr; Previous</a>
@@ -193,18 +238,6 @@ sql.<span class="token-function">close</span>(db)<span class="token-punctuation"
     </div>
 
     <script src="js/main.js"></script>
-    <script>
-        const themeToggle = document.getElementById('theme-toggle');
-        themeToggle.addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-            if (document.body.classList.contains('dark-mode')) {
-                themeToggle.textContent = '🌙';
-            } else {
-                themeToggle.textContent = '💡';
-            }
-        });
-    </script>
+    
 </body>
 </html>
-
-
