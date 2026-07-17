@@ -2693,6 +2693,13 @@ std::string VM::find_and_load_module(const std::string& module_name, std::string
             // Also try the build directory structure
             "../" + plugin_name + "/versions/v" + version + "/files/main.sp",
         };
+
+        const char* appdata_path = getenv("APPDATA");
+        if (appdata_path != nullptr) {
+            possible_paths.push_back(
+                std::string(appdata_path) + "\\Sapphire\\plugins\\" + plugin_name +
+                "\\versions\\v" + version + "\\files\\main.sp");
+        }
         
         for (const auto& plugin_path : possible_paths) {
             std::string content = load_file_as_string(plugin_path);
@@ -2716,6 +2723,12 @@ std::string VM::find_and_load_module(const std::string& module_name, std::string
                 "../../plugins/" + plugin_name + "/versions/v1.0.0/files/main.sp",
                 "../" + plugin_name + "/versions/v1.0.0/files/main.sp",
             };
+
+            if (appdata_path != nullptr) {
+                latest_paths.push_back(
+                    std::string(appdata_path) + "\\Sapphire\\plugins\\" + plugin_name +
+                    "\\versions\\v1.0.0\\files\\main.sp");
+            }
             
             for (const auto& plugin_path : latest_paths) {
                 std::string content = load_file_as_string(plugin_path);

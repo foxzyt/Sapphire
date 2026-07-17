@@ -9,98 +9,17 @@
 #include "core/lockfile.hpp"
 #include <iostream>
 #include <filesystem>
+#include <vector>
+#include <string>
+#include <sstream>
+#include <algorithm>
 #include "termcolor.hpp"
 
 namespace mine {
 namespace commands {
 
-// Fetch the latest version tag from a GitHub repository
-inline std::string get_latest_github_version(const std::string& repo_url) {
-    // Parse owner/repo from URL
-    // Expected: https://github.com/owner/repo
-    std::string api_url = repo_url;
-    
-    // Extract owner/repo from GitHub URL
-    size_t github_pos = api_url.find("github.com/");
-    if (github_pos == std::string::npos) {
-        return "";
-    }
-    
-    std::string owner_repo = api_url.substr(github_pos + 11);
-    // Remove trailing slash if present
-    if (!owner_repo.empty() && owner_repo.back() == '/') {
-        owner_repo.pop_back();
-    }
-    // Remove .git suffix if present
-    if (owner_repo.size() > 4 && owner_repo.substr(owner_repo.size() - 4) == ".git") {
-        owner_repo = owner_repo.substr(0, owner_repo.size() - 4);
-    }
-    
-    // Use GitHub API to get the latest release
-    std::string api_path = "/repos/" + owner_repo + "/releases/latest";
-    
-    std::cout << termcolor::cyan << "[*] Checking for updates at: " << api_url << termcolor::reset << std::endl;
-    
-    try {
-        httplib::SSLClient cli("api.github.com");
-        cli.set_follow_location(true);
-        cli.set_connection_timeout(10);
-        cli.set_read_timeout(15);
-        cli.enable_server_certificate_verification(false);
-        
-        // Add User-Agent header (required by GitHub API)
-        httplib::Headers headers = {
-            {"User-Agent", "Sapphire-Mine/2.0"},
-            {"Accept", "application/vnd.github.v3+json"}
-        };
-        
-        auto res = cli.Get(api_path.c_str(), headers);
-        
-        if (res && res->status == 200) {
-            try {
-                nlohmann::json j = nlohmann::json::parse(res->body);
-                if (j.contains("tag_name")) {
-                    std::string tag = j["tag_name"].get<std::string>();
-                    // Remove 'v' prefix if present
-                    if (tag.size() > 1 && tag[0] == 'v') {
-                        tag = tag.substr(1);
-                    }
-                    return tag;
-                }
-            } catch (const std::exception& e) {
-                std::cerr << termcolor::yellow << "[!] Failed to parse GitHub API response: " << e.what() << termcolor::reset << std::endl;
-            }
-        } else if (res && (res->status == 404 || res->status == 403)) {
-            // Fallback: try to get tags instead
-            std::string tags_path = "/repos/" + owner_repo + "/tags";
-            auto tags_res = cli.Get(tags_path.c_str(), headers);
-            if (tags_res && tags_res->status == 200) {
-                try {
-                    nlohmann::json tags = nlohmann::json::parse(tags_res->body);
-                    if (tags.is_array() && !tags.empty()) {
-                        std::string tag = tags[0]["name"].get<std::string>();
-                        if (tag.size() > 1 && tag[0] == 'v') {
-                            tag = tag.substr(1);
-                        }
-                        return tag;
-                    }
-                } catch (const std::exception& e) {
-                    std::cerr << termcolor::yellow << "[!] Failed to parse tags: " << e.what() << termcolor::reset << std::endl;
-                }
-            }
-        } else if (res) {
-            std::cerr << termcolor::yellow << "[!] GitHub API error: " << res->status << " " << res->reason << termcolor::reset << std::endl;
-        } else {
-            std::cerr << termcolor::yellow << "[!] Could not connect to GitHub API" << termcolor::reset << std::endl;
-        }
-    } catch (const std::exception& e) {
-        std::cerr << termcolor::yellow << "[!] Update check error: " << e.what() << termcolor::reset << std::endl;
-    }
-    
-    return "";
-}
-
 // Compare two semantic versions (returns true if v1 < v2)
+// Moved ABOVE get_latest_github_version so it can be used for directory comparison
 inline bool is_version_older(const std::string& v1, const std::string& v2) {
     if (v1 == v2) return false;
     if (v1 == "latest" || v1.empty()) return true;
@@ -127,6 +46,120 @@ inline bool is_version_older(const std::string& v1, const std::string& v2) {
     }
     
     return false;
+}
+
+// Fetch the latest version tag from a GitHub repository
+inline std::string get_latest_github_version(const std::string& repo_url) {
+    // Parse owner/repo from URL
+    // Expected: https://github.com/owner/repo
+    std::string api_url = repo_url;
+    
+    // Extract owner/repo from GitHub URL
+    size_t github_pos = api_url.find("github.com/");
+    if (github_pos == std::string::npos) {
+        return "";
+    }
+    
+    std::string owner_repo = api_url.substr(github_pos + 11);
+    // Remove trailing slash if present
+    if (!owner_repo.empty() && owner_repo.back() == '/') {
+        owner_repo.pop_back();
+    }
+    // Remove .git suffix if present
+    if (owner_repo.size() > 4 && owner_repo.substr(owner_repo.size() - 4) == ".git") {
+        owner_repo = owner_repo.substr(0, owner_repo.size() - 4);
+    }
+    
+    std::cout << termcolor::cyan << "[*] Checking for updates at: " << api_url << termcolor::reset << std::endl;
+    
+    try {
+        httplib::SSLClient cli("api.github.com");
+        cli.set_follow_location(true);
+        cli.set_connection_timeout(10);
+        cli.set_read_timeout(15);
+        cli.enable_server_certificate_verification(false);
+        
+        // Add User-Agent header (required by GitHub API)
+        httplib::Headers headers = {
+            {"User-Agent", "Sapphire-Mine/2.0"},
+            {"Accept", "application/vnd.github.v3+json"}
+        };
+        
+        // 1. Try Releases
+        std::string api_path = "/repos/" + owner_repo + "/releases/latest";
+        auto res = cli.Get(api_path.c_str(), headers);
+        
+        if (res && res->status == 200) {
+            try {
+                nlohmann::json j = nlohmann::json::parse(res->body);
+                if (j.contains("tag_name")) {
+                    std::string tag = j["tag_name"].get<std::string>();
+                    if (tag.size() > 1 && tag[0] == 'v') { tag = tag.substr(1); }
+                    return tag;
+                }
+            } catch (...) {}
+        } 
+        
+        // 2. Try Tags Fallback
+        std::string tags_path = "/repos/" + owner_repo + "/tags";
+        auto tags_res = cli.Get(tags_path.c_str(), headers);
+        if (tags_res && tags_res->status == 200) {
+            try {
+                nlohmann::json tags = nlohmann::json::parse(tags_res->body);
+                if (tags.is_array() && !tags.empty()) {
+                    std::string tag = tags[0]["name"].get<std::string>();
+                    if (tag.size() > 1 && tag[0] == 'v') { tag = tag.substr(1); }
+                    return tag;
+                }
+            } catch (...) {}
+        }
+
+        // 3. Try versions/ Directory Check (Sapphire Native Structure Fallback)
+        std::string contents_path = "/repos/" + owner_repo + "/contents/versions";
+        auto contents_res = cli.Get(contents_path.c_str(), headers);
+        if (contents_res && contents_res->status == 200) {
+            try {
+                nlohmann::json items = nlohmann::json::parse(contents_res->body);
+                std::string highest_version = "";
+                
+                if (items.is_array()) {
+                    for (const auto& item : items) {
+                        if (item.contains("type") && item["type"] == "dir" && item.contains("name")) {
+                            std::string dir_name = item["name"].get<std::string>();
+                            std::string ver = dir_name;
+                            
+                            // Remove 'v' prefix for comparison
+                            if (ver.size() > 1 && ver[0] == 'v') {
+                                ver = ver.substr(1);
+                            }
+                            
+                            if (highest_version.empty() || is_version_older(highest_version, ver)) {
+                                highest_version = ver;
+                            }
+                        }
+                    }
+                }
+                
+                if (!highest_version.empty()) {
+                    return highest_version;
+                }
+            } catch (const std::exception& e) {
+                std::cerr << termcolor::yellow << "  [!] Failed to parse versions directory: " << e.what() << termcolor::reset << std::endl;
+            }
+        }
+        
+        // If all checks fail, output error
+        if ((!res || res->status != 200) && 
+            (!tags_res || tags_res->status != 200) && 
+            (!contents_res || contents_res->status != 200)) {
+             std::cerr << termcolor::yellow << "  [!] Could not find any releases, tags, or 'versions/' directory" << termcolor::reset << std::endl;
+        }
+
+    } catch (const std::exception& e) {
+        std::cerr << termcolor::yellow << "[!] Update check error: " << e.what() << termcolor::reset << std::endl;
+    }
+    
+    return "";
 }
 
 // Update a specific plugin to the latest version
