@@ -1,9 +1,0 @@
-function main() void {
-    var a = 15;
-    var b = 3;
-    var c = (a * b) / 5;
-    if (c == 9) {
-        print("Math test passed.");
-    }
-}
-main();
