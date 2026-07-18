@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Sapphire VM & Preprocessor Imports:**
   - Custom entry point routing supporting `main: <path>` or `entry: <path>` tags in `PLUGIN.txt` or `sapphire.json` configuration manifests.
   - Scope prefix tags inside module imports allowing developers to enforce search boundaries (`local:plugin@version`, `global:plugin@version`, `path:relative/or/absolute/folder`).
+  - Added new native **`assert(condition, message)`** function in VM for test assertions.
+  - Added CLI command **`sapphire test [file_or_dir]`** to dynamically scan and execute all functions/methods starting with `test` or `should` inside global functions and class definitions.
+  - Added CLI command **`sapphire lint <file>`** performing static code analysis checks (warning on non-PascalCase class names, function naming conventions, TODOs, line length, and syntax compilation validations).
 - **LSP — Full Python/Rust-class Language Server (v2):**
   - `textDocument/signatureHelp`: Parameter hints popup triggered on `(` and `,` for all 60+ built-in functions. Shows the signature, parameter list, and active parameter highlighted.
   - `textDocument/documentSymbol`: Outline panel populates with all `function`, `class`, `var`, `const`, and `enum` declarations in the current file.
