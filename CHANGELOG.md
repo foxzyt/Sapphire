@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Renomeado **Spack (sapphire packer)** para **Beryl**. Todas as referências internas de build, caminhos de arquivos (`src/spack` para `src/beryl`), assinaturas de rodapés de executáveis compactados (`SPACK_V1`/`SPACK_V2` para `BERYL_V1`/`BERYL_V2`), arquivos de configuração padrão (`SpackConfig.txt` para `BerylConfig.txt`), interface gráfica do empacotador e documentação foram atualizados para Beryl.
+
 ### Added
 - **Spark v2.4.0 — Environment, Manifests & Lockfiles:**
   - Automated project manifest initialization (`sapphire.json`) via `spark init` supporting interactive bypass (`-y` / `--yes`) and direct flags (`--name`, `--version`, `--author`, `--description`).
