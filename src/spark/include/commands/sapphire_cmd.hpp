@@ -1,16 +1,16 @@
-#ifndef MINE_COMMANDS_SAPPHIRE_CMD_HPP
-#define MINE_COMMANDS_SAPPHIRE_CMD_HPP
+#ifndef SPARK_COMMANDS_SAPPHIRE_CMD_HPP
+#define SPARK_COMMANDS_SAPPHIRE_CMD_HPP
 
 // =============================================================================
-// sapphire_cmd.hpp — Comandos "mine sapphire *"
+// sapphire_cmd.hpp — Comandos "spark sapphire *"
 //
 // Subcomandos disponíveis:
-//   mine sapphire list                   — Lista versões disponíveis no GitHub
-//   mine sapphire versions               — Lista versões instaladas localmente
-//   mine sapphire current                — Mostra a versão ativa
-//   mine sapphire install <ver>          — Instala e ativa uma versão (suporta SemVer)
-//   mine sapphire use <ver>              — Ativa uma versão já instalada
-//   mine sapphire uninstall <ver>        — Remove uma versão instalada
+//   spark sapphire list                   — Lista versões disponíveis no GitHub
+//   spark sapphire versions               — Lista versões instaladas localmente
+//   spark sapphire current                — Mostra a versão ativa
+//   spark sapphire install <ver>          — Instala e ativa uma versão (suporta SemVer)
+//   spark sapphire use <ver>              — Ativa uma versão já instalada
+//   spark sapphire uninstall <ver>        — Remove uma versão instalada
 // =============================================================================
 
 #include "core/sapphire_version.hpp"
@@ -22,7 +22,7 @@
 #include <algorithm>
 #include <iomanip>
 
-namespace mine {
+namespace spark {
 namespace commands {
 
 // ---------------------------------------------------------------------------
@@ -113,7 +113,7 @@ inline int cmd_sapphire_list() {
                   << termcolor::reset << std::endl;
     } else {
         std::cout << termcolor::yellow
-                  << "Active: (none — run: mine sapphire install latest)"
+                  << "Active: (none — run: spark sapphire install latest)"
                   << termcolor::reset << std::endl;
     }
 
@@ -136,7 +136,7 @@ inline int cmd_sapphire_versions() {
                   << "(No versions installed)"
                   << termcolor::reset << std::endl;
         std::cout << "Run: " << termcolor::green
-                  << "mine sapphire install latest"
+                  << "spark sapphire install latest"
                   << termcolor::reset << std::endl;
         return 0;
     }
@@ -199,7 +199,7 @@ inline int cmd_sapphire_current() {
                   << "No active Sapphire version."
                   << termcolor::reset << std::endl;
         std::cout << "Run: " << termcolor::green
-                  << "mine sapphire install latest"
+                  << "spark sapphire install latest"
                   << termcolor::reset << std::endl;
         return 1;
     }
@@ -345,7 +345,7 @@ inline int cmd_sapphire_use(const std::string& version) {
         std::cerr << termcolor::red
                   << "[!] Missing version argument"
                   << termcolor::reset << std::endl;
-        std::cerr << "Usage: mine sapphire use <version>" << std::endl;
+        std::cerr << "Usage: spark sapphire use <version>" << std::endl;
         std::cerr << "Installed versions: ";
         auto installed = get_installed_sapphire_versions();
         for (const auto& v : installed) std::cerr << semver::with_v(v) << " ";
@@ -360,7 +360,7 @@ inline int cmd_sapphire_use(const std::string& version) {
                   << "[!] Version " << semver::with_v(clean) << " is not installed."
                   << termcolor::reset << std::endl;
         std::cout << "Run: " << termcolor::green
-                  << "mine sapphire install " << clean
+                  << "spark sapphire install " << clean
                   << termcolor::reset << std::endl;
 
         auto installed = get_installed_sapphire_versions();
@@ -383,7 +383,7 @@ inline int cmd_sapphire_uninstall(const std::string& version) {
         std::cerr << termcolor::red
                   << "[!] Missing version argument"
                   << termcolor::reset << std::endl;
-        std::cerr << "Usage: mine sapphire uninstall <version>" << std::endl;
+        std::cerr << "Usage: spark sapphire uninstall <version>" << std::endl;
         return 1;
     }
 
@@ -458,28 +458,28 @@ inline int cmd_sapphire_uninstall(const std::string& version) {
 // ---------------------------------------------------------------------------
 inline void print_sapphire_help() {
     std::cout << termcolor::bold << termcolor::cyan
-              << "mine sapphire" << termcolor::reset
+              << "spark sapphire" << termcolor::reset
               << " — Sapphire Runtime Version Manager"
               << std::endl;
     std::cout << std::endl;
 
     std::cout << termcolor::bold << "Commands:" << termcolor::reset << std::endl;
-    std::cout << "  " << termcolor::green << "mine sapphire list"
+    std::cout << "  " << termcolor::green << "spark sapphire list"
               << termcolor::reset
               << "                  List all available versions (remote)" << std::endl;
-    std::cout << "  " << termcolor::green << "mine sapphire versions"
+    std::cout << "  " << termcolor::green << "spark sapphire versions"
               << termcolor::reset
               << "               List installed versions (local)" << std::endl;
-    std::cout << "  " << termcolor::green << "mine sapphire current"
+    std::cout << "  " << termcolor::green << "spark sapphire current"
               << termcolor::reset
               << "                Show the currently active version" << std::endl;
-    std::cout << "  " << termcolor::green << "mine sapphire install <version>"
+    std::cout << "  " << termcolor::green << "spark sapphire install <version>"
               << termcolor::reset
               << "      Install (and activate) a version" << std::endl;
-    std::cout << "  " << termcolor::green << "mine sapphire use <version>"
+    std::cout << "  " << termcolor::green << "spark sapphire use <version>"
               << termcolor::reset
               << "          Activate an already-installed version" << std::endl;
-    std::cout << "  " << termcolor::green << "mine sapphire uninstall <version>"
+    std::cout << "  " << termcolor::green << "spark sapphire uninstall <version>"
               << termcolor::reset
               << "    Remove an installed version" << std::endl;
     std::cout << std::endl;
@@ -496,7 +496,7 @@ inline void print_sapphire_help() {
     std::cout << std::endl;
 
     std::cout << termcolor::yellow
-              << "Binaries installed: sapphire.exe, runner.exe, spac.exe, mine.exe"
+              << "Binaries installed: sapphire.exe, runner.exe, spack.exe"
               << termcolor::reset << std::endl;
     std::cout << termcolor::yellow
               << "Install path: " << get_sapphire_bin_dir().string()
@@ -504,11 +504,11 @@ inline void print_sapphire_help() {
 }
 
 // ---------------------------------------------------------------------------
-// cmd_sapphire_dispatch — Ponto de entrada principal para "mine sapphire ..."
+// cmd_sapphire_dispatch — Ponto de entrada principal para "spark sapphire ..."
 // ---------------------------------------------------------------------------
 inline int cmd_sapphire_dispatch(int argc, char* argv[], int sapphire_arg_offset) {
     // sapphire_arg_offset = índice de argv onde começa o subcomando
-    // Ex: "mine sapphire install 1.0.9"  → argv[2]="install", argv[3]="1.0.9"
+    // Ex: "spark sapphire install 1.0.9"  → argv[2]="install", argv[3]="1.0.9"
 
     if (sapphire_arg_offset >= argc) {
         print_sapphire_help();
@@ -555,12 +555,12 @@ inline int cmd_sapphire_dispatch(int argc, char* argv[], int sapphire_arg_offset
         std::cerr << termcolor::red
                   << "[!] Unknown sapphire subcommand: '" << subcmd << "'"
                   << termcolor::reset << std::endl;
-        std::cerr << "Run 'mine sapphire help' for usage" << std::endl;
+        std::cerr << "Run 'spark sapphire help' for usage" << std::endl;
         return 1;
     }
 }
 
 } // namespace commands
-} // namespace mine
+} // namespace spark
 
-#endif // MINE_COMMANDS_SAPPHIRE_CMD_HPP
+#endif // SPARK_COMMANDS_SAPPHIRE_CMD_HPP

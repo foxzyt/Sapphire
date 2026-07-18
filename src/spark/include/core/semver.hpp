@@ -1,8 +1,8 @@
-#ifndef MINE_CORE_SEMVER_HPP
-#define MINE_CORE_SEMVER_HPP
+#ifndef SPARK_CORE_SEMVER_HPP
+#define SPARK_CORE_SEMVER_HPP
 
 // =============================================================================
-// semver.hpp — Semantic Versioning utilities for Mine Package Manager
+// semver.hpp — Semantic Versioning utilities for Spark Package Manager
 //
 // Extraído de commands/install.hpp para permitir reuso tanto no subsistema
 // de plugins quanto no novo subsistema de versão de binários da Sapphire.
@@ -14,7 +14,7 @@
 #include <algorithm>
 #include <stdexcept>
 
-namespace mine {
+namespace spark {
 namespace semver {
 
 // ---------------------------------------------------------------------------
@@ -196,6 +196,6 @@ inline std::string with_v(const std::string& version) {
 }
 
 } // namespace semver
-} // namespace mine
+} // namespace spark
 
-#endif // MINE_CORE_SEMVER_HPP
+#endif // SPARK_CORE_SEMVER_HPP

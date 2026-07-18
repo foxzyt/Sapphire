@@ -1,5 +1,5 @@
-#ifndef MINE_PARSER_HPP
-#define MINE_PARSER_HPP
+#ifndef SPARK_PARSER_HPP
+#define SPARK_PARSER_HPP
 
 #include "types.hpp"
 #include "fs_utils.hpp"
@@ -7,7 +7,7 @@
 #include <sstream>
 #include <optional>
 
-namespace mine {
+namespace spark {
 
 // Parse PLUGIN.txt file
 // Returns std::optional<PluginMeta> - empty if file doesn't exist or parsing fails
@@ -152,6 +152,6 @@ inline bool write_dependencies_txt(const fs::path& path, const std::vector<Depen
     return true;
 }
 
-} // namespace mine
+} // namespace spark
 
-#endif // MINE_PARSER_HPP
+#endif // SPARK_PARSER_HPP

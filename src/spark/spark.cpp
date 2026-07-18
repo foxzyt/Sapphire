@@ -23,21 +23,21 @@ fs::path get_plugin_dir() {
 }
 
 void print_info() {
-  std::cout << tc_bold() << tc_blue() << "Mine Package Manager" << tc_reset()
+  std::cout << tc_bold() << tc_blue() << "Spark Package Manager" << tc_reset()
             << " for Sapphire\n";
   std::cout << "Version: 1.0.0\n";
-  std::cout << "Repository: https://github.com/foxzyt/sapphire-mine\n\n";
+  std::cout << "Repository: https://github.com/foxzyt/sapphire-spark\n\n";
 
   std::cout << tc_bold() << "Commands:\n" << tc_reset();
-  std::cout << "  " << tc_green() << "mine get <name>" << tc_reset()
+  std::cout << "  " << tc_green() << "spark get <name>" << tc_reset()
             << "    - Download and install a plugin from the repository\n";
-  std::cout << "  " << tc_green() << "mine install <name>" << tc_reset()
+  std::cout << "  " << tc_green() << "spark install <name>" << tc_reset()
             << " - Install local file OR download from repository\n";
-  std::cout << "  " << tc_yellow() << "mine remove <name>" << tc_reset()
+  std::cout << "  " << tc_yellow() << "spark remove <name>" << tc_reset()
             << "  - Remove an installed plugin\n";
-  std::cout << "  " << tc_cyan() << "mine list" << tc_reset()
+  std::cout << "  " << tc_cyan() << "spark list" << tc_reset()
             << "           - List installed plugins\n";
-  std::cout << "  " << tc_blue() << "mine info" << tc_reset()
+  std::cout << "  " << tc_blue() << "spark info" << tc_reset()
             << "           - Show this information\n";
 }
 
@@ -84,7 +84,7 @@ void get_plugin(const std::string &raw_name) {
   }
 
   const std::string host = "https://raw.githubusercontent.com";
-  const std::string path = "/foxzyt/sapphire-mine/main/" + name + ".sp";
+  const std::string path = "/foxzyt/sapphire-spark/main/" + name + ".sp";
 
   std::cout << tc_cyan() << "Connecting to repository..." << tc_reset() << "\n";
 
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
     if (argc < 3) {
       std::cerr << tc_red() << "Error:" << tc_reset()
                 << " Missing plugin name.\n";
-      std::cerr << "Usage: mine get <name>\n";
+      std::cerr << "Usage: spark get <name>\n";
       return 1;
     }
     get_plugin(argv[2]);
@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
     if (argc < 3) {
       std::cerr << tc_red() << "Error:" << tc_reset()
                 << " Missing plugin name or file path.\n";
-      std::cerr << "Usage: mine install <name>\n";
+      std::cerr << "Usage: spark install <name>\n";
       return 1;
     }
     install_local_plugin(argv[2]);
@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
     if (argc < 3) {
       std::cerr << tc_red() << "Error:" << tc_reset()
                 << " Missing plugin name.\n";
-      std::cerr << "Usage: mine remove <name>\n";
+      std::cerr << "Usage: spark remove <name>\n";
       return 1;
     }
     remove_plugin(argv[2]);

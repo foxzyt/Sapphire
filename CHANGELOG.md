@@ -1,5 +1,4 @@
 # Changelog
-# Changelog
 
 All notable changes to this project will be documented in this file.
 
@@ -9,10 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Mine v2.2.0 — Sapphire Runtime Version Manager (`mine sapphire`):**
+- **Spark v2.3.0 — Renamed from Mine:**
+  - Package manager renamed from "mine" to "spark" (more thematic with Sapphire).
+  - Repository moved to `https://github.com/foxzyt/sapphire-spark`.
+  - All commands updated: `spark init`, `spark install`, `spark search`, etc.
+  - `spark outdated [name]` — Shows plugins with newer versions available. Compares installed version against the latest GitHub release/tag/version directory.
+  - `spark cache clean` — Cleans the download cache with size preview and confirmation prompt.
+  - `spark cache dir` — Shows the cache directory path, contents (files/dirs with sizes), and total space used.
+  - `spark lock <name> [version]` — Generates `spark.lock` and `CHECKSUMS.txt` for a plugin via dependency resolution. Displays locked dependencies with checksums.
+  - `spark tree [name] [version]` — Shows plugin dependency trees with Unicode box-drawing characters. Detects circular dependencies, missing plugins, and lock file status. Supports showing tree for all plugins or a specific one.
+  - `spark purge <name> [version] [--local] [--global]` — Removes specific version(s) of a plugin from local and/or global scopes. Without a version, removes all versions. Supports `--local` and `--global` flags to target specific scopes.
+  - `spark check` now scans both global (AppData) and local (./plugins/) directories, and validates exact version requirements for dependencies.
+- **Spark v2.2.0 — Sapphire Runtime Version Manager (`spark sapphire`):**
   - Novo subsistema de controle de versão dos executáveis da Sapphire integrado ao Mine.
   - `mine sapphire list` — Lista todas as versões disponíveis na branch `mine` do repositório `foxzyt/Sapphire` via GitHub Contents API.
-  - `mine sapphire install <version>` — Baixa e instala os binários (`sapphire.exe`, `runner.exe`, `spac.exe`, `mine.exe`) de uma versão específica. Suporta constraints SemVer completas: `latest`, `1.0.6`, `^1.0`, `>=1.0.5`, `<2.0`, etc.
+  - `mine sapphire install <version>` — Baixa e instala os binários (`sapphire.exe`, `runner.exe`, `spack.exe`, `mine.exe`) de uma versão específica. Suporta constraints SemVer completas: `latest`, `1.0.6`, `^1.0`, `>=1.0.5`, `<2.0`, etc.
   - `mine sapphire use <version>` — Ativa uma versão já instalada, copiando os binários para o diretório raiz (`%APPDATA%\Sapphire\bin\`).
   - `mine sapphire current` — Exibe a versão ativa, o caminho de instalação e o status de cada binário.
   - `mine sapphire versions` — Lista todas as versões instaladas localmente com tamanho e indicação da ativa.
@@ -155,6 +165,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Integration testing with mine.lock system
 
 ### Fixed
+- **`get_plugin_versions()` path bug:** Function was looking at `base_dir/"versions"` instead of `base_dir/plugin_name/"versions"`, causing version lists to always return empty for locally installed plugins. Now properly resolves versions across both local and global scopes.
+- **`spark check` scope bug:** Diagnostic was only scanning the global AppData directory, missing plugins installed in the local `./plugins/` project scope. Now scans both scopes and shows scope labels.
+- **`spark check` version validation:** Previously only checked if a dependency's directory existed, not if the required version was actually available. Now validates exact version requirements and shows warnings for version mismatches.
+- **`spark install` downloading entire repository:** When installing a specific version (e.g., `spark install infinitum 1.0.0`), the system was downloading the entire `main` branch ZIP containing ALL versions, leaving extra versions on disk. Now resolves the actual version tag first and downloads ONLY that specific version's tag ZIP.
+- **Deprecated references renamed from "mine" to "spark":** Core utilities (`sapphire_cmd.hpp`, `sapphire_version.hpp`) updated to reference `spark` instead of `mine` in messages and paths.
 - **Global Versioned Plugin Imports:** Versioned imports now also resolve plugins
   installed in `%APPDATA%/Sapphire/plugins`, matching Mine's global installation
   scope.

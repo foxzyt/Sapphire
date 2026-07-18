@@ -1,5 +1,5 @@
-#ifndef MINE_FS_UTILS_HPP
-#define MINE_FS_UTILS_HPP
+#ifndef SPARK_FS_UTILS_HPP
+#define SPARK_FS_UTILS_HPP
 
 #include <filesystem>
 #include <string>
@@ -9,7 +9,7 @@
 #include <vector>
 #include <algorithm>
 
-namespace mine {
+namespace spark {
 
 namespace fs = std::filesystem;
 
@@ -131,7 +131,7 @@ inline std::vector<std::string> get_plugin_versions(const std::string& plugin_na
     std::set<std::string> seen;
     
     auto add_versions = [&](const fs::path& base_dir) {
-        fs::path versions_dir = base_dir / "versions";
+        fs::path versions_dir = base_dir / plugin_name / "versions";
         if (fs::exists(versions_dir) && fs::is_directory(versions_dir)) {
             for (const auto& entry : fs::directory_iterator(versions_dir)) {
                 if (fs::is_directory(entry.path())) {
@@ -168,6 +168,6 @@ inline void cleanup_cache() {
     }
 }
 
-} // namespace mine
+} // namespace spark
 
-#endif // MINE_FS_UTILS_HPP
+#endif // SPARK_FS_UTILS_HPP

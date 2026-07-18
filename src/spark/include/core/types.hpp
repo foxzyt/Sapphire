@@ -1,11 +1,11 @@
-#ifndef MINE_TYPES_HPP
-#define MINE_TYPES_HPP
+#ifndef SPARK_TYPES_HPP
+#define SPARK_TYPES_HPP
 
 #include <string>
 #include <vector>
 #include <optional>
 
-namespace mine {
+namespace spark {
 
 struct Dependency {
     std::string name;
@@ -31,6 +31,6 @@ struct PluginMeta {
     bool is_valid() const { return !name.empty(); }
 };
 
-} // namespace mine
+} // namespace spark
 
-#endif // MINE_TYPES_HPP
+#endif // SPARK_TYPES_HPP

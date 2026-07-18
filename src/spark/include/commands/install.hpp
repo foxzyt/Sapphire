@@ -1,5 +1,5 @@
-#ifndef MINE_COMMANDS_INSTALL_HPP
-#define MINE_COMMANDS_INSTALL_HPP
+#ifndef SPARK_COMMANDS_INSTALL_HPP
+#define SPARK_COMMANDS_INSTALL_HPP
 
 #include "core/types.hpp"
 #include "core/fs_utils.hpp"
@@ -15,7 +15,7 @@
 #include <algorithm>
 #include "termcolor.hpp"
 
-namespace mine {
+namespace spark {
 namespace commands {
 
 // --- SemVer: aliases de compatibilidade (lógica centralizada em core/semver.hpp) ---
@@ -135,7 +135,7 @@ inline std::string install_resolve_github_version(const std::string& repo_url, c
 inline int cmd_install(const std::string& plugin_name, const std::string& version = "latest", bool local_scope = false) {
     if (plugin_name.empty()) {
         std::cerr << termcolor::red << "[!] Plugin name cannot be empty" << termcolor::reset << std::endl;
-        std::cerr << "Usage: mine install <name> [version] [--local] [--global]" << std::endl;
+        std::cerr << "Usage: spark install <name> [version] [--local] [--global]" << std::endl;
         return 1;
     }
     
@@ -222,10 +222,14 @@ inline int cmd_install(const std::string& plugin_name, const std::string& versio
     }
     
     // --- CORRECAO PRINCIPAL ---
-    // Faz o download do repo inteiro (latest) para garantir que a pasta versions/vX.X.X/ exista fisicamente no disco
-    // antes do DependencyResolver tentar procura-la.
-    std::cout << termcolor::cyan << "[*] Fetching repository to guarantee version folders availability..." << termcolor::reset << std::endl;
-    download_and_extract_plugin(plugin_name, registry_entry->repository, "latest");
+    // Baixa APENAS a versão específica resolvida (nunca o branch main inteiro).
+    // Para "latest", já resolvemos para vX.X.X no install_resolve_github_version.
+    // Para "1.0.0", já temos v1.0.0. O github_to_zip_url converte "vX.X.X" para tags/vX.X.X.zip.
+    std::string tag_version = resolved_version;
+    // Remove 'v' prefix if present (github_to_zip_url will re-add if needed)
+    if (tag_version.size() > 0 && tag_version[0] == 'v') tag_version = tag_version.substr(1);
+    std::cout << termcolor::cyan << "[*] Fetching version " << tag_version << "..." << termcolor::reset << std::endl;
+    download_and_extract_plugin(plugin_name, registry_entry->repository, "v" + tag_version);
     
     // Perform installation with dependency resolution
     DependencyResolver resolver(fs::current_path(), plugin_name);
@@ -295,6 +299,6 @@ inline int cmd_install(const std::string& plugin_name, const std::string& versio
 }
 
 } // namespace commands
-} // namespace mine
+} // namespace spark
 
-#endif // MINE_COMMANDS_INSTALL_HPP
+#endif // SPARK_COMMANDS_INSTALL_HPP

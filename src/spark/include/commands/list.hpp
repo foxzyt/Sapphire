@@ -1,5 +1,5 @@
-#ifndef MINE_COMMANDS_LIST_HPP
-#define MINE_COMMANDS_LIST_HPP
+#ifndef SPARK_COMMANDS_LIST_HPP
+#define SPARK_COMMANDS_LIST_HPP
 
 #include "core/types.hpp"
 #include "core/fs_utils.hpp"
@@ -11,7 +11,7 @@
 #include <iomanip>
 #include "termcolor.hpp"
 
-namespace mine {
+namespace spark {
 namespace commands {
 
 // List installed plugins (global and local scope)
@@ -31,7 +31,7 @@ inline int cmd_list() {
 
         if (active_ver.empty()) {
             std::cout << termcolor::yellow
-                      << "  Runtime: (not installed — run: mine sapphire install latest)"
+                      << "  Runtime: (not installed — run: spark sapphire install latest)"
                       << termcolor::reset << std::endl;
         } else {
             std::cout << "  Active:  "
@@ -42,7 +42,7 @@ inline int cmd_list() {
             if (installed_vers.size() > 1) {
                 std::cout << "  ("
                           << installed_vers.size()
-                          << " versions installed — run: mine sapphire versions)";
+                          << " versions installed — run: spark sapphire versions)";
             }
             std::cout << std::endl;
 
@@ -229,6 +229,6 @@ inline int cmd_list() {
 }
 
 } // namespace commands
-} // namespace mine
+} // namespace spark
 
-#endif // MINE_COMMANDS_LIST_HPP
+#endif // SPARK_COMMANDS_LIST_HPP

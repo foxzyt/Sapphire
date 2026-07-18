@@ -1,5 +1,5 @@
-#ifndef MINE_COMMANDS_INFO_HPP
-#define MINE_COMMANDS_INFO_HPP
+#ifndef SPARK_COMMANDS_INFO_HPP
+#define SPARK_COMMANDS_INFO_HPP
 
 #include "core/types.hpp"
 #include "core/fs_utils.hpp"
@@ -9,14 +9,14 @@
 #include <filesystem>
 #include "termcolor.hpp"
 
-namespace mine {
+namespace spark {
 namespace commands {
 
 // Show detailed information about a plugin (local and global scope)
 inline int cmd_info(const std::string& plugin_name) {
     if (plugin_name.empty()) {
         std::cerr << termcolor::red << "[!] Plugin name cannot be empty" << termcolor::reset << std::endl;
-        std::cerr << "Usage: mine info <name>" << std::endl;
+        std::cerr << "Usage: spark info <name>" << std::endl;
         return 1;
     }
     
@@ -70,7 +70,7 @@ inline int cmd_info(const std::string& plugin_name) {
             }
             
             // Check for lockfile
-            fs::path lockfile = plugin_path.parent_path() / "mine.lock";
+            fs::path lockfile = plugin_path.parent_path() / "spark.lock";
             if (fs::exists(lockfile)) {
                 std::cout << termcolor::green << "  Lockfile: Present" << termcolor::reset << std::endl;
             } else {
@@ -144,6 +144,6 @@ inline int cmd_info(const std::string& plugin_name) {
 }
 
 } // namespace commands
-} // namespace mine
+} // namespace spark
 
-#endif // MINE_COMMANDS_INFO_HPP
+#endif // SPARK_COMMANDS_INFO_HPP

@@ -1,5 +1,5 @@
-#ifndef MINE_COMMANDS_UNINSTALL_HPP
-#define MINE_COMMANDS_UNINSTALL_HPP
+#ifndef SPARK_COMMANDS_UNINSTALL_HPP
+#define SPARK_COMMANDS_UNINSTALL_HPP
 
 #include "core/types.hpp"
 #include "core/fs_utils.hpp"
@@ -9,7 +9,7 @@
 #include <filesystem>
 #include "termcolor.hpp"
 
-namespace mine {
+namespace spark {
 namespace commands {
 
 // Check if a plugin is a dependency of any other installed plugin
@@ -77,7 +77,7 @@ inline bool is_plugin_required_by_others(const std::string& plugin_name) {
 inline int cmd_uninstall(const std::string& plugin_name, bool local_only = false) {
     if (plugin_name.empty()) {
         std::cerr << termcolor::red << "[!] Plugin name cannot be empty" << termcolor::reset << std::endl;
-        std::cerr << "Usage: mine uninstall <name> [--local] [--global]" << std::endl;
+        std::cerr << "Usage: spark uninstall <name> [--local] [--global]" << std::endl;
         return 1;
     }
     
@@ -116,7 +116,7 @@ inline int cmd_uninstall(const std::string& plugin_name, bool local_only = false
         
         try {
             // Remove the lock file first
-            fs::path lockfile = local_plugin_path / "mine.lock";
+            fs::path lockfile = local_plugin_path / "spark.lock";
             if (fs::exists(lockfile)) {
                 fs::remove(lockfile);
                 std::cout << termcolor::green << "[+] Removed lockfile" << termcolor::reset << std::endl;
@@ -144,7 +144,7 @@ inline int cmd_uninstall(const std::string& plugin_name, bool local_only = false
         
         try {
             // Remove the lock file first
-            fs::path lockfile = global_plugin_path / "mine.lock";
+            fs::path lockfile = global_plugin_path / "spark.lock";
             if (fs::exists(lockfile)) {
                 fs::remove(lockfile);
                 std::cout << termcolor::green << "[+] Removed lockfile" << termcolor::reset << std::endl;
@@ -167,9 +167,9 @@ inline int cmd_uninstall(const std::string& plugin_name, bool local_only = false
     
     // Update the central lock registry if it exists
     if (removed_count > 0) {
-        fs::path registry_lock = get_plugin_dir() / "mine.lock";
+        fs::path registry_lock = get_plugin_dir() / "spark.lock";
         if (fs::exists(registry_lock)) {
-            LockFile registry(registry_lock.parent_path(), "mine", "registry");
+            LockFile registry(registry_lock.parent_path(), "spark", "registry");
             if (registry.read()) {
                 // Remove the plugin from the registry lock
                 registry.clear();
@@ -200,6 +200,6 @@ inline int cmd_uninstall(const std::string& plugin_name, bool local_only = false
 }
 
 } // namespace commands
-} // namespace mine
+} // namespace spark
 
-#endif // MINE_COMMANDS_UNINSTALL_HPP
+#endif // SPARK_COMMANDS_UNINSTALL_HPP

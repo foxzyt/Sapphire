@@ -1,9 +1,10 @@
-#ifndef MINE_DOWNLOADER_HPP
-#define MINE_DOWNLOADER_HPP
+#ifndef SPARK_DOWNLOADER_HPP
+#define SPARK_DOWNLOADER_HPP
 
 #include "types.hpp"
 #include "fs_utils.hpp"
 #include "parser.hpp"
+#include "semver.hpp"
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
@@ -14,10 +15,10 @@
 #include "json.hpp"
 #include "miniz.h"
 
-namespace mine {
+namespace spark {
 
 // Registry URL base
-constexpr const char* REGISTRY_BASE = "https://raw.githubusercontent.com/foxzyt/sapphire-mine/main/registry/";
+constexpr const char* REGISTRY_BASE = "https://raw.githubusercontent.com/foxzyt/Sapphire-Spark/main/registry/";
 
 // Structure to hold registry information
 struct RegistryEntry {
@@ -51,7 +52,7 @@ inline std::optional<RegistryEntry> parse_registry_json(const std::string& json_
 // Query the central registry for a plugin
 inline std::optional<RegistryEntry> query_registry(const std::string& plugin_name) {
     try {
-        std::string url_path = "/foxzyt/sapphire-mine/main/" + plugin_name + ".json";
+        std::string url_path = "/foxzyt/Sapphire-Spark/main/" + plugin_name + ".json";
         
         httplib::Client cli("https://raw.githubusercontent.com");
         cli.set_follow_location(true);
@@ -65,7 +66,7 @@ inline std::optional<RegistryEntry> query_registry(const std::string& plugin_nam
         } else if (res) {
             if (res->status == 404) {
                 std::cerr << "[!] Plugin '" << plugin_name << "' not found in central registry" << std::endl;
-                std::cerr << "[!] Available plugins can be found at: https://github.com/foxzyt/sapphire-mine" << std::endl;
+                std::cerr << "[!] Available plugins can be found at: https://github.com/foxzyt/Sapphire-Spark" << std::endl;
             } else {
                 std::cerr << "[!] HTTP error: " << res->status << " while querying registry" << std::endl;
             }
@@ -278,6 +279,111 @@ inline bool download_and_extract_plugin(const std::string& plugin_name, const st
     }
 }
 
-} // namespace mine
+// Fetch the latest version tag from a GitHub repository using the GitHub API
+inline std::string fetch_latest_version_from_repo(const std::string& repo_url) {
+    // Parse owner/repo from URL
+    // Expected: https://github.com/owner/repo
+    std::string api_url = repo_url;
+    
+    // Extract owner/repo from GitHub URL
+    size_t github_pos = api_url.find("github.com/");
+    if (github_pos == std::string::npos) {
+        return "";
+    }
+    
+    std::string owner_repo = api_url.substr(github_pos + 11);
+    // Remove trailing slash if present
+    if (!owner_repo.empty() && owner_repo.back() == '/') {
+        owner_repo.pop_back();
+    }
+    // Remove .git suffix if present
+    if (owner_repo.size() > 4 && owner_repo.substr(owner_repo.size() - 4) == ".git") {
+        owner_repo = owner_repo.substr(0, owner_repo.size() - 4);
+    }
+    
+    try {
+        httplib::SSLClient cli("api.github.com");
+        cli.set_follow_location(true);
+        cli.set_connection_timeout(10);
+        cli.set_read_timeout(15);
+        cli.enable_server_certificate_verification(false);
+        
+        // Add User-Agent header (required by GitHub API)
+        httplib::Headers headers = {
+            {"User-Agent", "Sapphire-Mine/2.0"},
+            {"Accept", "application/vnd.github.v3+json"}
+        };
+        
+        // 1. Try Releases
+        std::string api_path = "/repos/" + owner_repo + "/releases/latest";
+        auto res = cli.Get(api_path.c_str(), headers);
+        
+        if (res && res->status == 200) {
+            try {
+                nlohmann::json j = nlohmann::json::parse(res->body);
+                if (j.contains("tag_name")) {
+                    std::string tag = j["tag_name"].get<std::string>();
+                    if (tag.size() > 1 && tag[0] == 'v') { tag = tag.substr(1); }
+                    return tag;
+                }
+            } catch (...) {}
+        } 
+        
+        // 2. Try Tags Fallback
+        std::string tags_path = "/repos/" + owner_repo + "/tags";
+        auto tags_res = cli.Get(tags_path.c_str(), headers);
+        if (tags_res && tags_res->status == 200) {
+            try {
+                nlohmann::json tags = nlohmann::json::parse(tags_res->body);
+                if (tags.is_array() && !tags.empty()) {
+                    std::string tag = tags[0]["name"].get<std::string>();
+                    if (tag.size() > 1 && tag[0] == 'v') { tag = tag.substr(1); }
+                    return tag;
+                }
+            } catch (...) {}
+        }
 
-#endif // MINE_DOWNLOADER_HPP
+        // 3. Try versions/ Directory Check (Sapphire Native Structure Fallback)
+        std::string contents_path = "/repos/" + owner_repo + "/contents/versions";
+        auto contents_res = cli.Get(contents_path.c_str(), headers);
+        if (contents_res && contents_res->status == 200) {
+            try {
+                nlohmann::json items = nlohmann::json::parse(contents_res->body);
+                std::string highest_version = "";
+                
+                if (items.is_array()) {
+                    for (const auto& item : items) {
+                        if (item.contains("type") && item["type"] == "dir" && item.contains("name")) {
+                            std::string dir_name = item["name"].get<std::string>();
+                            std::string ver = dir_name;
+                            
+                            // Remove 'v' prefix for comparison
+                            if (ver.size() > 1 && ver[0] == 'v') {
+                                ver = ver.substr(1);
+                            }
+                            
+                            if (highest_version.empty() || semver::is_older(highest_version, ver)) {
+                                highest_version = ver;
+                            }
+                        }
+                    }
+                }
+                
+                if (!highest_version.empty()) {
+                    return highest_version;
+                }
+            } catch (const std::exception& e) {
+                std::cerr << termcolor::yellow << "  [!] Failed to parse versions directory: " << e.what() << termcolor::reset << std::endl;
+            }
+        }
+        
+    } catch (const std::exception& e) {
+        std::cerr << termcolor::yellow << "[!] Version fetch error: " << e.what() << termcolor::reset << std::endl;
+    }
+    
+    return "";
+}
+
+} // namespace spark
+
+#endif // SPARK_DOWNLOADER_HPP

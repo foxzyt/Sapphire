@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.11)
-project(mine CXX)
+project(spark CXX)
 
 include(FetchContent)
 
@@ -115,19 +115,19 @@ else()
 endif()
 
 # Create executable
-add_executable(mine
+add_executable(spark
     src/main.cpp
     ${MINIZ_SOURCE}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../src/utils/termcolor.cpp
 )
 
 # Set output directory to be in the main build directory
-set_target_properties(mine PROPERTIES
+set_target_properties(spark PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
 )
 
 # Include directories
-target_include_directories(mine PRIVATE
+target_include_directories(spark PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${HTTPLIB_INCLUDE_DIR}
@@ -140,17 +140,17 @@ target_include_directories(mine PRIVATE
 )
 
 # Link libraries
-target_link_libraries(mine PRIVATE
+target_link_libraries(spark PRIVATE
     OpenSSL::SSL
     OpenSSL::Crypto
 )
 
 if(WIN32)
-    target_link_libraries(mine PRIVATE
+    target_link_libraries(spark PRIVATE
         ws2_32
         crypt32
     )
     if(NOT MSVC)
-        target_link_libraries(mine PRIVATE -pthread)
+        target_link_libraries(spark PRIVATE -pthread)
     endif()
 endif()

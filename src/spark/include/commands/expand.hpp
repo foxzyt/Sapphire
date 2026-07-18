@@ -1,5 +1,5 @@
-#ifndef MINE_COMMANDS_EXPAND_HPP
-#define MINE_COMMANDS_EXPAND_HPP
+#ifndef SPARK_COMMANDS_EXPAND_HPP
+#define SPARK_COMMANDS_EXPAND_HPP
 
 #include "core/types.hpp"
 #include "core/fs_utils.hpp"
@@ -8,7 +8,7 @@
 #include <filesystem>
 #include "termcolor.hpp"
 
-namespace mine {
+namespace spark {
 namespace commands {
 
 // Version management - create version structure
@@ -16,7 +16,7 @@ inline int cmd_expand(const std::string& version, const std::filesystem::path& w
     // Validate version format
     if (version.empty()) {
         std::cerr << termcolor::red << "[!] Version cannot be empty" << termcolor::reset << std::endl;
-        std::cerr << "Usage: mine expand <version>" << std::endl;
+        std::cerr << "Usage: spark expand <version>" << std::endl;
         return 1;
     }
     
@@ -24,7 +24,7 @@ inline int cmd_expand(const std::string& version, const std::filesystem::path& w
     fs::path plugin_txt_path = working_dir / "PLUGIN.txt";
     if (!fs::exists(plugin_txt_path)) {
         std::cerr << termcolor::red << "[!] PLUGIN.txt not found in current directory" << termcolor::reset << std::endl;
-        std::cerr << termcolor::yellow << "[!] Run 'mine init' first to create a plugin base" << termcolor::reset << std::endl;
+        std::cerr << termcolor::yellow << "[!] Run 'spark init' first to create a plugin base" << termcolor::reset << std::endl;
         return 1;
     }
     
@@ -121,6 +121,6 @@ inline int cmd_expand(const std::string& version, const std::filesystem::path& w
 }
 
 } // namespace commands
-} // namespace mine
+} // namespace spark
 
-#endif // MINE_COMMANDS_EXPAND_HPP
+#endif // SPARK_COMMANDS_EXPAND_HPP

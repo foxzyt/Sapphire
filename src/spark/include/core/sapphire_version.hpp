@@ -1,5 +1,5 @@
-#ifndef MINE_CORE_SAPPHIRE_VERSION_HPP
-#define MINE_CORE_SAPPHIRE_VERSION_HPP
+#ifndef SPARK_CORE_SAPPHIRE_VERSION_HPP
+#define SPARK_CORE_SAPPHIRE_VERSION_HPP
 
 // =============================================================================
 // sapphire_version.hpp — Gerenciamento de versões dos binários da Sapphire
@@ -10,8 +10,8 @@
 //   v1.0.9/
 //     sapphire.exe
 //     runner.exe
-//     spac.exe
-//     mine.exe
+//     spack.exe
+//     spark.exe
 //   v1.1.0/
 //     ...
 //
@@ -32,16 +32,17 @@
 #include <optional>
 #include <algorithm>
 
-namespace mine {
+namespace spark {
 
 namespace fs = std::filesystem;
 
 // Binários presentes em cada release
+// NOTA: spark.exe (o package manager) NÃO está aqui - ele é gerenciado separadamente
+// via "spark upgrade", pois o usuário já tem o spark para usar este comando.
 static const std::vector<std::string> SAPPHIRE_BINARIES = {
     "sapphire.exe",
     "runner.exe",
-    "spac.exe",
-    "mine.exe"
+    "spack.exe"
 };
 
 // Repositório e branch dos binários
@@ -172,7 +173,7 @@ inline std::vector<std::string> list_remote_sapphire_versions() {
         cli.enable_server_certificate_verification(false);
 
         httplib::Headers headers = {
-            {"User-Agent", "Sapphire-Mine/2.2"},
+            {"User-Agent", "Sapphire-Spark/2.2"},
             {"Accept", "application/vnd.github.v3+json"}
         };
 
@@ -331,7 +332,7 @@ inline bool activate_sapphire_version(const std::string& version) {
     if (!fs::exists(ver_dir)) {
         std::cerr << termcolor::red
                   << "[!] Version " << semver::with_v(clean)
-                  << " is not installed. Run: mine sapphire install " << clean
+                  << " is not installed. Run: spark sapphire install " << clean
                   << termcolor::reset << std::endl;
         return false;
     }
@@ -422,6 +423,6 @@ inline bool install_sapphire_version(const std::string& version, bool activate =
     return true;
 }
 
-} // namespace mine
+} // namespace spark
 
-#endif // MINE_CORE_SAPPHIRE_VERSION_HPP
+#endif // SPARK_CORE_SAPPHIRE_VERSION_HPP

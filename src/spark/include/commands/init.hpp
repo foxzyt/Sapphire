@@ -1,5 +1,5 @@
-#ifndef MINE_COMMANDS_INIT_HPP
-#define MINE_COMMANDS_INIT_HPP
+#ifndef SPARK_COMMANDS_INIT_HPP
+#define SPARK_COMMANDS_INIT_HPP
 
 #include "core/types.hpp"
 #include "core/fs_utils.hpp"
@@ -8,14 +8,14 @@
 #include <filesystem>
 #include "termcolor.hpp"
 
-namespace mine {
+namespace spark {
 namespace commands {
 
 // Interactive plugin creation
 inline int cmd_init(const std::filesystem::path& working_dir) {
     PluginMeta meta;
     
-    std::cout << "=== Mine Plugin Initialization ===" << std::endl;
+    std::cout << "=== Spark Plugin Initialization ===" << std::endl;
     std::cout << "This will create a new plugin structure in the current directory." << std::endl;
     std::cout << std::endl;
     
@@ -57,7 +57,7 @@ inline int cmd_init(const std::filesystem::path& working_dir) {
     
     if (write_plugin_txt(plugin_txt_path, meta)) {
         std::cout << termcolor::green << "[+] Plugin directory created: " << plugin_dir << termcolor::reset << std::endl;
-        std::cout << termcolor::green << "[+] Use 'mine expand <version>' to add code and version structure." << termcolor::reset << std::endl;
+        std::cout << termcolor::green << "[+] Use 'spark expand <version>' to add code and version structure." << termcolor::reset << std::endl;
         return 0;
     } else {
         std::cerr << termcolor::red << "[!] Failed to create PLUGIN.txt" << termcolor::reset << std::endl;
@@ -66,6 +66,6 @@ inline int cmd_init(const std::filesystem::path& working_dir) {
 }
 
 } // namespace commands
-} // namespace mine
+} // namespace spark
 
-#endif // MINE_COMMANDS_INIT_HPP
+#endif // SPARK_COMMANDS_INIT_HPP

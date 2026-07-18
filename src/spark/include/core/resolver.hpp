@@ -1,5 +1,5 @@
-#ifndef MINE_RESOLVER_HPP
-#define MINE_RESOLVER_HPP
+#ifndef SPARK_RESOLVER_HPP
+#define SPARK_RESOLVER_HPP
 
 #include "types.hpp"
 #include "fs_utils.hpp"
@@ -13,7 +13,7 @@
 #include <iomanip>
 #include <sstream>
 
-namespace mine {
+namespace spark {
 
 // Dependency resolution engine using DFS to avoid loops
 class DependencyResolver {
@@ -338,6 +338,6 @@ inline int install_plugin_with_dependencies(const std::string& plugin_name, cons
     return resolver.get_total_installed();
 }
 
-} // namespace mine
+} // namespace spark
 
-#endif // MINE_RESOLVER_HPP
+#endif // SPARK_RESOLVER_HPP

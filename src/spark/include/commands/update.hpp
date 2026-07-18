@@ -1,5 +1,5 @@
-#ifndef MINE_COMMANDS_UPDATE_HPP
-#define MINE_COMMANDS_UPDATE_HPP
+#ifndef SPARK_COMMANDS_UPDATE_HPP
+#define SPARK_COMMANDS_UPDATE_HPP
 
 #include "core/types.hpp"
 #include "core/fs_utils.hpp"
@@ -15,7 +15,7 @@
 #include <algorithm>
 #include "termcolor.hpp"
 
-namespace mine {
+namespace spark {
 namespace commands {
 
 // Compare two semantic versions (returns true if v1 < v2)
@@ -336,6 +336,6 @@ inline int cmd_update(const std::string& plugin_name = "") {
 }
 
 } // namespace commands
-} // namespace mine
+} // namespace spark
 
-#endif // MINE_COMMANDS_UPDATE_HPP
+#endif // SPARK_COMMANDS_UPDATE_HPP
