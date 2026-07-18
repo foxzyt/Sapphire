@@ -1,4 +1,4 @@
-#include "spack.h"
+#include "beryl.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -24,8 +24,8 @@ static inline void rtrim(std::string &s) {
 }
 static inline void trim(std::string &s) { rtrim(s); ltrim(s); }
 
-SpackConfig parse_spack_config(const std::string& path) {
-    SpackConfig config;
+BerylConfig parse_beryl_config(const std::string& path) {
+    BerylConfig config;
     std::ifstream file(path);
     if (!file.is_open()) {
         std::cerr << tc_red() << "Error: Could not open " << path << tc_reset() << std::endl;
@@ -113,7 +113,7 @@ static ScriptConfig read_script_config(const std::string& source) {
     return config;
 }
 
-bool pack_executable(const SpackConfig& config, const std::string& runner_path) {
+bool pack_executable(const BerylConfig& config, const std::string& runner_path) {
     std::cout << tc_cyan() << "Packing " << config.EntryFile << " -> " << config.OutputFile << tc_reset() << std::endl;
 
     std::string source = load_file_as_string(config.EntryFile);
@@ -139,7 +139,7 @@ bool pack_executable(const SpackConfig& config, const std::string& runner_path) 
         return false;
     }
 
-    std::string temp_sbc = "temp_spack.sbc";
+    std::string temp_sbc = "temp_beryl.sbc";
     serialize_function(main_function, &vm, temp_sbc);
 
     std::ifstream runner_in(runner_path, std::ios::binary | std::ios::ate);
@@ -154,7 +154,7 @@ bool pack_executable(const SpackConfig& config, const std::string& runner_path) 
     std::streamsize sbc_size = sbc_in.tellg();
     sbc_in.seekg(0, std::ios::beg);
 
-    // Build SPACK_V2 metadata block:
+    // Build BERYL_V2 metadata block:
     // [is_ui:1][window_w:4][window_h:4][title_len:4][title:N]
     std::string title    = scriptCfg.windowTitle;
     uint8_t  meta_is_ui  = is_ui ? 1 : 0;
@@ -182,12 +182,12 @@ bool pack_executable(const SpackConfig& config, const std::string& runner_path) 
     std::cout << "Appending Bytecode Payload (" << sbc_size << " bytes)..." << std::endl;
     out << sbc_in.rdbuf();
 
-    // Footer layout: [meta_block][meta_size:4][payload_size:8][SPACK_V2:8]
+    // Footer layout: [meta_block][meta_size:4][payload_size:8][BERYL_V2:8]
     out.write(meta_block.data(), (std::streamsize)meta_size);
     out.write(reinterpret_cast<const char*>(&meta_size), 4);
     uint64_t payload_size = (uint64_t)sbc_size;
     out.write(reinterpret_cast<const char*>(&payload_size), 8);
-    out.write("SPACK_V2", 8);
+    out.write("BERYL_V2", 8);
 
     out.close();
     runner_in.close();

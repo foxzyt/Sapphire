@@ -29,18 +29,18 @@ std::string get_executable_path() {
 #endif
 }
 
-struct SpackMeta {
+struct BerylMeta {
     bool     is_ui       = false;
     uint32_t window_w    = 800;
     uint32_t window_h    = 600;
     std::string title    = "Sapphire App";
 };
 
-// Parse SPACK_V2 metadata from the open exe file.
-// Returns true and fills meta if SPACK_V2. Returns false if SPACK_V1 (no meta).
+// Parse BERYL_V2 metadata from the open exe file.
+// Returns true and fills meta if BERYL_V2. Returns false if BERYL_V1 (no meta).
 // On return, exe_file is positioned at start of sbc payload.
-bool parse_spack_footer(std::ifstream& exe_file, std::streamsize file_size,
-                        ObjFunction** out_function, VM* vm, SpackMeta& meta) {
+bool parse_beryl_footer(std::ifstream& exe_file, std::streamsize file_size,
+                        ObjFunction** out_function, VM* vm, BerylMeta& meta) {
     if (file_size < 20) return false;
 
     // Read last 8 bytes: magic
@@ -49,8 +49,8 @@ bool parse_spack_footer(std::ifstream& exe_file, std::streamsize file_size,
     exe_file.read(magic, 8);
     std::string magic_str(magic, 8);
 
-    if (magic_str == "SPACK_V2") {
-        // Footer: [meta][meta_size:4][payload_size:8][SPACK_V2:8]
+    if (magic_str == "BERYL_V2") {
+        // Footer: [meta][meta_size:4][payload_size:8][BERYL_V2:8]
         exe_file.seekg(-16, std::ios::end);
         uint64_t payload_size = 0;
         exe_file.read(reinterpret_cast<char*>(&payload_size), 8);
@@ -85,7 +85,7 @@ bool parse_spack_footer(std::ifstream& exe_file, std::streamsize file_size,
         return true;
     }
 
-    if (magic_str == "SPACK_V1") {
+    if (magic_str == "BERYL_V1") {
         // Legacy: no UI meta, non-UI app
         exe_file.seekg(-16, std::ios::end);
         uint64_t payload_size = 0;
@@ -108,14 +108,14 @@ int main(int argc, char* argv[]) {
     std::ifstream exe_file(exe_path, std::ios::binary | std::ios::ate);
 
     ObjFunction* main_function = nullptr;
-    SpackMeta meta;
+    BerylMeta meta;
     bool found_payload = false;
 
     if (exe_file.is_open()) {
         std::streamsize file_size = exe_file.tellg();
         ScriptConfig dummy_cfg;
         VM temp_vm;
-        found_payload = parse_spack_footer(exe_file, file_size, &main_function, &temp_vm, meta);
+        found_payload = parse_beryl_footer(exe_file, file_size, &main_function, &temp_vm, meta);
         exe_file.close();
 
         if (found_payload && main_function) {
@@ -161,8 +161,8 @@ int main(int argc, char* argv[]) {
         std::ifstream exe2(exe_path, std::ios::binary | std::ios::ate);
         if (!exe2.is_open()) { std::cerr << "Error: Cannot reopen executable." << std::endl; return 1; }
         std::streamsize fs2 = exe2.tellg();
-        SpackMeta meta2;
-        parse_spack_footer(exe2, fs2, &main_function, &vm, meta2);
+        BerylMeta meta2;
+        parse_beryl_footer(exe2, fs2, &main_function, &vm, meta2);
         exe2.close();
 
         if (!main_function) {
@@ -183,8 +183,8 @@ int main(int argc, char* argv[]) {
         g_current_vm = &vm;
 
         std::ifstream exe3(exe_path, std::ios::binary | std::ios::ate);
-        SpackMeta meta3;
-        parse_spack_footer(exe3, (std::streamsize)exe3.tellg(), &main_function, &vm, meta3);
+        BerylMeta meta3;
+        parse_beryl_footer(exe3, (std::streamsize)exe3.tellg(), &main_function, &vm, meta3);
         exe3.close();
 
         if (!main_function) {

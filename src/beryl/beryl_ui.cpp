@@ -2,7 +2,7 @@
 #include <SFML/Window.hpp>
 #include <iostream>
 #include <fstream>
-#include "spack.h"
+#include "beryl.h"
 #ifdef _WIN32
 #include <windows.h>
 #include <commdlg.h>
@@ -119,8 +119,8 @@ struct CheckBox {
     }
 };
 
-void run_native_spack_ui(const std::string& runner_path) {
-    sf::RenderWindow window(sf::VideoMode({1000, 800}), "Spack C++ Native UI");
+void run_native_beryl_ui(const std::string& runner_path) {
+    sf::RenderWindow window(sf::VideoMode({1000, 800}), "Beryl C++ Native UI");
     window.setFramerateLimit(60);
 
     sf::Font font;
@@ -128,13 +128,13 @@ void run_native_spack_ui(const std::string& runner_path) {
         std::cerr << "Could not load font." << std::endl;
     }
 
-    sf::Text title(font, "Spack Native Packager", 28);
+    sf::Text title(font, "Beryl Native Packager", 28);
     title.setPosition({50, 20});
     title.setFillColor(sf::Color::White);
 
     TextBox tbEntry(font, "Entry File (.sp):", 50, 70, 700, "main.sp");
     TextBox tbOutput(font, "Output File (.exe):", 50, 140, 700, "app.exe");
-    TextBox tbAuthor(font, "Author:", 50, 210, 700, "Spack User");
+    TextBox tbAuthor(font, "Author:", 50, 210, 700, "Beryl User");
     TextBox tbVersion(font, "Version:", 50, 280, 700, "1.0.0");
     TextBox tbIcon(font, "Icon Path (.ico) (optional):", 50, 350, 700, "");
 
@@ -202,7 +202,7 @@ void run_native_spack_ui(const std::string& runner_path) {
                     }
 
                     if (button.getGlobalBounds().contains(mPos)) {
-                        std::ofstream confFile("SpackConfig.txt");
+                        std::ofstream confFile("BerylConfig.txt");
                         if (confFile.is_open()) {
                             confFile << "EntryFile=" << tbEntry.value << "\n";
                             confFile << "OutputFile=" << tbOutput.value << "\n";
@@ -215,9 +215,9 @@ void run_native_spack_ui(const std::string& runner_path) {
                             confFile << "RequireAdmin=" << (cbAdmin.checked ? "true" : "false") << "\n";
                             confFile.close();
                         }
-
+ 
                         // Empacotar
-                        SpackConfig config = parse_spack_config("SpackConfig.txt");
+                        BerylConfig config = parse_beryl_config("BerylConfig.txt");
                         if (config.EntryFile.empty()) {
                             status.setFillColor(sf::Color::Red);
                             status.setString("Error: Entry File is empty.");

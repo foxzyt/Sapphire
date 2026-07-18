@@ -139,7 +139,7 @@ target_link_libraries(sapphire_core PUBLIC OpenCL sqlite3)
 
 add_executable(sapphire src/main.cpp)
 add_executable(runner src/vm/runner.cpp)
-add_executable(spack src/spack/main.cpp src/spack/spack.cpp src/spack/spack_ui.cpp)
+add_executable(beryl src/beryl/main.cpp src/beryl/beryl.cpp src/beryl/beryl_ui.cpp)
 
 # Build new modular spark (v2) - full-featured package manager
 option(BUILD_SPARK "Build new modular spark package manager" ON)
@@ -152,7 +152,7 @@ endif()
 
 target_compile_definitions(sapphire PRIVATE SFML_STATIC)
 target_compile_definitions(runner PRIVATE SFML_STATIC)
-target_compile_definitions(spack PRIVATE SFML_STATIC)
+target_compile_definitions(beryl PRIVATE SFML_STATIC)
 
 set(COMMON_LIBS
     sapphire_core
@@ -189,7 +189,7 @@ endif()
 
 target_link_libraries(sapphire PRIVATE ${COMMON_LIBS})
 target_link_libraries(runner PRIVATE ${COMMON_LIBS})
-target_link_libraries(spack PRIVATE ${COMMON_LIBS})
+target_link_libraries(beryl PRIVATE ${COMMON_LIBS})
 
 # Spark only needs OpenSSL for HTTPS, not OpenCL/SQLite/SFML
 if(BUILD_SPARK)
@@ -243,9 +243,9 @@ if(WIN32)
 #        $<TARGET_FILE:OpenCL>
 #        $<TARGET_FILE_DIR:mine>
 #    )
-#    add_custom_command(TARGET spack POST_BUILD
+#    add_custom_command(TARGET beryl POST_BUILD
 #        COMMAND ${CMAKE_COMMAND} -E copy_if_different
 #        $<TARGET_FILE:OpenCL>
-#        $<TARGET_FILE_DIR:spack>
+#        $<TARGET_FILE_DIR:beryl>
 #    )
 endif()

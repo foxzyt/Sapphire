@@ -1,11 +1,11 @@
-#ifndef SAPPHIRE_SPACK_H
-#define SAPPHIRE_SPACK_H
+#ifndef SAPPHIRE_BERYL_H
+#define SAPPHIRE_BERYL_H
 
 #include <string>
 #include <map>
 #include <vector>
 
-struct SpackConfig {
+struct BerylConfig {
     std::string EntryFile;
     std::string OutputFile;
     std::string Author;
@@ -20,8 +20,8 @@ struct SpackConfig {
     std::map<std::string, std::string> CustomFields;
 };
 
-SpackConfig parse_spack_config(const std::string& path);
-bool pack_executable(const SpackConfig& config, const std::string& runner_path);
-void run_native_spack_ui(const std::string& runner_path);
+BerylConfig parse_beryl_config(const std::string& path);
+bool pack_executable(const BerylConfig& config, const std::string& runner_path);
+void run_native_beryl_ui(const std::string& runner_path);
 
-#endif // SAPPHIRE_SPACK_H
+#endif // SAPPHIRE_BERYL_H
