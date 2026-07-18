@@ -163,7 +163,7 @@ inline std::string get_latest_github_version(const std::string& repo_url) {
 }
 
 // Update a specific plugin to the latest version
-inline int cmd_update(const std::string& plugin_name = "") {
+inline int cmd_update(const std::string& plugin_name = "", bool check_only = false) {
     // If no plugin name given, update all installed plugins
     std::vector<std::string> plugins_to_update;
     
@@ -264,6 +264,12 @@ inline int cmd_update(const std::string& plugin_name = "") {
         if (!is_version_older(current_version, latest_version)) {
             std::cout << termcolor::yellow << "  [*] Current version is newer than latest (dev/pre-release)" << termcolor::reset << std::endl;
             up_to_date_count++;
+            continue;
+        }
+        
+        if (check_only) {
+            std::cout << termcolor::yellow << "  [*] Update available: v" << current_version << " -> v" << latest_version << " (run without --check-only to update)" << termcolor::reset << std::endl;
+            updated_count++;
             continue;
         }
         

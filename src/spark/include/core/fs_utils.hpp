@@ -56,6 +56,14 @@ inline bool is_sapphire_project() {
     return false;
 }
 
+inline fs::path get_project_manifest_path() {
+    return fs::current_path() / "sapphire.json";
+}
+
+inline fs::path get_project_lockfile_path() {
+    return fs::current_path() / "spark.lock";
+}
+
 // Get cache directory: %APPDATA%/Sapphire/plugins/.cache/
 inline fs::path get_cache_dir() {
     fs::path cache_dir = get_plugin_dir() / ".cache";

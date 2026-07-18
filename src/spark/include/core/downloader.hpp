@@ -17,8 +17,23 @@
 
 namespace spark {
 
-// Registry URL base
-constexpr const char* REGISTRY_BASE = "https://raw.githubusercontent.com/foxzyt/Sapphire-Spark/main/registry/";
+inline bool g_offline = false;
+inline std::string g_registry_url = "https://raw.githubusercontent.com/foxzyt/Sapphire-Spark/main/";
+
+// Helper: Parse any URL into host and path (supports http and https)
+inline bool parse_url(const std::string& url, std::string& host, std::string& path) {
+    size_t protocol_pos = url.find("://");
+    if (protocol_pos == std::string::npos) return false;
+    size_t host_end = url.find('/', protocol_pos + 3);
+    if (host_end == std::string::npos) {
+        host = url.substr(protocol_pos + 3);
+        path = "/";
+        return true;
+    }
+    host = url.substr(protocol_pos + 3, host_end - protocol_pos - 3);
+    path = url.substr(host_end);
+    return true;
+}
 
 // Structure to hold registry information
 struct RegistryEntry {
@@ -51,15 +66,29 @@ inline std::optional<RegistryEntry> parse_registry_json(const std::string& json_
 
 // Query the central registry for a plugin
 inline std::optional<RegistryEntry> query_registry(const std::string& plugin_name) {
+    if (g_offline) {
+        std::cerr << "[!] Offline mode: Cannot query remote registry for '" << plugin_name << "'" << std::endl;
+        return std::nullopt;
+    }
     try {
-        std::string url_path = "/foxzyt/Sapphire-Spark/main/" + plugin_name + ".json";
+        std::string full_url = g_registry_url;
+        if (full_url.empty()) return std::nullopt;
+        if (full_url.back() != '/') full_url += "/";
+        full_url += plugin_name + ".json";
         
-        httplib::Client cli("https://raw.githubusercontent.com");
+        std::string host, path;
+        if (!parse_url(full_url, host, path)) {
+            std::cerr << "[!] Invalid registry URL: " << full_url << std::endl;
+            return std::nullopt;
+        }
+        
+        httplib::SSLClient cli(host);
         cli.set_follow_location(true);
         cli.set_connection_timeout(10);
         cli.set_read_timeout(30);
+        cli.enable_server_certificate_verification(false);
         
-        auto res = cli.Get(url_path.c_str());
+        auto res = cli.Get(path.c_str());
         
         if (res && res->status == 200) {
             return parse_registry_json(res->body);
@@ -71,7 +100,7 @@ inline std::optional<RegistryEntry> query_registry(const std::string& plugin_nam
                 std::cerr << "[!] HTTP error: " << res->status << " while querying registry" << std::endl;
             }
         } else {
-            std::cerr << "[!] Connection failed to registry" << std::endl;
+            std::cerr << "[!] Connection failed to registry at: " << host << std::endl;
         }
     } catch (const std::exception& e) {
         std::cerr << "[!] Registry query error: " << e.what() << std::endl;
@@ -82,22 +111,16 @@ inline std::optional<RegistryEntry> query_registry(const std::string& plugin_nam
 
 // Download a file from URL to local path
 inline bool download_file(const std::string& url, const fs::path& output_path) {
+    if (g_offline) {
+        std::cerr << "[!] Offline mode: Blocked download request for " << url << std::endl;
+        return false;
+    }
     try {
-        // Parse URL to extract host and path
-        size_t protocol_pos = url.find("://");
-        if (protocol_pos == std::string::npos) {
-            std::cerr << "[!] Invalid URL format" << std::endl;
+        std::string host, path;
+        if (!parse_url(url, host, path)) {
+            std::cerr << "[!] Invalid URL format: " << url << std::endl;
             return false;
         }
-        
-        size_t host_end = url.find('/', protocol_pos + 3);
-        if (host_end == std::string::npos) {
-            std::cerr << "[!] Invalid URL format" << std::endl;
-            return false;
-        }
-        
-        std::string host = url.substr(protocol_pos + 3, host_end - protocol_pos - 3);
-        std::string path = url.substr(host_end);
         
         std::cout << "[*] Connecting to host: " << host << std::endl;
         std::cout << "[*] Requesting path: " << path << std::endl;
@@ -223,6 +246,10 @@ inline bool download_and_extract_plugin(const std::string& plugin_name, const st
         if (fs::exists(zip_path)) {
             std::cout << "[*] Using cached download: " << cache_key << std::endl;
         } else {
+            if (g_offline) {
+                std::cerr << "[!] Offline mode error: Cache miss for " << plugin_name << " " << version << " (download blocked)" << std::endl;
+                return false;
+            }
             // Download ZIP to cache
             if (!download_file(zip_url, zip_path)) {
                 std::cerr << "[!] Failed to download ZIP file" << std::endl;
@@ -281,6 +308,9 @@ inline bool download_and_extract_plugin(const std::string& plugin_name, const st
 
 // Fetch the latest version tag from a GitHub repository using the GitHub API
 inline std::string fetch_latest_version_from_repo(const std::string& repo_url) {
+    if (g_offline) {
+        return "";
+    }
     // Parse owner/repo from URL
     // Expected: https://github.com/owner/repo
     std::string api_url = repo_url;

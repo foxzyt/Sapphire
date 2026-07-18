@@ -31,7 +31,7 @@ inline int cmd_search(const std::string& query) {
 
     // GitHub repository for the plugin registry
     const char* REGISTRY_OWNER = "foxzyt";
-    const char* REGISTRY_REPO = "sapphire-spark";
+    const char* REGISTRY_REPO = "Sapphire-Spark";
     const char* REGISTRY_BRANCH = "main";
     const char* REGISTRY_FILE = "registry.json";
 

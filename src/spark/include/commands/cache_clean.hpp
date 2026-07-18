@@ -15,7 +15,7 @@ namespace commands {
 // Usage:
 //   spark cache clean
 // ---------------------------------------------------------------------------
-inline int cmd_cache_clean() {
+inline int cmd_cache_clean(bool force = false) {
     fs::path cache_dir = get_cache_dir();
 
     if (!fs::exists(cache_dir)) {
@@ -48,15 +48,17 @@ inline int cmd_cache_clean() {
     }
     std::cout << "  Space to free: " << size_str << std::endl;
 
-    // Ask for confirmation
-    std::cout << "Proceed with cache cleanup? (Y/n): ";
-    std::string response;
-    std::getline(std::cin, response);
-    response = trim(response);
+    if (!force) {
+        // Ask for confirmation
+        std::cout << "Proceed with cache cleanup? (Y/n): ";
+        std::string response;
+        std::getline(std::cin, response);
+        response = trim(response);
 
-    if (response == "n" || response == "N") {
-        std::cout << termcolor::yellow << "[*] Cache cleanup cancelled." << termcolor::reset << std::endl;
-        return 0;
+        if (response == "n" || response == "N") {
+            std::cout << termcolor::yellow << "[*] Cache cleanup cancelled." << termcolor::reset << std::endl;
+            return 0;
+        }
     }
 
     // Perform cleanup

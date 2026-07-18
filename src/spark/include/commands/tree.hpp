@@ -148,7 +148,136 @@ static void print_dependency_tree(const std::string& plugin_name, const std::str
 //   spark tree <name>               — Show dependency tree for specific plugin
 //   spark tree <name> <version>     — Show tree for specific version
 // ---------------------------------------------------------------------------
-inline int cmd_tree(const std::string& plugin_name = "", const std::string& version = "latest") {
+static nlohmann::json build_json_tree(const std::string& plugin_name, const std::string& version, std::set<std::string>& visited) {
+    nlohmann::json j;
+    j["name"] = plugin_name;
+    j["version"] = version;
+    j["dependencies"] = nlohmann::json::array();
+    
+    std::string node_key = plugin_name + ":" + version;
+    if (visited.find(node_key) != visited.end()) {
+        j["circular"] = true;
+        return j;
+    }
+    visited.insert(node_key);
+    
+    auto deps = get_version_dependencies(plugin_name, version);
+    for (const auto& dep : deps) {
+        std::string dep_ver = dep.version;
+        if (dep_ver == "latest") {
+            auto installed = get_plugin_versions(dep.name);
+            if (!installed.empty()) dep_ver = installed.back();
+        }
+        j["dependencies"].push_back(build_json_tree(dep.name, dep_ver, visited));
+    }
+    return j;
+}
+
+static void print_mermaid_tree(const std::string& plugin_name, const std::string& version, 
+                               std::set<std::string>& visited, std::set<std::string>& printed_edges) {
+    std::string node_key = plugin_name + ":" + version;
+    if (visited.find(node_key) != visited.end()) return;
+    visited.insert(node_key);
+    
+    auto deps = get_version_dependencies(plugin_name, version);
+    for (const auto& dep : deps) {
+        std::string dep_ver = dep.version;
+        if (dep_ver == "latest") {
+            auto installed = get_plugin_versions(dep.name);
+            if (!installed.empty()) dep_ver = installed.back();
+        }
+        std::string edge = plugin_name + "-->" + dep.name;
+        if (printed_edges.find(edge) == printed_edges.end()) {
+            printed_edges.insert(edge);
+            std::cout << "    " << plugin_name << "[\"" << plugin_name << " v" << version << "\"] --> " 
+                      << dep.name << "[\"" << dep.name << " v" << dep_ver << "\"]" << std::endl;
+        }
+        print_mermaid_tree(dep.name, dep_ver, visited, printed_edges);
+    }
+}
+
+inline int cmd_tree(const std::string& plugin_name = "", const std::string& version = "latest", const std::string& format = "text") {
+    if (format == "mermaid") {
+        std::cout << "graph TD" << std::endl;
+        std::set<std::string> visited;
+        std::set<std::string> printed_edges;
+        if (plugin_name.empty()) {
+            // Collect all installed plugins
+            std::vector<std::string> all_plugins;
+            std::set<std::string> seen;
+            auto add_plugins = [&](const fs::path& dir) {
+                if (fs::exists(dir)) {
+                    for (const auto& entry : fs::directory_iterator(dir)) {
+                        if (fs::is_directory(entry.path())) {
+                            std::string name = entry.path().filename().string();
+                            if (name != ".cache" && seen.find(name) == seen.end()) {
+                                seen.insert(name);
+                                all_plugins.push_back(name);
+                            }
+                        }
+                    }
+                }
+            };
+            add_plugins(get_plugin_dir());
+            if (is_sapphire_project()) add_plugins(get_local_plugin_dir());
+            
+            for (const auto& name : all_plugins) {
+                auto versions = get_plugin_versions(name);
+                if (!versions.empty()) {
+                    print_mermaid_tree(name, versions.back(), visited, printed_edges);
+                }
+            }
+        } else {
+            std::string resolved_version = version;
+            if (version == "latest") {
+                auto versions = get_plugin_versions(plugin_name);
+                if (!versions.empty()) resolved_version = versions.back();
+            }
+            print_mermaid_tree(plugin_name, resolved_version, visited, printed_edges);
+        }
+        return 0;
+    }
+    
+    if (format == "json") {
+        nlohmann::json root_json = nlohmann::json::array();
+        std::set<std::string> visited;
+        if (plugin_name.empty()) {
+            std::vector<std::string> all_plugins;
+            std::set<std::string> seen;
+            auto add_plugins = [&](const fs::path& dir) {
+                if (fs::exists(dir)) {
+                    for (const auto& entry : fs::directory_iterator(dir)) {
+                        if (fs::is_directory(entry.path())) {
+                            std::string name = entry.path().filename().string();
+                            if (name != ".cache" && seen.find(name) == seen.end()) {
+                                seen.insert(name);
+                                all_plugins.push_back(name);
+                            }
+                        }
+                    }
+                }
+            };
+            add_plugins(get_plugin_dir());
+            if (is_sapphire_project()) add_plugins(get_local_plugin_dir());
+            
+            for (const auto& name : all_plugins) {
+                auto versions = get_plugin_versions(name);
+                if (!versions.empty()) {
+                    root_json.push_back(build_json_tree(name, versions.back(), visited));
+                }
+            }
+        } else {
+            std::string resolved_version = version;
+            if (version == "latest") {
+                auto versions = get_plugin_versions(plugin_name);
+                if (!versions.empty()) resolved_version = versions.back();
+            }
+            root_json = build_json_tree(plugin_name, resolved_version, visited);
+        }
+        std::cout << root_json.dump(2) << std::endl;
+        return 0;
+    }
+
     if (plugin_name.empty()) {
         // Show tree for all installed plugins
         std::cout << termcolor::bold << "Spark Dependency Tree" << termcolor::reset << std::endl;

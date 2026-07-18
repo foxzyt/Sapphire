@@ -155,10 +155,14 @@ private:
         }
         
         // Write lockfile for this version
-        version_lockfile.write();
+        if (!no_save_) {
+            version_lockfile.write();
+        }
     }
     
     bool local_scope_ = false;
+    bool no_save_ = false;
+    bool frozen_lockfile_ = false;
     
 public:
     DependencyResolver(const fs::path& project_dir = fs::current_path(), 
@@ -169,6 +173,14 @@ public:
     // Enable local scope installation
     void set_local_scope(bool local) {
         local_scope_ = local;
+    }
+    
+    void set_no_save(bool no_save) {
+        no_save_ = no_save;
+    }
+    
+    void set_frozen_lockfile(bool frozen) {
+        frozen_lockfile_ = frozen;
     }
     
     // Main resolution function
@@ -310,6 +322,9 @@ public:
     
     // Write lock files for all installed versions
     bool write_lockfiles() {
+        if (no_save_) {
+            return true;
+        }
         for (const auto& [plugin_name, version] : installed_plugins_) {
             fs::path version_dir = get_plugin_dir() / plugin_name / "versions" / ("v" + version);
             install_version(plugin_name, version);
@@ -321,6 +336,10 @@ public:
     
     int get_total_installed() const {
         return total_installed_;
+    }
+    
+    const std::vector<std::pair<std::string, std::string>>& get_installed_plugins() const {
+        return installed_plugins_;
     }
     
     void reset() {
