@@ -10,7 +10,9 @@
 #include <sstream>
 #include <stdio.h>
 #include <string>
+#include <regex>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "bytecode_io.h"
@@ -551,7 +553,947 @@ static void publish_diagnostics(const std::string& uri, const std::string& sourc
     std::cerr << "[Sapphire LSP] Published " << diagnostics.size() << " diagnostic(s) for " << uri << std::endl;
 }
 
+// =============================================================
+// HELPER UTILITIES
+// =============================================================
+
+// Return a single line from the document (0-based index)
+static std::string get_doc_line(const std::string& src, int target_line) {
+    std::istringstream ss(src);
+    std::string ln;
+    int n = 0;
+    while (std::getline(ss, ln)) {
+        if (n == target_line) {
+            if (!ln.empty() && ln.back() == '\r') ln.pop_back();
+            return ln;
+        }
+        n++;
+    }
+    return "";
+}
+
+// Extract the word around a given (line, col) in the document
+static std::string get_word_at(const std::string& src, int target_line, int target_col) {
+    std::string ln = get_doc_line(src, target_line);
+    int limit = std::min(target_col, (int)ln.size());
+    int ws = limit;
+    while (ws > 0 && (isalnum((unsigned char)ln[ws-1]) || ln[ws-1] == '_')) ws--;
+    int we = limit;
+    while (we < (int)ln.size() && (isalnum((unsigned char)ln[we]) || ln[we] == '_')) we++;
+    return ln.substr(ws, we - ws);
+}
+
+// =============================================================
+// DOCUMENT SYMBOL SCANNING
+// Kind: 12=Function, 5=Class, 13=Variable, 10=Enum, 8=Field
+// =============================================================
+struct DocSymbol {
+    std::string name;
+    int kind;         // LSP SymbolKind
+    int line;         // 0-based
+    int col;
+    int end_line;
+    int end_col;
+};
+
+static std::vector<DocSymbol> scan_document_symbols(const std::string& src) {
+    std::vector<DocSymbol> symbols;
+    std::istringstream ss(src);
+    std::string ln;
+    int line_no = 0;
+
+    // Simple regex-style scan using token patterns
+    std::regex re_func(R"(\bfunction\s+([A-Za-z_][A-Za-z0-9_]*)\s*\()");
+    std::regex re_class(R"(\bclass\s+([A-Za-z_][A-Za-z0-9_]*))");
+    std::regex re_var(R"(\b(var|const)\s+([A-Za-z_][A-Za-z0-9_]*)\s*=)");
+    std::regex re_enum(R"(\benum\s+([A-Za-z_][A-Za-z0-9_]*))");
+
+    while (std::getline(ss, ln)) {
+        if (!ln.empty() && ln.back() == '\r') ln.pop_back();
+
+        std::smatch m;
+        if (std::regex_search(ln, m, re_func)) {
+            DocSymbol sym;
+            sym.name = m[1].str();
+            sym.kind = 12; // Function
+            sym.line = line_no;
+            sym.col  = (int)m.position(1);
+            sym.end_line = line_no;
+            sym.end_col  = sym.col + (int)sym.name.size();
+            symbols.push_back(sym);
+        } else if (std::regex_search(ln, m, re_class)) {
+            DocSymbol sym;
+            sym.name = m[1].str();
+            sym.kind = 5; // Class
+            sym.line = line_no;
+            sym.col  = (int)m.position(1);
+            sym.end_line = line_no;
+            sym.end_col  = sym.col + (int)sym.name.size();
+            symbols.push_back(sym);
+        } else if (std::regex_search(ln, m, re_enum)) {
+            DocSymbol sym;
+            sym.name = m[1].str();
+            sym.kind = 10; // Enum
+            sym.line = line_no;
+            sym.col  = (int)m.position(1);
+            sym.end_line = line_no;
+            sym.end_col  = sym.col + (int)sym.name.size();
+            symbols.push_back(sym);
+        }
+        // Scan all var/const declarations on this line
+        std::string rest = ln;
+        std::smatch mv;
+        while (std::regex_search(rest, mv, re_var)) {
+            DocSymbol sym;
+            sym.name = mv[2].str();
+            sym.kind = (mv[1].str() == "const") ? 14 : 13; // Constant or Variable
+            // Compute absolute position
+            std::string prefix = ln.substr(0, ln.size() - rest.size() + (int)mv.position(2));
+            sym.col  = (int)prefix.size();
+            sym.line = line_no;
+            sym.end_line = line_no;
+            sym.end_col  = sym.col + (int)sym.name.size();
+            symbols.push_back(sym);
+            rest = mv.suffix().str();
+        }
+        line_no++;
+    }
+    return symbols;
+}
+
+// =============================================================
+// SIGNATURE HELP DATA
+// =============================================================
+struct SigParam { std::string label; };
+struct SigInfo  { std::string label; std::vector<SigParam> params; std::string doc; };
+
+static const std::unordered_map<std::string, SigInfo>& get_signatures() {
+    static const std::unordered_map<std::string, SigInfo> sigs = {
+        // Core
+        {"clock",          {"clock()", {}, "Returns elapsed time in seconds since program start."}},
+        {"parseDouble",    {"parseDouble(str)", {{"str: string"}}, "Parse a string to a double."}},
+        {"valueToString",  {"valueToString(val)", {{"val: any"}}, "Convert any value to its string representation."}},
+        {"evaluate",       {"evaluate(code)", {{"code: string"}}, "Evaluate Sapphire code at runtime."}},
+        {"len",            {"len(val)", {{"val: string|list|map"}}, "Return the length of a string, list, or map."}},
+        {"createInstance", {"createInstance(className)", {{"className: string"}}, "Dynamically create an instance of a named class."}},
+        // Strings
+        {"stringCharAt",    {"stringCharAt(str, index)", {{"str: string"}, {"index: int"}}, "Character at index."}},
+        {"stringLength",    {"stringLength(str)", {{"str: string"}}, "Length of string."}},
+        {"stringSubstring", {"stringSubstring(str, start, end)", {{"str: string"}, {"start: int"}, {"end: int"}}, "Extract substring."}},
+        {"stringSplit",     {"stringSplit(str, delim)", {{"str: string"}, {"delim: string"}}, "Split by delimiter."}},
+        {"stringReplace",   {"stringReplace(str, from, to)", {{"str: string"}, {"from: string"}, {"to: string"}}, "Replace all occurrences."}},
+        {"stringToUpper",   {"stringToUpper(str)", {{"str: string"}}, "To uppercase."}},
+        {"stringToLower",   {"stringToLower(str)", {{"str: string"}}, "To lowercase."}},
+        {"stringTrim",      {"stringTrim(str)", {{"str: string"}}, "Trim whitespace."}},
+        {"stringContains",  {"stringContains(str, substr)", {{"str: string"}, {"substr: string"}}, "Check containment."}},
+        {"getQuote",        {"getQuote()", {}, "Return a random quote."}},
+        // I/O
+        {"readLine",       {"readLine()", {}, "Read a line from stdin."}},
+        {"printColor",     {"printColor(text, color)", {{"text: string"}, {"color: string"}}, "Print colored text."}},
+        {"writeFile",      {"writeFile(path, content)", {{"path: string"}, {"content: string"}}, "Write to file."}},
+        {"readFile",       {"readFile(path)", {{"path: string"}}, "Read file as string."}},
+        {"exists",         {"exists(path)", {{"path: string"}}, "Check if path exists."}},
+        {"deleteFile",     {"deleteFile(path)", {{"path: string"}}, "Delete a file."}},
+        {"appendFile",     {"appendFile(path, content)", {{"path: string"}, {"content: string"}}, "Append to file."}},
+        {"openFileDialog", {"openFileDialog()", {}, "Open native file picker."}},
+        // Math
+        {"sqrt",   {"sqrt(x)", {{"x: number"}}, "Square root."}},
+        {"rand",   {"rand()", {}, "Random float [0,1)."}},
+        {"abs",    {"abs(x)", {{"x: number"}}, "Absolute value."}},
+        {"floor",  {"floor(x)", {{"x: number"}}, "Floor."}},
+        {"ceil",   {"ceil(x)", {{"x: number"}}, "Ceiling."}},
+        {"sin",    {"sin(x)", {{"x: number"}}, "Sine (radians)."}},
+        {"cos",    {"cos(x)", {{"x: number"}}, "Cosine (radians)."}},
+        {"log",    {"log(x)", {{"x: number"}}, "Natural logarithm."}},
+        {"pow",    {"pow(base, exp)", {{"base: number"}, {"exp: number"}}, "Exponentiation."}},
+        {"min",    {"min(a, b)", {{"a: number"}, {"b: number"}}, "Minimum."}},
+        {"max",    {"max(a, b)", {{"a: number"}, {"b: number"}}, "Maximum."}},
+        {"clamp",  {"clamp(val, min, max)", {{"val: number"}, {"min: number"}, {"max: number"}}, "Clamp to range."}},
+        {"lerp",   {"lerp(a, b, t)", {{"a: number"}, {"b: number"}, {"t: number"}}, "Linear interpolation."}},
+        // Lists
+        {"listCreate",   {"listCreate()", {}, "Create empty list."}},
+        {"listAppend",   {"listAppend(list, value)", {{"list: list"}, {"value: any"}}, "Append value."}},
+        {"listGet",      {"listGet(list, index)", {{"list: list"}, {"index: int"}}, "Get element."}},
+        {"listSet",      {"listSet(list, index, value)", {{"list: list"}, {"index: int"}, {"value: any"}}, "Set element."}},
+        {"listLength",   {"listLength(list)", {{"list: list"}}, "List length."}},
+        {"listRemoveAt", {"listRemoveAt(list, index)", {{"list: list"}, {"index: int"}}, "Remove element."}},
+        {"listContains", {"listContains(list, value)", {{"list: list"}, {"value: any"}}, "Check membership."}},
+        // System
+        {"getEnv",       {"getEnv(name)", {{"name: string"}}, "Read environment variable."}},
+        {"getOS",        {"getOS()", {}, "Return OS name."}},
+        {"sleep",        {"sleep(ms)", {{"ms: number"}}, "Sleep milliseconds."}},
+        {"getClipboard", {"getClipboard()", {}, "Read clipboard."}},
+        {"exec",         {"exec(command)", {{"command: string"}}, "Run shell command."}},
+        {"spawn",        {"spawn(fn)", {{"fn: function"}}, "Spawn thread."}},
+        {"join",         {"join(thread)", {{"thread: thread"}}, "Wait for thread."}},
+        {"getCoreCount", {"getCoreCount()", {}, "CPU core count."}},
+        // Network
+        {"httpGet",      {"httpGet(url)", {{"url: string"}}, "HTTP GET."}},
+        {"httpPost",     {"httpPost(url, body)", {{"url: string"}, {"body: string"}}, "HTTP POST."}},
+        {"httpPing",     {"httpPing(url)", {{"url: string"}}, "Ping URL."}},
+        {"httpDownload", {"httpDownload(url, dest)", {{"url: string"}, {"dest: string"}}, "Download file."}},
+        {"httpServer",   {"httpServer(port, handler)", {{"port: int"}, {"handler: function"}}, "Start HTTP server."}},
+        // Color / misc
+        {"hexToRGB",      {"hexToRGB(hex)", {{"hex: string"}}, "Hex string to [r,g,b]."}},
+        {"checkCollision",{"checkCollision(a, b)", {{"a: object"}, {"b: object"}}, "Collision test."}},
+        {"printStack",   {"printStack()", {}, "Print VM stack (debug)."}},
+        {"dumpGlobals",  {"dumpGlobals()", {}, "Dump globals (debug)."}},
+        // UI
+        {"Render",      {"Render(element)", {{"element: any"}}, "Render a UI element."}},
+        {"Style",       {"Style(props)", {{"props: map"}}, "Apply style properties."}},
+        {"Flex",        {"Flex(props, children)", {{"props: map"}, {"children: list"}}, "Flex layout."}},
+        {"Button",      {"Button(text, onClick)", {{"text: string"}, {"onClick: function"}}, "Clickable button."}},
+        {"Text",        {"Text(content)", {{"content: string"}}, "Text element."}},
+        {"Display",     {"Display(props)", {{"props: map"}}, "Display container."}},
+        {"Checkbox",    {"Checkbox(label, checked, onChange)", {{"label: string"}, {"checked: bool"}, {"onChange: function"}}, "Checkbox."}},
+        {"Slider",      {"Slider(value, min, max, onChange)", {{"value: number"}, {"min: number"}, {"max: number"}, {"onChange: function"}}, "Slider."}},
+        {"Input",       {"Input(id, placeholder)", {{"id: string"}, {"placeholder: string"}}, "Text input."}},
+        {"GetInputText",{"GetInputText(id)", {{"id: string"}}, "Get input text."}},
+        {"Separator",   {"Separator()", {}, "Separator line."}},
+        {"Menu",        {"Menu(label, items)", {{"label: string"}, {"items: list"}}, "Menu bar entry."}},
+        {"MenuItem",    {"MenuItem(label, onClick)", {{"label: string"}, {"onClick: function"}}, "Menu item."}},
+        {"Grid",        {"Grid(cols, rows, children)", {{"cols: int"}, {"rows: int"}, {"children: list"}}, "Grid layout."}},
+        {"StackPanel",  {"StackPanel(orientation, children)", {{"orientation: string"}, {"children: list"}}, "Stack panel."}},
+        {"DockPanel",   {"DockPanel(children)", {{"children: list"}}, "Dock panel."}},
+        {"WrapPanel",   {"WrapPanel(children)", {{"children: list"}}, "Wrap panel."}},
+        {"ScrollView",  {"ScrollView(children)", {{"children: list"}}, "Scrollable area."}},
+        {"Border",      {"Border(props, child)", {{"props: map"}, {"child: any"}}, "Bordered container."}},
+        {"Image",       {"Image(path)", {{"path: string"}}, "Display image."}},
+        {"ProgressBar", {"ProgressBar(value, max)", {{"value: number"}, {"max: number"}}, "Progress bar."}},
+        {"RadioBox",    {"RadioBox(label, selected, onChange)", {{"label: string"}, {"selected: bool"}, {"onChange: function"}}, "Radio button."}},
+        {"ToggleSwitch",{"ToggleSwitch(checked, onChange)", {{"checked: bool"}, {"onChange: function"}}, "Toggle switch."}},
+        {"ComboBox",    {"ComboBox(items, selected, onChange)", {{"items: list"}, {"selected: int"}, {"onChange: function"}}, "Dropdown."}},
+        {"ListBox",     {"ListBox(items, onSelect)", {{"items: list"}, {"onSelect: function"}}, "List box."}},
+        {"PasswordBox", {"PasswordBox(id, placeholder)", {{"id: string"}, {"placeholder: string"}}, "Password input."}},
+        {"Hyperlink",   {"Hyperlink(text, url)", {{"text: string"}, {"url: string"}}, "Hyperlink."}},
+        {"Expander",    {"Expander(header, content)", {{"header: string"}, {"content: any"}}, "Collapsible panel."}},
+        {"DataGrid",    {"DataGrid(data, columns)", {{"data: list"}, {"columns: list"}}, "Data grid."}},
+        {"Canvas",      {"Canvas(width, height, drawFn)", {{"width: number"}, {"height: number"}, {"drawFn: function"}}, "2D canvas."}},
+        {"Tooltip",     {"Tooltip(text, child)", {{"text: string"}, {"child: any"}}, "Tooltip."}},
+        {"Popup",       {"Popup(content)", {{"content: any"}}, "Popup."}},
+        {"Window",      {"Window(title, content)", {{"title: string"}, {"content: any"}}, "Sub-window."}},
+        {"Animate",     {"Animate(props)", {{"props: map"}}, "UI animation."}},
+    };
+    return sigs;
+}
+
+// Figure out which parameter index the cursor is on inside a function call
+// by counting commas at the same paren depth.
+static int get_active_parameter(const std::string& src, int req_line, int req_char) {
+    std::string ln = get_doc_line(src, req_line);
+    int limit = std::min(req_char, (int)ln.size());
+    int depth = 0, param_idx = 0;
+    for (int i = limit - 1; i >= 0; i--) {
+        char c = ln[i];
+        if (c == ')' || c == ']') { depth++; continue; }
+        if (c == '(' || c == '[') {
+            if (depth == 0) break;
+            depth--;
+            continue;
+        }
+        if (c == ',' && depth == 0) param_idx++;
+    }
+    return param_idx;
+}
+
+// Get the function name just before the opening ( at the cursor
+static std::string get_call_name(const std::string& src, int req_line, int req_char) {
+    std::string ln = get_doc_line(src, req_line);
+    int limit = std::min(req_char, (int)ln.size());
+    int depth = 0;
+    for (int i = limit - 1; i >= 0; i--) {
+        char c = ln[i];
+        if (c == ')' || c == ']') { depth++; continue; }
+        if (c == '(' || c == '[') {
+            if (depth == 0) {
+                // Walk left to collect the identifier
+                int end = i;
+                while (end > 0 && ln[end-1] == ' ') end--;
+                int start = end;
+                while (start > 0 && (isalnum((unsigned char)ln[start-1]) || ln[start-1] == '_')) start--;
+                return ln.substr(start, end - start);
+            }
+            depth--;
+            continue;
+        }
+    }
+    return "";
+}
+
+// =============================================================
+// SEMANTIC TOKENS
+// tokenTypes index: keyword=0, type=1, class=2, function=3,
+//   variable=4, string=5, number=6, comment=7, operator=8,
+//   parameter=9, enumMember=10
+// =============================================================
+static const std::vector<std::string> sem_token_types = {
+    "keyword","type","class","function","variable",
+    "string","number","comment","operator","parameter","enumMember"
+};
+static const std::vector<std::string> sem_token_modifiers = {
+    "declaration","readonly","defaultLibrary","deprecated"
+};
+
+struct SemToken { int line, col, len, type, mods; };
+
+static json build_semantic_tokens_data(const std::string& src) {
+    // Use the Sapphire Lexer to get accurate token positions
+    Lexer lexer(src);
+    std::vector<SemToken> tokens;
+
+    // Build a set of known built-in names for quick lookup
+    static const std::unordered_set<std::string> builtins = {
+        "clock","parseDouble","valueToString","evaluate","len","createInstance",
+        "stringCharAt","stringLength","stringSubstring","stringSplit","stringReplace",
+        "stringToUpper","stringToLower","stringTrim","stringContains","getQuote",
+        "readLine","printColor","writeFile","readFile","exists","deleteFile","appendFile",
+        "openFileDialog","sqrt","rand","abs","floor","ceil","sin","cos","log","pow",
+        "min","max","clamp","lerp","listCreate","listAppend","listGet","listSet",
+        "listLength","listRemoveAt","listContains","getEnv","getOS","sleep","getClipboard",
+        "exec","join","getCoreCount","httpGet","httpPost","httpPing","httpDownload",
+        "httpServer","hexToRGB","checkCollision","printStack","dumpGlobals",
+        "Render","Style","Flex","Button","Text","Display","Checkbox","Slider","Input",
+        "GetInputText","Separator","Menu","MenuItem","Grid","StackPanel","DockPanel",
+        "WrapPanel","ScrollView","Border","Image","ProgressBar","RadioBox","ToggleSwitch",
+        "ComboBox","ListBox","PasswordBox","Hyperlink","Expander","DataGrid","Canvas",
+        "Tooltip","Popup","Window","Animate"
+    };
+
+    for (;;) {
+        Token tok = lexer.scan_token();
+        if (tok.type == TokenType::TOKEN_END_OF_FILE) break;
+        if (tok.type == TokenType::TOKEN_ILLEGAL)     continue;
+
+        SemToken st;
+        st.line = tok.line - 1; // LSP 0-based
+        st.col  = tok.column - 1;
+        st.len  = tok.length;
+        st.mods = 0;
+
+        switch (tok.type) {
+            case TokenType::TOKEN_IF: case TokenType::TOKEN_ELSE:
+            case TokenType::TOKEN_WHILE: case TokenType::TOKEN_FOR:
+            case TokenType::TOKEN_FOREACH: case TokenType::TOKEN_IN:
+            case TokenType::TOKEN_OF: case TokenType::TOKEN_RETURN:
+            case TokenType::TOKEN_BREAK: case TokenType::TOKEN_CONTINUE:
+            case TokenType::TOKEN_SWITCH: case TokenType::TOKEN_CASE:
+            case TokenType::TOKEN_DEFAULT: case TokenType::TOKEN_TRY:
+            case TokenType::TOKEN_CATCH: case TokenType::TOKEN_THROW:
+            case TokenType::TOKEN_FINALLY: case TokenType::TOKEN_IMPORT:
+            case TokenType::TOKEN_ASYNC: case TokenType::TOKEN_AWAIT:
+            case TokenType::TOKEN_SPAWN: case TokenType::TOKEN_PRINT:
+            case TokenType::TOKEN_AND: case TokenType::TOKEN_OR:
+            case TokenType::TOKEN_NEW:
+                st.type = 0; // keyword
+                break;
+            case TokenType::TOKEN_FUNCTION:
+                st.type = 0; st.mods = 1; // keyword | declaration
+                break;
+            case TokenType::TOKEN_CLASS:
+                st.type = 0; st.mods = 1;
+                break;
+            case TokenType::TOKEN_VAR:
+            case TokenType::TOKEN_CONST:
+                st.type = 0; st.mods = (tok.type == TokenType::TOKEN_CONST) ? 3 : 1;
+                break;
+            case TokenType::TOKEN_THIS: case TokenType::TOKEN_SUPER:
+                st.type = 0;
+                break;
+            case TokenType::TOKEN_INT:   case TokenType::TOKEN_BOOL:
+            case TokenType::TOKEN_STRING: case TokenType::TOKEN_DOUBLE:
+            case TokenType::TOKEN_FLOAT: case TokenType::TOKEN_VOID:
+                st.type = 1; // type
+                break;
+            case TokenType::TOKEN_ENUM:
+                st.type = 1; st.mods = 1;
+                break;
+            case TokenType::TOKEN_TRUE: case TokenType::TOKEN_FALSE:
+            case TokenType::TOKEN_NIL:
+                st.type = 6; // number/literal — use number slot for constants
+                break;
+            case TokenType::TOKEN_NUMBER:
+                st.type = 6; // number
+                break;
+            case TokenType::TOKEN_STRING_LITERAL:
+                st.type = 5; // string
+                st.len += 2; // account for the surrounding quotes
+                st.col = std::max(0, st.col - 1);
+                break;
+            case TokenType::TOKEN_IDENTIFIER:
+                if (builtins.count(tok.literal)) {
+                    st.type = 3; // function
+                    st.mods = 4; // defaultLibrary
+                } else {
+                    st.type = 4; // variable
+                }
+                break;
+            default:
+                st.type = 8; // operator / punctuation
+                break;
+        }
+
+        if (st.line >= 0 && st.col >= 0 && st.len > 0)
+            tokens.push_back(st);
+    }
+
+    // Encode as delta-encoded flat array
+    json data = json::array();
+    int prev_line = 0, prev_col = 0;
+    for (auto& t : tokens) {
+        int delta_line = t.line - prev_line;
+        int delta_col  = (delta_line == 0) ? (t.col - prev_col) : t.col;
+        data.push_back(delta_line);
+        data.push_back(delta_col);
+        data.push_back(t.len);
+        data.push_back(t.type);
+        data.push_back(t.mods);
+        prev_line = t.line;
+        prev_col  = t.col;
+    }
+    return data;
+}
+
+// =============================================================
+// FOLDING RANGES — match { } and detect block structure
+// =============================================================
+static json build_folding_ranges(const std::string& src) {
+    json ranges = json::array();
+    std::vector<int> brace_stack;
+    std::istringstream ss(src);
+    std::string ln;
+    int line_no = 0;
+    while (std::getline(ss, ln)) {
+        for (char c : ln) {
+            if (c == '{') brace_stack.push_back(line_no);
+            else if (c == '}' && !brace_stack.empty()) {
+                int start = brace_stack.back();
+                brace_stack.pop_back();
+                if (line_no > start) {
+                    ranges.push_back({{"startLine", start}, {"endLine", line_no - 1}, {"kind", "region"}});
+                }
+            }
+        }
+        line_no++;
+    }
+    return ranges;
+}
+
+// =============================================================
+// BASIC FORMATTER — normalize indentation (4-space, expand tabs)
+// =============================================================
+static std::string format_document(const std::string& src) {
+    std::string result;
+    int indent = 0;
+    std::istringstream ss(src);
+    std::string ln;
+    while (std::getline(ss, ln)) {
+        // Strip trailing whitespace and \r
+        while (!ln.empty() && (ln.back() == ' ' || ln.back() == '\t' || ln.back() == '\r'))
+            ln.pop_back();
+
+        // Decrease indent before lines starting with }
+        std::string trimmed = ln;
+        size_t first = trimmed.find_first_not_of(" \t");
+        if (first != std::string::npos) trimmed = trimmed.substr(first);
+
+        if (!trimmed.empty() && trimmed[0] == '}') indent = std::max(0, indent - 1);
+
+        if (!trimmed.empty()) {
+            result += std::string(indent * 4, ' ') + trimmed + "\n";
+        } else {
+            result += "\n";
+        }
+
+        // Increase indent after lines ending with {
+        if (!trimmed.empty() && trimmed.back() == '{') indent++;
+    }
+    return result;
+}
+
+// =============================================================
+// MAIN LSP LOOP
+// =============================================================
 void run_lsp() {
+    // Disable IO sync to avoid polluting stdout
+    std::ios_base::sync_with_stdio(false);
+    std::cin.tie(NULL);
+
+    // Build completion list and signatures once at startup
+    static const json all_completion_items = build_all_completion_items();
+    const auto& sigs = get_signatures();
+
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        if (line.empty() || line == "\r") continue;
+
+        if (line.rfind("Content-Length:", 0) == 0) {
+            try {
+                int content_length = std::stoi(line.substr(15));
+                std::getline(std::cin, line); // consume blank separator
+
+                std::string body(content_length, '\0');
+                std::cin.read(&body[0], content_length);
+
+                json request = json::parse(body);
+
+                if (request.contains("method")) {
+                    std::cerr << "[Sapphire LSP] Received method: " << request["method"] << std::endl;
+                }
+
+                if (request.contains("method")) {
+                    std::string method = request["method"];
+
+                    // =========================================================
+                    if (method == "initialize") {
+                        json response = {
+                            {"jsonrpc", "2.0"},
+                            {"id",      request["id"]},
+                            {"result",  {
+                                {"capabilities", {
+                                    // Full document sync
+                                    {"textDocumentSync", {
+                                        {"openClose",         true},
+                                        {"change",            1},
+                                        {"save",              {{"includeText", true}}}
+                                    }},
+                                    // Completion
+                                    {"completionProvider", {
+                                        {"resolveProvider",   false},
+                                        {"triggerCharacters", {".", " ", "("}}
+                                    }},
+                                    // Hover
+                                    {"hoverProvider", true},
+                                    // Signature help
+                                    {"signatureHelpProvider", {
+                                        {"triggerCharacters",   {"(", ","}},
+                                        {"retriggerCharacters", {","}}
+                                    }},
+                                    // Definition
+                                    {"definitionProvider", true},
+                                    // References
+                                    {"referencesProvider", true},
+                                    // Document highlight
+                                    {"documentHighlightProvider", true},
+                                    // Document symbols (outline)
+                                    {"documentSymbolProvider", true},
+                                    // Rename
+                                    {"renameProvider", {{"prepareProvider", false}}},
+                                    // Formatting
+                                    {"documentFormattingProvider", true},
+                                    // Folding ranges
+                                    {"foldingRangeProvider", true},
+                                    // Semantic tokens
+                                    {"semanticTokensProvider", {
+                                        {"legend", {
+                                            {"tokenTypes",     sem_token_types},
+                                            {"tokenModifiers", sem_token_modifiers}
+                                        }},
+                                        {"full",  true},
+                                        {"range", false}
+                                    }},
+                                    // Diagnostics (push-based)
+                                    {"diagnosticProvider", {
+                                        {"interFileDependencies", false},
+                                        {"workspaceDiagnostics",  false}
+                                    }}
+                                }},
+                                {"serverInfo", {
+                                    {"name",    "Sapphire Language Server"},
+                                    {"version", "1.0.9"}
+                                }}
+                            }}
+                        };
+                        send_lsp_message(response);
+                        std::cerr << "[Sapphire LSP] Handshake complete. Server connected." << std::endl;
+                    }
+                    // =========================================================
+                    else if (method == "textDocument/didOpen") {
+                        auto& params = request["params"];
+                        if (params.contains("textDocument")) {
+                            auto& td = params["textDocument"];
+                            if (td.contains("text")) current_document_content = td["text"];
+                            if (td.contains("uri"))  current_document_uri     = td["uri"];
+                        }
+                        std::cerr << "[Sapphire LSP] Document opened: "
+                                  << current_document_content.length() << " chars" << std::endl;
+                        publish_diagnostics(current_document_uri, current_document_content);
+                    }
+                    // =========================================================
+                    else if (method == "textDocument/didChange") {
+                        auto& params = request["params"];
+                        if (params.contains("textDocument") && params["textDocument"].contains("uri"))
+                            current_document_uri = params["textDocument"]["uri"];
+                        if (params.contains("contentChanges") && !params["contentChanges"].empty())
+                            current_document_content = params["contentChanges"][0]["text"];
+                        std::cerr << "[Sapphire LSP] Document updated: "
+                                  << current_document_content.length() << " chars" << std::endl;
+                        publish_diagnostics(current_document_uri, current_document_content);
+                    }
+                    // =========================================================
+                    else if (method == "textDocument/didSave") {
+                        auto& params = request["params"];
+                        if (params.contains("textDocument") && params["textDocument"].contains("uri"))
+                            current_document_uri = params["textDocument"]["uri"];
+                        if (params.contains("text"))
+                            current_document_content = params["text"];
+                        publish_diagnostics(current_document_uri, current_document_content);
+                    }
+                    // =========================================================
+                    else if (method == "textDocument/completion") {
+                        std::string prefix;
+                        try {
+                            auto& params   = request["params"];
+                            int   req_line = params["position"]["line"];
+                            int   req_char = params["position"]["character"];
+                            std::string cur = get_doc_line(current_document_content, req_line);
+                            int limit = std::min(req_char, (int)cur.size());
+                            int i = limit;
+                            while (i > 0 && (isalnum((unsigned char)cur[i-1]) || cur[i-1] == '_')) i--;
+                            prefix = cur.substr(i, limit - i);
+                        } catch (...) {}
+
+                        json filtered = json::array();
+                        for (const auto& item : all_completion_items) {
+                            std::string label = item["label"];
+                            if (prefix.empty()) {
+                                filtered.push_back(item);
+                            } else if (label.size() >= prefix.size()) {
+                                std::string lp = label.substr(0, prefix.size());
+                                std::string pp = prefix;
+                                std::transform(lp.begin(), lp.end(), lp.begin(), ::tolower);
+                                std::transform(pp.begin(), pp.end(), pp.begin(), ::tolower);
+                                if (lp == pp) filtered.push_back(item);
+                            }
+                        }
+                        send_lsp_message({
+                            {"jsonrpc", "2.0"}, {"id", request["id"]},
+                            {"result",  {{"isIncomplete", false}, {"items", filtered}}}
+                        });
+                        std::cerr << "[Sapphire LSP] Sent " << filtered.size()
+                                  << " completion(s) (prefix: '" << prefix << "')" << std::endl;
+                    }
+                    // =========================================================
+                    else if (method == "textDocument/hover") {
+                        std::string word;
+                        try {
+                            auto& params   = request["params"];
+                            word = get_word_at(current_document_content,
+                                               params["position"]["line"],
+                                               params["position"]["character"]);
+                        } catch (...) {}
+
+                        auto it = hover_docs.find(word);
+                        if (!word.empty() && it != hover_docs.end()) {
+                            send_lsp_message({
+                                {"jsonrpc", "2.0"}, {"id", request["id"]},
+                                {"result",  {{"contents", {{"kind","markdown"},{"value", it->second}}}}}
+                            });
+                        } else {
+                            send_lsp_message({
+                                {"jsonrpc","2.0"},{"id",request["id"]},{"result",nullptr}
+                            });
+                        }
+                    }
+                    // =========================================================
+                    else if (method == "textDocument/signatureHelp") {
+                        std::string func_name;
+                        int active_param = 0;
+                        try {
+                            auto& params   = request["params"];
+                            int   req_line = params["position"]["line"];
+                            int   req_char = params["position"]["character"];
+                            func_name    = get_call_name(current_document_content, req_line, req_char);
+                            active_param = get_active_parameter(current_document_content, req_line, req_char);
+                        } catch (...) {}
+
+                        auto sit = sigs.find(func_name);
+                        if (sit != sigs.end()) {
+                            const auto& sig = sit->second;
+                            json params_arr = json::array();
+                            for (auto& p : sig.params) {
+                                params_arr.push_back({{"label", p.label}});
+                            }
+                            send_lsp_message({
+                                {"jsonrpc", "2.0"}, {"id", request["id"]},
+                                {"result", {
+                                    {"signatures", json::array({
+                                        json({
+                                            {"label",           sig.label},
+                                            {"documentation",   sig.doc},
+                                            {"parameters",      params_arr},
+                                            {"activeParameter", std::min(active_param, (int)sig.params.size()-1)}
+                                        })
+                                    })},
+                                    {"activeSignature",  0},
+                                    {"activeParameter",  active_param}
+                                }}
+                            });
+                        } else {
+                            send_lsp_message({
+                                {"jsonrpc","2.0"},{"id",request["id"]},{"result",nullptr}
+                            });
+                        }
+                    }
+                    // =========================================================
+                    else if (method == "textDocument/documentSymbol") {
+                        auto symbols = scan_document_symbols(current_document_content);
+                        json sym_arr = json::array();
+                        for (auto& s : symbols) {
+                            sym_arr.push_back({
+                                {"name", s.name},
+                                {"kind", s.kind},
+                                {"range", {
+                                    {"start", {{"line", s.line},     {"character", s.col}}},
+                                    {"end",   {{"line", s.end_line}, {"character", s.end_col}}}
+                                }},
+                                {"selectionRange", {
+                                    {"start", {{"line", s.line}, {"character", s.col}}},
+                                    {"end",   {{"line", s.line}, {"character", s.col + (int)s.name.size()}}}
+                                }}
+                            });
+                        }
+                        send_lsp_message({
+                            {"jsonrpc","2.0"},{"id",request["id"]},{"result",sym_arr}
+                        });
+                        std::cerr << "[Sapphire LSP] Document symbols: " << sym_arr.size() << std::endl;
+                    }
+                    // =========================================================
+                    else if (method == "textDocument/documentHighlight") {
+                        std::string word;
+                        try {
+                            auto& params = request["params"];
+                            word = get_word_at(current_document_content,
+                                               params["position"]["line"],
+                                               params["position"]["character"]);
+                        } catch (...) {}
+
+                        json highlights = json::array();
+                        if (!word.empty()) {
+                            std::istringstream ss(current_document_content);
+                            std::string ln;
+                            int line_no = 0;
+                            while (std::getline(ss, ln)) {
+                                if (!ln.empty() && ln.back() == '\r') ln.pop_back();
+                                size_t pos = 0;
+                                while ((pos = ln.find(word, pos)) != std::string::npos) {
+                                    // Ensure it's a whole-word match
+                                    bool left_ok  = (pos == 0 || !isalnum((unsigned char)ln[pos-1]) && ln[pos-1] != '_');
+                                    bool right_ok = (pos + word.size() >= ln.size() ||
+                                                     !isalnum((unsigned char)ln[pos+word.size()]) &&
+                                                     ln[pos+word.size()] != '_');
+                                    if (left_ok && right_ok) {
+                                        highlights.push_back({
+                                            {"range", {
+                                                {"start", {{"line", line_no}, {"character", (int)pos}}},
+                                                {"end",   {{"line", line_no}, {"character", (int)(pos + word.size())}}}
+                                            }},
+                                            {"kind", 1} // 1=Text, 2=Read, 3=Write
+                                        });
+                                    }
+                                    pos += word.size();
+                                }
+                                line_no++;
+                            }
+                        }
+                        send_lsp_message({
+                            {"jsonrpc","2.0"},{"id",request["id"]},{"result",highlights}
+                        });
+                    }
+                    // =========================================================
+                    else if (method == "textDocument/definition") {
+                        std::string word;
+                        try {
+                            auto& params = request["params"];
+                            word = get_word_at(current_document_content,
+                                               params["position"]["line"],
+                                               params["position"]["character"]);
+                        } catch (...) {}
+
+                        json locations = json::array();
+                        if (!word.empty()) {
+                            // Search for the first declaration of this identifier
+                            std::regex re_decl("\\b(?:function|var|const|class|enum)\\s+(" + word + ")\\b");
+                            std::istringstream ss(current_document_content);
+                            std::string ln;
+                            int line_no = 0;
+                            while (std::getline(ss, ln)) {
+                                if (!ln.empty() && ln.back() == '\r') ln.pop_back();
+                                std::smatch m;
+                                if (std::regex_search(ln, m, re_decl)) {
+                                    int col = (int)m.position(1);
+                                    locations.push_back({
+                                        {"uri", current_document_uri},
+                                        {"range", {
+                                            {"start", {{"line", line_no}, {"character", col}}},
+                                            {"end",   {{"line", line_no}, {"character", col + (int)word.size()}}}
+                                        }}
+                                    });
+                                    break; // first definition only
+                                }
+                                line_no++;
+                            }
+                        }
+                        send_lsp_message({
+                            {"jsonrpc","2.0"},{"id",request["id"]},
+                            {"result", locations.empty() ? json(nullptr) : locations[0]}
+                        });
+                    }
+                    // =========================================================
+                    else if (method == "textDocument/references") {
+                        std::string word;
+                        try {
+                            auto& params = request["params"];
+                            word = get_word_at(current_document_content,
+                                               params["position"]["line"],
+                                               params["position"]["character"]);
+                        } catch (...) {}
+
+                        json refs = json::array();
+                        if (!word.empty()) {
+                            std::istringstream ss(current_document_content);
+                            std::string ln;
+                            int line_no = 0;
+                            while (std::getline(ss, ln)) {
+                                if (!ln.empty() && ln.back() == '\r') ln.pop_back();
+                                size_t pos = 0;
+                                while ((pos = ln.find(word, pos)) != std::string::npos) {
+                                    bool left_ok  = (pos == 0 || !isalnum((unsigned char)ln[pos-1]) && ln[pos-1] != '_');
+                                    bool right_ok = (pos + word.size() >= ln.size() ||
+                                                     !isalnum((unsigned char)ln[pos+word.size()]) &&
+                                                     ln[pos+word.size()] != '_');
+                                    if (left_ok && right_ok) {
+                                        refs.push_back({
+                                            {"uri", current_document_uri},
+                                            {"range", {
+                                                {"start", {{"line", line_no}, {"character", (int)pos}}},
+                                                {"end",   {{"line", line_no}, {"character", (int)(pos + word.size())}}}
+                                            }}
+                                        });
+                                    }
+                                    pos += word.size();
+                                }
+                                line_no++;
+                            }
+                        }
+                        send_lsp_message({
+                            {"jsonrpc","2.0"},{"id",request["id"]},{"result",refs}
+                        });
+                    }
+                    // =========================================================
+                    else if (method == "textDocument/rename") {
+                        std::string old_word, new_name;
+                        try {
+                            auto& params = request["params"];
+                            old_word = get_word_at(current_document_content,
+                                                   params["position"]["line"],
+                                                   params["position"]["character"]);
+                            new_name = params["newName"];
+                        } catch (...) {}
+
+                        json edits = json::array();
+                        if (!old_word.empty() && !new_name.empty()) {
+                            std::istringstream ss(current_document_content);
+                            std::string ln;
+                            int line_no = 0;
+                            while (std::getline(ss, ln)) {
+                                if (!ln.empty() && ln.back() == '\r') ln.pop_back();
+                                size_t pos = 0;
+                                while ((pos = ln.find(old_word, pos)) != std::string::npos) {
+                                    bool left_ok  = (pos == 0 || !isalnum((unsigned char)ln[pos-1]) && ln[pos-1] != '_');
+                                    bool right_ok = (pos + old_word.size() >= ln.size() ||
+                                                     !isalnum((unsigned char)ln[pos+old_word.size()]) &&
+                                                     ln[pos+old_word.size()] != '_');
+                                    if (left_ok && right_ok) {
+                                        edits.push_back({
+                                            {"range", {
+                                                {"start", {{"line", line_no}, {"character", (int)pos}}},
+                                                {"end",   {{"line", line_no}, {"character", (int)(pos + old_word.size())}}}
+                                            }},
+                                            {"newText", new_name}
+                                        });
+                                    }
+                                    pos += old_word.size();
+                                }
+                                line_no++;
+                            }
+                        }
+                        send_lsp_message({
+                            {"jsonrpc","2.0"},{"id",request["id"]},
+                            {"result", {
+                                {"changes", {
+                                    {current_document_uri, edits}
+                                }}
+                            }}
+                        });
+                        std::cerr << "[Sapphire LSP] Rename '" << old_word << "' -> '"
+                                  << new_name << "': " << edits.size() << " edits" << std::endl;
+                    }
+                    // =========================================================
+                    else if (method == "textDocument/formatting") {
+                        std::string formatted = format_document(current_document_content);
+                        // Count lines in document
+                        int num_lines = 0;
+                        for (char c : current_document_content) if (c == '\n') num_lines++;
+
+                        send_lsp_message({
+                            {"jsonrpc","2.0"},{"id",request["id"]},
+                            {"result", json::array({
+                                json({
+                                    {"range", {
+                                        {"start", {{"line", 0},         {"character", 0}}},
+                                        {"end",   {{"line", num_lines}, {"character", 9999}}}
+                                    }},
+                                    {"newText", formatted}
+                                })
+                            })}
+                        });
+                        std::cerr << "[Sapphire LSP] Formatted document." << std::endl;
+                    }
+                    // =========================================================
+                    else if (method == "textDocument/foldingRange") {
+                        send_lsp_message({
+                            {"jsonrpc","2.0"},{"id",request["id"]},
+                            {"result", build_folding_ranges(current_document_content)}
+                        });
+                    }
+                    // =========================================================
+                    else if (method == "textDocument/semanticTokens/full") {
+                        json data;
+                        try {
+                            data = build_semantic_tokens_data(current_document_content);
+                        } catch (...) {
+                            data = json::array();
+                        }
+                        send_lsp_message({
+                            {"jsonrpc","2.0"},{"id",request["id"]},
+                            {"result", {{"data", data}}}
+                        });
+                        std::cerr << "[Sapphire LSP] Semantic tokens: " << (data.size()/5) << " token(s)" << std::endl;
+                    }
+                    // =========================================================
+                    else if (method == "shutdown") {
+                        send_lsp_message({
+                            {"jsonrpc","2.0"},{"id",request["id"]},{"result",nullptr}
+                        });
+                    }
+                    else if (method == "exit") {
+                        break;
+                    }
+                    // Notifications with no id don't need a response
+
+                } else if (request.contains("id")) {
+                    // Respond null to unsupported requests to prevent editor hangs
+                    send_lsp_message({
+                        {"jsonrpc","2.0"},{"id",request["id"]},{"result",nullptr}
+                    });
+                }
+
+            } catch (const std::exception& e) {
+                std::cerr << "[Sapphire LSP] Error: " << e.what() << std::endl;
+            }
+        }
+    }
+}
     // Disable IO sync to avoid polluting stdout
     std::ios_base::sync_with_stdio(false);
     std::cin.tie(NULL);

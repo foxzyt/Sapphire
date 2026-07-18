@@ -8,7 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **LSP (Language Server Protocol) — Major Expansion:**
+- **LSP — Full Python/Rust-class Language Server (v2):**
+  - `textDocument/signatureHelp`: Parameter hints popup triggered on `(` and `,` for all 60+ built-in functions. Shows the signature, parameter list, and active parameter highlighted.
+  - `textDocument/documentSymbol`: Outline panel populates with all `function`, `class`, `var`, `const`, and `enum` declarations in the current file.
+  - `textDocument/documentHighlight`: Click any identifier to highlight all its occurrences in the file simultaneously.
+  - `textDocument/definition`: F12 / Ctrl+Click jumps to the declaration (`function`/`var`/`const`/`class`/`enum`) within the same file.
+  - `textDocument/references`: Shift+F12 lists every reference to an identifier across the file.
+  - `textDocument/rename`: F2 renames a symbol across all its occurrences in the file atomically.
+  - `textDocument/formatting`: Shift+Alt+F formats the document with consistent 4-space indentation.
+  - `textDocument/foldingRange`: `{}` block folding via the VS Code gutter.
+  - `textDocument/semanticTokens/full`: Full document semantic tokenization using the actual Sapphire Lexer — overrides/supplements TextMate grammar with accurate per-token type coloring (keywords, types, variables, built-ins, strings, numbers, operators).
+  - **Improved TextMate grammar (`syntaxes/sapphire.tmLanguage.json`)**: Complete rewrite with block comments (`/* */`), f-string interpolation as embedded code regions, decorator support (`@name`), separate class/function declaration captures, PascalCase type detection, SCREAMING_SNAKE constant detection, rich operator set (all compound assignments, bitwise, logical, arrow, optional chain, spread, ternary), and distinct built-in function scope.
+  - **New helper infrastructure in `main.cpp`**: `get_doc_line`, `get_word_at`, `scan_document_symbols`, `get_signatures`, `get_active_parameter`, `get_call_name`, `build_semantic_tokens_data`, `build_folding_ranges`, `format_document`.
+  - Added `#include <regex>` and `#include <unordered_set>` for document scanning.
+  - VS Code extension `package.json` bumped to `v1.2.0`.
+- **LSP (Language Server Protocol) — Initial Expansion:**
+
   - Full keyword coverage: all 30+ Sapphire keywords (`function`, `var`, `const`, `class`, `extends`, `enum`, `try`, `catch`, `throw`, `finally`, `async`, `await`, `spawn`, `foreach`, `switch`, `case`, `default`, etc.) are now listed as completion items with snippet templates.
   - Full built-in function coverage: all ~60 VM native functions (string, math, list, I/O, system, network, debug) added to autocompletion with parameter hints and Markdown documentation.
   - Full type annotation coverage: `int`, `bool`, `string`, `double`, `float`, `void`.
