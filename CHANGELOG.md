@@ -8,7 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Spark v2.3.0 — Renamed from Mine:**
+- **LSP (Language Server Protocol) — Major Expansion:**
+  - Full keyword coverage: all 30+ Sapphire keywords (`function`, `var`, `const`, `class`, `extends`, `enum`, `try`, `catch`, `throw`, `finally`, `async`, `await`, `spawn`, `foreach`, `switch`, `case`, `default`, etc.) are now listed as completion items with snippet templates.
+  - Full built-in function coverage: all ~60 VM native functions (string, math, list, I/O, system, network, debug) added to autocompletion with parameter hints and Markdown documentation.
+  - Full type annotation coverage: `int`, `bool`, `string`, `double`, `float`, `void`.
+  - Full UI component coverage: all 30+ UI functions (`Render`, `Button`, `Text`, `Grid`, `Flex`, `Slider`, `Input`, `Checkbox`, `ToggleSwitch`, `ComboBox`, `DataGrid`, `Canvas`, etc.).
+  - **Real-time diagnostics** via `textDocument/publishDiagnostics`: the LSP now compiles the document on every `didOpen`, `didChange`, and `didSave` event using the actual Sapphire compiler, and pushes inline error squiggles to VS Code with exact line/column positions.
+  - **Hover documentation**: hovering over any keyword, built-in, type, or UI function shows a Markdown tooltip with signature and description.
+  - **Trigger characters** (`"."`, `" "`, `"("`) registered in the `initialize` response for smarter completion invocation.
+  - **Server info** (`name`, `version`) reported during handshake.
+  - All LSP debug log messages translated from Portuguese to English.
+  - **VS Code Extension (`downloads/lsp`) updated:**
+    - `extension.ts` comments translated to English.
+    - `package.json` bumped to v1.1.0 with English description.
+    - Added `language-configuration.json` for bracket matching, auto-closing pairs, and `//` line comment toggling.
+    - Added `syntaxes/sapphire.tmLanguage.json` TextMate grammar providing syntax highlighting for keywords, types, constants, strings (including f-strings), numbers, operators, function calls, and comments.
+
   - Package manager renamed from "mine" to "spark" (more thematic with Sapphire).
   - Repository moved to `https://github.com/foxzyt/sapphire-spark`.
   - All commands updated: `spark init`, `spark install`, `spark search`, etc.
