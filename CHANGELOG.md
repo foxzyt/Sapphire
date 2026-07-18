@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Spark v2.4.0 — Environment, Manifests & Lockfiles:**
+  - Automated project manifest initialization (`sapphire.json`) via `spark init` supporting interactive bypass (`-y` / `--yes`) and direct flags (`--name`, `--version`, `--author`, `--description`).
+  - Project-level lockfiles (`spark.lock`) for deterministic transitive dependency resolution on project root.
+  - Advanced install parameters: `--save-dev` / `-D` (save to devDependencies), `--no-save` (skip manifest/lock updates), `--offline` mode (restrict search/install to cache), `--frozen-lockfile` (fail on mismatch), and `--registry <url>` (endpoint override).
+  - Multi-format tree visualization command (`spark tree [name] [version] --format json` / `--format mermaid`).
+  - Added dry-run updates listing using `spark update [name] --check-only`.
+  - Added force flag to skip prompt confirmations on `spark cache clean --force` / `-f`.
+- **Sapphire VM & Preprocessor Imports:**
+  - Custom entry point routing supporting `main: <path>` or `entry: <path>` tags in `PLUGIN.txt` or `sapphire.json` configuration manifests.
+  - Scope prefix tags inside module imports allowing developers to enforce search boundaries (`local:plugin@version`, `global:plugin@version`, `path:relative/or/absolute/folder`).
 - **LSP — Full Python/Rust-class Language Server (v2):**
   - `textDocument/signatureHelp`: Parameter hints popup triggered on `(` and `,` for all 60+ built-in functions. Shows the signature, parameter list, and active parameter highlighted.
   - `textDocument/documentSymbol`: Outline panel populates with all `function`, `class`, `var`, `const`, and `enum` declarations in the current file.
