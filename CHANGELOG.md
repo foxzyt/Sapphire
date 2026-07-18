@@ -260,3 +260,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Property Access:** Fixed `OP_GET_PROPERTY` and `OP_SET_PROPERTY` causing variant access exceptions when interacting with `ObjMap` objects.
 - Fixed parser expressions that incorrectly required a semicolon when evaluating an arrow function.
 - Fixed nullish coalescing type check failure when the left-hand side is `nil`.
+ 
