@@ -1,4 +1,4 @@
-﻿#include <SFML/Graphics.hpp>
+#include <SFML/Graphics.hpp>
 #include <algorithm>
 #include <cctype>
 #include <ctime>
@@ -1776,6 +1776,213 @@ void run_check(const std::string &path) {
   }
 }
 
+void run_test(const std::string &path) {
+  std::vector<std::string> test_files;
+
+  try {
+    if (std::filesystem::is_directory(path)) {
+      for (const auto &entry : std::filesystem::recursive_directory_iterator(path)) {
+        if (entry.is_regular_file()) {
+          std::string fname = entry.path().filename().string();
+          if ((fname.rfind("test_", 0) == 0 || fname.find("_test.sp") != std::string::npos || fname.find("test.sp") != std::string::npos) && entry.path().extension() == ".sp") {
+            test_files.push_back(entry.path().string());
+          }
+        }
+      }
+    } else {
+      test_files.push_back(path);
+    }
+  } catch (...) {
+    std::cerr << "Error: Directory access failed " << path << std::endl;
+    return;
+  }
+
+  if (test_files.empty()) {
+    std::cout << tc_yellow() << "No test files found matching: " << path << tc_reset() << std::endl;
+    return;
+  }
+
+  int total_tests = 0;
+  int passed_tests = 0;
+  int failed_tests = 0;
+
+  std::cout << tc_bold() << tc_cyan() << "========================================" << tc_reset() << std::endl;
+  std::cout << tc_bold() << tc_cyan() << "       SAPPHIRE DYNAMIC TEST RUNNER     " << tc_reset() << std::endl;
+  std::cout << tc_bold() << tc_cyan() << "========================================" << tc_reset() << std::endl;
+
+  for (const auto &file : test_files) {
+    std::cout << tc_bold() << "\nRunning tests in: " << file << tc_reset() << std::endl;
+    
+    std::string source = load_source_script(file);
+    if (source.empty()) {
+      std::cerr << tc_red() << "  [!] Error: Could not read " << file << tc_reset() << std::endl;
+      failed_tests++;
+      continue;
+    }
+
+    VM vm;
+    g_current_vm = &vm;
+    vm.add_module_search_path(std::filesystem::path(file).parent_path().string());
+    
+    Preprocessor prep;
+    std::string processed = prep.process(source);
+    
+    try {
+      vm.interpret(processed);
+    } catch (const std::exception &e) {
+      std::cerr << tc_red() << "  [!] File execution failure: " << e.what() << tc_reset() << std::endl;
+      failed_tests++;
+      g_current_vm = nullptr;
+      continue;
+    }
+
+    std::vector<std::string> global_tests;
+    std::vector<std::pair<std::string, std::string>> class_tests;
+
+    for (const auto &pair : vm.globals) {
+      std::string name = pair.first;
+      SapphireValue val = pair.second;
+      
+      if (name.rfind("test", 0) == 0 || name.rfind("should", 0) == 0) {
+        if (is_obj_type(val, OBJ_FUNCTION) || is_obj_type(val, OBJ_CLOSURE) || is_obj_type(val, OBJ_NATIVE)) {
+          global_tests.push_back(name);
+        }
+      }
+      
+      if (name.rfind("Test", 0) == 0 || name.rfind("test", 0) == 0) {
+        if (is_obj_type(val, OBJ_CLASS)) {
+          ObjClass* klass = static_cast<ObjClass*>(std::get<Obj*>(val._value));
+          for (const auto &method_pair : klass->methods) {
+            std::string method_name = method_pair.first;
+            if (method_name.rfind("test", 0) == 0 || method_name.rfind("should", 0) == 0) {
+              class_tests.push_back({name, method_name});
+            }
+          }
+        }
+      }
+    }
+
+    std::sort(global_tests.begin(), global_tests.end());
+    std::sort(class_tests.begin(), class_tests.end());
+
+    for (const auto &test_name : global_tests) {
+      total_tests++;
+      std::cout << "  - " << test_name << " ... ";
+      
+      try {
+        std::string test_code = test_name + "();";
+        vm.interpret(test_code);
+        std::cout << tc_green() << "PASSED" << tc_reset() << std::endl;
+        passed_tests++;
+      } catch (const std::exception &e) {
+        std::cout << tc_red() << "FAILED (" << e.what() << ")" << tc_reset() << std::endl;
+        failed_tests++;
+      }
+    }
+
+    for (const auto &class_test : class_tests) {
+      total_tests++;
+      std::string class_name = class_test.first;
+      std::string method_name = class_test.second;
+      std::cout << "  - " << class_name << "." << method_name << " ... ";
+      
+      try {
+        std::string test_code = "var test_inst = " + class_name + "(); test_inst." + method_name + "();";
+        vm.interpret(test_code);
+        std::cout << tc_green() << "PASSED" << tc_reset() << std::endl;
+        passed_tests++;
+      } catch (const std::exception &e) {
+        std::cout << tc_red() << "FAILED (" << e.what() << ")" << tc_reset() << std::endl;
+        failed_tests++;
+      }
+    }
+
+    g_current_vm = nullptr;
+  }
+
+  std::cout << tc_bold() << tc_cyan() << "\n========================================" << tc_reset() << std::endl;
+  std::cout << "Test Summary:" << std::endl;
+  std::cout << "  Total:  " << total_tests << std::endl;
+  std::cout << "  Passed: " << tc_green() << passed_tests << tc_reset() << std::endl;
+  std::cout << "  Failed: " << (failed_tests > 0 ? tc_red() : tc_green()) << failed_tests << tc_reset() << std::endl;
+  std::cout << tc_bold() << tc_cyan() << "========================================" << tc_reset() << std::endl;
+}
+
+void run_lint(const std::string &path) {
+  std::string source = load_source_script(path);
+  if (source.empty()) {
+    std::cerr << "Error: Could not read " << path << std::endl;
+    return;
+  }
+
+  std::cout << tc_bold() << tc_cyan() << "--- Sapphire Linter: " << path << " ---" << tc_reset() << std::endl;
+  
+  std::vector<std::string> lines;
+  std::stringstream ss(source);
+  std::string line;
+  while (std::getline(ss, line)) {
+    lines.push_back(line);
+  }
+
+  int warnings = 0;
+  int errors = 0;
+
+  std::regex class_pattern(R"(class\s+([A-Za-z0-9_]+))");
+  std::regex function_pattern(R"(function\s+([A-Za-z0-9_]+))");
+  
+  for (size_t i = 0; i < lines.size(); i++) {
+    std::string current_line = lines[i];
+    int line_num = i + 1;
+
+    std::smatch match;
+    if (std::regex_search(current_line, match, class_pattern)) {
+      std::string class_name = match[1];
+      if (!std::isupper(class_name[0])) {
+        std::cout << tc_yellow() << "[Warning] Line " << line_num << ": Class name '" << class_name 
+                  << "' should start with an uppercase letter (PascalCase)." << tc_reset() << std::endl;
+        warnings++;
+      }
+    }
+
+    if (std::regex_search(current_line, match, function_pattern)) {
+      std::string fn_name = match[1];
+      if (fn_name.rfind("test", 0) != 0 && fn_name.rfind("should", 0) != 0) {
+        if (fn_name.find('_') != std::string::npos) {
+          std::cout << tc_yellow() << "[Warning] Line " << line_num << ": Function name '" << fn_name 
+                    << "' should use camelCase naming convention." << tc_reset() << std::endl;
+          warnings++;
+        }
+      }
+    }
+
+    if (current_line.find("TODO") != std::string::npos || current_line.find("FIXME") != std::string::npos) {
+      std::cout << tc_cyan() << "[Info] Line " << line_num << ": Found pending task comment (TODO/FIXME)." << tc_reset() << std::endl;
+    }
+
+    if (current_line.length() > 120) {
+      std::cout << tc_yellow() << "[Warning] Line " << line_num << ": Line exceeds 120 characters (" 
+                << current_line.length() << " chars)." << tc_reset() << std::endl;
+      warnings++;
+    }
+  }
+
+  VM vm;
+  Preprocessor prep;
+  std::string processed = prep.process(source);
+  ObjFunction *func = compile(&vm, processed);
+  if (!func) {
+    std::cout << tc_red() << "[Error] File has syntax/compilation errors." << tc_reset() << std::endl;
+    errors++;
+  }
+
+  std::cout << tc_bold() << tc_cyan() << "------------------------------------------" << tc_reset() << std::endl;
+  std::cout << "Lint summary: " 
+            << tc_red() << errors << " error(s), " 
+            << tc_yellow() << warnings << " warning(s)" 
+            << tc_reset() << std::endl;
+}
+
+
 void run_disasm(const std::string &path) {
   std::string source = load_source_script(path);
   if (source.empty()) {
@@ -1960,6 +2167,16 @@ int main(int argc, char *argv[]) {
       run_init(argv[2]);
     else
       std::cerr << "Usage: sapphire init <project_name>" << std::endl;
+  } else if (command == "test") {
+    if (argc >= 3)
+      run_test(argv[2]);
+    else
+      run_test(".");
+  } else if (command == "lint") {
+    if (argc >= 3)
+      run_lint(argv[2]);
+    else
+      std::cerr << "Usage: sapphire lint <file>" << std::endl;
   } else {
     std::string path = (command == "run" && argc >= 3) ? argv[2] : command;
     std::string ext = std::filesystem::path(path).extension().string();

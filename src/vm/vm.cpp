@@ -183,6 +183,25 @@ static SapphireValue clock_native(int arg_count, SapphireValue* args) {
     return diff.count();
 }
 
+static SapphireValue assert_native(int arg_count, SapphireValue* args) {
+    if (arg_count < 1) {
+        throw std::runtime_error("assert() expects at least 1 argument.");
+    }
+    bool condition = !is_falsey(args[0]);
+    if (!condition) {
+        std::string message = "Assertion failed.";
+        if (arg_count >= 2 && std::holds_alternative<Obj*>(args[1]._value)) {
+            Obj* obj = std::get<Obj*>(args[1]._value);
+            if (obj->type == OBJ_STRING) {
+                message = static_cast<ObjString*>(obj)->chars;
+            }
+        }
+        throw std::runtime_error(message);
+    }
+    return true;
+}
+
+
 static UIStyle resolve_style(const std::string& id, const std::string& styleName = "") {
     UIStyle base = g_current_vm->ui_state.defaultStyle;
     if (!styleName.empty()) {
@@ -2562,6 +2581,7 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     catch_count = 0;
   
     define_native("clock", clock_native);
+    define_native("assert", assert_native);
     define_native("parseDouble", native_string_to_double);
     define_native("valueToString", native_value_to_string);
     define_native("evaluate", native_evaluate);
