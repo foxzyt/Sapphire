@@ -1191,8 +1191,68 @@ TokenType Parser::number(bool can_assign) {
     return TokenType::TOKEN_DOUBLE;
 }
 
+static std::string unescape_string(const std::string& input) {
+    std::string result;
+    result.reserve(input.size());
+    for (size_t i = 0; i < input.size(); ++i) {
+        if (input[i] == '\\' && i + 1 < input.size()) {
+            char next = input[i + 1];
+            switch (next) {
+                case 'n': result += '\n'; ++i; break;
+                case 'r': result += '\r'; ++i; break;
+                case 't': result += '\t'; ++i; break;
+                case 'b': result += '\b'; ++i; break;
+                case 'f': result += '\f'; ++i; break;
+                case 'v': result += '\v'; ++i; break;
+                case '0': {
+                    if (i + 3 < input.size() && 
+                        input[i+2] >= '0' && input[i+2] <= '7' && 
+                        input[i+3] >= '0' && input[i+3] <= '7') {
+                        std::string octal = input.substr(i + 1, 3);
+                        try {
+                            char c = static_cast<char>(std::stoi(octal, nullptr, 8));
+                            result += c;
+                            i += 3;
+                        } catch(...) {
+                            result += '\\';
+                        }
+                    } else {
+                        result += '\0';
+                        ++i;
+                    }
+                    break;
+                }
+                case 'x': {
+                    if (i + 3 < input.size()) {
+                        std::string hex = input.substr(i + 2, 2);
+                        try {
+                            char c = static_cast<char>(std::stoi(hex, nullptr, 16));
+                            result += c;
+                            i += 3;
+                        } catch(...) {
+                            result += "\\x";
+                            i += 1;
+                        }
+                    } else {
+                        result += "\\x";
+                        i += 1;
+                    }
+                    break;
+                }
+                case '\\': result += '\\'; ++i; break;
+                case '"': result += '"'; ++i; break;
+                case '\'': result += '\''; ++i; break;
+                default: result += '\\'; break;
+            }
+        } else {
+            result += input[i];
+        }
+    }
+    return result;
+}
+
 TokenType Parser::string(bool can_assign) {
-    emit_constant(new_string(vm, previous.literal));
+    emit_constant(new_string(vm, unescape_string(previous.literal)));
     return TokenType::TOKEN_STRING;
 }
 

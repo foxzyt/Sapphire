@@ -43,6 +43,11 @@
 #ifdef _WIN32
 #include <windows.h>
 #include <commdlg.h>
+#include <conio.h>
+#else
+#include <unistd.h>
+#include <sys/select.h>
+#include <termios.h>
 #endif
 
 static std::random_device rd;
@@ -270,8 +275,8 @@ static SapphireValue native_io_exists(int arg_count, SapphireValue* args) {
 }
 
 static SapphireValue native_io_print_color(int arg_count, SapphireValue* args) {
-    if (arg_count < 2 || !is_obj_type(args[0], OBJ_STRING)) return {};
-    std::string color = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
+    if (arg_count < 2 || !is_obj_type(args[1], OBJ_STRING)) return {};
+    std::string color = static_cast<ObjString*>(std::get<Obj*>(args[1]._value))->chars;
 
     std::string code = "\033[0m";
     if (color == "red") code = "\033[31m";
@@ -279,11 +284,71 @@ static SapphireValue native_io_print_color(int arg_count, SapphireValue* args) {
     else if (color == "yellow") code = "\033[33m";
     else if (color == "blue") code = "\033[34m";
     else if (color == "cyan") code = "\033[36m";
+    else if (color == "magenta") code = "\033[35m";
+    else if (color == "white") code = "\033[37m";
+    else if (color == "black") code = "\033[30m";
+    else if (color.size() == 7 && color[0] == '#') {
+        try {
+            int r = std::stoi(color.substr(1, 2), nullptr, 16);
+            int g = std::stoi(color.substr(3, 2), nullptr, 16);
+            int b = std::stoi(color.substr(5, 2), nullptr, 16);
+            code = "\033[38;2;" + std::to_string(r) + ";" + std::to_string(g) + ";" + std::to_string(b) + "m";
+        } catch(...) {}
+    } else if (color.substr(0, 4) == "rgb(" && color.back() == ')') {
+        try {
+            std::string inner = color.substr(4, color.size() - 5);
+            size_t p1 = inner.find(',');
+            size_t p2 = inner.find(',', p1 + 1);
+            if (p1 != std::string::npos && p2 != std::string::npos) {
+                int r = std::stoi(inner.substr(0, p1));
+                int g = std::stoi(inner.substr(p1 + 1, p2 - p1 - 1));
+                int b = std::stoi(inner.substr(p2 + 1));
+                code = "\033[38;2;" + std::to_string(r) + ";" + std::to_string(g) + ";" + std::to_string(b) + "m";
+            }
+        } catch(...) {}
+    }
 
     std::cout << code;
-    print_value(args[1]);
-    std::cout << "\033[0m" << std::endl;
+    print_value(args[0]);
+    std::cout << "\033[0m"; // Sem std::endl
     return {};
+}
+
+static SapphireValue native_io_read_input(int arg_count, SapphireValue* args) {
+    std::string result = "";
+#ifdef _WIN32
+    // Check if there are console events
+    HANDLE hInput = GetStdHandle(STD_INPUT_HANDLE);
+    DWORD numEvents = 0;
+    if (GetNumberOfConsoleInputEvents(hInput, &numEvents) && numEvents > 0) {
+        while (_kbhit()) {
+            int ch = _getch();
+            result += (char)ch;
+        }
+    }
+#else
+    struct termios oldt, newt;
+    tcgetattr(STDIN_FILENO, &oldt);
+    newt = oldt;
+    newt.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+    
+    struct timeval tv = {0, 0};
+    fd_set fds;
+    FD_ZERO(&fds);
+    FD_SET(STDIN_FILENO, &fds);
+    
+    if (select(STDIN_FILENO + 1, &fds, NULL, NULL, &tv) > 0) {
+        char buf[256];
+        ssize_t bytes = read(STDIN_FILENO, buf, sizeof(buf) - 1);
+        if (bytes > 0) {
+            buf[bytes] = '\0';
+            result = buf;
+        }
+    }
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+#endif
+    return new_string(g_current_vm, result);
 }
 
 static SapphireValue native_io_delete_file(int arg_count, SapphireValue* args) {
@@ -2521,6 +2586,7 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     // --- IO ---
     define_native("readLine", io_readline_native);
     define_native("printColor", native_io_print_color);
+    define_native("readInput", native_io_read_input);
     define_native("writeFile", native_io_write_file);
     define_native("readFile", native_io_read_file);
     define_native("exists", native_io_exists);
@@ -2678,72 +2744,188 @@ void VM::add_module_search_path(const std::string& path) {
     module_search_paths.push_back(path);
 }
 
-std::string VM::find_and_load_module(const std::string& module_name, std::string& out_resolved_path) {
-    // Check if this is a plugin import (format: plugin@version or plugin@latest)
-    size_t at_pos = module_name.find('@');
-    if (at_pos != std::string::npos) {
-        std::string plugin_name = module_name.substr(0, at_pos);
-        std::string version = module_name.substr(at_pos + 1);
-        
-        // Try multiple possible plugin paths
-        std::vector<std::string> possible_paths = {
-            "plugins/" + plugin_name + "/versions/v" + version + "/files/main.sp",
-            "../plugins/" + plugin_name + "/versions/v" + version + "/files/main.sp",
-            "../../plugins/" + plugin_name + "/versions/v" + version + "/files/main.sp",
-            // Also try the build directory structure
-            "../" + plugin_name + "/versions/v" + version + "/files/main.sp",
-        };
+static std::string get_custom_entry_point(const std::string& base_dir) {
+    // 1. Check PLUGIN.txt
+    std::string plugin_txt_path = base_dir + "/PLUGIN.txt";
+    std::ifstream infile(plugin_txt_path);
+    if (infile.good()) {
+        std::string line;
+        while (std::getline(infile, line)) {
+            size_t start = line.find_first_not_of(" \t\r\n");
+            if (start == std::string::npos) continue;
+            std::string trimmed = line.substr(start);
+            if (trimmed.rfind("main:", 0) == 0) {
+                std::string val = trimmed.substr(5);
+                size_t vstart = val.find_first_not_of(" \t\r\n");
+                if (vstart != std::string::npos) {
+                    std::string entry = val.substr(vstart);
+                    while (!entry.empty() && (entry.back() == '\r' || entry.back() == '\n' || entry.back() == ' ')) {
+                        entry.pop_back();
+                    }
+                    infile.close();
+                    return entry;
+                }
+            }
+            if (trimmed.rfind("entry:", 0) == 0) {
+                std::string val = trimmed.substr(6);
+                size_t vstart = val.find_first_not_of(" \t\r\n");
+                if (vstart != std::string::npos) {
+                    std::string entry = val.substr(vstart);
+                    while (!entry.empty() && (entry.back() == '\r' || entry.back() == '\n' || entry.back() == ' ')) {
+                        entry.pop_back();
+                    }
+                    infile.close();
+                    return entry;
+                }
+            }
+        }
+    }
+    infile.close();
 
-        const char* appdata_path = getenv("APPDATA");
-        if (appdata_path != nullptr) {
-            possible_paths.push_back(
-                std::string(appdata_path) + "\\Sapphire\\plugins\\" + plugin_name +
-                "\\versions\\v" + version + "\\files\\main.sp");
+    // 2. Check sapphire.json
+    std::string json_path = base_dir + "/sapphire.json";
+    std::ifstream json_file(json_path);
+    if (json_file.good()) {
+        try {
+            nlohmann::json j;
+            json_file >> j;
+            json_file.close();
+            if (j.contains("main") && j["main"].is_string()) {
+                return j["main"].get<std::string>();
+            }
+            if (j.contains("entry") && j["entry"].is_string()) {
+                return j["entry"].get<std::string>();
+            }
+        } catch(...) {}
+    }
+    json_file.close();
+
+    // Default entry point
+    return "files/main.sp";
+}
+
+std::string VM::find_and_load_module(const std::string& module_name, std::string& out_resolved_path) {
+    std::string target_name = module_name;
+    
+    // Check for explicit import scope prefix
+    bool force_local = false;
+    bool force_global = false;
+    bool direct_path = false;
+    std::string explicit_path = "";
+    
+    if (target_name.rfind("local:", 0) == 0) {
+        force_local = true;
+        target_name = target_name.substr(6);
+    } else if (target_name.rfind("global:", 0) == 0) {
+        force_global = true;
+        target_name = target_name.substr(7);
+    } else if (target_name.rfind("path:", 0) == 0) {
+        direct_path = true;
+        explicit_path = target_name.substr(5);
+    }
+
+    if (direct_path) {
+        std::string entry = get_custom_entry_point(explicit_path);
+        std::string full_path = explicit_path + "/" + entry;
+        std::string content = load_file_as_string(full_path);
+        if (!content.empty()) {
+            try {
+                out_resolved_path = std::filesystem::absolute(full_path).string();
+            } catch(...) {
+                out_resolved_path = full_path;
+            }
+            return content;
+        }
+        return "";
+    }
+
+    // Check if this is a plugin import (format: plugin@version or plugin@latest)
+    size_t at_pos = target_name.find('@');
+    if (at_pos != std::string::npos || force_local || force_global) {
+        std::string plugin_name = target_name;
+        std::string version = "latest";
+        if (at_pos != std::string::npos) {
+            plugin_name = target_name.substr(0, at_pos);
+            version = target_name.substr(at_pos + 1);
         }
         
-        for (const auto& plugin_path : possible_paths) {
-            std::string content = load_file_as_string(plugin_path);
+        // Define base paths to try based on options
+        std::vector<std::string> base_dirs;
+        
+        const char* appdata_path = getenv("APPDATA");
+        
+        // If not forced local, global (APPDATA) is preferred search path
+        if (!force_local) {
+            if (appdata_path != nullptr) {
+                base_dirs.push_back(
+                    std::string(appdata_path) + "\\Sapphire\\plugins\\" + plugin_name +
+                    "\\versions\\v" + version);
+            }
+        }
+        
+        // If not forced global, check local project-level paths
+        if (!force_global) {
+            base_dirs.push_back("plugins/" + plugin_name + "/versions/v" + version);
+            base_dirs.push_back("../plugins/" + plugin_name + "/versions/v" + version);
+            base_dirs.push_back("../../plugins/" + plugin_name + "/versions/v" + version);
+            base_dirs.push_back("../" + plugin_name + "/versions/v" + version);
+            base_dirs.push_back(plugin_name + "/versions/v" + version);
+            if (plugin_name == "vividry" || plugin_name == "Vividry") {
+                base_dirs.push_back("Vividry/versions/v" + version);
+            }
+        }
+        
+        // Try to load
+        for (const auto& base_dir : base_dirs) {
+            std::string entry = get_custom_entry_point(base_dir);
+            std::string full_path = base_dir + "/" + entry;
+            std::string content = load_file_as_string(full_path);
             if (!content.empty()) {
                 try {
-                    out_resolved_path = std::filesystem::absolute(plugin_path).string();
+                    out_resolved_path = std::filesystem::absolute(full_path).string();
                 } catch(...) {
-                    out_resolved_path = plugin_path;
+                    out_resolved_path = full_path;
                 }
                 return content;
             }
         }
         
-        // If version is "latest", try to find the latest version
+        // Fallback for "latest" version if not found
         if (version == "latest") {
-            // This is a simplified approach - in production, you'd scan the directory
-            // For now, try v1.0.0 as a fallback
-            std::vector<std::string> latest_paths = {
-                "plugins/" + plugin_name + "/versions/v1.0.0/files/main.sp",
-                "../plugins/" + plugin_name + "/versions/v1.0.0/files/main.sp",
-                "../../plugins/" + plugin_name + "/versions/v1.0.0/files/main.sp",
-                "../" + plugin_name + "/versions/v1.0.0/files/main.sp",
-            };
-
-            if (appdata_path != nullptr) {
-                latest_paths.push_back(
-                    std::string(appdata_path) + "\\Sapphire\\plugins\\" + plugin_name +
-                    "\\versions\\v1.0.0\\files\\main.sp");
+            std::vector<std::string> latest_base_dirs;
+            if (!force_local) {
+                if (appdata_path != nullptr) {
+                    latest_base_dirs.push_back(
+                        std::string(appdata_path) + "\\Sapphire\\plugins\\" + plugin_name +
+                        "\\versions\\v1.0.0");
+                }
+            }
+            if (!force_global) {
+                latest_base_dirs.push_back("plugins/" + plugin_name + "/versions/v1.0.0");
+                latest_base_dirs.push_back("../plugins/" + plugin_name + "/versions/v1.0.0");
+                latest_base_dirs.push_back("../../plugins/" + plugin_name + "/versions/v1.0.0");
+                latest_base_dirs.push_back("../" + plugin_name + "/versions/v1.0.0");
+                latest_base_dirs.push_back(plugin_name + "/versions/v1.0.0");
+                if (plugin_name == "vividry" || plugin_name == "Vividry") {
+                    latest_base_dirs.push_back("Vividry/versions/v1.0.0");
+                }
             }
             
-            for (const auto& plugin_path : latest_paths) {
-                std::string content = load_file_as_string(plugin_path);
+            for (const auto& base_dir : latest_base_dirs) {
+                std::string entry = get_custom_entry_point(base_dir);
+                std::string full_path = base_dir + "/" + entry;
+                std::string content = load_file_as_string(full_path);
                 if (!content.empty()) {
                     try {
-                        out_resolved_path = std::filesystem::absolute(plugin_path).string();
+                        out_resolved_path = std::filesystem::absolute(full_path).string();
                     } catch(...) {
-                        out_resolved_path = plugin_path;
+                        out_resolved_path = full_path;
                     }
                     return content;
                 }
             }
         }
         
-        // Plugin not found
         return "";
     }
     
@@ -3451,6 +3633,13 @@ TARGET(OP_IMPORT) {
         std::cerr << "[SAPPHIRE ERROR] Module '" << name_tmp->chars << "' not found." << std::endl;
         return false;
     }
+    
+    try {
+        std::string dir = std::filesystem::path(resolved_path_tmp).parent_path().string();
+        if (std::find(module_search_paths.begin(), module_search_paths.end(), dir) == module_search_paths.end()) {
+            module_search_paths.push_back(dir);
+        }
+    } catch (...) {}
     
     if (loaded_modules.find(resolved_path_tmp) != loaded_modules.end()) {
         PUSH(SapphireValue());
