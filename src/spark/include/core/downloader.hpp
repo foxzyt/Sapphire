@@ -39,6 +39,7 @@ inline bool parse_url(const std::string& url, std::string& host, std::string& pa
 struct RegistryEntry {
     std::string name;
     std::string repository;
+    std::string checksum;
 };
 
 // Parse JSON from registry
@@ -52,6 +53,11 @@ inline std::optional<RegistryEntry> parse_registry_json(const std::string& json_
         }
         if (j.contains("repository")) {
             entry.repository = j["repository"].get<std::string>();
+        }
+        if (j.contains("sha256")) {
+            entry.checksum = j["sha256"].get<std::string>();
+        } else if (j.contains("checksum")) {
+            entry.checksum = j["checksum"].get<std::string>();
         }
         
         if (!entry.name.empty() && !entry.repository.empty()) {
@@ -232,7 +238,7 @@ inline bool extract_zip(const fs::path& zip_path, const fs::path& dest_dir) {
 }
 
 // Download and extract a plugin from its repository
-inline bool download_and_extract_plugin(const std::string& plugin_name, const std::string& repo_url, const std::string& version = "latest") {
+inline bool download_and_extract_plugin(const std::string& plugin_name, const std::string& repo_url, const std::string& version = "latest", const std::string& expected_checksum = "") {
     try {
         // Convert repo URL to ZIP URL
         std::string zip_url = github_to_zip_url(repo_url, version);
@@ -255,6 +261,44 @@ inline bool download_and_extract_plugin(const std::string& plugin_name, const st
                 std::cerr << "[!] Failed to download ZIP file" << std::endl;
                 return false;
             }
+        }
+        
+        if (!expected_checksum.empty()) {
+            std::cout << "[*] Verifying checksum..." << std::endl;
+            std::ifstream file(zip_path, std::ios::binary);
+            if (file.is_open()) {
+                EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+                EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr);
+                
+                char buffer[8192];
+                while (file.read(buffer, sizeof(buffer))) {
+                    EVP_DigestUpdate(ctx, buffer, file.gcount());
+                }
+                EVP_DigestUpdate(ctx, buffer, file.gcount());
+                
+                unsigned char hash[EVP_MAX_MD_SIZE];
+                unsigned int hash_len;
+                EVP_DigestFinal_ex(ctx, hash, &hash_len);
+                EVP_MD_CTX_free(ctx);
+                
+                std::stringstream ss;
+                for (unsigned int i = 0; i < hash_len; i++) {
+                    ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+                }
+                
+                std::string actual_checksum = ss.str();
+                if (actual_checksum != expected_checksum) {
+                    std::cerr << termcolor::red << "[!] SECURITY WARNING: Checksum mismatch for downloaded file!" << termcolor::reset << std::endl;
+                    std::cerr << "Expected: " << expected_checksum << std::endl;
+                    std::cerr << "Got:      " << actual_checksum << std::endl;
+                    // According to user request, log warning but proceed or reject? The user said "emitindo apenas um alerta caso o pacote nao tenha assinatura... ou se prefere que bloqueie". The user approved the implementation plan. I will block if it HAS a checksum but it MISMATCHES.
+                    return false;
+                } else {
+                    std::cout << termcolor::green << "[+] Checksum verified." << termcolor::reset << std::endl;
+                }
+            }
+        } else {
+            std::cout << termcolor::yellow << "[!] WARNING: No checksum provided by registry. Cannot verify signature." << termcolor::reset << std::endl;
         }
         
         // Extract to temporary directory
