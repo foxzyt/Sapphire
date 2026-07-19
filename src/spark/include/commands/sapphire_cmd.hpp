@@ -496,7 +496,7 @@ inline void print_sapphire_help() {
     std::cout << std::endl;
 
     std::cout << termcolor::yellow
-              << "Binaries installed: sapphire.exe, runner.exe, spack.exe"
+              << "Binaries installed: sapphire.exe, runner.exe, beryl.exe"
               << termcolor::reset << std::endl;
     std::cout << termcolor::yellow
               << "Install path: " << get_sapphire_bin_dir().string()

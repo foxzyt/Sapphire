@@ -42,7 +42,7 @@ namespace fs = std::filesystem;
 static const std::vector<std::string> SAPPHIRE_BINARIES = {
     "sapphire.exe",
     "runner.exe",
-    "spack.exe"
+    "beryl.exe"
 };
 
 // Repositório e branch dos binários
@@ -352,6 +352,15 @@ inline bool activate_sapphire_version(const std::string& version) {
         }
 
         try {
+            if (fs::exists(dest)) {
+                // Windows locks executing files. Rename it first before overwriting.
+                std::error_code ec;
+                fs::path old_path = dest.string() + ".old";
+                if (fs::exists(old_path)) {
+                    fs::remove(old_path, ec);
+                }
+                fs::rename(dest, old_path, ec);
+            }
             fs::copy_file(src, dest, fs::copy_options::overwrite_existing);
             std::cout << "  " << termcolor::green << "[+] " << termcolor::reset
                       << bin << std::endl;
