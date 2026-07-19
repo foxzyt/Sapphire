@@ -90,6 +90,10 @@ inline int cmd_list() {
             // Check for versions directory
             fs::path versions_dir = entry.path() / "versions";
             if (!fs::exists(versions_dir) || !fs::is_directory(versions_dir)) {
+                // If it doesn't have a versions directory and no PLUGIN.txt, it's just garbage, skip silently.
+                if (!fs::exists(plugin_txt)) {
+                    continue;
+                }
                 std::cout << termcolor::red << plugin_name << " [INVALID: No versions]" << termcolor::reset << std::endl;
                 global_count++;
                 continue;
@@ -175,6 +179,10 @@ inline int cmd_list() {
                 
                 // Collect all versions
                 fs::path versions_dir = entry.path() / "versions";
+                if (!fs::exists(versions_dir) || !fs::is_directory(versions_dir)) {
+                    if (!fs::exists(plugin_txt)) continue;
+                }
+                
                 std::vector<std::string> versions;
                 if (fs::exists(versions_dir)) {
                     for (const auto& version_entry : fs::directory_iterator(versions_dir)) {
