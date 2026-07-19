@@ -584,6 +584,53 @@ static double valueToDoubleC(const SapphireValue& val) {
     return 0.0;
 }
 
+static SapphireValue native_lru_create(int arg_count, SapphireValue* args) {
+    if (arg_count != 1 || args[0].type != ValType::VAL_NUMBER) {
+        return SapphireValue(new_lru(g_current_vm, 128));
+    }
+    return SapphireValue(new_lru(g_current_vm, (int)args[0].as.number));
+}
+
+static SapphireValue native_lru_has(int arg_count, SapphireValue* args) {
+    if (arg_count != 2 || args[0].type != ValType::VAL_OBJ || args[0].as.obj->type != OBJ_LRU || args[1].type != ValType::VAL_OBJ || args[1].as.obj->type != OBJ_STRING) return SapphireValue(false);
+    ObjLRU* lru = (ObjLRU*)args[0].as.obj;
+    ObjString* key = (ObjString*)args[1].as.obj;
+    return SapphireValue(lru->items.find(key->chars) != lru->items.end());
+}
+
+static SapphireValue native_lru_get(int arg_count, SapphireValue* args) {
+    if (arg_count != 2 || args[0].type != ValType::VAL_OBJ || args[0].as.obj->type != OBJ_LRU || args[1].type != ValType::VAL_OBJ || args[1].as.obj->type != OBJ_STRING) return SapphireValue();
+    ObjLRU* lru = (ObjLRU*)args[0].as.obj;
+    ObjString* key = (ObjString*)args[1].as.obj;
+    auto it = lru->items.find(key->chars);
+    if (it != lru->items.end()) {
+        lru->order.remove(key->chars);
+        lru->order.push_front(key->chars);
+        return it->second;
+    }
+    return SapphireValue();
+}
+
+static SapphireValue native_lru_put(int arg_count, SapphireValue* args) {
+    if (arg_count != 3 || args[0].type != ValType::VAL_OBJ || args[0].as.obj->type != OBJ_LRU || args[1].type != ValType::VAL_OBJ || args[1].as.obj->type != OBJ_STRING) return SapphireValue(false);
+    ObjLRU* lru = (ObjLRU*)args[0].as.obj;
+    ObjString* key = (ObjString*)args[1].as.obj;
+    SapphireValue val = args[2];
+    
+    if (lru->items.find(key->chars) != lru->items.end()) {
+        lru->order.remove(key->chars);
+    } else {
+        if (lru->items.size() >= (size_t)lru->capacity) {
+            std::string last = lru->order.back();
+            lru->order.pop_back();
+            lru->items.erase(last);
+        }
+    }
+    lru->order.push_front(key->chars);
+    lru->items[key->chars] = val;
+    return SapphireValue(true);
+}
+
 static SapphireValue native_value_to_string(int arg_count, SapphireValue* args) {
     if (arg_count != 1) {
         if (!g_current_vm->soft_mode) {
@@ -2584,6 +2631,10 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     define_native("assert", assert_native);
     define_native("parseDouble", native_string_to_double);
     define_native("valueToString", native_value_to_string);
+    define_native("lruCreate", native_lru_create);
+    define_native("lruHas", native_lru_has);
+    define_native("lruGet", native_lru_get);
+    define_native("lruPut", native_lru_put);
     define_native("evaluate", native_evaluate);
     define_native("len", native_len);
     define_native("stringCharAt", native_string_char_at);
