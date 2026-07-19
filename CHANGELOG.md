@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Criado o **Quartz**, uma suíte oficial de micro-benchmarking de alta performance para o Sapphire. Ele implementa **50 benchmarks diferentes codificados manualmente** divididos em 5 categorias (VM Core, Stdlib, Algorithms, Concurrency, Hardware/Integrations) medindo taxa de processamento em Hz, média de latência em microssegundos com desvio padrão estatístico, e impacto de alocação de memória no Garbage Collector. Suporta o modo explicativo/listagem (`quartz list`), execução direcionada por benchmark ou categoria (`quartz run`) e um comparador de performance comparativo visual de alta fidelidade (`quartz compare`).
 - Integrado o **Citrine**, o **Garnet**, o **Amethyst** e o **Quartz** no menu de ajuda principal do Sapphire (`sapphire -h` / `display_info()`) sob a seção de ferramentas oficiais (`Tool Options`).
 
+### Fixed
+- Corrigido um vazamento crítico de memória e corrupção de stack da VM onde construtores de classes sem estado interno (`init`) consumiam indevidamente argumentos de inicialização fornecidos pela pilha em declarações como `Node(k, v)`, resultando no avanço descontrolado da pilha.
+- Refatorado os benchmarks do `quartz` para removerem o uso de construtores de classe inválidos e consertada a captura do `assert(false)` em blocos `try/catch`, uma vez que `assert` lança uma exceção C++ invés de um erro controlável no ecossistema da VM.
+
 ### Added
 - **Topaz v2.4.0 — Environment, Manifests & Lockfiles:**
   - Automated project manifest initialization (`sapphire.json`) via `topaz init` supporting interactive bypass (`-y` / `--yes`) and direct flags (`--name`, `--version`, `--author`, `--description`).
