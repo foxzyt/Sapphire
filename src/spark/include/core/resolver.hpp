@@ -270,7 +270,17 @@ public:
             // Read the PLUGIN.txt to get the actual version
             fs::path plugin_path = get_plugin_dir() / plugin_name / "PLUGIN.txt";
             auto meta = parse_plugin_txt(plugin_path);
-            std::string actual_version = meta ? meta->version : "latest";
+            std::string actual_version = (meta && !meta->version.empty()) ? meta->version : "";
+            
+            if (actual_version.empty()) {
+                // Try to find the version by looking at the versions directory
+                auto versions = get_available_versions(plugin_name);
+                if (!versions.empty()) {
+                    actual_version = versions[0]; // Usually latest is the only one downloaded here
+                } else {
+                    actual_version = "latest";
+                }
+            }
             
             // Track for lockfile
             installed_plugins_.push_back({plugin_name, actual_version});
