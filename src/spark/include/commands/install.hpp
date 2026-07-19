@@ -140,6 +140,25 @@ inline int cmd_install_project(bool local_scope = false, bool frozen_lockfile = 
         return 1;
     }
     
+    // Backup manifests for rollback
+    std::string manifest_backup;
+    if (fs::exists(manifest_path)) {
+        std::ifstream f_in(manifest_path);
+        std::stringstream buffer;
+        buffer << f_in.rdbuf();
+        manifest_backup = buffer.str();
+    }
+    
+    std::string lockfile_backup;
+    fs::path lockfile_path = get_project_lockfile_path();
+    bool has_lockfile = fs::exists(lockfile_path);
+    if (has_lockfile) {
+        std::ifstream f_in(lockfile_path);
+        std::stringstream buffer;
+        buffer << f_in.rdbuf();
+        lockfile_backup = buffer.str();
+    }
+    
     nlohmann::json manifest;
     try {
         std::ifstream f(manifest_path);
@@ -159,8 +178,6 @@ inline int cmd_install_project(bool local_scope = false, bool frozen_lockfile = 
         proj_ver = manifest["version"].get<std::string>();
     }
     
-    fs::path lockfile_path = get_project_lockfile_path();
-    bool has_lockfile = fs::exists(lockfile_path);
     
     if (frozen_lockfile && !has_lockfile) {
         std::cerr << termcolor::red << "[!] --frozen-lockfile specified but no spark.lock exists." << termcolor::reset << std::endl;
@@ -197,8 +214,12 @@ inline int cmd_install_project(bool local_scope = false, bool frozen_lockfile = 
                     return 1;
                 }
                 
-                if (!download_and_extract_plugin(dep_name, registry_entry->repository, "v" + dep_version)) {
+                if (!download_and_extract_plugin(dep_name, registry_entry->repository, "v" + dep_version, registry_entry->checksum)) {
                     std::cerr << termcolor::red << "[!] Failed to install " << dep_name << " v" << dep_version << termcolor::reset << std::endl;
+                    // Rollback
+                    std::cerr << termcolor::yellow << "[*] Rolling back installation..." << termcolor::reset << std::endl;
+                    if (!manifest_backup.empty()) { std::ofstream out(manifest_path); out << manifest_backup; }
+                    if (has_lockfile && !lockfile_backup.empty()) { std::ofstream out(lockfile_path); out << lockfile_backup; }
                     return 1;
                 }
                 
@@ -251,8 +272,12 @@ inline int cmd_install_project(bool local_scope = false, bool frozen_lockfile = 
             std::string tag_version = resolved_version;
             if (tag_version.size() > 0 && tag_version[0] == 'v') tag_version = tag_version.substr(1);
             
-            if (!download_and_extract_plugin(name, registry_entry->repository, "v" + tag_version)) {
+            if (!download_and_extract_plugin(name, registry_entry->repository, "v" + tag_version, registry_entry->checksum)) {
                 std::cerr << termcolor::red << "[!] Failed to download " << name << " v" << tag_version << termcolor::reset << std::endl;
+                // Rollback
+                std::cerr << termcolor::yellow << "[*] Rolling back installation..." << termcolor::reset << std::endl;
+                if (!manifest_backup.empty()) { std::ofstream out(manifest_path); out << manifest_backup; }
+                if (has_lockfile && !lockfile_backup.empty()) { std::ofstream out(lockfile_path); out << lockfile_backup; }
                 return 1;
             }
             
@@ -307,6 +332,27 @@ inline int cmd_install(const std::string& plugin_name,
     if (plugin_name.empty()) {
         return cmd_install_project(local_scope, frozen_lockfile, no_save);
     }
+    
+    // Backup manifests for rollback
+    fs::path manifest_path = get_project_manifest_path();
+    std::string manifest_backup;
+    if (fs::exists(manifest_path)) {
+        std::ifstream f_in(manifest_path);
+        std::stringstream buffer;
+        buffer << f_in.rdbuf();
+        manifest_backup = buffer.str();
+    }
+    
+    std::string lockfile_backup;
+    fs::path lockfile_path = get_project_lockfile_path();
+    bool has_lockfile = fs::exists(lockfile_path);
+    if (has_lockfile) {
+        std::ifstream f_in(lockfile_path);
+        std::stringstream buffer;
+        buffer << f_in.rdbuf();
+        lockfile_backup = buffer.str();
+    }
+    
     
     std::cout << termcolor::cyan << "[*] Installing plugin: " << plugin_name << termcolor::reset;
     if (version != "latest") {
@@ -416,7 +462,14 @@ inline int cmd_install(const std::string& plugin_name,
     std::string tag_version = resolved_version;
     if (tag_version.size() > 0 && tag_version[0] == 'v') tag_version = tag_version.substr(1);
     std::cout << termcolor::cyan << "[*] Fetching version " << tag_version << "..." << termcolor::reset << std::endl;
-    download_and_extract_plugin(plugin_name, registry_entry->repository, "v" + tag_version);
+    
+    if (!download_and_extract_plugin(plugin_name, registry_entry->repository, "v" + tag_version, registry_entry->checksum)) {
+        std::cerr << termcolor::red << "[!] Failed to download and extract plugin." << termcolor::reset << std::endl;
+        std::cerr << termcolor::yellow << "[*] Rolling back installation..." << termcolor::reset << std::endl;
+        if (!manifest_backup.empty()) { std::ofstream out(manifest_path); out << manifest_backup; }
+        if (has_lockfile && !lockfile_backup.empty()) { std::ofstream out(lockfile_path); out << lockfile_backup; }
+        return 1;
+    }
     
     DependencyResolver resolver(fs::current_path(), plugin_name, local_scope);
     resolver.set_no_save(no_save);
