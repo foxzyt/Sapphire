@@ -52,12 +52,12 @@ static std::vector<BenchmarkDef> get_all_benchmarks() {
         {
             "vm_prop_read", "VM Core",
             "Reading attributes from class instances.",
-            "class Dummy { function init() { this.x = 42; } } var d = Dummy(); for (var i = 0; i < 300; i = i + 1) { var y = d.x; }"
+            "class Dummy { } var d = Dummy(); d.x = 42; for (var i = 0; i < 300; i = i + 1) { var y = d.x; }"
         },
         {
             "vm_prop_write", "VM Core",
             "Writing attributes to class instances.",
-            "class Dummy { function init() { this.x = 0; } } var d = Dummy(); for (var i = 0; i < 300; i = i + 1) { d.x = i; }"
+            "class Dummy { } var d = Dummy(); d.x = 0; for (var i = 0; i < 300; i = i + 1) { d.x = i; }"
         },
         {
             "vm_method_call", "VM Core",
@@ -145,8 +145,8 @@ static std::vector<BenchmarkDef> get_all_benchmarks() {
         },
         {
             "algo_hash_lookup", "Algorithms",
-            "Simulating a dictionary lookup bucket list.",
-            "class Node { function init(k, v) { this.k = k; this.v = v; } } var bucket = listCreate(); for (var i = 0; i < 20; i = i + 1) { listAppend(bucket, Node(i + \"\", i)); } for (var i = 0; i < 20; i = i + 1) { if (listGet(bucket, i).k == \"10\") { break; } }"
+            "Stress test for hashing and dictionary lookups.",
+            "class Node {} function createNode(k, v) { var n = Node(); n.k = k; n.v = v; return n; } var bucket = listCreate(); for (var i = 0; i < 20; i = i + 1) { listAppend(bucket, createNode(i + \"\", i)); } for (var i = 0; i < 20; i = i + 1) { if (listGet(bucket, i).k == \"10\") { break; } }"
         },
         {
             "algo_base64", "Algorithms",
@@ -178,7 +178,7 @@ static std::vector<BenchmarkDef> get_all_benchmarks() {
         {
             "concur_try_catch_throw", "Concurrency & Time-flow",
             "Try-catch exception throwing and trapping latency.",
-            "for (var i = 0; i < 10; i = i + 1) { try { assert(false); } catch (e) {} }"
+            "for (var i = 0; i < 10; i = i + 1) { try { throw \"err\"; } catch (e) {} }"
         },
         {
             "concur_undo_backup", "Concurrency & Time-flow",
@@ -213,12 +213,12 @@ static std::vector<BenchmarkDef> get_all_benchmarks() {
         {
             "concur_throw_trace", "Concurrency & Time-flow",
             "Capturing exception call traces.",
-            "try { assert(false, \"err\"); } catch (e) {}"
+            "try { throw \"err\"; } catch (e) {}"
         },
         {
             "concur_undo_rollback", "Concurrency & Time-flow",
             "Executing undo rollback variables restore.",
-            "var x = 0; try { x = 1; assert(false); } undo {}"
+            "var x = 0; try { x = 1; throw \"err\"; } undo {}"
         },
 
         // --- CATEGORY: HARDWARE & INTEGRATIONS (41-50) ---
@@ -238,14 +238,14 @@ static std::vector<BenchmarkDef> get_all_benchmarks() {
             "for (var i = 0; i < 300; i = i + 1) { clock(); }"
         },
         {
-            "hw_vec2d_math", "Hardware & Integrations",
-            "2D vector instantiation and additions.",
-            "class Vec2D { function init(x, y) { this.x = x; this.y = y; } function add(o) { return Vec2D(this.x + o.x, this.y + o.y); } } var v1 = Vec2D(1, 2); var v2 = Vec2D(3, 4); for (var i = 0; i < 100; i = i + 1) { v1.add(v2); }"
+            "math_vec2d", "Math",
+            "2D vector addition.",
+            "class Vec2D { function add(o) { var r = Vec2D(); r.x = this.x + o.x; r.y = this.y + o.y; return r; } } function createVec2D(x, y) { var v = Vec2D(); v.x = x; v.y = y; return v; } var v1 = createVec2D(1, 2); var v2 = createVec2D(3, 4); for (var i = 0; i < 100; i = i + 1) { v1.add(v2); }"
         },
         {
-            "hw_vec3d_math", "Hardware & Integrations",
-            "3D vector instantiation and additions.",
-            "class Vec3D { function init(x, y, z) { this.x = x; this.y = y; this.z = z; } function add(o) { return Vec3D(this.x + o.x, this.y + o.y, this.z + o.z); } } var v1 = Vec3D(1, 2, 3); var v2 = Vec3D(4, 5, 6); for (var i = 0; i < 100; i = i + 1) { v1.add(v2); }"
+            "math_vec3d", "Math",
+            "3D vector addition.",
+            "class Vec3D { function add(o) { var r = Vec3D(); r.x = this.x + o.x; r.y = this.y + o.y; r.z = this.z + o.z; return r; } } function createVec3D(x, y, z) { var v = Vec3D(); v.x = x; v.y = y; v.z = z; return v; } var v1 = createVec3D(1, 2, 3); var v2 = createVec3D(4, 5, 6); for (var i = 0; i < 100; i = i + 1) { v1.add(v2); }"
         },
         {
             "hw_file_exists", "Hardware & Integrations",

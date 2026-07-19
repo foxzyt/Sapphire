@@ -3145,6 +3145,10 @@ bool VM::call_value(SapphireValue callee, int arg_count) {
                 return call_value(bound->method, arg_count);
             }
             case OBJ_CLASS: {
+                if (arg_count != 0) {
+                    if (!this->soft_mode) std::cerr << "Runtime Error: Expected 0 arguments but got " << arg_count << "." << std::endl;
+                    return false;
+                }
                 ObjClass* klass = (ObjClass*)obj;
                 stack_top[-arg_count - 1] = new_instance(this, klass);
                 return true;
