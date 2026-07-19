@@ -1,4 +1,4 @@
-﻿#include <SFML/Graphics.hpp>
+#include <SFML/Graphics.hpp>
 #include <algorithm>
 #include <cctype>
 #include <ctime>
@@ -2139,7 +2139,7 @@ void display_info() {
       "--- Tool Options ---",
       "beryl <command>                  : Executes the Beryl tool (for packing "
       "files into .exe executables)",
-      "spark <command>                  : Executes the Spark help command "
+      "topaz <command>                  : Executes the Topaz help command "
       "(plugin and version manager)",
       "",
       "Thank you!",
@@ -2512,91 +2512,6 @@ void run_test(const std::string &path) {
             << std::endl;
 }
 
-void run_lint(const std::string &path) {
-  std::string source = load_source_script(path);
-  if (source.empty()) {
-    std::cerr << "Error: Could not read " << path << std::endl;
-    return;
-  }
-
-  std::cout << tc_bold() << tc_cyan() << "--- Sapphire Linter: " << path
-            << " ---" << tc_reset() << std::endl;
-
-  std::vector<std::string> lines;
-  std::stringstream ss(source);
-  std::string line;
-  while (std::getline(ss, line)) {
-    lines.push_back(line);
-  }
-
-  int warnings = 0;
-  int errors = 0;
-
-  std::regex class_pattern(R"(class\s+([A-Za-z0-9_]+))");
-  std::regex function_pattern(R"(function\s+([A-Za-z0-9_]+))");
-
-  for (size_t i = 0; i < lines.size(); i++) {
-    std::string current_line = lines[i];
-    int line_num = i + 1;
-
-    std::smatch match;
-    if (std::regex_search(current_line, match, class_pattern)) {
-      std::string class_name = match[1];
-      if (!std::isupper(class_name[0])) {
-        std::cout << tc_yellow() << "[Warning] Line " << line_num
-                  << ": Class name '" << class_name
-                  << "' should start with an uppercase letter (PascalCase)."
-                  << tc_reset() << std::endl;
-        warnings++;
-      }
-    }
-
-    if (std::regex_search(current_line, match, function_pattern)) {
-      std::string fn_name = match[1];
-      if (fn_name.rfind("test", 0) != 0 && fn_name.rfind("should", 0) != 0) {
-        if (fn_name.find('_') != std::string::npos) {
-          std::cout << tc_yellow() << "[Warning] Line " << line_num
-                    << ": Function name '" << fn_name
-                    << "' should use camelCase naming convention." << tc_reset()
-                    << std::endl;
-          warnings++;
-        }
-      }
-    }
-
-    if (current_line.find("TODO") != std::string::npos ||
-        current_line.find("FIXME") != std::string::npos) {
-      std::cout << tc_cyan() << "[Info] Line " << line_num
-                << ": Found pending task comment (TODO/FIXME)." << tc_reset()
-                << std::endl;
-    }
-
-    if (current_line.length() > 120) {
-      std::cout << tc_yellow() << "[Warning] Line " << line_num
-                << ": Line exceeds 120 characters (" << current_line.length()
-                << " chars)." << tc_reset() << std::endl;
-      warnings++;
-    }
-  }
-
-  VM vm;
-  Preprocessor prep;
-  std::string processed = prep.process(source);
-  ObjFunction *func = compile(&vm, processed);
-  if (!func) {
-    std::cout << tc_red() << "[Error] File has syntax/compilation errors."
-              << tc_reset() << std::endl;
-    errors++;
-  }
-
-  std::cout << tc_bold() << tc_cyan()
-            << "------------------------------------------" << tc_reset()
-            << std::endl;
-  std::cout << "Lint summary: " << tc_red() << errors << " error(s), "
-            << tc_yellow() << warnings << " warning(s)" << tc_reset()
-            << std::endl;
-}
-
 void run_disasm(const std::string &path) {
   std::string source = load_source_script(path);
   if (source.empty()) {
@@ -2786,11 +2701,7 @@ int main(int argc, char *argv[]) {
       run_test(argv[2]);
     else
       run_test(".");
-  } else if (command == "lint") {
-    if (argc >= 3)
-      run_lint(argv[2]);
-    else
-      std::cerr << "Usage: sapphire lint <file>" << std::endl;
+
   } else {
     std::string path = (command == "run" && argc >= 3) ? argv[2] : command;
     std::string ext = std::filesystem::path(path).extension().string();

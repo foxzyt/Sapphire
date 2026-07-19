@@ -13,15 +13,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed time-bound flow control (`within` / `fallback`) timeout fallback execution.
   - Implemented unit scaling (`s` to milliseconds) in the compiler/parser for `within`, `every`, and `fade` blocks.
 - Renomeado **Spack (sapphire packer)** para **Beryl**. Todas as referências internas de build, caminhos de arquivos (`src/spack` para `src/beryl`), assinaturas de rodapés de executáveis compactados (`SPACK_V1`/`SPACK_V2` para `BERYL_V1`/`BERYL_V2`), arquivos de configuração padrão (`SpackConfig.txt` para `BerylConfig.txt`), interface gráfica do empacotador e documentação foram atualizados para Beryl.
+- Renomeado **Spark** para **Topaz**. Todas as referências internas de gerenciamento de pacotes e diretórios foram atualizadas para o novo nome.
+- Renomeado **Sapphire VM** para **Corundum**.
+- Criado novo Linter poderoso chamado **Citrine** que conta com 200 práticas manuais verificadas (Sintaxe, Estilo, Performance, Segurança, Arquitetura), adaptadas para a especificação do Sapphire (ex: proibição de `let` e `++i` pré-incremento, já que o compilador do Sapphire não os suporta), permitindo auto-correção interativa (modo `fix`), comando de reversão (modo `undo`) com arquivos de cache ocultos nativos no Windows, modo explicativo (modo `explain`), exportação de relatórios em JSON, além de um dashboard de saúde do código (Health Score e barra de progresso por categoria), supressão de regras via comentários inline (`citrine-disable-next-line`), e filtros por categoria (`--category`) e nível de severidade (`--level`) via CLI.
 
 ### Added
-- **Spark v2.4.0 — Environment, Manifests & Lockfiles:**
-  - Automated project manifest initialization (`sapphire.json`) via `spark init` supporting interactive bypass (`-y` / `--yes`) and direct flags (`--name`, `--version`, `--author`, `--description`).
-  - Project-level lockfiles (`spark.lock`) for deterministic transitive dependency resolution on project root.
+- **Topaz v2.4.0 — Environment, Manifests & Lockfiles:**
+  - Automated project manifest initialization (`sapphire.json`) via `topaz init` supporting interactive bypass (`-y` / `--yes`) and direct flags (`--name`, `--version`, `--author`, `--description`).
+  - Project-level lockfiles (`topaz.lock`) for deterministic transitive dependency resolution on project root.
   - Advanced install parameters: `--save-dev` / `-D` (save to devDependencies), `--no-save` (skip manifest/lock updates), `--offline` mode (restrict search/install to cache), `--frozen-lockfile` (fail on mismatch), and `--registry <url>` (endpoint override).
-  - Multi-format tree visualization command (`spark tree [name] [version] --format json` / `--format mermaid`).
-  - Added dry-run updates listing using `spark update [name] --check-only`.
-  - Added force flag to skip prompt confirmations on `spark cache clean --force` / `-f`.
+  - Multi-format tree visualization command (`topaz tree [name] [version] --format json` / `--format mermaid`).
+  - Added dry-run updates listing using `topaz update [name] --check-only`.
+  - Added force flag to skip prompt confirmations on `topaz cache clean --force` / `-f`.
 - **Sapphire VM & Preprocessor Imports:**
   - Custom entry point routing supporting `main: <path>` or `entry: <path>` tags in `PLUGIN.txt` or `sapphire.json` configuration manifests.
   - Scope prefix tags inside module imports allowing developers to enforce search boundaries (`local:plugin@version`, `global:plugin@version`, `path:relative/or/absolute/folder`).
@@ -59,17 +62,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Added `language-configuration.json` for bracket matching, auto-closing pairs, and `//` line comment toggling.
     - Added `syntaxes/sapphire.tmLanguage.json` TextMate grammar providing syntax highlighting for keywords, types, constants, strings (including f-strings), numbers, operators, function calls, and comments.
 
-  - Package manager renamed from "mine" to "spark" (more thematic with Sapphire).
-  - Repository moved to `https://github.com/foxzyt/sapphire-spark`.
-  - All commands updated: `spark init`, `spark install`, `spark search`, etc.
-  - `spark outdated [name]` — Shows plugins with newer versions available. Compares installed version against the latest GitHub release/tag/version directory.
-  - `spark cache clean` — Cleans the download cache with size preview and confirmation prompt.
-  - `spark cache dir` — Shows the cache directory path, contents (files/dirs with sizes), and total space used.
-  - `spark lock <name> [version]` — Generates `spark.lock` and `CHECKSUMS.txt` for a plugin via dependency resolution. Displays locked dependencies with checksums.
-  - `spark tree [name] [version]` — Shows plugin dependency trees with Unicode box-drawing characters. Detects circular dependencies, missing plugins, and lock file status. Supports showing tree for all plugins or a specific one.
-  - `spark purge <name> [version] [--local] [--global]` — Removes specific version(s) of a plugin from local and/or global scopes. Without a version, removes all versions. Supports `--local` and `--global` flags to target specific scopes.
-  - `spark check` now scans both global (AppData) and local (./plugins/) directories, and validates exact version requirements for dependencies.
-- **Spark v2.2.0 — Sapphire Runtime Version Manager (`spark sapphire`):**
+  - Package manager renamed from "mine" to "topaz" (more thematic with Sapphire).
+  - Repository moved to `https://github.com/foxzyt/sapphire-topaz`.
+  - All commands updated: `topaz init`, `topaz install`, `topaz search`, etc.
+  - `topaz outdated [name]` — Shows plugins with newer versions available. Compares installed version against the latest GitHub release/tag/version directory.
+  - `topaz cache clean` — Cleans the download cache with size preview and confirmation prompt.
+  - `topaz cache dir` — Shows the cache directory path, contents (files/dirs with sizes), and total space used.
+  - `topaz lock <name> [version]` — Generates `topaz.lock` and `CHECKSUMS.txt` for a plugin via dependency resolution. Displays locked dependencies with checksums.
+  - `topaz tree [name] [version]` — Shows plugin dependency trees with Unicode box-drawing characters. Detects circular dependencies, missing plugins, and lock file status. Supports showing tree for all plugins or a specific one.
+  - `topaz purge <name> [version] [--local] [--global]` — Removes specific version(s) of a plugin from local and/or global scopes. Without a version, removes all versions. Supports `--local` and `--global` flags to target specific scopes.
+  - `topaz check` now scans both global (AppData) and local (./plugins/) directories, and validates exact version requirements for dependencies.
+- **Topaz v2.2.0 — Sapphire Runtime Version Manager (`topaz sapphire`):**
   - Novo subsistema de controle de versão dos executáveis da Sapphire integrado ao Mine.
   - `mine sapphire list` — Lista todas as versões disponíveis na branch `mine` do repositório `foxzyt/Sapphire` via GitHub Contents API.
   - `mine sapphire install <version>` — Baixa e instala os binários (`sapphire.exe`, `runner.exe`, `spack.exe`, `mine.exe`) de uma versão específica. Suporta constraints SemVer completas: `latest`, `1.0.6`, `^1.0`, `>=1.0.5`, `<2.0`, etc.
@@ -203,8 +206,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Shape manipulation: `reshape()`, `transpose()`, `flatten()`
   - Slicing: `slice()`, `filter()` (boolean indexing)
 - **Performance Optimizations (v1.0.10+):** The Sapphire VM underwent a massive performance rewrite, transitioning from `std::variant` to a lightweight Tagged Union (`SapphireValue`). Inlined heavily used check functions (like `is_falsey`) and implemented direct fast-paths for math operators (`OP_ADD`, `OP_LESS`, etc.) and `OP_CALL`. Loop evaluation and standard function calls are now dramatically faster, pushing execution speeds to ~0.14s for deep recursive calls like `fib(30)`.
-- **Spark Test CLI Engine:** `spark test` now reads an explicit `SparkTestConfig.txt` which specifies expected console output, regex, and assertions for each test execution.
-- **Spark Plugin Documentation:** Added extensive C++ Plugin API documentation on how to write Sapphire extensions dynamically, viewable at `site/docs_plugins.html`.
+- **Topaz Test CLI Engine:** `topaz test` now reads an explicit `TopazTestConfig.txt` which specifies expected console output, regex, and assertions for each test execution.
+- **Topaz Plugin Documentation:** Added extensive C++ Plugin API documentation on how to write Sapphire extensions dynamically, viewable at `site/docs_plugins.html`.
 - **Advanced linear algebra:** `matmul()`, `determinant()`, `inverse()`
   - Broadcasting: `add_scalar()`, `sub_scalar()`, `mul_scalar()`, `div_scalar()`
   - Random generation: `rand()`, `randn()`, `randint()`, `choice()`
@@ -219,26 +222,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **`get_plugin_versions()` path bug:** Function was looking at `base_dir/"versions"` instead of `base_dir/plugin_name/"versions"`, causing version lists to always return empty for locally installed plugins. Now properly resolves versions across both local and global scopes.
-- **`spark check` scope bug:** Diagnostic was only scanning the global AppData directory, missing plugins installed in the local `./plugins/` project scope. Now scans both scopes and shows scope labels.
-- **`spark check` version validation:** Previously only checked if a dependency's directory existed, not if the required version was actually available. Now validates exact version requirements and shows warnings for version mismatches.
-- **`spark install` downloading entire repository:** When installing a specific version (e.g., `spark install infinitum 1.0.0`), the system was downloading the entire `main` branch ZIP containing ALL versions, leaving extra versions on disk. Now resolves the actual version tag first and downloads ONLY that specific version's tag ZIP.
-- **Deprecated references renamed from "mine" to "spark":** Core utilities (`sapphire_cmd.hpp`, `sapphire_version.hpp`) updated to reference `spark` instead of `mine` in messages and paths.
+- **`topaz check` scope bug:** Diagnostic was only scanning the global AppData directory, missing plugins installed in the local `./plugins/` project scope. Now scans both scopes and shows scope labels.
+- **`topaz check` version validation:** Previously only checked if a dependency's directory existed, not if the required version was actually available. Now validates exact version requirements and shows warnings for version mismatches.
+- **`topaz install` downloading entire repository:** When installing a specific version (e.g., `topaz install infinitum 1.0.0`), the system was downloading the entire `main` branch ZIP containing ALL versions, leaving extra versions on disk. Now resolves the actual version tag first and downloads ONLY that specific version's tag ZIP.
+- **Deprecated references renamed from "mine" to "topaz":** Core utilities (`sapphire_cmd.hpp`, `sapphire_version.hpp`) updated to reference `topaz` instead of `mine` in messages and paths.
 - **Global Versioned Plugin Imports:** Versioned imports now also resolve plugins
   installed in `%APPDATA%/Sapphire/plugins`, matching Mine's global installation
   scope.
 - **Array assignment semantics:** Dynamic array writes now support appending at the next index when assigning to `len(array)`, matching the behavior used by Infinitum vector helpers.
 - **Parser compatibility:** Function declarations now accept optional explicit return-type annotations such as `function main() void {}` and `function foo() string {}` while preserving the newer no-return-type syntax.
-- **`spark.lock` Race Condition:** Resolved an issue where abrupt interruptions during package installation would leave `spark.lock` partially written or corrupted by implementing atomic renames (`std::filesystem::rename`).
+- **`topaz.lock` Race Condition:** Resolved an issue where abrupt interruptions during package installation would leave `topaz.lock` partially written or corrupted by implementing atomic renames (`std::filesystem::rename`).
 - **SemVer Constraint Parsing:** Fixed parser bug handling comma or space separated version constraints, enabling advanced constraint parsing.
 - **Package Signature/Integrity Validation:** Added SHA256 checksum verification during plugin downloads and unzipping to guarantee package integrity.
 - **Plugin Resolution Fallback:** `resolver.hpp` now gracefully falls back to checking the `versions/` subdirectory when `PLUGIN.txt` is absent from the root (e.g. Vividry directory layout).
-- **Install Rollback Mechanism:** `spark install` now atomically rolls back the `sapphire.json` and `spark.lock` state if an installation/download step fails (e.g., HTTP 404), preventing ghost packages.
-- **Silent Directory Filtering in `list`:** `spark list` now silently skips malformed plugin directories without throwing disruptive error logs.
-- **Dependency Protections on Purge:** `spark purge` now checks whether a plugin is required by other installed plugins and issues a strong warning and confirmation prompt before allowing removal.
-- **Ghost Registry Removal:** `spark search` no longer points to a dead `registry.json` file, using the GitHub API `contents` endpoint instead to fetch available plugins dynamically.
-- **Sapphire Executable Overwrites:** Fixed `spark sapphire use` throwing "Access Denied" errors when overwriting running binaries (`sapphire.exe`, `runner.exe`) on Windows by securely staging them using `.old` files. Also fully updated `spack.exe` references to `beryl.exe`.
-- **Empty Version Metadata Validation:** `spark check` now explicitly flags and counts errors for missing/empty version fields in `PLUGIN.txt`.
-- **Mermaid Graph Rendering:** `spark tree --format mermaid` now correctly renders isolated root nodes that have no child dependencies instead of skipping them.
+- **Install Rollback Mechanism:** `topaz install` now atomically rolls back the `sapphire.json` and `topaz.lock` state if an installation/download step fails (e.g., HTTP 404), preventing ghost packages.
+- **Silent Directory Filtering in `list`:** `topaz list` now silently skips malformed plugin directories without throwing disruptive error logs.
+- **Dependency Protections on Purge:** `topaz purge` now checks whether a plugin is required by other installed plugins and issues a strong warning and confirmation prompt before allowing removal.
+- **Ghost Registry Removal:** `topaz search` no longer points to a dead `registry.json` file, using the GitHub API `contents` endpoint instead to fetch available plugins dynamically.
+- **Sapphire Executable Overwrites:** Fixed `topaz sapphire use` throwing "Access Denied" errors when overwriting running binaries (`sapphire.exe`, `runner.exe`) on Windows by securely staging them using `.old` files. Also fully updated `spack.exe` references to `beryl.exe`.
+- **Empty Version Metadata Validation:** `topaz check` now explicitly flags and counts errors for missing/empty version fields in `PLUGIN.txt`.
+- **Mermaid Graph Rendering:** `topaz tree --format mermaid` now correctly renders isolated root nodes that have no child dependencies instead of skipping them.
 - **Miniz Compilation Linker Error:** Configured `CMakeLists.txt` to explicitly compile C files along with C++ allowing static compilation of the `miniz` library without undefined reference errors.
 
 ## [1.0.9] - 2026-07-15

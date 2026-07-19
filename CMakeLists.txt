@@ -138,16 +138,18 @@ target_link_libraries(sapphire_core PUBLIC
 target_link_libraries(sapphire_core PUBLIC OpenCL sqlite3)
 
 add_executable(sapphire src/main.cpp)
-add_executable(runner src/vm/runner.cpp src/spark/third_party/miniz.c)
-add_executable(beryl src/beryl/main.cpp src/beryl/beryl.cpp src/beryl/beryl_ui.cpp src/spark/third_party/miniz.c)
+add_executable(runner src/vm/runner.cpp src/topaz/third_party/miniz.c)
+add_executable(beryl src/beryl/main.cpp src/beryl/beryl.cpp src/beryl/beryl_ui.cpp src/topaz/third_party/miniz.c)
+add_executable(citrine src/linter/main.cpp src/linter/citrine.cpp)
+target_link_libraries(citrine PUBLIC sapphire_core)
 
-# Build new modular spark (v2) - full-featured package manager
-option(BUILD_SPARK "Build new modular spark package manager" ON)
-if(BUILD_SPARK)
-    add_subdirectory(src/spark)
+# Build new modular topaz (v2) - full-featured package manager
+option(BUILD_TOPAZ "Build new modular topaz package manager" ON)
+if(BUILD_TOPAZ)
+    add_subdirectory(src/topaz)
 else()
-    # Only build old spark if new spark is not being built
-    add_executable(spark src/spark/spark.cpp)
+    # Only build old topaz if new topaz is not being built
+    add_executable(topaz src/topaz/topaz.cpp)
 endif()
 
 target_compile_definitions(sapphire PRIVATE SFML_STATIC)
@@ -165,8 +167,8 @@ set(COMMON_LIBS
 
 list(APPEND COMMON_LIBS OpenCL sqlite3)
 
-# Spark doesn't need OpenCL, SQLite, or SFML - only OpenSSL for HTTPS
-set(SPARK_LIBS
+# Topaz doesn't need OpenCL, SQLite, or SFML - only OpenSSL for HTTPS
+set(TOPAZ_LIBS
     OpenSSL::SSL
     OpenSSL::Crypto
 )
@@ -191,38 +193,38 @@ target_link_libraries(sapphire PRIVATE ${COMMON_LIBS})
 target_link_libraries(runner PRIVATE ${COMMON_LIBS})
 target_link_libraries(beryl PRIVATE ${COMMON_LIBS})
 
-# Spark only needs OpenSSL for HTTPS, not OpenCL/SQLite/SFML
-if(BUILD_SPARK)
-    target_link_libraries(spark PRIVATE ${SPARK_LIBS})
+# Topaz only needs OpenSSL for HTTPS, not OpenCL/SQLite/SFML
+if(BUILD_TOPAZ)
+    target_link_libraries(topaz PRIVATE ${TOPAZ_LIBS})
 else()
-    target_link_libraries(spark PRIVATE ${COMMON_LIBS})
+    target_link_libraries(topaz PRIVATE ${COMMON_LIBS})
 endif()
 
-# Optional: Build standalone spark (without Sapphire dependencies)
-option(BUILD_SPARK_STANDALONE "Build spark as standalone executable (no Sapphire dependencies)" OFF)
-if(BUILD_SPARK_STANDALONE)
-    add_executable(spark_standalone
-        src/spark/spark.cpp
+# Optional: Build standalone topaz (without Sapphire dependencies)
+option(BUILD_TOPAZ_STANDALONE "Build topaz as standalone executable (no Sapphire dependencies)" OFF)
+if(BUILD_TOPAZ_STANDALONE)
+    add_executable(topaz_standalone
+        src/topaz/topaz.cpp
         src/utils/termcolor.cpp
     )
-    target_compile_definitions(spark_standalone PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT)
-    target_include_directories(spark_standalone PRIVATE
+    target_compile_definitions(topaz_standalone PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT)
+    target_include_directories(topaz_standalone PRIVATE
         src/
         src/utils/
         ${LIBS_DIR}
         ${OPENSSL_INCLUDE_DIR}
     )
-    target_link_libraries(spark_standalone PRIVATE
+    target_link_libraries(topaz_standalone PRIVATE
         OpenSSL::SSL
         OpenSSL::Crypto
     )
     if(WIN32)
-        target_link_libraries(spark_standalone PRIVATE
+        target_link_libraries(topaz_standalone PRIVATE
             ws2_32
             crypt32
         )
         if(NOT MSVC)
-            target_link_libraries(spark_standalone PRIVATE -pthread)
+            target_link_libraries(topaz_standalone PRIVATE -pthread)
         endif()
     endif()
 endif()
