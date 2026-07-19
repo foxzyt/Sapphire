@@ -2144,6 +2144,7 @@ void display_info() {
       "citrine <command>                : Executes the Citrine static analysis linter",
       "garnet <command>                 : Executes the Garnet parallel test runner",
       "amethyst <command>               : Executes the Amethyst automatic code formatter",
+      "quartz <command>                 : Executes the Quartz micro-benchmarking engine",
       "",
       "Thank you!",
       "",

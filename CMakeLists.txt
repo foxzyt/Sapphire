@@ -149,6 +149,9 @@ target_link_libraries(garnet PUBLIC sapphire_core)
 add_executable(amethyst src/formatter/main.cpp src/formatter/amethyst.cpp)
 target_link_libraries(amethyst PUBLIC sapphire_core)
 
+add_executable(quartz src/benchmarker/main.cpp src/benchmarker/quartz.cpp)
+target_link_libraries(quartz PUBLIC sapphire_core)
+
 
 # Build new modular topaz (v2) - full-featured package manager
 option(BUILD_TOPAZ "Build new modular topaz package manager" ON)
