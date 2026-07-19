@@ -180,6 +180,14 @@ static void print_mermaid_tree(const std::string& plugin_name, const std::string
     visited.insert(node_key);
     
     auto deps = get_version_dependencies(plugin_name, version);
+    if (deps.empty()) {
+        std::string node_def = plugin_name + "[\"" + plugin_name + " v" + version + "\"]";
+        if (printed_edges.find(node_def) == printed_edges.end()) {
+            printed_edges.insert(node_def);
+            std::cout << "    " << node_def << std::endl;
+        }
+    }
+    
     for (const auto& dep : deps) {
         std::string dep_ver = dep.version;
         if (dep_ver == "latest") {
