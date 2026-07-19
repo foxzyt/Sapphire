@@ -98,7 +98,7 @@ inline bool is_equal(const std::string& v1, const std::string& v2) {
 //     "^1.0.0"    → compatível: mesmo MAJOR, qualquer MINOR/PATCH maior ou igual
 //     "~1.0.0"    → mesmo MAJOR (alias de ^)
 // ---------------------------------------------------------------------------
-inline bool satisfies(const std::string& version, const std::string& constraint) {
+inline bool satisfies_single(const std::string& version, const std::string& constraint) {
     if (constraint.empty() || constraint == "latest") return true;
 
     // Remove aspas que o terminal possa passar (ex: "^1.0.0")
@@ -142,6 +142,24 @@ inline bool satisfies(const std::string& version, const std::string& constraint)
     }
 
     return false;
+}
+
+inline bool satisfies(const std::string& version, const std::string& constraint) {
+    if (constraint.empty() || constraint == "latest") return true;
+
+    std::string c = constraint;
+    // Replace commas with spaces
+    std::replace(c.begin(), c.end(), ',', ' ');
+    
+    std::stringstream ss(c);
+    std::string token;
+    while (ss >> token) {
+        if (!satisfies_single(version, token)) {
+            return false;
+        }
+    }
+    
+    return true;
 }
 
 // ---------------------------------------------------------------------------
