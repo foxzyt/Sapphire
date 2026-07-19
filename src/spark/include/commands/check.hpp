@@ -48,7 +48,12 @@ static void check_plugin_dir(const fs::path& plugin_dir, const std::string& scop
             continue;
         }
 
-        std::cout << "  Version: " << meta->version << std::endl;
+        if (meta->version.empty()) {
+            std::cout << termcolor::red << "  [!] ERROR: Empty or missing version in PLUGIN.txt" << termcolor::reset << std::endl;
+            errors++;
+        } else {
+            std::cout << "  Version: " << meta->version << std::endl;
+        }
         std::cout << "  Author: " << meta->author << std::endl;
 
         // Check for deprecation
