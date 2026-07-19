@@ -80,6 +80,13 @@ enum OpCode : uint8_t {
     OP_TRY_START,
     OP_TRY_END,
     OP_THROW,
+    
+    // UI e Eventos (adicionados recentemente)
+    OP_WITHIN_START,
+    OP_WITHIN_END,
+    OP_EVERY_TICK,
+    OP_UNDO,
+    OP_DEFINE_FADE,
 };
 
 #endif //SAPPHIRE_OPCODES_H

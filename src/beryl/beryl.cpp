@@ -16,7 +16,7 @@
 #include "config.h"
 
 // For zipping assets
-#include "../spark/third_party/miniz.h"
+#include "../topaz/third_party/miniz.h"
 
 #ifdef _WIN32
 #include <windows.h>

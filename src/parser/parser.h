@@ -113,6 +113,9 @@ private:
     void break_statement();
     void continue_statement();
     void enum_declaration();
+    void undo_statement();
+    void within_statement();
+    void every_statement();
 
     // Variáveis
     uint16_t identifier_constant(const Token& name);

@@ -1,4 +1,4 @@
-﻿#ifndef SAPPHIRE_VM_H
+#ifndef SAPPHIRE_VM_H
 #define SAPPHIRE_VM_H
 
 #include "chunk.h"
@@ -131,6 +131,18 @@ struct CallFrame {
   SapphireValue *slots;
 };
 
+struct UndoBackup {
+    std::unordered_map<std::string, SapphireValue> globals;
+    std::vector<SapphireValue> locals;
+    SapphireValue* stack_top;
+    int frame_count;
+};
+
+struct WithinTimer {
+    uint64_t end_time_ms;
+    uint8_t* fallback_ip;
+};
+
 struct CatchBlock {
   int frame_count;
   SapphireValue* stack_top;
@@ -197,6 +209,10 @@ public:
 
   CallFrame frames[FRAMES_MAX];
   int frame_count;
+
+  std::vector<UndoBackup> undo_stack;
+  std::vector<WithinTimer> within_timers;
+  int timer_counter = 0;
 
 
   enum class GCState {

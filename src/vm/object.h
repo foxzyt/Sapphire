@@ -35,6 +35,7 @@ enum ObjType {
     OBJ_PROMISE,
     OBJ_ARRAY,
     OBJ_LRU,
+    OBJ_FADE,
 };
 
 // A struct base para todos os objetos gerenciados no "heap" pela VM
@@ -108,6 +109,13 @@ struct ObjLRU : Obj {
     std::unordered_map<std::string, SapphireValue> items;
 };
 
+struct ObjFade : Obj {
+    SapphireValue value;
+    double duration_ms;
+    std::string curve_type;
+    uint64_t created_at_ms;
+};
+
 // Funções "fábrica" para criar novos objetos (agora recebem VM*)
 ObjBoundMethod* new_bound_method(VM* vm, SapphireValue receiver, SapphireValue method, ObjClass* defined_in_class);
 ObjFunction* new_function(VM* vm);
@@ -121,6 +129,7 @@ ObjMap* new_map(VM* vm);
 ObjPromise* new_promise(VM* vm);
 ObjArray* new_array(VM* vm);
 ObjLRU* new_lru(VM* vm, int capacity);
+ObjFade* new_fade(VM* vm, SapphireValue value, double duration_ms, const std::string& curve_type);
 
 // Declaração da função que imprime objetos (será implementada em object.cpp)
 void print_object(const SapphireValue& value);

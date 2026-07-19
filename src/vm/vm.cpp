@@ -1,4 +1,4 @@
-// Sapphire VM Implementation
+// Corundum VM Implementation
 #include <stdexcept>
 #include <mutex>
 #include <condition_variable>

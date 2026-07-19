@@ -15,7 +15,7 @@
 #include "tokens.h"
 #include "config.h"
 #include <SFML/Graphics.hpp>
-#include "../spark/third_party/miniz.h"
+#include "../topaz/third_party/miniz.h"
 
 #ifdef _WIN32
 #include <windows.h>

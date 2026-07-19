@@ -23,6 +23,7 @@ void free_object(Obj* object) {
         case OBJ_PROMISE: delete static_cast<ObjPromise*>(object); break;
         case OBJ_ARRAY: delete static_cast<ObjArray*>(object); break;
         case OBJ_LRU: delete static_cast<ObjLRU*>(object); break;
+        case OBJ_FADE: delete static_cast<ObjFade*>(object); break;
     }
 }
 
@@ -119,7 +120,7 @@ static void register_object(VM* vm, T* object) {
     
     // NOVO: Hard Limit para evitar BSOD e Memory Leaks Incontroláveis!
     if (vm->bytes_allocated > vm->max_memory_limit) {
-        std::cerr << "CRITICAL ERROR: SAPPHIRE VM OOM (Out of Memory) DETECTED! Aborting immediately to prevent system crash!" << std::endl;
+        std::cerr << "CRITICAL ERROR: CORUNDUM VM OOM (Out of Memory) DETECTED! Aborting immediately to prevent system crash!" << std::endl;
         std::cerr << "Memory exceeded safe limit of " << vm->max_memory_limit / (1024*1024) << " MB in thread " << std::this_thread::get_id() << std::endl;
         exit(1); // Aborta tudo imediatamente!
     }
@@ -226,4 +227,14 @@ ObjLRU* new_lru(VM* vm, int capacity) {
     lru->capacity = capacity;
     register_object(vm, lru);
     return lru;
+}
+
+ObjFade* new_fade(VM* vm, SapphireValue value, double duration_ms, const std::string& curve_type) {
+    ObjFade* fade = new ObjFade();
+    fade->type = OBJ_FADE;
+    fade->value = value;
+    fade->duration_ms = duration_ms;
+    fade->curve_type = curve_type;
+    register_object(vm, fade);
+    return fade;
 }
