@@ -11,8 +11,10 @@ struct BerylConfig {
     std::string Author;
     std::string Version;
     std::string IconPath;
+    std::string AssetsFolder;
     bool NoConsole = false;
     bool Compress = false;
+    bool Encrypt = false;
     bool Optimize = true;
     bool RequireAdmin = false;
     bool SoftMode = false;

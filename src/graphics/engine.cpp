@@ -1,4 +1,4 @@
-#include "engine.h"
+﻿#include "engine.h"
 #include <iostream>
 #include <vector>
 #include <memory>
@@ -46,10 +46,10 @@ static SapphireValue graphics_drawRect(int arg_count, SapphireValue* args) {
     if (arg_count != 4) return SapphireValue();
     sf::RenderWindow* window = get_window(g_current_vm);
     if (!window) return SapphireValue();
-    double x = std::get<double>(args[0]._value);
-    double y = std::get<double>(args[1]._value);
-    double w = std::get<double>(args[2]._value);
-    double h = std::get<double>(args[3]._value);
+    double x = args[0].as.number;
+    double y = args[1].as.number;
+    double w = args[2].as.number;
+    double h = args[3].as.number;
     sf::RectangleShape rect({(float)w, (float)h});
     rect.setPosition({(float)x, (float)y});
     window->draw(rect);
@@ -59,7 +59,7 @@ static SapphireValue graphics_drawRect(int arg_count, SapphireValue* args) {
 // Keyboard
 static SapphireValue keyboard_isKeyPressed(int arg_count, SapphireValue* args) {
     if (arg_count != 1) return SapphireValue();
-    std::string key_name = ((ObjString*)std::get<Obj*>(args[0]._value))->chars;
+    std::string key_name = ((ObjString*)args[0].as.obj)->chars;
     sf::Keyboard::Key key = sf::Keyboard::Key::Unknown;
     
     if (key_name == "W" || key_name == "w") key = sf::Keyboard::Key::W;
@@ -80,8 +80,8 @@ static SapphireValue keyboard_isKeyPressed(int arg_count, SapphireValue* args) {
 // Texture
 static SapphireValue texture_load(int arg_count, SapphireValue* args) {
     if (arg_count != 1) return SapphireValue();
-    ObjInstance* self = (ObjInstance*)std::get<Obj*>(args[-1]._value);
-    std::string path = ((ObjString*)std::get<Obj*>(args[0]._value))->chars;
+    ObjInstance* self = (ObjInstance*)args[-1].as.obj;
+    std::string path = ((ObjString*)args[0].as.obj)->chars;
     
     auto tex = std::make_unique<sf::Texture>();
     if (tex->loadFromFile(path)) {
@@ -93,18 +93,18 @@ static SapphireValue texture_load(int arg_count, SapphireValue* args) {
 
 // Sprite
 static SapphireValue sprite_draw(int arg_count, SapphireValue* args) {
-    ObjInstance* self = (ObjInstance*)std::get<Obj*>(args[-1]._value);
+    ObjInstance* self = (ObjInstance*)args[-1].as.obj;
     sf::RenderWindow* window = get_window(g_current_vm);
     if (!window) return SapphireValue();
 
     if (!self->fields.contains("textureId") || !self->fields.contains("x") || !self->fields.contains("y")) return SapphireValue();
 
-    double id_val = std::get<double>(self->fields["textureId"]._value);
+    double id_val = self->fields["textureId"].as.number;
     int tex_id = (int)id_val;
     if (tex_id >= 0 && tex_id < global_textures.size()) {
         sf::Sprite sprite(*(global_textures[tex_id]));
-        double x = std::get<double>(self->fields["x"]._value);
-        double y = std::get<double>(self->fields["y"]._value);
+        double x = self->fields["x"].as.number;
+        double y = self->fields["y"].as.number;
         sprite.setPosition({(float)x, (float)y});
         window->draw(sprite);
     }
@@ -112,8 +112,8 @@ static SapphireValue sprite_draw(int arg_count, SapphireValue* args) {
 }
 
 static SapphireValue sprite_setTexture(int arg_count, SapphireValue* args) {
-    ObjInstance* self = (ObjInstance*)std::get<Obj*>(args[-1]._value);
-    ObjInstance* tex = (ObjInstance*)std::get<Obj*>(args[0]._value);
+    ObjInstance* self = (ObjInstance*)args[-1].as.obj;
+    ObjInstance* tex = (ObjInstance*)args[0].as.obj;
     self->fields["textureId"] = tex->fields["id"];
     return SapphireValue((Obj*)self);
 }
@@ -123,19 +123,19 @@ static SapphireValue graphics_drawTextureRect(int arg_count, SapphireValue* args
     sf::RenderWindow* window = get_window(g_current_vm);
     if (!window) return SapphireValue();
 
-    double id_val = std::get<double>(args[0]._value);
+    double id_val = args[0].as.number;
     int tex_id = (int)id_val;
 
     if (tex_id >= 0 && tex_id < global_textures.size()) {
-        float sx = std::get<double>(args[1]._value);
-        float sy = std::get<double>(args[2]._value);
-        float sw = std::get<double>(args[3]._value);
-        float sh = std::get<double>(args[4]._value);
+        float sx = args[1].as.number;
+        float sy = args[2].as.number;
+        float sw = args[3].as.number;
+        float sh = args[4].as.number;
         
-        float dx = std::get<double>(args[5]._value);
-        float dy = std::get<double>(args[6]._value);
-        float dw = std::get<double>(args[7]._value);
-        float dh = std::get<double>(args[8]._value);
+        float dx = args[5].as.number;
+        float dy = args[6].as.number;
+        float dw = args[7].as.number;
+        float dh = args[8].as.number;
 
         sf::Sprite sprite(*(global_textures[tex_id]));
         sprite.setTextureRect(sf::IntRect({(int)sx, (int)sy}, {(int)sw, (int)sh}));
@@ -170,3 +170,12 @@ void register_graphics_engine(VM* vm) {
     spr_class->methods["setTexture"] = SapphireValue((Obj*)new_native(vm, sprite_setTexture));
     vm->globals["Sprite"] = SapphireValue((Obj*)spr_class);
 }
+
+
+
+
+
+
+
+
+

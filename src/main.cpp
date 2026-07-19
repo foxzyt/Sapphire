@@ -285,6 +285,19 @@ static json build_all_completion_items() {
       "Linearly interpolates between `a` and `b` by factor `t`."));
 
   // --- List built-ins ---
+  items.push_back(make_function("lruCreate", "lruCreate(capacity) -> lru_cache",
+                                "lruCreate(${1:capacity})",
+                                "Creates a new LRU cache with the specified capacity."));
+  items.push_back(make_function("lruGet", "lruGet(cache, key) -> value",
+                                "lruGet(${1:cache}, ${2:key})",
+                                "Gets a value from the LRU cache."));
+  items.push_back(make_function("lruPut", "lruPut(cache, key, value) -> value",
+                                "lruPut(${1:cache}, ${2:key}, ${3:value})",
+                                "Puts a value into the LRU cache."));
+  items.push_back(make_function("lruHas", "lruHas(cache, key) -> boolean",
+                                "lruHas(${1:cache}, ${2:key})",
+                                "Checks if a key exists in the LRU cache."));
+
   items.push_back(make_function("listCreate", "listCreate() -> list",
                                 "listCreate()",
                                 "Creates and returns a new empty list."));
@@ -503,30 +516,30 @@ static const std::unordered_map<std::string, std::string> hover_docs = {
     {"extends", "**keyword** `extends`\n\nInherits from a parent class."},
     {"this", "**keyword** `this`\n\nReferences the current object instance."},
     {"super", "**keyword** `super`\n\nReferences the parent class."},
-    {"true", "**literal** `true` — Boolean value true."},
-    {"false", "**literal** `false` — Boolean value false."},
-    {"nil", "**literal** `nil` — The null / absent value."},
-    {"null", "**literal** `null` — Alias for `nil`."},
-    {"and", "**operator** `and` — Logical AND."},
-    {"or", "**operator** `or` — Logical OR."},
-    {"break", "**keyword** `break` — Exits the innermost loop."},
-    {"continue", "**keyword** `continue` — Skips to the next loop iteration."},
-    {"try", "**keyword** `try` — Begins an error-handling block."},
+    {"true", "**literal** `true` â€” Boolean value true."},
+    {"false", "**literal** `false` â€” Boolean value false."},
+    {"nil", "**literal** `nil` â€” The null / absent value."},
+    {"null", "**literal** `null` â€” Alias for `nil`."},
+    {"and", "**operator** `and` â€” Logical AND."},
+    {"or", "**operator** `or` â€” Logical OR."},
+    {"break", "**keyword** `break` â€” Exits the innermost loop."},
+    {"continue", "**keyword** `continue` â€” Skips to the next loop iteration."},
+    {"try", "**keyword** `try` â€” Begins an error-handling block."},
     {"catch",
-     "**keyword** `catch` — Handles an error thrown in a `try` block."},
-    {"throw", "**keyword** `throw` — Raises an exception."},
-    {"finally", "**keyword** `finally` — Always executes after a try/catch."},
-    {"async", "**keyword** `async` — Marks a function as asynchronous."},
-    {"await", "**keyword** `await` — Waits for an async result."},
-    {"spawn", "**keyword** `spawn` — Spawns a concurrent task."},
-    {"enum", "**keyword** `enum` — Declares an enumeration."},
-    {"switch", "**keyword** `switch` — Multi-branch conditional."},
-    {"int", "**type** `int` — Integer type annotation."},
-    {"bool", "**type** `bool` — Boolean type annotation."},
-    {"string", "**type** `string` — String type annotation."},
-    {"double", "**type** `double` — Double-precision float type annotation."},
-    {"float", "**type** `float` — Single-precision float type annotation."},
-    {"void", "**type** `void` — Void return type annotation."},
+     "**keyword** `catch` â€” Handles an error thrown in a `try` block."},
+    {"throw", "**keyword** `throw` â€” Raises an exception."},
+    {"finally", "**keyword** `finally` â€” Always executes after a try/catch."},
+    {"async", "**keyword** `async` â€” Marks a function as asynchronous."},
+    {"await", "**keyword** `await` â€” Waits for an async result."},
+    {"spawn", "**keyword** `spawn` â€” Spawns a concurrent task."},
+    {"enum", "**keyword** `enum` â€” Declares an enumeration."},
+    {"switch", "**keyword** `switch` â€” Multi-branch conditional."},
+    {"int", "**type** `int` â€” Integer type annotation."},
+    {"bool", "**type** `bool` â€” Boolean type annotation."},
+    {"string", "**type** `string` â€” String type annotation."},
+    {"double", "**type** `double` â€” Double-precision float type annotation."},
+    {"float", "**type** `float` â€” Single-precision float type annotation."},
+    {"void", "**type** `void` â€” Void return type annotation."},
     {"clock", "**built-in** `clock() -> number`\n\nReturns seconds elapsed "
               "since program start."},
     {"len", "**built-in** `len(val) -> number`\n\nReturns the length of a "
@@ -587,6 +600,14 @@ static const std::unordered_map<std::string, std::string> hover_docs = {
     {"clamp",
      "**built-in** `clamp(val, min, max) -> number`\n\nClamps value to range."},
     {"lerp", "**built-in** `lerp(a, b, t) -> number`\n\nLinear interpolation."},
+    {"lruCreate",
+     "**built-in** `lruCreate(capacity) -> lru_cache`\n\nCreates a new LRU cache."},
+    {"lruGet",
+     "**built-in** `lruGet(cache, key) -> value`\n\nGets an item from the LRU cache."},
+    {"lruPut",
+     "**built-in** `lruPut(cache, key, value) -> value`\n\nPuts an item in the LRU cache."},
+    {"lruHas",
+     "**built-in** `lruHas(cache, key) -> boolean`\n\nChecks if an item is in the LRU cache."},
     {"listCreate",
      "**built-in** `listCreate() -> list`\n\nCreates a new empty list."},
     {"listAppend",
@@ -1001,6 +1022,10 @@ static const std::unordered_map<std::string, SigInfo> &get_signatures() {
         {{"a: number"}, {"b: number"}, {"t: number"}},
         "Linear interpolation."}},
       // Lists
+      {"lruCreate", {"lruCreate(capacity)", {{"capacity: int"}}, "Create LRU cache."}},
+      {"lruGet", {"lruGet(cache, key)", {{"cache: lru_cache"}, {"key: string"}}, "Get from LRU cache."}},
+      {"lruPut", {"lruPut(cache, key, value)", {{"cache: lru_cache"}, {"key: string"}, {"value: any"}}, "Put in LRU cache."}},
+      {"lruHas", {"lruHas(cache, key)", {{"cache: lru_cache"}, {"key: string"}}, "Check LRU cache."}},
       {"listCreate", {"listCreate()", {}, "Create empty list."}},
       {"listAppend",
        {"listAppend(list, value)",
@@ -1285,6 +1310,10 @@ static json build_semantic_tokens_data(const std::string &src) {
                                                            "max",
                                                            "clamp",
                                                            "lerp",
+                                                           "lruCreate",
+                                                           "lruGet",
+                                                           "lruPut",
+                                                           "lruHas",
                                                            "listCreate",
                                                            "listAppend",
                                                            "listGet",
@@ -1416,7 +1445,7 @@ static json build_semantic_tokens_data(const std::string &src) {
     case TokenType::TOKEN_TRUE:
     case TokenType::TOKEN_FALSE:
     case TokenType::TOKEN_NIL:
-      st.type = 6; // number/literal — use number slot for constants
+      st.type = 6; // number/literal â€” use number slot for constants
       break;
     case TokenType::TOKEN_NUMBER:
       st.type = 6; // number
@@ -1461,7 +1490,7 @@ static json build_semantic_tokens_data(const std::string &src) {
 }
 
 // =============================================================
-// FOLDING RANGES — match { } and detect block structure
+// FOLDING RANGES â€” match { } and detect block structure
 // =============================================================
 static json build_folding_ranges(const std::string &src) {
   json ranges = json::array();
@@ -1489,7 +1518,7 @@ static json build_folding_ranges(const std::string &src) {
 }
 
 // =============================================================
-// BASIC FORMATTER — normalize indentation (4-space, expand tabs)
+// BASIC FORMATTER â€” normalize indentation (4-space, expand tabs)
 // =============================================================
 static std::string format_document(const std::string &src) {
   std::string result;
@@ -2107,6 +2136,12 @@ void display_info() {
       "sapphire test <script_path.sp>   : Runs tests in a script",
       "sapphire lint <script_path.sp>   : Lints a script",
       "",
+      "--- Tool Options ---",
+      "beryl <command>                  : Executes the Beryl tool (for packing "
+      "files into .exe executables)",
+      "spark <command>                  : Executes the Spark help command "
+      "(plugin and version manager)",
+      "",
       "Thank you!",
       "",
       "GitHub: github.com/foxzyt/sapphire"};
@@ -2211,15 +2246,15 @@ void run_ui_mode(std::string script_content, const ScriptConfig &config,
   vm.call_and_run(main_script_func);
 
   SapphireValue update_fn_val = vm.getGlobal("updateUI");
-  if (!std::holds_alternative<Obj *>(update_fn_val._value) ||
-      std::get<Obj *>(update_fn_val._value)->type != OBJ_CLOSURE) {
+  if (update_fn_val.type != ValType::VAL_OBJ ||
+      update_fn_val.as.obj->type != OBJ_CLOSURE) {
     std::cerr << "Error: updateUI() function not found in script." << std::endl;
     window.close();
     return;
   }
 
   ObjClosure *update_closure =
-      static_cast<ObjClosure *>(std::get<Obj *>(update_fn_val._value));
+      static_cast<ObjClosure *>(update_fn_val.as.obj);
   ObjFunction *update_function = update_closure->function;
 
   auto last_write = std::filesystem::last_write_time(script_path);
@@ -2236,10 +2271,10 @@ void run_ui_mode(std::string script_content, const ScriptConfig &config,
         if (new_func) {
           vm.call_and_run(new_func);
           SapphireValue new_update_fn_val = vm.getGlobal("updateUI");
-          if (std::holds_alternative<Obj *>(new_update_fn_val._value) &&
-              std::get<Obj *>(new_update_fn_val._value)->type == OBJ_CLOSURE) {
+          if (new_update_fn_val.type == ValType::VAL_OBJ &&
+              new_update_fn_val.as.obj->type == OBJ_CLOSURE) {
             update_closure = static_cast<ObjClosure *>(
-                std::get<Obj *>(new_update_fn_val._value));
+                new_update_fn_val.as.obj);
             update_function = update_closure->function;
           }
         }
@@ -2410,7 +2445,7 @@ void run_test(const std::string &path) {
       if (name.rfind("Test", 0) == 0 || name.rfind("test", 0) == 0) {
         if (is_obj_type(val, OBJ_CLASS)) {
           ObjClass *klass =
-              static_cast<ObjClass *>(std::get<Obj *>(val._value));
+              static_cast<ObjClass *>(val.as.obj);
           for (const auto &method_pair : klass->methods) {
             std::string method_name = method_pair.first;
             if (method_name.rfind("test", 0) == 0 ||
@@ -2676,10 +2711,10 @@ void run_bytecode_mode(const std::string &bytecode_path,
 
   if (is_ui_mode && temp_window) {
     SapphireValue update_fn_val = vm.getGlobal("updateUI");
-    if (std::holds_alternative<Obj *>(update_fn_val._value) &&
-        std::get<Obj *>(update_fn_val._value)->type == OBJ_CLOSURE) {
+    if (update_fn_val.type == ValType::VAL_OBJ &&
+        update_fn_val.as.obj->type == OBJ_CLOSURE) {
       ObjFunction *update_function =
-          static_cast<ObjClosure *>(std::get<Obj *>(update_fn_val._value))
+          static_cast<ObjClosure *>(update_fn_val.as.obj)
               ->function;
 
       while (temp_window->isOpen()) {
@@ -2782,3 +2817,10 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
+
+
+
+
+
+
+

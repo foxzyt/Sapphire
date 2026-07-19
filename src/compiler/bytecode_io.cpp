@@ -1,4 +1,4 @@
-#include "bytecode_io.h"
+﻿#include "bytecode_io.h"
 #include <iostream>
 #include <vector>
 #include <variant>
@@ -8,7 +8,7 @@
 
 using enum TokenType;
 
-// Fun��es de escrita (agora aceitam std::ostream&)
+// Funï¿½ï¿½es de escrita (agora aceitam std::ostream&)
 void write_u8(std::ostream& out, uint8_t value) {
     out.put(value);
 }
@@ -36,16 +36,16 @@ void write_string(std::ostream& out, const std::string& str) {
 
 // serialize_sapphire_value agora aceita std::ostream&
 void serialize_sapphire_value(std::ostream& out, VM* vm, const SapphireValue& value) {
-    if (std::holds_alternative<std::monostate>(value._value)) {
+    if (value.type == ValType::VAL_NIL) {
         write_u8(out, 0);
-    } else if (std::holds_alternative<bool>(value._value)) {
+    } else if (value.type == ValType::VAL_BOOL) {
         write_u8(out, 1);
-        write_u8(out, std::get<bool>(value._value) ? 1 : 0);
-    } else if (std::holds_alternative<double>(value._value)) {
+        write_u8(out, value.as.boolean ? 1 : 0);
+    } else if (value.type == ValType::VAL_NUMBER) {
         write_u8(out, 2);
-        write_double(out, std::get<double>(value._value));
-    } else if (std::holds_alternative<Obj*>(value._value)) {
-        Obj* obj = std::get<Obj*>(value._value);
+        write_double(out, value.as.number);
+    } else if (value.type == ValType::VAL_OBJ) {
+        Obj* obj = value.as.obj;
         switch (obj->type) {
             case OBJ_STRING: {
                 write_u8(out, 3);
@@ -104,10 +104,10 @@ void serialize_sapphire_value(std::ostream& out, VM* vm, const SapphireValue& va
             case OBJ_INSTANCE: {
                 ObjInstance* instance = static_cast<ObjInstance*>(obj);
                 for (const auto& pair : vm->globals) {
-                    if (std::holds_alternative<Obj*>(pair.second._value) && std::get<Obj*>(pair.second._value) == instance) {
+                    if (pair.second.type == ValType::VAL_OBJ && pair.second.as.obj == instance) {
                         write_u8(out, 100); // 100 = Marcador para NATIVE_INSTANCE_REF
                         write_string(out, pair.first);
-                        return; // Saímos da função
+                        return; // SaÃ­mos da funÃ§Ã£o
                     }
                 }
                 std::cerr << "Warning: Attempting to serialize a non-native OBJ_INSTANCE. This is not supported." << std::endl;
@@ -115,9 +115,9 @@ void serialize_sapphire_value(std::ostream& out, VM* vm, const SapphireValue& va
                 break;
             }
         }
-    } else if (std::holds_alternative<std::shared_ptr<SapphireArray>>(value._value)) {
+    } else if (is_obj_type(value, OBJ_ARRAY)) {
         write_u8(out, 8);
-        auto array_ptr = std::get<std::shared_ptr<SapphireArray>>(value._value);
+        auto array_ptr = static_cast<ObjArray*>(value.as.obj);
         write_u32(out, array_ptr->elements.size());
         for (const auto& element : array_ptr->elements) {
             serialize_sapphire_value(out, vm, element);
@@ -135,8 +135,8 @@ void serialize_function_to_stream(ObjFunction* function, VM* vm, std::ostream& o
 
     std::vector<std::pair<std::string, SapphireValue>> serializable_globals;
     for (const auto& pair : vm->globals) {
-        if (std::holds_alternative<Obj*>(pair.second._value)) {
-            Obj* obj = std::get<Obj*>(pair.second._value);
+        if (pair.second.type == ValType::VAL_OBJ) {
+            Obj* obj = pair.second.as.obj;
             if (obj->type == OBJ_NATIVE) {
                 continue;
             }
@@ -144,7 +144,7 @@ void serialize_function_to_stream(ObjFunction* function, VM* vm, std::ostream& o
                 ObjClass* klass = static_cast<ObjClass*>(obj);
                 bool is_native = false;
                 for (const auto& method_pair : klass->methods) {
-                    if (std::holds_alternative<Obj*>(method_pair.second._value) && std::get<Obj*>(method_pair.second._value)->type == OBJ_NATIVE) {
+                    if (method_pair.second.type == ValType::VAL_OBJ && method_pair.second.as.obj->type == OBJ_NATIVE) {
                         is_native = true;
                         break;
                     }
@@ -173,7 +173,7 @@ void serialize_function(ObjFunction* function, VM* vm, const std::string& output
     serialize_function_to_stream(function, vm, out);
 }
 
-// Fun��es de leitura (agora aceitam std::istream&)
+// Funï¿½ï¿½es de leitura (agora aceitam std::istream&)
 uint8_t read_u8(std::istream& in) {
     return in.get();
 }
@@ -249,7 +249,7 @@ SapphireValue deserialize_sapphire_value(std::istream& in, VM* vm) {
         case 6: {
             std::string native_name = read_string(in);
             auto it = vm->globals.find(native_name);
-            if (it != vm->globals.end() && std::holds_alternative<Obj*>(it->second._value) && std::get<Obj*>(it->second._value)->type == OBJ_NATIVE) {
+            if (it != vm->globals.end() && it->second.type == ValType::VAL_OBJ && it->second.as.obj->type == OBJ_NATIVE) {
                 return it->second;
             } else {
                 std::cerr << "Error: Native function '" << native_name << "' not found during deserialization. This might cause issues if it's a constant." << std::endl;
@@ -258,8 +258,8 @@ SapphireValue deserialize_sapphire_value(std::istream& in, VM* vm) {
         }
         case 7: {
             SapphireValue func_val = deserialize_sapphire_value(in, vm);
-            if (std::holds_alternative<Obj*>(func_val._value) && std::get<Obj*>(func_val._value)->type == OBJ_FUNCTION) {
-                ObjFunction* func = static_cast<ObjFunction*>(std::get<Obj*>(func_val._value));
+            if (func_val.type == ValType::VAL_OBJ && func_val.as.obj->type == OBJ_FUNCTION) {
+                ObjFunction* func = static_cast<ObjFunction*>(func_val.as.obj);
                 return new_closure(vm, func);
             } else {
                 std::cerr << "Error: Expected function for closure during deserialization." << std::endl;
@@ -267,7 +267,7 @@ SapphireValue deserialize_sapphire_value(std::istream& in, VM* vm) {
             }
         }
         case 8: {
-            auto array_obj = std::make_shared<SapphireArray>();
+            auto array_obj = new_array(g_current_vm);
             uint32_t element_count = read_u32(in);
             array_obj->elements.reserve(element_count);
             for (int i = 0; i < element_count; ++i) {
@@ -290,7 +290,7 @@ SapphireValue deserialize_sapphire_value(std::istream& in, VM* vm) {
     }
 }
 
-// deserialize_function (l� de um caminho de arquivo, mant�m std::ifstream)
+// deserialize_function (lï¿½ de um caminho de arquivo, mantï¿½m std::ifstream)
 ObjFunction* deserialize_function(VM* vm, const std::string& input_path) {
     std::ifstream in(input_path, std::ios::binary);
     if (!in) {
@@ -322,15 +322,15 @@ ObjFunction* deserialize_function(VM* vm, const std::string& input_path) {
     }
 
     SapphireValue main_func_val = deserialize_sapphire_value(in, vm);
-    if (std::holds_alternative<Obj*>(main_func_val._value) && std::get<Obj*>(main_func_val._value)->type == OBJ_FUNCTION) {
-        return static_cast<ObjFunction*>(std::get<Obj*>(main_func_val._value));
+    if (main_func_val.type == ValType::VAL_OBJ && main_func_val.as.obj->type == OBJ_FUNCTION) {
+        return static_cast<ObjFunction*>(main_func_val.as.obj);
     } else {
         std::cerr << "Error: Expected a function as the main script entry point." << std::endl;
         return nullptr;
     }
 }
 
-// deserialize_function_from_stream (l� de um stream gen�rico, agora aceita std::istream)
+// deserialize_function_from_stream (lï¿½ de um stream genï¿½rico, agora aceita std::istream)
 ObjFunction* deserialize_function_from_stream(VM* vm, std::istream& in) {
     char header[4];
     in.read(header, 4);
@@ -356,10 +356,23 @@ ObjFunction* deserialize_function_from_stream(VM* vm, std::istream& in) {
     }
 
     SapphireValue main_func_val = deserialize_sapphire_value(in, vm);
-    if (std::holds_alternative<Obj*>(main_func_val._value) && std::get<Obj*>(main_func_val._value)->type == OBJ_FUNCTION) {
-        return static_cast<ObjFunction*>(std::get<Obj*>(main_func_val._value));
+    if (main_func_val.type == ValType::VAL_OBJ && main_func_val.as.obj->type == OBJ_FUNCTION) {
+        return static_cast<ObjFunction*>(main_func_val.as.obj);
     } else {
         std::cerr << "Error: Expected a function as the main script entry point from stream." << std::endl;
         return nullptr;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+

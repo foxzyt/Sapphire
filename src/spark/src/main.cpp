@@ -32,6 +32,8 @@
 #include "commands/uninstall.hpp"
 #include "commands/update.hpp"
 #include "commands/upgrade.hpp"
+#include "commands/test.hpp"
+#include "commands/clean.hpp"
 
 
 #include "termcolor.hpp"
@@ -53,6 +55,13 @@ void print_help() {
       << "  " << termcolor::yellow << "spark upgrade" << termcolor::reset
       << "                 - Download and install the latest spark version"
       << std::endl;
+  std::cout << std::endl;
+
+  std::cout << termcolor::bold << "Project Workflow Commands:" << termcolor::reset << std::endl;
+  std::cout << "  " << termcolor::cyan << "spark test [dir]" << termcolor::reset
+            << "              - Run tests (default: tests/ directory)" << std::endl;
+  std::cout << "  " << termcolor::cyan << "spark clean" << termcolor::reset
+            << "                   - Clean build artifacts" << std::endl;
   std::cout << std::endl;
 
   std::cout << termcolor::bold << "Plugin/Project Commands:" << termcolor::reset
@@ -314,6 +323,11 @@ int main(int argc, char *argv[]) {
     } else if (command == "init") {
       return spark::commands::cmd_init(working_dir, name_opt, author_opt,
                                        desc_opt, ver_opt, yes);
+    } else if (command == "test") {
+      std::string test_dir = clean_args.empty() ? "" : clean_args[0];
+      return spark::commands::cmd_test(working_dir, test_dir);
+    } else if (command == "clean") {
+      return spark::commands::cmd_clean(working_dir);
     } else if (command == "expand") {
       if (clean_args.empty()) {
         std::cerr << termcolor::red << "[!] Missing version argument"

@@ -1,4 +1,4 @@
-#include "sqlite_api.h"
+﻿#include "sqlite_api.h"
 #include "vm.h"
 #include "object.h"
 #include "value.h"
@@ -14,7 +14,7 @@ static SapphireValue sqlite_api_open(int arg_count, SapphireValue* args) {
     if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) {
         return SapphireValue(-1.0);
     }
-    ObjString* path = static_cast<ObjString*>(std::get<Obj*>(args[0]._value));
+    ObjString* path = static_cast<ObjString*>(args[0].as.obj);
     
     sqlite3* db;
     int rc = sqlite3_open(path->chars.c_str(), &db);
@@ -30,15 +30,15 @@ static SapphireValue sqlite_api_open(int arg_count, SapphireValue* args) {
 }
 
 static SapphireValue sqlite_api_execute(int arg_count, SapphireValue* args) {
-    if (arg_count != 2 || !std::holds_alternative<double>(args[0]._value) || !is_obj_type(args[1], OBJ_STRING)) {
+    if (arg_count != 2 || args[0].type != ValType::VAL_NUMBER || !is_obj_type(args[1], OBJ_STRING)) {
         return SapphireValue(false);
     }
     
-    int db_id = (int)std::get<double>(args[0]._value);
+    int db_id = (int)args[0].as.number;
     if (db_connections.find(db_id) == db_connections.end()) return SapphireValue(false);
     
     sqlite3* db = db_connections[db_id];
-    ObjString* query = static_cast<ObjString*>(std::get<Obj*>(args[1]._value));
+    ObjString* query = static_cast<ObjString*>(args[1].as.obj);
     
     char* err_msg = nullptr;
     int rc = sqlite3_exec(db, query->chars.c_str(), nullptr, nullptr, &err_msg);
@@ -54,15 +54,15 @@ static SapphireValue sqlite_api_execute(int arg_count, SapphireValue* args) {
 }
 
 static SapphireValue sqlite_api_query(int arg_count, SapphireValue* args) {
-    if (arg_count != 2 || !std::holds_alternative<double>(args[0]._value) || !is_obj_type(args[1], OBJ_STRING)) {
+    if (arg_count != 2 || args[0].type != ValType::VAL_NUMBER || !is_obj_type(args[1], OBJ_STRING)) {
         return SapphireValue(); // nil
     }
     
-    int db_id = (int)std::get<double>(args[0]._value);
+    int db_id = (int)args[0].as.number;
     if (db_connections.find(db_id) == db_connections.end()) return SapphireValue();
     
     sqlite3* db = db_connections[db_id];
-    ObjString* query = static_cast<ObjString*>(std::get<Obj*>(args[1]._value));
+    ObjString* query = static_cast<ObjString*>(args[1].as.obj);
     
     sqlite3_stmt* stmt;
     int rc = sqlite3_prepare_v2(db, query->chars.c_str(), -1, &stmt, nullptr);
@@ -71,7 +71,7 @@ static SapphireValue sqlite_api_query(int arg_count, SapphireValue* args) {
         return SapphireValue();
     }
     
-    auto result_array = std::make_shared<SapphireArray>();
+    auto result_array = new_array(g_current_vm);
     
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         int cols = sqlite3_column_count(stmt);
@@ -110,9 +110,9 @@ static SapphireValue sqlite_api_query(int arg_count, SapphireValue* args) {
 }
 
 static SapphireValue sqlite_api_close(int arg_count, SapphireValue* args) {
-    if (arg_count != 1 || !std::holds_alternative<double>(args[0]._value)) return SapphireValue(false);
+    if (arg_count != 1 || args[0].type != ValType::VAL_NUMBER) return SapphireValue(false);
     
-    int db_id = (int)std::get<double>(args[0]._value);
+    int db_id = (int)args[0].as.number;
     if (db_connections.find(db_id) != db_connections.end()) {
         sqlite3_close(db_connections[db_id]);
         db_connections.erase(db_id);
@@ -132,3 +132,13 @@ void define_sqlite_natives(VM* vm) {
     
     vm->globals["SQLite"] = SapphireValue(sqlite_class);
 }
+
+
+
+
+
+
+
+
+
+

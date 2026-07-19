@@ -1,4 +1,4 @@
-#include "compiler.h"
+﻿#include "compiler.h"
 #include "parser.h"
 #include "tokens.h"
 #include "debug.h"
@@ -20,22 +20,22 @@ void Compiler::init(ObjFunction* func) {
     local->name.literal = "";
 }
 
-// A função de compilação agora está em seu próprio arquivo.
-// Ela será chamada pelo parser.h
+// A funÃ§Ã£o de compilaÃ§Ã£o agora estÃ¡ em seu prÃ³prio arquivo.
+// Ela serÃ¡ chamada pelo parser.h
 ObjFunction* compile(VM* vm, const std::string& source) {
     Lexer lexer(source);
     Compiler compiler(new_function(vm));
 
     Parser parser(lexer, &compiler, vm);
 
-    // Continue a declarar até o fim do arquivo ou um erro grave
+    // Continue a declarar atÃ© o fim do arquivo ou um erro grave
     while (!parser.match(TokenType::TOKEN_END_OF_FILE)) {
         parser.declaration();
     }
 
     ObjFunction* main_function = compiler.function;
     // Garanta que o emit_return esteja sempre no final do chunk
-    // Adicionamos uma verificação para evitar múltiplos returns no final ou returns duplos
+    // Adicionamos uma verificaÃ§Ã£o para evitar mÃºltiplos returns no final ou returns duplos
     if (main_function->chunk.code.empty() || main_function->chunk.code.back() != OP_RETURN) {
         parser.emit_return(); // Garante que o script principal sempre retorne algo.
     }
@@ -48,6 +48,15 @@ ObjFunction* compile(VM* vm, const std::string& source) {
     }
     #endif
 
-    // Retorna nullptr se houve um erro de compilação.
+    // Retorna nullptr se houve um erro de compilaÃ§Ã£o.
     return parser.had_error ? nullptr : main_function;
 }
+
+
+
+
+
+
+
+
+

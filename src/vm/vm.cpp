@@ -61,7 +61,7 @@ static int next_thread_id = 1;
 
 static SapphireValue native_spawn(int arg_count, SapphireValue* args) {
     if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) return SapphireValue();
-    std::string script_path = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
+    std::string script_path = static_cast<ObjString*>(args[0].as.obj)->chars;
     
     int tid;
     {
@@ -91,8 +91,8 @@ static SapphireValue native_mutex_new(int arg_count, SapphireValue* args) {
 }
 
 static SapphireValue native_mutex_lock(int arg_count, SapphireValue* args) {
-    if(arg_count != 1 || !std::holds_alternative<double>(args[0]._value)) return SapphireValue(false);
-    int id = (int)std::get<double>(args[0]._value);
+    if(arg_count != 1 || args[0].type != ValType::VAL_NUMBER) return SapphireValue(false);
+    int id = (int)args[0].as.number;
     std::shared_ptr<std::mutex> m;
     {
         std::lock_guard<std::mutex> lock(global_mutexes_lock);
@@ -104,8 +104,8 @@ static SapphireValue native_mutex_lock(int arg_count, SapphireValue* args) {
 }
 
 static SapphireValue native_mutex_unlock(int arg_count, SapphireValue* args) {
-    if(arg_count != 1 || !std::holds_alternative<double>(args[0]._value)) return SapphireValue(false);
-    int id = (int)std::get<double>(args[0]._value);
+    if(arg_count != 1 || args[0].type != ValType::VAL_NUMBER) return SapphireValue(false);
+    int id = (int)args[0].as.number;
     std::shared_ptr<std::mutex> m;
     {
         std::lock_guard<std::mutex> lock(global_mutexes_lock);
@@ -117,8 +117,8 @@ static SapphireValue native_mutex_unlock(int arg_count, SapphireValue* args) {
 }
 
 static SapphireValue native_join(int arg_count, SapphireValue* args) {
-    if (arg_count != 1 || !std::holds_alternative<double>(args[0]._value)) return SapphireValue(false);
-    int tid = (int)std::get<double>(args[0]._value);
+    if (arg_count != 1 || args[0].type != ValType::VAL_NUMBER) return SapphireValue(false);
+    int tid = (int)args[0].as.number;
     
     std::thread t;
     {
@@ -157,7 +157,7 @@ static SapphireValue convertJsonObjectToSapphireMap(VM* vm, const nlohmann::json
 }
 
 static SapphireValue convertJsonArrayToSapphireArray(VM* vm, const nlohmann::json& j) {
-    auto array_obj = std::make_shared<SapphireArray>();
+    auto array_obj = new_array(g_current_vm);
     for (const auto& element : j) {
         array_obj->elements.push_back(convertJsonToSapphire(vm, element));
     }
@@ -190,8 +190,8 @@ static SapphireValue assert_native(int arg_count, SapphireValue* args) {
     bool condition = !is_falsey(args[0]);
     if (!condition) {
         std::string message = "Assertion failed.";
-        if (arg_count >= 2 && std::holds_alternative<Obj*>(args[1]._value)) {
-            Obj* obj = std::get<Obj*>(args[1]._value);
+        if (arg_count >= 2 && args[1].type == ValType::VAL_OBJ) {
+            Obj* obj = args[1].as.obj;
             if (obj->type == OBJ_STRING) {
                 message = static_cast<ObjString*>(obj)->chars;
             }
@@ -242,8 +242,8 @@ static SapphireValue native_io_write_file(int arg_count, SapphireValue* args) {
     if (arg_count != 2 || !is_obj_type(args[0], OBJ_STRING) || !is_obj_type(args[1], OBJ_STRING)) {
         return false;
     }
-    std::string path = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
-    std::string content = static_cast<ObjString*>(std::get<Obj*>(args[1]._value))->chars;
+    std::string path = static_cast<ObjString*>(args[0].as.obj)->chars;
+    std::string content = static_cast<ObjString*>(args[1].as.obj)->chars;
 
     std::ofstream file(path);
     if (!file.is_open()) return false;
@@ -254,7 +254,7 @@ static SapphireValue native_io_write_file(int arg_count, SapphireValue* args) {
 
 static SapphireValue native_io_read_file(int arg_count, SapphireValue* args) {
     if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) return {};
-    std::string path = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
+    std::string path = static_cast<ObjString*>(args[0].as.obj)->chars;
 
     std::ifstream file(path);
     if (!file.is_open()) return {};
@@ -288,14 +288,14 @@ static SapphireValue native_io_open_file_dialog(int arg_count, SapphireValue* ar
 
 static SapphireValue native_io_exists(int arg_count, SapphireValue* args) {
     if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) return false;
-    std::string path = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
+    std::string path = static_cast<ObjString*>(args[0].as.obj)->chars;
     std::ifstream file(path);
     return file.good();
 }
 
 static SapphireValue native_io_print_color(int arg_count, SapphireValue* args) {
     if (arg_count < 2 || !is_obj_type(args[1], OBJ_STRING)) return {};
-    std::string color = static_cast<ObjString*>(std::get<Obj*>(args[1]._value))->chars;
+    std::string color = static_cast<ObjString*>(args[1].as.obj)->chars;
 
     std::string code = "\033[0m";
     if (color == "red") code = "\033[31m";
@@ -372,7 +372,7 @@ static SapphireValue native_io_read_input(int arg_count, SapphireValue* args) {
 
 static SapphireValue native_io_delete_file(int arg_count, SapphireValue* args) {
     if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) return false;
-    std::string path = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
+    std::string path = static_cast<ObjString*>(args[0].as.obj)->chars;
     return std::remove(path.c_str()) == 0;
 }
 
@@ -380,8 +380,8 @@ static SapphireValue native_io_append_file(int arg_count, SapphireValue* args) {
     if (arg_count != 2 || !is_obj_type(args[0], OBJ_STRING) || !is_obj_type(args[1], OBJ_STRING)) {
         return false;
     }
-    std::string path = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
-    std::string content = static_cast<ObjString*>(std::get<Obj*>(args[1]._value))->chars;
+    std::string path = static_cast<ObjString*>(args[0].as.obj)->chars;
+    std::string content = static_cast<ObjString*>(args[1].as.obj)->chars;
 
     std::ofstream file(path, std::ios_base::app);
     if (!file.is_open()) return false;
@@ -397,13 +397,13 @@ static SapphireValue native_math_sqrt(int arg_count, SapphireValue* args) {
         }
         return {};
     }
-    if (!std::holds_alternative<double>(args[0]._value)) {
+    if (args[0].type != ValType::VAL_NUMBER) {
         if (!g_current_vm->soft_mode) {
             std::cerr << "Runtime Error: Argument for sqrt() must be a number." << std::endl;
         }
         return {};
     }
-    double number = std::get<double>(args[0]._value);
+    double number = args[0].as.number;
     return sqrt(number);
 }
 
@@ -412,15 +412,15 @@ static SapphireValue native_math_sqrt(int arg_count, SapphireValue* args) {
 
 
 static SapphireValue native_string_char_at(int arg_count, SapphireValue* args) {
-    if (arg_count != 2 || !is_obj_type(args[0], OBJ_STRING) || !std::holds_alternative<double>(args[1]._value)) {
+    if (arg_count != 2 || !is_obj_type(args[0], OBJ_STRING) || args[1].type != ValType::VAL_NUMBER) {
         if (!g_current_vm->soft_mode) {
             std::cerr << "Runtime Error: stringCharAt() expects a string and a number (index)." << std::endl;
         }
         return {};
     }
 
-    ObjString* str_obj = static_cast<ObjString*>(std::get<Obj*>(args[0]._value));
-    int index = static_cast<int>(std::get<double>(args[1]._value));
+    ObjString* str_obj = static_cast<ObjString*>(args[0].as.obj);
+    int index = static_cast<int>(args[1].as.number);
 
     if (index < 0 || index >= str_obj->chars.length()) {
         if (!g_current_vm->soft_mode) {
@@ -436,19 +436,19 @@ static SapphireValue native_string_length(int arg_count, SapphireValue* args) {
     if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) {
         return SapphireValue(0.0);
     }
-    ObjString* str_obj = static_cast<ObjString*>(std::get<Obj*>(args[0]._value));
+    ObjString* str_obj = static_cast<ObjString*>(args[0].as.obj);
     return SapphireValue((double)str_obj->chars.length());
 }
 
 static SapphireValue native_string_substring(int arg_count, SapphireValue* args) {
     if (arg_count != 3 || !is_obj_type(args[0], OBJ_STRING) || 
-        !std::holds_alternative<double>(args[1]._value) || 
-        !std::holds_alternative<double>(args[2]._value)) {
+        args[1].type != ValType::VAL_NUMBER || 
+        args[2].type != ValType::VAL_NUMBER) {
         return new_string(g_current_vm, "");
     }
-    ObjString* str_obj = static_cast<ObjString*>(std::get<Obj*>(args[0]._value));
-    int start = static_cast<int>(std::get<double>(args[1]._value));
-    int len = static_cast<int>(std::get<double>(args[2]._value));
+    ObjString* str_obj = static_cast<ObjString*>(args[0].as.obj);
+    int start = static_cast<int>(args[1].as.number);
+    int len = static_cast<int>(args[2].as.number);
     
     if (start < 0) start = 0;
     if (start >= str_obj->chars.length()) return new_string(g_current_vm, "");
@@ -459,13 +459,13 @@ static SapphireValue native_string_substring(int arg_count, SapphireValue* args)
 
 static SapphireValue native_string_split(int arg_count, SapphireValue* args) {
     if (arg_count != 2 || !is_obj_type(args[0], OBJ_STRING) || !is_obj_type(args[1], OBJ_STRING)) {
-        auto arr = std::make_shared<SapphireArray>();
+        auto arr = new_array(g_current_vm);
         return SapphireValue(arr);
     }
-    ObjString* str_obj = static_cast<ObjString*>(std::get<Obj*>(args[0]._value));
-    ObjString* delim_obj = static_cast<ObjString*>(std::get<Obj*>(args[1]._value));
+    ObjString* str_obj = static_cast<ObjString*>(args[0].as.obj);
+    ObjString* delim_obj = static_cast<ObjString*>(args[1].as.obj);
     
-    auto arr = std::make_shared<SapphireArray>();
+    auto arr = new_array(g_current_vm);
     std::string s = str_obj->chars;
     std::string delim = delim_obj->chars;
     
@@ -493,9 +493,9 @@ static SapphireValue native_string_replace(int arg_count, SapphireValue* args) {
         if (!g_current_vm->soft_mode) std::cerr << "Runtime Error: stringReplace expects 3 string arguments." << std::endl;
         return {};
     }
-    std::string s = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
-    std::string search = static_cast<ObjString*>(std::get<Obj*>(args[1]._value))->chars;
-    std::string replace = static_cast<ObjString*>(std::get<Obj*>(args[2]._value))->chars;
+    std::string s = static_cast<ObjString*>(args[0].as.obj)->chars;
+    std::string search = static_cast<ObjString*>(args[1].as.obj)->chars;
+    std::string replace = static_cast<ObjString*>(args[2].as.obj)->chars;
     if (search.empty()) return new_string(g_current_vm, s);
     size_t pos = 0;
     while ((pos = s.find(search, pos)) != std::string::npos) {
@@ -507,21 +507,21 @@ static SapphireValue native_string_replace(int arg_count, SapphireValue* args) {
 
 static SapphireValue native_string_to_upper(int arg_count, SapphireValue* args) {
     if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) return {};
-    std::string s = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
+    std::string s = static_cast<ObjString*>(args[0].as.obj)->chars;
     std::transform(s.begin(), s.end(), s.begin(), ::toupper);
     return new_string(g_current_vm, s);
 }
 
 static SapphireValue native_string_to_lower(int arg_count, SapphireValue* args) {
     if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) return {};
-    std::string s = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
+    std::string s = static_cast<ObjString*>(args[0].as.obj)->chars;
     std::transform(s.begin(), s.end(), s.begin(), ::tolower);
     return new_string(g_current_vm, s);
 }
 
 static SapphireValue native_string_trim(int arg_count, SapphireValue* args) {
     if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) return {};
-    std::string s = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
+    std::string s = static_cast<ObjString*>(args[0].as.obj)->chars;
     s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) { return !std::isspace(ch); }));
     s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) { return !std::isspace(ch); }).base(), s.end());
     return new_string(g_current_vm, s);
@@ -529,24 +529,24 @@ static SapphireValue native_string_trim(int arg_count, SapphireValue* args) {
 
 static SapphireValue native_string_contains(int arg_count, SapphireValue* args) {
     if (arg_count != 2 || !is_obj_type(args[0], OBJ_STRING) || !is_obj_type(args[1], OBJ_STRING)) return SapphireValue(false);
-    std::string s = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
-    std::string search = static_cast<ObjString*>(std::get<Obj*>(args[1]._value))->chars;
+    std::string s = static_cast<ObjString*>(args[0].as.obj)->chars;
+    std::string search = static_cast<ObjString*>(args[1].as.obj)->chars;
     return SapphireValue(s.find(search) != std::string::npos);
 }
 
 static std::string valueToStringC(const SapphireValue& val) {
     std::stringstream ss;
-    if (std::holds_alternative<std::monostate>(val._value)) {
+    if (val.type == ValType::VAL_NIL) {
         ss << "nil";
-    } else if (std::holds_alternative<bool>(val._value)) {
-        ss << (std::get<bool>(val._value) ? "true" : "false");
-    } else if (std::holds_alternative<double>(val._value)) {
-        double d = std::get<double>(val._value);
+    } else if (val.type == ValType::VAL_BOOL) {
+        ss << (val.as.boolean ? "true" : "false");
+    } else if (val.type == ValType::VAL_NUMBER) {
+        double d = val.as.number;
         double int_part;
         if (modf(d, &int_part) == 0.0) ss << static_cast<long long>(d);
         else ss << d;
-    } else if (std::holds_alternative<Obj*>(val._value)) {
-        Obj* obj = std::get<Obj*>(val._value);
+    } else if (val.type == ValType::VAL_OBJ) {
+        Obj* obj = val.as.obj;
         if (obj->type == OBJ_STRING) ss << static_cast<ObjString*>(obj)->chars;
         else if (obj->type == OBJ_MAP) {
             ObjMap* map = static_cast<ObjMap*>(obj);
@@ -560,8 +560,8 @@ static std::string valueToStringC(const SapphireValue& val) {
             ss << "}";
         }
         else ss << "[object]";
-    } else if (std::holds_alternative<std::shared_ptr<SapphireArray>>(val._value)) {
-        auto arr = std::get<std::shared_ptr<SapphireArray>>(val._value);
+    } else if (is_obj_type(val, OBJ_ARRAY)) {
+        auto arr = static_cast<ObjArray*>(val.as.obj);
         ss << "[";
         for (size_t i = 0; i < arr->elements.size(); ++i) {
             ss << valueToStringC(arr->elements[i]);
@@ -575,10 +575,10 @@ static std::string valueToStringC(const SapphireValue& val) {
 }
 
 static double valueToDoubleC(const SapphireValue& val) {
-    if (val._value.index() == 2) {
-        return std::get<double>(val._value);
-    } else if (val._value.index() == 3) {
-        ObjString* str = static_cast<ObjString*>(std::get<Obj*>(val._value));
+    if (val.type == ValType::VAL_NUMBER) {
+        return val.as.number;
+    } else if (val.type == ValType::VAL_OBJ) {
+        ObjString* str = static_cast<ObjString*>(val.as.obj);
         try { return std::stod(str->chars); } catch (...) { return 0.0; }
     }
     return 0.0;
@@ -715,7 +715,7 @@ static SapphireValue create_declarative_node(const std::string& type, int arg_co
     node->fields["type"] = new_string(g_current_vm, type);
     
     if (arg_count > 0 && is_obj_type(args[0], OBJ_MAP)) {
-        ObjMap* map = static_cast<ObjMap*>(std::get<Obj*>(args[0]._value));
+        ObjMap* map = static_cast<ObjMap*>(args[0].as.obj);
         for (auto& pair : map->items) {
             node->fields[pair.first] = pair.second;
         }
@@ -729,7 +729,7 @@ static SapphireValue create_declarative_node(const std::string& type, int arg_co
     // Parse all named arguments (overriding positional if specified)
     for (int i = 0; i < arg_count; i++) {
         if (is_obj_type(args[i], OBJ_NAMED_ARG)) {
-            ObjNamedArg* narg = static_cast<ObjNamedArg*>(std::get<Obj*>(args[i]._value));
+            ObjNamedArg* narg = static_cast<ObjNamedArg*>(args[i].as.obj);
             node->fields[narg->name->chars] = narg->value;
         }
     }
@@ -779,37 +779,37 @@ static SapphireValue native_ui_animate(int arg_count, SapphireValue* args) {
     if (!is_obj_type(args[0], OBJ_STRING)) { std::cout << "arg0 not string" << std::endl; return false; }
     if (!is_obj_type(args[1], OBJ_MAP)) { std::cout << "arg1 not map" << std::endl; return false; }
 
-    std::string id = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
-    ObjMap* dict = static_cast<ObjMap*>(std::get<Obj*>(args[1]._value));
+    std::string id = static_cast<ObjString*>(args[0].as.obj)->chars;
+    ObjMap* dict = static_cast<ObjMap*>(args[1].as.obj);
     std::cout << "native_ui_animate id=" << id << std::endl;
 
     Animation anim;
     anim.id = id;
-    if (dict->items.count("duration") && std::holds_alternative<double>(dict->items["duration"]._value))
-        anim.duration = (float)std::get<double>(dict->items["duration"]._value);
+    if (dict->items.count("duration") && dict->items["duration"].type == ValType::VAL_NUMBER)
+        anim.duration = (float)dict->items["duration"].as.number;
     
-    if (dict->items.count("loop") && std::holds_alternative<bool>(dict->items["loop"]._value))
-        anim.loop = std::get<bool>(dict->items["loop"]._value);
+    if (dict->items.count("loop") && dict->items["loop"].type == ValType::VAL_BOOL)
+        anim.loop = dict->items["loop"].as.boolean;
     
     if (dict->items.count("easing") && is_obj_type(dict->items["easing"], OBJ_STRING))
-        anim.easing = static_cast<ObjString*>(std::get<Obj*>(dict->items["easing"]._value))->chars;
+        anim.easing = static_cast<ObjString*>(dict->items["easing"].as.obj)->chars;
     
-    if (dict->items.count("keyframes") && std::holds_alternative<std::shared_ptr<SapphireArray>>(dict->items["keyframes"]._value)) {
-        auto kfs = std::get<std::shared_ptr<SapphireArray>>(dict->items["keyframes"]._value);
+    if (dict->items.count("keyframes") && is_obj_type(dict->items["keyframes"], OBJ_ARRAY)) {
+        auto kfs = static_cast<ObjArray*>(dict->items["keyframes"].as.obj);
         for (auto& kfVal : kfs->elements) {
             if (is_obj_type(kfVal, OBJ_MAP)) {
-                ObjMap* kfInst = static_cast<ObjMap*>(std::get<Obj*>(kfVal._value));
+                ObjMap* kfInst = static_cast<ObjMap*>(kfVal.as.obj);
                 Keyframe kf;
-                if (kfInst->items.count("time") && std::holds_alternative<double>(kfInst->items["time"]._value))
-                    kf.timeOffset = (float)std::get<double>(kfInst->items["time"]._value);
+                if (kfInst->items.count("time") && kfInst->items["time"].type == ValType::VAL_NUMBER)
+                    kf.timeOffset = (float)kfInst->items["time"].as.number;
                 
                 for (auto& [k, v] : kfInst->items) {
                     if (k == "time") continue;
-                    if (std::holds_alternative<double>(v._value)) {
-                        kf.numericProps[k] = (float)std::get<double>(v._value);
+                    if (v.type == ValType::VAL_NUMBER) {
+                        kf.numericProps[k] = (float)v.as.number;
                         std::cout << "Parsed numeric prop: " << k << " = " << kf.numericProps[k] << std::endl;
                     } else if (is_obj_type(v, OBJ_STRING)) {
-                        kf.colorProps[k] = hexToColor(static_cast<ObjString*>(std::get<Obj*>(v._value))->chars);
+                        kf.colorProps[k] = hexToColor(static_cast<ObjString*>(v.as.obj)->chars);
                         std::cout << "Parsed color prop: " << k << std::endl;
                     } else {
                         std::cout << "Keyframe value for " << k << " has unknown type." << std::endl;
@@ -817,18 +817,18 @@ static SapphireValue native_ui_animate(int arg_count, SapphireValue* args) {
                 }
                 anim.keyframes.push_back(kf);
             } else if (is_obj_type(kfVal, OBJ_INSTANCE)) {
-                ObjInstance* kfInst = static_cast<ObjInstance*>(std::get<Obj*>(kfVal._value));
+                ObjInstance* kfInst = static_cast<ObjInstance*>(kfVal.as.obj);
                 Keyframe kf;
-                if (kfInst->fields.count("time") && std::holds_alternative<double>(kfInst->fields["time"]._value))
-                    kf.timeOffset = (float)std::get<double>(kfInst->fields["time"]._value);
+                if (kfInst->fields.count("time") && kfInst->fields["time"].type == ValType::VAL_NUMBER)
+                    kf.timeOffset = (float)kfInst->fields["time"].as.number;
                 
                 for (auto& [k, v] : kfInst->fields) {
                     if (k == "time") continue;
-                    if (std::holds_alternative<double>(v._value)) {
-                        kf.numericProps[k] = (float)std::get<double>(v._value);
+                    if (v.type == ValType::VAL_NUMBER) {
+                        kf.numericProps[k] = (float)v.as.number;
                         std::cout << "Parsed numeric prop (instance): " << k << " = " << kf.numericProps[k] << std::endl;
                     } else if (is_obj_type(v, OBJ_STRING)) {
-                        kf.colorProps[k] = hexToColor(static_cast<ObjString*>(std::get<Obj*>(v._value))->chars);
+                        kf.colorProps[k] = hexToColor(static_cast<ObjString*>(v.as.obj)->chars);
                         std::cout << "Parsed color prop (instance): " << k << std::endl;
                     } else {
                         std::cout << "Keyframe instance value for " << k << " has unknown type." << std::endl;
@@ -836,7 +836,7 @@ static SapphireValue native_ui_animate(int arg_count, SapphireValue* args) {
                 }
                 anim.keyframes.push_back(kf);
             } else {
-                std::cout << "kfVal is NOT OBJ_MAP or OBJ_INSTANCE. type index: " << kfVal._value.index() << std::endl;
+                std::cout << "kfVal is NOT OBJ_MAP or OBJ_INSTANCE. type index: " << (int)kfVal.type << std::endl;
             }
         }
     }
@@ -855,7 +855,7 @@ static SapphireValue native_ui_style(int arg_count, SapphireValue* args) {
     if (arg_count == 0) return {};
     
     if (arg_count == 1 && is_obj_type(args[0], OBJ_STRING)) {
-        std::string path = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
+        std::string path = static_cast<ObjString*>(args[0].as.obj)->chars;
         std::ifstream file(path);
         if (!file.is_open()) {
             std::cerr << "[SAPPHIRE ERROR] Could not open style file: " << path << std::endl;
@@ -886,28 +886,28 @@ static SapphireValue native_ui_style(int arg_count, SapphireValue* args) {
     } else if (arg_count > 0) {
         std::string styleName = "";
         if (!is_obj_type(args[0], OBJ_NAMED_ARG) && is_obj_type(args[0], OBJ_STRING)) {
-            styleName = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
+            styleName = static_cast<ObjString*>(args[0].as.obj)->chars;
         }
         UIStyle style = g_current_vm->ui_state.defaultStyle;
         for (int i = 0; i < arg_count; i++) {
             if (is_obj_type(args[i], OBJ_NAMED_ARG)) {
-                ObjNamedArg* narg = static_cast<ObjNamedArg*>(std::get<Obj*>(args[i]._value));
+                ObjNamedArg* narg = static_cast<ObjNamedArg*>(args[i].as.obj);
                 std::string key = narg->name->chars;
-                if (key == "name" && is_obj_type(narg->value, OBJ_STRING)) styleName = static_cast<ObjString*>(std::get<Obj*>(narg->value._value))->chars;
-                else if (key == "bgColor" && is_obj_type(narg->value, OBJ_STRING)) style.bgColor = hexToColor(static_cast<ObjString*>(std::get<Obj*>(narg->value._value))->chars);
-                else if (key == "textColor" && is_obj_type(narg->value, OBJ_STRING)) style.textColor = hexToColor(static_cast<ObjString*>(std::get<Obj*>(narg->value._value))->chars);
-                else if (key == "accentColor" && is_obj_type(narg->value, OBJ_STRING)) style.accentColor = hexToColor(static_cast<ObjString*>(std::get<Obj*>(narg->value._value))->chars);
-                else if (key == "hoverColor" && is_obj_type(narg->value, OBJ_STRING)) style.hoverColor = hexToColor(static_cast<ObjString*>(std::get<Obj*>(narg->value._value))->chars);
-                else if (key == "borderColor" && is_obj_type(narg->value, OBJ_STRING)) style.borderColor = hexToColor(static_cast<ObjString*>(std::get<Obj*>(narg->value._value))->chars);
-                else if (key == "borderThickness" && std::holds_alternative<double>(narg->value._value)) style.borderThickness = (float)std::get<double>(narg->value._value);
-                else if (key == "borderRadius" && std::holds_alternative<double>(narg->value._value)) style.borderRadius = (float)std::get<double>(narg->value._value);
-                else if (key == "padding" && std::holds_alternative<double>(narg->value._value)) style.padding = (float)std::get<double>(narg->value._value);
-                else if (key == "fontAlias" && is_obj_type(narg->value, OBJ_STRING)) style.fontAlias = static_cast<ObjString*>(std::get<Obj*>(narg->value._value))->chars;
-                else if (key == "fontSize" && std::holds_alternative<double>(narg->value._value)) style.fontSize = (unsigned int)std::get<double>(narg->value._value);
-                else if (key == "width" && std::holds_alternative<double>(narg->value._value)) style.width = (float)std::get<double>(narg->value._value);
-                else if (key == "height" && std::holds_alternative<double>(narg->value._value)) style.height = (float)std::get<double>(narg->value._value);
-                else if (key == "margin" && std::holds_alternative<double>(narg->value._value)) style.margin = (float)std::get<double>(narg->value._value);
-                else if (key == "thickness" && std::holds_alternative<double>(narg->value._value)) style.thickness = (float)std::get<double>(narg->value._value);
+                if (key == "name" && is_obj_type(narg->value, OBJ_STRING)) styleName = static_cast<ObjString*>(narg->value.as.obj)->chars;
+                else if (key == "bgColor" && is_obj_type(narg->value, OBJ_STRING)) style.bgColor = hexToColor(static_cast<ObjString*>(narg->value.as.obj)->chars);
+                else if (key == "textColor" && is_obj_type(narg->value, OBJ_STRING)) style.textColor = hexToColor(static_cast<ObjString*>(narg->value.as.obj)->chars);
+                else if (key == "accentColor" && is_obj_type(narg->value, OBJ_STRING)) style.accentColor = hexToColor(static_cast<ObjString*>(narg->value.as.obj)->chars);
+                else if (key == "hoverColor" && is_obj_type(narg->value, OBJ_STRING)) style.hoverColor = hexToColor(static_cast<ObjString*>(narg->value.as.obj)->chars);
+                else if (key == "borderColor" && is_obj_type(narg->value, OBJ_STRING)) style.borderColor = hexToColor(static_cast<ObjString*>(narg->value.as.obj)->chars);
+                else if (key == "borderThickness" && narg->value.type == ValType::VAL_NUMBER) style.borderThickness = (float)narg->value.as.number;
+                else if (key == "borderRadius" && narg->value.type == ValType::VAL_NUMBER) style.borderRadius = (float)narg->value.as.number;
+                else if (key == "padding" && narg->value.type == ValType::VAL_NUMBER) style.padding = (float)narg->value.as.number;
+                else if (key == "fontAlias" && is_obj_type(narg->value, OBJ_STRING)) style.fontAlias = static_cast<ObjString*>(narg->value.as.obj)->chars;
+                else if (key == "fontSize" && narg->value.type == ValType::VAL_NUMBER) style.fontSize = (unsigned int)narg->value.as.number;
+                else if (key == "width" && narg->value.type == ValType::VAL_NUMBER) style.width = (float)narg->value.as.number;
+                else if (key == "height" && narg->value.type == ValType::VAL_NUMBER) style.height = (float)narg->value.as.number;
+                else if (key == "margin" && narg->value.type == ValType::VAL_NUMBER) style.margin = (float)narg->value.as.number;
+                else if (key == "thickness" && narg->value.type == ValType::VAL_NUMBER) style.thickness = (float)narg->value.as.number;
             }
         }
         if (!styleName.empty()) {
@@ -1414,7 +1414,7 @@ static std::shared_ptr<UINode> build_ui_tree(ObjInstance* nodeDict, int& counter
     
     auto typeVal = nodeDict->fields["type"];
     if (!is_obj_type(typeVal, OBJ_STRING)) return nullptr;
-    std::string typeStr = static_cast<ObjString*>(std::get<Obj*>(typeVal._value))->chars;
+    std::string typeStr = static_cast<ObjString*>(typeVal.as.obj)->chars;
     
     UINodeType type = UINodeType::Container;
     if (typeStr == "Button") type = UINodeType::Button;
@@ -1449,7 +1449,7 @@ static std::shared_ptr<UINode> build_ui_tree(ObjInstance* nodeDict, int& counter
     
     std::string id = typeStr + "_" + std::to_string(counter++);
     if (nodeDict->fields.count("id") && is_obj_type(nodeDict->fields["id"], OBJ_STRING)) {
-        id = static_cast<ObjString*>(std::get<Obj*>(nodeDict->fields["id"]._value))->chars;
+        id = static_cast<ObjString*>(nodeDict->fields["id"].as.obj)->chars;
     }
     
 #ifdef DEBUG_PRINT_CODE
@@ -1457,13 +1457,13 @@ static std::shared_ptr<UINode> build_ui_tree(ObjInstance* nodeDict, int& counter
     if (nodeDict->fields.count("text")) {
         std::cout << " text_present=true";
         if (is_obj_type(nodeDict->fields["text"], OBJ_STRING)) {
-            std::cout << " text_val=" << static_cast<ObjString*>(std::get<Obj*>(nodeDict->fields["text"]._value))->chars;
+            std::cout << " text_val=" << static_cast<ObjString*>(nodeDict->fields["text"].as.obj)->chars;
         }
     }
     if (nodeDict->fields.count("label")) {
         std::cout << " label_present=true";
         if (is_obj_type(nodeDict->fields["label"], OBJ_STRING)) {
-            std::cout << " label_val=" << static_cast<ObjString*>(std::get<Obj*>(nodeDict->fields["label"]._value))->chars;
+            std::cout << " label_val=" << static_cast<ObjString*>(nodeDict->fields["label"].as.obj)->chars;
         }
     }
     std::cout << std::endl;
@@ -1473,18 +1473,18 @@ static std::shared_ptr<UINode> build_ui_tree(ObjInstance* nodeDict, int& counter
     
     auto get_str = [&](const std::string& key, std::string& out) {
         if (nodeDict->fields.count(key) && is_obj_type(nodeDict->fields[key], OBJ_STRING)) {
-            out = static_cast<ObjString*>(std::get<Obj*>(nodeDict->fields[key]._value))->chars;
+            out = static_cast<ObjString*>(nodeDict->fields[key].as.obj)->chars;
         }
     };
     auto get_num = [&](const std::string& key, float& out) {
-        if (nodeDict->fields.count(key) && std::holds_alternative<double>(nodeDict->fields[key]._value)) {
-            out = (float)std::get<double>(nodeDict->fields[key]._value);
+        if (nodeDict->fields.count(key) && nodeDict->fields[key].type == ValType::VAL_NUMBER) {
+            out = (float)nodeDict->fields[key].as.number;
         }
     };
     
     auto get_bool = [&](const std::string& key, bool& out) {
-        if (nodeDict->fields.count(key) && std::holds_alternative<bool>(nodeDict->fields[key]._value)) {
-            out = std::get<bool>(nodeDict->fields[key]._value);
+        if (nodeDict->fields.count(key) && nodeDict->fields[key].type == ValType::VAL_BOOL) {
+            out = nodeDict->fields[key].as.boolean;
         }
     };
     
@@ -1542,11 +1542,11 @@ static std::shared_ptr<UINode> build_ui_tree(ObjInstance* nodeDict, int& counter
     get_num("right", node->right);
     get_num("bottom", node->bottom);
 
-    if (nodeDict->fields.count("options") && std::holds_alternative<std::shared_ptr<SapphireArray>>(nodeDict->fields["options"]._value)) {
-        auto arr = std::get<std::shared_ptr<SapphireArray>>(nodeDict->fields["options"]._value);
+    if (nodeDict->fields.count("options") && is_obj_type(nodeDict->fields["options"], OBJ_ARRAY)) {
+        auto arr = static_cast<ObjArray*>(nodeDict->fields["options"].as.obj);
         for (auto& val : arr->elements) {
             if (is_obj_type(val, OBJ_STRING)) {
-                node->options.push_back(static_cast<ObjString*>(std::get<Obj*>(val._value))->chars);
+                node->options.push_back(static_cast<ObjString*>(val.as.obj)->chars);
             }
         }
     }
@@ -1582,22 +1582,22 @@ static std::shared_ptr<UINode> build_ui_tree(ObjInstance* nodeDict, int& counter
             // This handles: initial value, Browse button updates, programmatic changes.
             const std::string& scriptVal = node->label;
             if (g_current_vm->ui_state.inputTexts[id] != scriptVal) {
-                // Value changed externally — accept it and move cursor to end
+                // Value changed externally â€” accept it and move cursor to end
                 g_current_vm->ui_state.cursorPositions[id] = scriptVal.size();
             }
             g_current_vm->ui_state.inputTexts[id] = scriptVal;
         }
-        // When focused, C++ owns the state — ignore text= from script completely.
+        // When focused, C++ owns the state â€” ignore text= from script completely.
         node->label = g_current_vm->ui_state.inputTexts[id];
     }
     
     if (nodeDict->fields.count("children")) {
         auto childrenVal = nodeDict->fields["children"];
-        if (std::holds_alternative<std::shared_ptr<SapphireArray>>(childrenVal._value)) {
-            auto arr = std::get<std::shared_ptr<SapphireArray>>(childrenVal._value);
+        if (is_obj_type(childrenVal, OBJ_ARRAY)) {
+            auto arr = static_cast<ObjArray*>(childrenVal.as.obj);
             for (auto& childVal : arr->elements) {
                 if (is_obj_type(childVal, OBJ_INSTANCE)) {
-                    auto childNode = build_ui_tree(static_cast<ObjInstance*>(std::get<Obj*>(childVal._value)), counter);
+                    auto childNode = build_ui_tree(static_cast<ObjInstance*>(childVal.as.obj), counter);
                     if (childNode) {
                         childNode->parent = node.get();
                         node->children.push_back(childNode);
@@ -1748,7 +1748,7 @@ static void apply_animations_to_tree(std::shared_ptr<UINode> node, float dt) {
 
 static SapphireValue native_ui_get_input_text(int arg_count, SapphireValue* args) {
     if (arg_count == 1 && is_obj_type(args[0], OBJ_STRING)) {
-        std::string id = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
+        std::string id = static_cast<ObjString*>(args[0].as.obj)->chars;
         if (g_current_vm->ui_state.inputTexts.count(id)) {
             return new_string(g_current_vm, g_current_vm->ui_state.inputTexts[id]);
         }
@@ -1819,7 +1819,7 @@ static SapphireValue native_ui_render(int arg_count, SapphireValue* args) {
 
     g_current_vm->ui_state.clickHandlers.clear();
     int counter = 0;
-    auto rootNode = build_ui_tree(static_cast<ObjInstance*>(std::get<Obj*>(args[0]._value)), counter);
+    auto rootNode = build_ui_tree(static_cast<ObjInstance*>(args[0].as.obj), counter);
     g_current_vm->ui_state.rootNode = rootNode;
 
     auto now = std::chrono::steady_clock::now();
@@ -1885,11 +1885,11 @@ static SapphireValue native_len(int arg_count, SapphireValue* args) {
     SapphireValue value = args[0];
 
     if (is_obj_type(value, OBJ_STRING)) {
-        ObjString* str = static_cast<ObjString*>(std::get<Obj*>(value._value));
+        ObjString* str = static_cast<ObjString*>(value.as.obj);
         return (double)str->chars.length();
     }
-    else if (std::holds_alternative<std::shared_ptr<SapphireArray>>(value._value)) {
-        auto array_obj = std::get<std::shared_ptr<SapphireArray>>(value._value);
+    else if (is_obj_type(value, OBJ_ARRAY)) {
+        auto array_obj = static_cast<ObjArray*>(value.as.obj);
         return (double)array_obj->elements.size();
     }
 
@@ -1907,7 +1907,7 @@ static SapphireValue native_http_get(int arg_count, SapphireValue* args) {
         return {};
     }
 
-    ObjString* url_obj = static_cast<ObjString*>(std::get<Obj*>(args[0]._value));
+    ObjString* url_obj = static_cast<ObjString*>(args[0].as.obj);
     std::string url_str = url_obj->chars;
     std::string host, path;
 
@@ -1944,7 +1944,7 @@ static SapphireValue native_http_get(int arg_count, SapphireValue* args) {
 static SapphireValue native_http_ping(int arg_count, SapphireValue* args) {
     if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) return false;
 
-    std::string url_str = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
+    std::string url_str = static_cast<ObjString*>(args[0].as.obj)->chars;
 
     try {
         httplib::Client cli(url_str.c_str());
@@ -1960,10 +1960,10 @@ static SapphireValue native_http_ping(int arg_count, SapphireValue* args) {
 static SapphireValue native_http_post(int arg_count, SapphireValue* args) {
     if (arg_count < 2 || !is_obj_type(args[0], OBJ_STRING) || !is_obj_type(args[1], OBJ_STRING)) return {};
 
-    std::string url_str = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
-    std::string body = static_cast<ObjString*>(std::get<Obj*>(args[1]._value))->chars;
+    std::string url_str = static_cast<ObjString*>(args[0].as.obj)->chars;
+    std::string body = static_cast<ObjString*>(args[1].as.obj)->chars;
     std::string content_type = (arg_count == 3 && is_obj_type(args[2], OBJ_STRING))
-                               ? static_cast<ObjString*>(std::get<Obj*>(args[2]._value))->chars
+                               ? static_cast<ObjString*>(args[2].as.obj)->chars
                                : "application/json";
 
     try {
@@ -1979,8 +1979,8 @@ static SapphireValue native_http_post(int arg_count, SapphireValue* args) {
 static SapphireValue native_http_download(int arg_count, SapphireValue* args) {
     if (arg_count != 2 || !is_obj_type(args[0], OBJ_STRING) || !is_obj_type(args[1], OBJ_STRING)) return false;
 
-    std::string url_str = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
-    std::string path = static_cast<ObjString*>(std::get<Obj*>(args[1]._value))->chars;
+    std::string url_str = static_cast<ObjString*>(args[0].as.obj)->chars;
+    std::string path = static_cast<ObjString*>(args[1].as.obj)->chars;
 
     try {
         httplib::Client cli(url_str.c_str());
@@ -1998,12 +1998,12 @@ static SapphireValue native_http_download(int arg_count, SapphireValue* args) {
 }
 
 static SapphireValue native_http_serve(int arg_count, SapphireValue* args) {
-    if (arg_count != 2 || !std::holds_alternative<double>(args[0]._value) || !std::holds_alternative<Obj*>(args[1]._value)) {
+    if (arg_count != 2 || args[0].type != ValType::VAL_NUMBER || args[1].type != ValType::VAL_OBJ) {
         if (!g_current_vm->soft_mode) std::cerr << "Runtime Error: httpServer() expects a number and a function/closure." << std::endl;
         return false;
     }
     
-    int port = (int)std::get<double>(args[0]._value);
+    int port = (int)args[0].as.number;
     SapphireValue callback = args[1];
     
     httplib::Server svr;
@@ -2028,31 +2028,31 @@ static SapphireValue native_http_serve(int arg_count, SapphireValue* args) {
             if (g_current_vm->run(target_frame_count)) {
                 SapphireValue result = g_current_vm->pop();
                 if (is_obj_type(result, OBJ_STRING)) {
-                    res.set_content(static_cast<ObjString*>(std::get<Obj*>(result._value))->chars, "text/plain");
+                    res.set_content(static_cast<ObjString*>(result.as.obj)->chars, "text/plain");
                 } else if (is_obj_type(result, OBJ_MAP)) {
-                    ObjMap* map_res = static_cast<ObjMap*>(std::get<Obj*>(result._value));
+                    ObjMap* map_res = static_cast<ObjMap*>(result.as.obj);
                     std::string body = "";
                     std::string ctype = "text/plain";
                     if (map_res->items.count("body")) {
                         if (is_obj_type(map_res->items["body"], OBJ_STRING)) {
-                            body = static_cast<ObjString*>(std::get<Obj*>(map_res->items["body"]._value))->chars;
+                            body = static_cast<ObjString*>(map_res->items["body"].as.obj)->chars;
                         }
                     }
                     if (map_res->items.count("status")) {
-                        res.status = (int)std::get<double>(map_res->items["status"]._value);
+                        res.status = (int)map_res->items["status"].as.number;
                     }
                     if (map_res->items.count("contentType")) {
                         if (is_obj_type(map_res->items["contentType"], OBJ_STRING)) {
-                            ctype = static_cast<ObjString*>(std::get<Obj*>(map_res->items["contentType"]._value))->chars;
+                            ctype = static_cast<ObjString*>(map_res->items["contentType"].as.obj)->chars;
                         }
                     }
                     
                     if (map_res->items.count("headers")) {
                         if (is_obj_type(map_res->items["headers"], OBJ_MAP)) {
-                            ObjMap* headers_map = static_cast<ObjMap*>(std::get<Obj*>(map_res->items["headers"]._value));
+                            ObjMap* headers_map = static_cast<ObjMap*>(map_res->items["headers"].as.obj);
                             for (auto const& [key, val] : headers_map->items) {
                                 if (is_obj_type(val, OBJ_STRING)) {
-                                    std::string header_val = static_cast<ObjString*>(std::get<Obj*>(val._value))->chars;
+                                    std::string header_val = static_cast<ObjString*>(val.as.obj)->chars;
                                     res.set_header(key, header_val);
                                 }
                             }
@@ -2087,7 +2087,7 @@ static SapphireValue native_json_parse(int arg_count, SapphireValue* args) {
         return {};
     }
 
-    ObjString* json_string_obj = static_cast<ObjString*>(std::get<Obj*>(args[0]._value));
+    ObjString* json_string_obj = static_cast<ObjString*>(args[0].as.obj);
     const std::string& json_string = json_string_obj->chars;
 
     try {
@@ -2102,21 +2102,21 @@ static SapphireValue native_json_parse(int arg_count, SapphireValue* args) {
 }
 
 static nlohmann::json convertSapphireToJson(SapphireValue val) {
-    if (std::holds_alternative<double>(val._value)) {
-        return std::get<double>(val._value);
-    } else if (std::holds_alternative<bool>(val._value)) {
-        return std::get<bool>(val._value);
-    } else if (std::holds_alternative<std::monostate>(val._value)) {
+    if (val.type == ValType::VAL_NUMBER) {
+        return val.as.number;
+    } else if (val.type == ValType::VAL_BOOL) {
+        return val.as.boolean;
+    } else if (val.type == ValType::VAL_NIL) {
         return nullptr;
-    } else if (std::holds_alternative<std::shared_ptr<SapphireArray>>(val._value)) {
-        auto arr = std::get<std::shared_ptr<SapphireArray>>(val._value);
+    } else if (is_obj_type(val, OBJ_ARRAY)) {
+        auto arr = static_cast<ObjArray*>(val.as.obj);
         nlohmann::json j = nlohmann::json::array();
         for (const auto& elem : arr->elements) {
             j.push_back(convertSapphireToJson(elem));
         }
         return j;
-    } else if (std::holds_alternative<Obj*>(val._value)) {
-        Obj* obj = std::get<Obj*>(val._value);
+    } else if (val.type == ValType::VAL_OBJ) {
+        Obj* obj = val.as.obj;
         if (obj->type == OBJ_STRING) {
             return static_cast<ObjString*>(obj)->chars;
         } else if (obj->type == OBJ_MAP) {
@@ -2157,7 +2157,7 @@ static SapphireValue core_create_instance(int arg_count, SapphireValue* args) {
         return {};
     }
 
-    ObjString* class_name_obj = static_cast<ObjString*>(std::get<Obj*>(args[0]._value));
+    ObjString* class_name_obj = static_cast<ObjString*>(args[0].as.obj);
     std::string class_name = class_name_obj->chars;
 
     auto it = g_current_vm->globals.find(class_name);
@@ -2170,14 +2170,14 @@ static SapphireValue core_create_instance(int arg_count, SapphireValue* args) {
 
     SapphireValue class_value = it->second;
 
-    if (!std::holds_alternative<Obj*>(class_value._value) || std::get<Obj*>(class_value._value)->type != OBJ_CLASS) {
+    if (class_value.type != ValType::VAL_OBJ || class_value.as.obj->type != OBJ_CLASS) {
         if (!g_current_vm->soft_mode) {
             std::cerr << "Runtime Error: Global variable '" << class_name << "' is not a class." << std::endl;
         }
         return {};
     }
 
-    ObjClass* klass = static_cast<ObjClass*>(std::get<Obj*>(class_value._value));
+    ObjClass* klass = static_cast<ObjClass*>(class_value.as.obj);
     ObjInstance* instance = new_instance(g_current_vm, klass);
     return instance;
 }
@@ -2189,30 +2189,30 @@ static SapphireValue native_list_util_create(int arg_count, SapphireValue* args)
         }
         return {};
     }
-    return std::make_shared<SapphireArray>();
+    return new_array(g_current_vm);
 }
 
 static SapphireValue native_list_util_append(int arg_count, SapphireValue* args) {
-    if (arg_count != 2 || !std::holds_alternative<std::shared_ptr<SapphireArray>>(args[0]._value)) {
+    if (arg_count != 2 || !is_obj_type(args[0], OBJ_ARRAY)) {
         if (!g_current_vm->soft_mode) {
             std::cerr << "Runtime Error: ListUtil.append() expects a list and a value." << std::endl;
         }
         return {};
     }
-    auto list_obj = std::get<std::shared_ptr<SapphireArray>>(args[0]._value);
+    auto list_obj = static_cast<ObjArray*>(args[0].as.obj);
     list_obj->elements.push_back(args[1]);
     return args[0];
 }
 
 static SapphireValue native_list_util_get(int arg_count, SapphireValue* args) {
-    if (arg_count != 2 || !std::holds_alternative<std::shared_ptr<SapphireArray>>(args[0]._value) || !std::holds_alternative<double>(args[1]._value)) {
+    if (arg_count != 2 || !is_obj_type(args[0], OBJ_ARRAY) || args[1].type != ValType::VAL_NUMBER) {
         if (!g_current_vm->soft_mode) {
             std::cerr << "Runtime Error: ListUtil.get() expects a list and an index (number)." << std::endl;
         }
         return {};
     }
-    auto list_obj = std::get<std::shared_ptr<SapphireArray>>(args[0]._value);
-    int index = static_cast<int>(std::get<double>(args[1]._value));
+    auto list_obj = static_cast<ObjArray*>(args[0].as.obj);
+    int index = static_cast<int>(args[1].as.number);
 
     if (index < 0 || index >= list_obj->elements.size()) {
         if (!g_current_vm->soft_mode) {
@@ -2224,14 +2224,14 @@ static SapphireValue native_list_util_get(int arg_count, SapphireValue* args) {
 }
 
 static SapphireValue native_list_util_set(int arg_count, SapphireValue* args) {
-    if (arg_count != 3 || !std::holds_alternative<std::shared_ptr<SapphireArray>>(args[0]._value) || !std::holds_alternative<double>(args[1]._value)) {
+    if (arg_count != 3 || !is_obj_type(args[0], OBJ_ARRAY) || args[1].type != ValType::VAL_NUMBER) {
         if (!g_current_vm->soft_mode) {
             std::cerr << "Runtime Error: ListUtil.set() expects a list, an index (number), and a value." << std::endl;
         }
         return {};
     }
-    auto list_obj = std::get<std::shared_ptr<SapphireArray>>(args[0]._value);
-    int index = static_cast<int>(std::get<double>(args[1]._value));
+    auto list_obj = static_cast<ObjArray*>(args[0].as.obj);
+    int index = static_cast<int>(args[1].as.number);
     SapphireValue new_value = args[2];
 
     if (index < 0 || index >= list_obj->elements.size()) {
@@ -2245,25 +2245,25 @@ static SapphireValue native_list_util_set(int arg_count, SapphireValue* args) {
 }
 
 static SapphireValue native_list_util_length(int arg_count, SapphireValue* args) {
-    if (arg_count != 1 || !std::holds_alternative<std::shared_ptr<SapphireArray>>(args[0]._value)) {
+    if (arg_count != 1 || !is_obj_type(args[0], OBJ_ARRAY)) {
         if (!g_current_vm->soft_mode) {
             std::cerr << "Runtime Error: ListUtil.length() expects 1 list argument." << std::endl;
         }
         return 0.0;
     }
-    auto list_obj = std::get<std::shared_ptr<SapphireArray>>(args[0]._value);
+    auto list_obj = static_cast<ObjArray*>(args[0].as.obj);
     return (double)list_obj->elements.size();
 }
 
 static SapphireValue native_list_util_remove_at(int arg_count, SapphireValue* args) {
-    if (arg_count != 2 || !std::holds_alternative<std::shared_ptr<SapphireArray>>(args[0]._value) || !std::holds_alternative<double>(args[1]._value)) {
+    if (arg_count != 2 || !is_obj_type(args[0], OBJ_ARRAY) || args[1].type != ValType::VAL_NUMBER) {
         if (!g_current_vm->soft_mode) {
             std::cerr << "Runtime Error: ListUtil.removeAt() expects a list and an index (number)." << std::endl;
         }
         return {};
     }
-    auto list_obj = std::get<std::shared_ptr<SapphireArray>>(args[0]._value);
-    int index = static_cast<int>(std::get<double>(args[1]._value));
+    auto list_obj = static_cast<ObjArray*>(args[0].as.obj);
+    int index = static_cast<int>(args[1].as.number);
 
     if (index < 0 || index >= list_obj->elements.size()) {
         if (!g_current_vm->soft_mode) {
@@ -2278,17 +2278,17 @@ static SapphireValue native_list_util_remove_at(int arg_count, SapphireValue* ar
 }
 
 static SapphireValue native_list_util_contains(int arg_count, SapphireValue* args) {
-    if (arg_count != 2 || !std::holds_alternative<std::shared_ptr<SapphireArray>>(args[0]._value)) {
+    if (arg_count != 2 || !is_obj_type(args[0], OBJ_ARRAY)) {
         if (!g_current_vm->soft_mode) {
             std::cerr << "Runtime Error: ListUtil.contains() expects a list and a value." << std::endl;
         }
         return false;
     }
-    auto list_obj = std::get<std::shared_ptr<SapphireArray>>(args[0]._value);
+    auto list_obj = static_cast<ObjArray*>(args[0].as.obj);
     SapphireValue value_to_find = args[1];
 
     for (const auto& element : list_obj->elements) {
-        if (element._value == value_to_find._value) {
+        if (values_equal(element, value_to_find)) {
             return true;
         }
     }
@@ -2307,22 +2307,22 @@ static SapphireValue native_math_rand(int arg_count, SapphireValue* args) {
     double max_val = 1.0;
 
     if (arg_count == 1) {
-        if (!std::holds_alternative<double>(args[0]._value)) {
+        if (args[0].type != ValType::VAL_NUMBER) {
             if (!g_current_vm->soft_mode) {
                 std::cerr << "Runtime Error: Math.rand(max) expects a number for max value." << std::endl;
             }
             return {};
         }
-        max_val = std::get<double>(args[0]._value);
+        max_val = args[0].as.number;
     } else if (arg_count == 2) {
-        if (!std::holds_alternative<double>(args[0]._value) || !std::holds_alternative<double>(args[1]._value)) {
+        if (args[0].type != ValType::VAL_NUMBER || args[1].type != ValType::VAL_NUMBER) {
             if (!g_current_vm->soft_mode) {
                 std::cerr << "Runtime Error: Math.rand(min, max) expects numbers for min and max values." << std::endl;
             }
             return {};
         }
-        min_val = std::get<double>(args[0]._value);
-        max_val = std::get<double>(args[1]._value);
+        min_val = args[0].as.number;
+        max_val = args[1].as.number;
     }
 
     if (min_val > max_val) {
@@ -2337,7 +2337,7 @@ static SapphireValue native_string_to_double(int arg_count, SapphireValue* args)
     if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) {
         return 0.0;
     }
-    ObjString* str = static_cast<ObjString*>(std::get<Obj*>(args[0]._value));
+    ObjString* str = static_cast<ObjString*>(args[0].as.obj);
     try {
         return std::stod(str->chars);
     } catch (const std::exception&) {
@@ -2350,7 +2350,7 @@ static SapphireValue native_evaluate(int arg_count, SapphireValue* args) {
         return new_string(g_current_vm, "Error");
     }
 
-    ObjString* source_string = static_cast<ObjString*>(std::get<Obj*>(args[0]._value));
+    ObjString* source_string = static_cast<ObjString*>(args[0].as.obj);
     std::string source_to_run = source_string->chars;
 
     VM* previous_vm = g_current_vm;
@@ -2363,14 +2363,14 @@ static SapphireValue native_evaluate(int arg_count, SapphireValue* args) {
     SapphireValue result = temp_vm.interpret(source_to_run);
     g_current_vm = previous_vm;
 
-    if (std::holds_alternative<std::monostate>(result._value)) {
+    if (result.type == ValType::VAL_NIL) {
         return new_string(g_current_vm, "Error");
     }
-    else if (std::holds_alternative<bool>(result._value)) {
-        return new_string(g_current_vm, std::get<bool>(result._value) ? "true" : "false");
+    else if (result.type == ValType::VAL_BOOL) {
+        return new_string(g_current_vm, result.as.boolean ? "true" : "false");
     }
-    else if (std::holds_alternative<double>(result._value)) {
-        double num = std::get<double>(result._value);
+    else if (result.type == ValType::VAL_NUMBER) {
+        double num = result.as.number;
         std::string s = std::to_string(num);
         s.erase(s.find_last_not_of('0') + 1, std::string::npos);
         if (s.back() == '.') {
@@ -2379,7 +2379,7 @@ static SapphireValue native_evaluate(int arg_count, SapphireValue* args) {
         return new_string(g_current_vm, s);
     }
     else if (is_obj_type(result, OBJ_STRING)) {
-        ObjString* str_obj = static_cast<ObjString*>(std::get<Obj*>(result._value));
+        ObjString* str_obj = static_cast<ObjString*>(result.as.obj);
         return new_string(g_current_vm, str_obj->chars);
     }
 
@@ -2389,10 +2389,10 @@ static SapphireValue native_evaluate(int arg_count, SapphireValue* args) {
 
 
 static SapphireValue native_system_sleep(int arg_count, SapphireValue* args) {
-    if (arg_count != 1 || !std::holds_alternative<double>(args[0]._value)) {
+    if (arg_count != 1 || args[0].type != ValType::VAL_NUMBER) {
         return {};
     }
-    int ms = static_cast<int>(std::get<double>(args[0]._value));
+    int ms = static_cast<int>(args[0].as.number);
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
     return {};
 }
@@ -2404,7 +2404,7 @@ static SapphireValue native_system_exec(int arg_count, SapphireValue* args) {
         }
         return {};
     }
-    std::string command = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
+    std::string command = static_cast<ObjString*>(args[0].as.obj)->chars;
     int result = std::system(command.c_str());
     return (double)result;
 }
@@ -2426,7 +2426,7 @@ static SapphireValue native_system_get_env(int arg_count, SapphireValue* args) {
         return {};
     }
 
-    std::string var_name = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
+    std::string var_name = static_cast<ObjString*>(args[0].as.obj)->chars;
     const char* env_value = std::getenv(var_name.c_str());
 
     if (env_value) {
@@ -2467,33 +2467,33 @@ static SapphireValue native_debug_dump_globals(int arg_count, SapphireValue* arg
 }
 
 static SapphireValue native_math_abs(int arg_count, SapphireValue* args) {
-    if (arg_count < 1 || !std::holds_alternative<double>(args[0]._value)) return 0.0;
-    return std::abs(std::get<double>(args[0]._value));
+    if (arg_count < 1 || args[0].type != ValType::VAL_NUMBER) return 0.0;
+    return std::abs(args[0].as.number);
 }
 
 static SapphireValue native_math_floor(int arg_count, SapphireValue* args) {
-    if (arg_count < 1 || !std::holds_alternative<double>(args[0]._value)) return 0.0;
-    return std::floor(std::get<double>(args[0]._value));
+    if (arg_count < 1 || args[0].type != ValType::VAL_NUMBER) return 0.0;
+    return std::floor(args[0].as.number);
 }
 
 static SapphireValue native_math_ceil(int arg_count, SapphireValue* args) {
-    if (arg_count < 1 || !std::holds_alternative<double>(args[0]._value)) return 0.0;
-    return std::ceil(std::get<double>(args[0]._value));
+    if (arg_count < 1 || args[0].type != ValType::VAL_NUMBER) return 0.0;
+    return std::ceil(args[0].as.number);
 }
 
 static SapphireValue native_math_sin(int arg_count, SapphireValue* args) {
-    if (arg_count < 1 || !std::holds_alternative<double>(args[0]._value)) return 0.0;
-    return std::sin(std::get<double>(args[0]._value));
+    if (arg_count < 1 || args[0].type != ValType::VAL_NUMBER) return 0.0;
+    return std::sin(args[0].as.number);
 }
 
 static SapphireValue native_math_cos(int arg_count, SapphireValue* args) {
-    if (arg_count < 1 || !std::holds_alternative<double>(args[0]._value)) return 0.0;
-    return std::cos(std::get<double>(args[0]._value));
+    if (arg_count < 1 || args[0].type != ValType::VAL_NUMBER) return 0.0;
+    return std::cos(args[0].as.number);
 }
 
 static SapphireValue native_math_log(int arg_count, SapphireValue* args) {
-    if (arg_count < 1 || !std::holds_alternative<double>(args[0]._value)) return 0.0;
-    return std::log(std::get<double>(args[0]._value));
+    if (arg_count < 1 || args[0].type != ValType::VAL_NUMBER) return 0.0;
+    return std::log(args[0].as.number);
 }
 
 static SapphireValue native_get_quote(int arg_count, SapphireValue* args) {
@@ -2502,48 +2502,48 @@ static SapphireValue native_get_quote(int arg_count, SapphireValue* args) {
 
 static SapphireValue native_math_pow(int arg_count, SapphireValue* args) {
     if (arg_count < 2) return 0.0;
-    return std::pow(std::get<double>(args[0]._value), std::get<double>(args[1]._value));
+    return std::pow(args[0].as.number, args[1].as.number);
 }
 
 static SapphireValue native_math_min(int arg_count, SapphireValue* args) {
     if (arg_count < 2) return args[0];
-    double a = std::get<double>(args[0]._value);
-    double b = std::get<double>(args[1]._value);
+    double a = args[0].as.number;
+    double b = args[1].as.number;
     return std::min(a, b);
 }
 
 static SapphireValue native_math_max(int arg_count, SapphireValue* args) {
     if (arg_count < 2) return args[0];
-    double a = std::get<double>(args[0]._value);
-    double b = std::get<double>(args[1]._value);
+    double a = args[0].as.number;
+    double b = args[1].as.number;
     return std::max(a, b);
 }
 
 static SapphireValue native_math_clamp(int arg_count, SapphireValue* args) {
     if (arg_count < 3) return args[0];
-    double v = std::get<double>(args[0]._value);
-    double lo = std::get<double>(args[1]._value);
-    double hi = std::get<double>(args[2]._value);
+    double v = args[0].as.number;
+    double lo = args[1].as.number;
+    double hi = args[2].as.number;
     return std::clamp(v, lo, hi);
 }
 
 static SapphireValue native_math_lerp(int arg_count, SapphireValue* args) {
     if (arg_count < 3) return args[0];
-    double a = std::get<double>(args[0]._value);
-    double b = std::get<double>(args[1]._value);
-    double t = std::get<double>(args[2]._value);
+    double a = args[0].as.number;
+    double b = args[1].as.number;
+    double t = args[2].as.number;
     return a + t * (b - a);
 }
 
 static SapphireValue native_color_hex_to_rgb(int arg_count, SapphireValue* args) {
     if (arg_count < 1 || !is_obj_type(args[0], OBJ_STRING)) return {};
 
-    std::string hex = static_cast<ObjString*>(std::get<Obj*>(args[0]._value))->chars;
+    std::string hex = static_cast<ObjString*>(args[0].as.obj)->chars;
     if (hex[0] == '#') hex.erase(0, 1);
     if (hex.length() != 6) return {};
 
     uint32_t value = std::stoul(hex, nullptr, 16);
-    auto array_obj = std::make_shared<SapphireArray>();
+    auto array_obj = new_array(g_current_vm);
     array_obj->elements.push_back((double)((value >> 16) & 0xFF)); // R
     array_obj->elements.push_back((double)((value >> 8) & 0xFF));  // G
     array_obj->elements.push_back((double)(value & 0xFF));         // B
@@ -2553,14 +2553,14 @@ static SapphireValue native_color_hex_to_rgb(int arg_count, SapphireValue* args)
 
 static SapphireValue native_check_collision(int arg_count, SapphireValue* args) {
     if (arg_count < 8) return false;
-    double x1 = std::get<double>(args[0]._value);
-    double y1 = std::get<double>(args[1]._value);
-    double w1 = std::get<double>(args[2]._value);
-    double h1 = std::get<double>(args[3]._value);
-    double x2 = std::get<double>(args[4]._value);
-    double y2 = std::get<double>(args[5]._value);
-    double w2 = std::get<double>(args[6]._value);
-    double h2 = std::get<double>(args[7]._value);
+    double x1 = args[0].as.number;
+    double y1 = args[1].as.number;
+    double w1 = args[2].as.number;
+    double h1 = args[3].as.number;
+    double x2 = args[4].as.number;
+    double y2 = args[5].as.number;
+    double w2 = args[6].as.number;
+    double h2 = args[7].as.number;
 
     return (x1 < x2 + w2 && x1 + w1 > x2 && y1 < y2 + h2 && y1 + h1 > y2);
 }
@@ -3063,18 +3063,18 @@ bool VM::call(ObjFunction* function, int arg_count) {
 }
 
 bool VM::call_value(SapphireValue callee, int arg_count) {
-    bool is_callable = std::holds_alternative<Obj*>(callee._value) &&
-                      (std::get<Obj*>(callee._value)->type == OBJ_CLOSURE ||
-                       std::get<Obj*>(callee._value)->type == OBJ_NATIVE ||
-                       std::get<Obj*>(callee._value)->type == OBJ_CLASS ||
-                       std::get<Obj*>(callee._value)->type == OBJ_BOUND_METHOD ||
-                       std::get<Obj*>(callee._value)->type == OBJ_FUNCTION);
+    bool is_callable = callee.type == ValType::VAL_OBJ &&
+                      (callee.as.obj->type == OBJ_CLOSURE ||
+                       callee.as.obj->type == OBJ_NATIVE ||
+                       callee.as.obj->type == OBJ_CLASS ||
+                       callee.as.obj->type == OBJ_BOUND_METHOD ||
+                       callee.as.obj->type == OBJ_FUNCTION);
 
     if (!is_callable) {
         for (int i = 1; i <= 4; i++) {
             SapphireValue potential = stack_top[-arg_count - 1 - i];
-            if (std::holds_alternative<Obj*>(potential._value)) {
-                Obj* o = std::get<Obj*>(potential._value);
+            if (potential.type == ValType::VAL_OBJ) {
+                Obj* o = potential.as.obj;
                 if (o->type == OBJ_CLOSURE || o->type == OBJ_NATIVE || o->type == OBJ_CLASS || o->type == OBJ_BOUND_METHOD || o->type == OBJ_FUNCTION) {
                     callee = potential;
                     stack_top[-arg_count - 1] = callee;
@@ -3086,7 +3086,7 @@ bool VM::call_value(SapphireValue callee, int arg_count) {
     }
 
     if (is_callable) {
-        Obj* obj = std::get<Obj*>(callee._value);
+        Obj* obj = callee.as.obj;
         switch (obj->type) {
             case OBJ_BOUND_METHOD: {
                 ObjBoundMethod* bound = (ObjBoundMethod*)obj;
@@ -3136,7 +3136,7 @@ bool VM::call_value(SapphireValue callee, int arg_count) {
 }
 
         // std::cout << "    [CALL_VALUE SPY] Despachando chamada para objeto tipo: " << obj->type << std::endl;
-        // Eu nem tiro mais os debugs, vai que eu preciso ¯\_(ツ)_/¯
+        // Eu nem tiro mais os debugs, vai que eu preciso Â¯\_(ãƒ„)_/Â¯
 
 bool VM::run(int target_frame_count) {
     CallFrame* frame = &frames[frame_count - 1];
@@ -3149,7 +3149,7 @@ bool VM::run(int target_frame_count) {
     static bool table_initialized = false;
 #endif
 
-    // Variáveis auxiliares declaradas fora para evitar erro de inicialização cruzada
+    // VariÃ¡veis auxiliares declaradas fora para evitar erro de inicializaÃ§Ã£o cruzada
     ObjString* name_tmp;
     std::string src_tmp;
     std::string resolved_path_tmp;
@@ -3279,7 +3279,7 @@ TARGET(OP_SET_LOCAL)
     NEXT_CODE();
 
 TARGET(OP_GET_GLOBAL) {
-    name_tmp = (ObjString*)std::get<Obj*>(frame->function->chunk.constants[READ_SHORT()]._value);
+    name_tmp = (ObjString*)frame->function->chunk.constants[READ_SHORT()].as.obj;
     auto it = globals.find(name_tmp->chars);
     if (it == globals.end()) {
         if (!this->soft_mode) {
@@ -3292,13 +3292,13 @@ TARGET(OP_GET_GLOBAL) {
 }
 
 TARGET(OP_DEFINE_GLOBAL) {
-    name_tmp = (ObjString*)std::get<Obj*>(frame->function->chunk.constants[READ_SHORT()]._value);
+    name_tmp = (ObjString*)frame->function->chunk.constants[READ_SHORT()].as.obj;
     globals[name_tmp->chars] = POP();
     NEXT_CODE();
 }
 
 TARGET(OP_SET_GLOBAL) {
-    name_tmp = (ObjString*)std::get<Obj*>(frame->function->chunk.constants[READ_SHORT()]._value);
+    name_tmp = (ObjString*)frame->function->chunk.constants[READ_SHORT()].as.obj;
     if (globals.find(name_tmp->chars) == globals.end()) {
         if (!this->soft_mode) std::cerr << "Runtime Error: Undefined variable '" << name_tmp->chars << "'. Variables must be declared with 'var' or 'const'." << std::endl;
         return false;
@@ -3308,12 +3308,12 @@ TARGET(OP_SET_GLOBAL) {
 }
 
 TARGET(OP_GET_PROPERTY) {
-    if (top[-1]._value.index() != 3) {
+    if (top[-1].type != ValType::VAL_OBJ) {
         if (!this->soft_mode) return false;
         top[-1] = SapphireValue();
     } else {
-        Obj* obj = std::get<Obj*>(top[-1]._value);
-        name_tmp = (ObjString*)std::get<Obj*>(frame->function->chunk.constants[READ_SHORT()]._value);
+        Obj* obj = top[-1].as.obj;
+        name_tmp = (ObjString*)frame->function->chunk.constants[READ_SHORT()].as.obj;
         if (obj->type == OBJ_MAP) {
             ObjMap* map = (ObjMap*)obj;
             auto it = map->items.find(name_tmp->chars);
@@ -3354,8 +3354,8 @@ TARGET(OP_GET_PROPERTY) {
 }
 
 TARGET(OP_SET_PROPERTY) {
-    Obj* obj = std::get<Obj*>(top[-2]._value);
-    name_tmp = (ObjString*)std::get<Obj*>(frame->function->chunk.constants[READ_SHORT()]._value);
+    Obj* obj = top[-2].as.obj;
+    name_tmp = (ObjString*)frame->function->chunk.constants[READ_SHORT()].as.obj;
     if (obj->type == OBJ_MAP) {
         ObjMap* map = (ObjMap*)obj;
         map->items[name_tmp->chars] = top[-1];
@@ -3373,17 +3373,17 @@ TARGET(OP_EQUAL) {
     {
         SapphireValue b = POP(); SapphireValue a = POP();
         bool isEqual = false;
-        if (a._value.index() == b._value.index()) {
-            if (std::holds_alternative<Obj*>(a._value) && std::holds_alternative<Obj*>(b._value)) {
-                Obj* objA = std::get<Obj*>(a._value);
-                Obj* objB = std::get<Obj*>(b._value);
+        if (a.type == b.type) {
+            if (a.type == ValType::VAL_OBJ && b.type == ValType::VAL_OBJ) {
+                Obj* objA = a.as.obj;
+                Obj* objB = b.as.obj;
                 if (objA && objB && objA->type == OBJ_STRING && objB->type == OBJ_STRING) {
                     isEqual = (static_cast<ObjString*>(objA)->chars == static_cast<ObjString*>(objB)->chars);
                 } else {
                     isEqual = (objA == objB);
                 }
             } else {
-                isEqual = (a._value == b._value);
+                isEqual = values_equal(a, b);
             }
         }
         PUSH(SapphireValue(isEqual));
@@ -3392,25 +3392,23 @@ TARGET(OP_EQUAL) {
 }
 
 TARGET(OP_GREATER) {
-    double b = std::get<double>(POP()._value);
-    double a = std::get<double>(POP()._value);
-    PUSH(SapphireValue(a > b));
+    top[-2] = SapphireValue(top[-2].as.number > top[-1].as.number);
+    top--;
     NEXT_CODE();
 }
 
 TARGET(OP_LESS) {
-    double b = std::get<double>(POP()._value);
-    double a = std::get<double>(POP()._value);
-    PUSH(SapphireValue(a < b));
+    top[-2] = SapphireValue(top[-2].as.number < top[-1].as.number);
+    top--;
     NEXT_CODE();
 }
 
 TARGET(OP_ADD) {
-    auto& v1 = top[-1]._value; auto& v2 = top[-2]._value;
-    if (v1.index() == 2 && v2.index() == 2) {
-        double res = std::get<double>(v2) + std::get<double>(v1);
-        top -= 2; PUSH(SapphireValue(res));
-    } else if (v1.index() == 3 || v2.index() == 3) {
+    auto& v1 = top[-1]; auto& v2 = top[-2];
+    if (v1.type == ValType::VAL_NUMBER && v2.type == ValType::VAL_NUMBER) {
+        top[-2].as.number += top[-1].as.number;
+        top--;
+    } else if (v1.type == ValType::VAL_OBJ || v2.type == ValType::VAL_OBJ) {
         std::string s2 = valueToStringC(top[-2]);
         std::string s1 = valueToStringC(top[-1]);
         bool parsed = false;
@@ -3447,7 +3445,7 @@ TARGET(OP_NOT)
     NEXT_CODE();
 
 TARGET(OP_NEGATE)
-    if (top[-1]._value.index() == 2) std::get<double>(top[-1]._value) *= -1;
+    if (top[-1].type == ValType::VAL_NUMBER) top[-1].as.number *= -1;
     NEXT_CODE();
 
 TARGET(OP_PRINT) {
@@ -3468,13 +3466,13 @@ TARGET(OP_JUMP_IF_FALSE) {
 
 TARGET(OP_JUMP_IF_NIL) {
     uint16_t offset = READ_SHORT();
-    if (std::holds_alternative<std::monostate>(top[-1]._value)) ip += offset;
+    if (top[-1].type == ValType::VAL_NIL) ip += offset;
     NEXT_CODE();
 }
 
 TARGET(OP_JUMP_IF_NOT_NIL) {
     uint16_t offset = READ_SHORT();
-    if (!std::holds_alternative<std::monostate>(top[-1]._value)) ip += offset;
+    if (top[-1].type != ValType::VAL_NIL) ip += offset;
     NEXT_CODE();
 }
 
@@ -3485,18 +3483,33 @@ TARGET(OP_LOOP)
     NEXT_CODE();
 
 TARGET(OP_CALL) {
+    int arg_count = READ_BYTE();
+    SapphireValue callee = top[-arg_count - 1];
+    if (callee.type == ValType::VAL_OBJ && callee.as.obj->type == OBJ_CLOSURE) {
+        ObjClosure* closure = static_cast<ObjClosure*>(callee.as.obj);
+        if (arg_count == closure->function->arity && frame_count < FRAMES_MAX && !closure->function->is_async) {
+            frame->ip = ip;
+            CallFrame* next_frame = &frames[frame_count++];
+            next_frame->function = closure->function;
+            next_frame->ip = closure->function->chunk.code.data();
+            next_frame->slots = top - arg_count - 1;
+            frame = next_frame;
+            ip = frame->ip; 
+            slots = frame->slots;
+            NEXT_CODE();
+        }
+    }
     stack_top = top;
     step_gc();
-    int arg_count = READ_BYTE();
     frame->ip = ip;
-    if (!call_value(top[-arg_count - 1], arg_count)) return false;
+    if (!call_value(callee, arg_count)) return false;
     frame = &frames[frame_count - 1];
     ip = frame->ip; slots = frame->slots; top = stack_top;
     NEXT_CODE();
 }
 
 TARGET(OP_CLOSURE) {
-    func_tmp = (ObjFunction*)std::get<Obj*>(frame->function->chunk.constants[READ_SHORT()]._value);
+    func_tmp = (ObjFunction*)frame->function->chunk.constants[READ_SHORT()].as.obj;
     PUSH(new_closure(this, func_tmp));
     NEXT_CODE();
 }
@@ -3526,7 +3539,7 @@ TARGET(OP_RETURN) {
 TARGET(OP_BUILD_ARRAY) {
     {
         uint8_t count = READ_BYTE();
-        auto arr = std::make_shared<SapphireArray>();
+        auto arr = new_array(g_current_vm);
         for (int i = 0; i < count; i++) arr->elements.push_back(top[-count + i]);
         top -= count; PUSH(arr);
     }
@@ -3537,10 +3550,10 @@ TARGET(OP_SPREAD_ARRAY) {
     {
         SapphireValue src = POP();
         SapphireValue target = top[-1];
-        if (std::holds_alternative<std::shared_ptr<SapphireArray>>(target._value) && 
-            std::holds_alternative<std::shared_ptr<SapphireArray>>(src._value)) {
-            auto arr_target = std::get<std::shared_ptr<SapphireArray>>(target._value);
-            auto arr_src = std::get<std::shared_ptr<SapphireArray>>(src._value);
+        if (is_obj_type(target, OBJ_ARRAY) && 
+            is_obj_type(src, OBJ_ARRAY)) {
+            auto arr_target = static_cast<ObjArray*>(target.as.obj);
+            auto arr_src = static_cast<ObjArray*>(src.as.obj);
             arr_target->elements.insert(arr_target->elements.end(), arr_src->elements.begin(), arr_src->elements.end());
         } else {
             if (!this->soft_mode) std::cerr << "Runtime Error: Cannot spread non-array." << std::endl;
@@ -3556,7 +3569,7 @@ TARGET(OP_BUILD_MAP) {
         for (int i = 0; i < count; i++) {
             SapphireValue val = POP();
             SapphireValue key = POP();
-            std::string key_str = static_cast<ObjString*>(std::get<Obj*>(key._value))->chars;
+            std::string key_str = static_cast<ObjString*>(key.as.obj)->chars;
             map_obj->items[key_str] = val;
         }
         PUSH(map_obj);
@@ -3569,10 +3582,10 @@ TARGET(OP_GET_SUBSCRIPT) {
         SapphireValue index = POP();
         SapphireValue collection = POP();
         
-        if (std::holds_alternative<std::shared_ptr<SapphireArray>>(collection._value)) {
-            auto arr = std::get<std::shared_ptr<SapphireArray>>(collection._value);
-            if (index._value.index() == 2) { 
-                int idx = (int)std::get<double>(index._value);
+        if (is_obj_type(collection, OBJ_ARRAY)) {
+            auto arr = static_cast<ObjArray*>(collection.as.obj);
+            if (index.type == ValType::VAL_NUMBER) { 
+                int idx = (int)index.as.number;
                 if (idx >= 0 && idx < arr->elements.size()) {
                     PUSH(arr->elements[idx]);
                 } else {
@@ -3583,10 +3596,10 @@ TARGET(OP_GET_SUBSCRIPT) {
                 if (!this->soft_mode) { std::cerr << "Runtime Error: Array index must be a number." << std::endl; return false; }
                 PUSH(SapphireValue());
             }
-        } else if (std::holds_alternative<Obj*>(collection._value) && std::get<Obj*>(collection._value)->type == OBJ_MAP) {
-            ObjMap* map_obj = static_cast<ObjMap*>(std::get<Obj*>(collection._value));
-            if (std::holds_alternative<Obj*>(index._value) && std::get<Obj*>(index._value)->type == OBJ_STRING) {
-                std::string key_str = static_cast<ObjString*>(std::get<Obj*>(index._value))->chars;
+        } else if (collection.type == ValType::VAL_OBJ && collection.as.obj->type == OBJ_MAP) {
+            ObjMap* map_obj = static_cast<ObjMap*>(collection.as.obj);
+            if (index.type == ValType::VAL_OBJ && index.as.obj->type == OBJ_STRING) {
+                std::string key_str = static_cast<ObjString*>(index.as.obj)->chars;
                 auto it = map_obj->items.find(key_str);
                 if (it != map_obj->items.end()) {
                     PUSH(it->second);
@@ -3611,10 +3624,10 @@ TARGET(OP_SET_SUBSCRIPT) {
         SapphireValue index = POP();
         SapphireValue collection = POP();
         
-        if (std::holds_alternative<std::shared_ptr<SapphireArray>>(collection._value)) {
-            auto arr = std::get<std::shared_ptr<SapphireArray>>(collection._value);
-            if (index._value.index() == 2) {
-                int idx = (int)std::get<double>(index._value);
+        if (is_obj_type(collection, OBJ_ARRAY)) {
+            auto arr = static_cast<ObjArray*>(collection.as.obj);
+            if (index.type == ValType::VAL_NUMBER) {
+                int idx = (int)index.as.number;
                 if (idx >= 0 && idx <= arr->elements.size()) {
                     if (idx == arr->elements.size()) {
                         arr->elements.push_back(value);
@@ -3627,10 +3640,10 @@ TARGET(OP_SET_SUBSCRIPT) {
             } else {
                 if (!this->soft_mode) { std::cerr << "Runtime Error: Array index must be a number." << std::endl; return false; }
             }
-        } else if (std::holds_alternative<Obj*>(collection._value) && std::get<Obj*>(collection._value)->type == OBJ_MAP) {
-            ObjMap* map_obj = static_cast<ObjMap*>(std::get<Obj*>(collection._value));
-            if (std::holds_alternative<Obj*>(index._value) && std::get<Obj*>(index._value)->type == OBJ_STRING) {
-                std::string key_str = static_cast<ObjString*>(std::get<Obj*>(index._value))->chars;
+        } else if (collection.type == ValType::VAL_OBJ && collection.as.obj->type == OBJ_MAP) {
+            ObjMap* map_obj = static_cast<ObjMap*>(collection.as.obj);
+            if (index.type == ValType::VAL_OBJ && index.as.obj->type == OBJ_STRING) {
+                std::string key_str = static_cast<ObjString*>(index.as.obj)->chars;
                 map_obj->items[key_str] = value;
                 write_barrier((Obj*)map_obj, value);
             } else {
@@ -3645,7 +3658,7 @@ TARGET(OP_SET_SUBSCRIPT) {
 }
 
 TARGET(OP_IMPORT) {
-    name_tmp = (ObjString*)std::get<Obj*>(frame->function->chunk.constants[READ_SHORT()]._value);
+    name_tmp = (ObjString*)frame->function->chunk.constants[READ_SHORT()].as.obj;
     frame->ip = ip; stack_top = top;
     
     src_tmp = find_and_load_module(name_tmp->chars, resolved_path_tmp);
@@ -3681,7 +3694,7 @@ TARGET(OP_MAKE_NAMED_ARG) {
     {
         SapphireValue value = POP();
         SapphireValue name = POP();
-        ObjNamedArg* arg = new_named_arg(this, static_cast<ObjString*>(std::get<Obj*>(name._value)), value);
+        ObjNamedArg* arg = new_named_arg(this, static_cast<ObjString*>(name.as.obj), value);
         PUSH(arg);
     }
     NEXT_CODE();
@@ -3690,12 +3703,12 @@ TARGET(OP_MAKE_NAMED_ARG) {
 TARGET(OP_AWAIT) {
     {
         SapphireValue promise_val = top[-1]; // Peek at it
-        if (!std::holds_alternative<Obj*>(promise_val._value) || std::get<Obj*>(promise_val._value)->type != OBJ_PROMISE) {
+        if (promise_val.type != ValType::VAL_OBJ || promise_val.as.obj->type != OBJ_PROMISE) {
             if (!this->soft_mode) std::cerr << "Runtime Error: Can only await promises." << std::endl;
             return false;
         }
         
-        ObjPromise* promise = (ObjPromise*)std::get<Obj*>(promise_val._value);
+        ObjPromise* promise = (ObjPromise*)promise_val.as.obj;
         
         if (promise->state == PromiseState::FULFILLED) {
             POP(); // Remove promise
@@ -3736,12 +3749,12 @@ TARGET(OP_INHERIT) {
         SapphireValue subclass_val = POP();
         SapphireValue superclass_val = top[-1];
         
-        if (superclass_val._value.index() != 3 || std::get<Obj*>(superclass_val._value)->type != OBJ_CLASS) {
+        if (superclass_val.type != ValType::VAL_OBJ || superclass_val.as.obj->type != OBJ_CLASS) {
             std::cerr << "Runtime Error: Superclass must be a class." << std::endl;
             return false;
         }
-        ObjClass* superclass = static_cast<ObjClass*>(std::get<Obj*>(superclass_val._value));
-        ObjClass* subclass = static_cast<ObjClass*>(std::get<Obj*>(subclass_val._value));
+        ObjClass* superclass = static_cast<ObjClass*>(superclass_val.as.obj);
+        ObjClass* subclass = static_cast<ObjClass*>(subclass_val.as.obj);
         
         subclass->superclass = superclass;
         
@@ -3755,13 +3768,13 @@ TARGET(OP_SPAWN) {
     {
         SapphireValue func_val = POP();
         
-        if (func_val._value.index() != 3 || (std::get<Obj*>(func_val._value)->type != OBJ_CLOSURE && std::get<Obj*>(func_val._value)->type != OBJ_FUNCTION)) {
+        if (func_val.type != ValType::VAL_OBJ || (func_val.as.obj->type != OBJ_CLOSURE && func_val.as.obj->type != OBJ_FUNCTION)) {
             std::cerr << "Runtime Error: Can only spawn functions or closures." << std::endl;
             return false;
         }
         
         ObjFunction* function = nullptr;
-        Obj* obj = std::get<Obj*>(func_val._value);
+        Obj* obj = func_val.as.obj;
         if (obj->type == OBJ_CLOSURE) {
             function = static_cast<ObjClosure*>(obj)->function;
         } else {
@@ -3795,7 +3808,7 @@ TARGET(OP_SPAWN) {
 
 TARGET(OP_GET_SUPER) {
     {
-        name_tmp = (ObjString*)std::get<Obj*>(frame->function->chunk.constants[READ_SHORT()]._value);
+        name_tmp = (ObjString*)frame->function->chunk.constants[READ_SHORT()].as.obj;
         ObjClass* superclass = frame->function->owner_class->superclass;
         if (superclass == nullptr) {
             std::cerr << "Runtime Error: Cannot use 'super' in a class with no superclass." << std::endl;
@@ -3880,25 +3893,25 @@ TARGET(OP_ITER_NEXT_IN) {
         SapphireValue state_val = top[-1];
         SapphireValue iterable_val = top[-2];
         
-        int index = (int)std::get<double>(state_val._value);
+        int index = (int)state_val.as.number;
         
-        if (std::holds_alternative<std::shared_ptr<SapphireArray>>(iterable_val._value)) {
-            auto arr = std::get<std::shared_ptr<SapphireArray>>(iterable_val._value);
+        if (is_obj_type(iterable_val, OBJ_ARRAY)) {
+            auto arr = static_cast<ObjArray*>(iterable_val.as.obj);
             if (index < arr->elements.size()) {
                 PUSH(SapphireValue((double)index));
-                    std::get<double>(top[-2]._value) += 1.0;
+                    top[-2].as.number += 1.0;
             } else {
                 ip += offset;
             }
-        } else if (std::holds_alternative<Obj*>(iterable_val._value)) {
-            Obj* obj = std::get<Obj*>(iterable_val._value);
+        } else if (iterable_val.type == ValType::VAL_OBJ) {
+            Obj* obj = iterable_val.as.obj;
             if (obj->type == OBJ_MAP) {
                 ObjMap* map = static_cast<ObjMap*>(obj);
                 if (index < map->items.size()) {
                     auto it = map->items.begin();
                     std::advance(it, index);
                     PUSH(new_string(this, it->first));
-                    std::get<double>(top[-2]._value) += 1.0;
+                    top[-2].as.number += 1.0;
                 } else {
                     ip += offset;
                 }
@@ -3906,7 +3919,7 @@ TARGET(OP_ITER_NEXT_IN) {
                 ObjString* str = static_cast<ObjString*>(obj);
                 if (index < str->chars.length()) {
                     PUSH(SapphireValue((double)index));
-                    std::get<double>(top[-2]._value) += 1.0;
+                    top[-2].as.number += 1.0;
                 } else {
                     ip += offset;
                 }
@@ -3926,25 +3939,25 @@ TARGET(OP_ITER_NEXT_OF) {
         SapphireValue state_val = top[-1];
         SapphireValue iterable_val = top[-2];
         
-        int index = (int)std::get<double>(state_val._value);
+        int index = (int)state_val.as.number;
         
-        if (std::holds_alternative<std::shared_ptr<SapphireArray>>(iterable_val._value)) {
-            auto arr = std::get<std::shared_ptr<SapphireArray>>(iterable_val._value);
+        if (is_obj_type(iterable_val, OBJ_ARRAY)) {
+            auto arr = static_cast<ObjArray*>(iterable_val.as.obj);
             if (index < arr->elements.size()) {
                 PUSH(arr->elements[index]);
-                    std::get<double>(top[-2]._value) += 1.0;
+                    top[-2].as.number += 1.0;
             } else {
                 ip += offset;
             }
-        } else if (std::holds_alternative<Obj*>(iterable_val._value)) {
-            Obj* obj = std::get<Obj*>(iterable_val._value);
+        } else if (iterable_val.type == ValType::VAL_OBJ) {
+            Obj* obj = iterable_val.as.obj;
             if (obj->type == OBJ_MAP) {
                 ObjMap* map = static_cast<ObjMap*>(obj);
                 if (index < map->items.size()) {
                     auto it = map->items.begin();
                     std::advance(it, index);
                     PUSH(it->second);
-                    std::get<double>(top[-2]._value) += 1.0;
+                    top[-2].as.number += 1.0;
                 } else {
                     ip += offset;
                 }
@@ -3952,7 +3965,7 @@ TARGET(OP_ITER_NEXT_OF) {
                 ObjString* str = static_cast<ObjString*>(obj);
                 if (index < str->chars.length()) {
                     PUSH(new_string(this, std::string(1, str->chars[index])));
-                    std::get<double>(top[-2]._value) += 1.0;
+                    top[-2].as.number += 1.0;
                 } else {
                     ip += offset;
                 }
@@ -4063,7 +4076,7 @@ static bool parse_top_memory_limit_mb(const std::string& source, size_t& out_lim
                                 value_pos++;
                                 trim_left(value_pos);
                             }
-                            // Permitir comentários após o ponto e vírgula
+                            // Permitir comentÃ¡rios apÃ³s o ponto e vÃ­rgula
                             if (value_pos < line_end && source.compare(value_pos, 2, "//") != 0) {
                                 return false;
                             }
@@ -4160,7 +4173,7 @@ SapphireValue VM::getGlobal(const std::string& name) {
     return {};
 }
 
-// --- Funções do Coletor de Lixo ---
+// --- FunÃ§Ãµes do Coletor de Lixo ---
 void VM::mark_object(Obj* object) {
     if (object == nullptr || object->is_marked) return;
 
@@ -4169,10 +4182,10 @@ void VM::mark_object(Obj* object) {
 }
 
 void VM::mark_value(SapphireValue value) {
-    if (std::holds_alternative<Obj*>(value._value)) {
-        mark_object(std::get<Obj*>(value._value));
-    } else if (std::holds_alternative<std::shared_ptr<SapphireArray>>(value._value)) {
-        auto array = std::get<std::shared_ptr<SapphireArray>>(value._value);
+    if (value.type == ValType::VAL_OBJ) {
+        mark_object(value.as.obj);
+    } else if (is_obj_type(value, OBJ_ARRAY)) {
+        auto array = static_cast<ObjArray*>(value.as.obj);
         for (SapphireValue& val : array->elements) {
             mark_value(val);
         }
@@ -4340,3 +4353,7 @@ bool VM::call_and_run(ObjFunction* function) {
 
     return result;
 }
+
+
+
+

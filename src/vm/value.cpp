@@ -2,22 +2,39 @@
 #include "object.h"
 #include <iostream>
 #include <cmath>
+bool values_equal(const SapphireValue& a, const SapphireValue& b) {
+    if (a.type != b.type) return false;
+    switch (a.type) {
+        case ValType::VAL_NIL: return true;
+        case ValType::VAL_BOOL: return a.as.boolean == b.as.boolean;
+        case ValType::VAL_NUMBER: return a.as.number == b.as.number;
+        case ValType::VAL_OBJ: {
+            if (a.as.obj == b.as.obj) return true;
+            if (a.as.obj->type == OBJ_STRING && b.as.obj->type == OBJ_STRING) {
+                return static_cast<ObjString*>(a.as.obj)->chars == static_cast<ObjString*>(b.as.obj)->chars;
+            }
+            return false;
+        }
+    }
+    return false;
+}
 
 bool is_falsey(const SapphireValue& value) {
-    return std::holds_alternative<std::monostate>(value._value) ||
-           (std::holds_alternative<bool>(value._value) && !std::get<bool>(value._value));
+    return value.type == ValType::VAL_NIL ||
+           (value.type == ValType::VAL_BOOL && !value.as.boolean);
 }
 
 const char* get_value_type_name(const SapphireValue& value) {
-    if (std::holds_alternative<std::monostate>(value._value)) return "nil";
-    if (std::holds_alternative<bool>(value._value)) return "boolean";
-    if (std::holds_alternative<double>(value._value)) return "number";
-    if (std::holds_alternative<Obj*>(value._value)) {
-        // Assume que Obj tem um campo 'type'
-        switch (std::get<Obj*>(value._value)->type) {
+    if (value.type == ValType::VAL_NIL) return "nil";
+    if (value.type == ValType::VAL_BOOL) return "boolean";
+    if (value.type == ValType::VAL_NUMBER) return "number";
+    if (value.type == ValType::VAL_OBJ) {
+        switch (value.as.obj->type) {
             case OBJ_STRING: return "string";
             case OBJ_FUNCTION: return "function";
             case OBJ_NATIVE: return "native function";
+            case OBJ_ARRAY: return "array";
+            case OBJ_LRU: return "lru_cache";
             default: return "object";
         }
     }
@@ -25,28 +42,18 @@ const char* get_value_type_name(const SapphireValue& value) {
 }
 
 void print_value(const SapphireValue& value) {
-    std::visit([&value](auto&& arg) {
-        using T = std::decay_t<decltype(arg)>;
-        if constexpr (std::is_same_v<T, std::monostate>) {
-            std::cout << "nil";
-        } else if constexpr (std::is_same_v<T, bool>) {
-            std::cout << (arg ? "true" : "false");
-        } else if constexpr (std::is_same_v<T, double>) {
-            double int_part;
-            if (modf(arg, &int_part) == 0.0) {
-                std::cout << static_cast<long long>(arg);
-            } else {
-                std::cout << arg;
-            }
-        } else if constexpr (std::is_same_v<T, Obj*>) {
-            print_object(value);
-        } else if constexpr (std::is_same_v<T, std::shared_ptr<SapphireArray>>) {
-            std::cout << "[";
-            for (size_t i = 0; i < arg->elements.size(); ++i) {
-                print_value(arg->elements[i]);
-                if (i < arg->elements.size() - 1) std::cout << ", ";
-            }
-            std::cout << "]";
+    if (value.type == ValType::VAL_NIL) {
+        std::cout << "nil";
+    } else if (value.type == ValType::VAL_BOOL) {
+        std::cout << (value.as.boolean ? "true" : "false");
+    } else if (value.type == ValType::VAL_NUMBER) {
+        double int_part;
+        if (modf(value.as.number, &int_part) == 0.0) {
+            std::cout << static_cast<long long>(value.as.number);
+        } else {
+            std::cout << value.as.number;
         }
-    }, value._value);
+    } else if (value.type == ValType::VAL_OBJ) {
+        print_object(value);
+    }
 }

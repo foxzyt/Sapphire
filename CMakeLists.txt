@@ -138,8 +138,8 @@ target_link_libraries(sapphire_core PUBLIC
 target_link_libraries(sapphire_core PUBLIC OpenCL sqlite3)
 
 add_executable(sapphire src/main.cpp)
-add_executable(runner src/vm/runner.cpp)
-add_executable(beryl src/beryl/main.cpp src/beryl/beryl.cpp src/beryl/beryl_ui.cpp)
+add_executable(runner src/vm/runner.cpp src/spark/third_party/miniz.c)
+add_executable(beryl src/beryl/main.cpp src/beryl/beryl.cpp src/beryl/beryl_ui.cpp src/spark/third_party/miniz.c)
 
 # Build new modular spark (v2) - full-featured package manager
 option(BUILD_SPARK "Build new modular spark package manager" ON)

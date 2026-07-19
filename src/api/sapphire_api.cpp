@@ -1,4 +1,4 @@
-#include "sapphire_api.h"
+﻿#include "sapphire_api.h"
 #include "vm.h"
 #include "compiler.h"
 #include "bytecode_io.h"
@@ -17,3 +17,12 @@ bool compile_source_to_bytecode_file(const std::string& source_code, const std::
     serialize_function(main_function, &vm, output_path);
     return true;
 }
+
+
+
+
+
+
+
+
+

@@ -33,6 +33,8 @@ enum ObjType {
     OBJ_NAMED_ARG,
     OBJ_MAP,
     OBJ_PROMISE,
+    OBJ_ARRAY,
+    OBJ_LRU,
 };
 
 // A struct base para todos os objetos gerenciados no "heap" pela VM
@@ -96,6 +98,16 @@ struct ObjMap : Obj {
     std::unordered_map<std::string, SapphireValue> items;
 };
 
+struct ObjArray : Obj {
+    std::vector<SapphireValue> elements;
+};
+
+struct ObjLRU : Obj {
+    int capacity;
+    std::list<std::string> order;
+    std::unordered_map<std::string, SapphireValue> items;
+};
+
 // Funções "fábrica" para criar novos objetos (agora recebem VM*)
 ObjBoundMethod* new_bound_method(VM* vm, SapphireValue receiver, SapphireValue method, ObjClass* defined_in_class);
 ObjFunction* new_function(VM* vm);
@@ -107,13 +119,15 @@ ObjClosure* new_closure(VM* vm, ObjFunction* function);
 ObjNamedArg* new_named_arg(VM* vm, ObjString* name, SapphireValue value);
 ObjMap* new_map(VM* vm);
 ObjPromise* new_promise(VM* vm);
+ObjArray* new_array(VM* vm);
+ObjLRU* new_lru(VM* vm, int capacity);
 
 // Declaração da função que imprime objetos (será implementada em object.cpp)
 void print_object(const SapphireValue& value);
 
 // Função auxiliar para verificar o tipo de um Obj* em tempo de execução
 static inline bool is_obj_type(const SapphireValue& value, ObjType type) {
-    return std::holds_alternative<Obj*>(value._value) && std::get<Obj*>(value._value)->type == type;
+    return value.type == ValType::VAL_OBJ && value.as.obj->type == type;
 }
 void free_object(Obj* object);
 

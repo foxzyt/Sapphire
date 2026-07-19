@@ -1,4 +1,4 @@
-#ifndef SAPPHIRE_VM_H
+﻿#ifndef SAPPHIRE_VM_H
 #define SAPPHIRE_VM_H
 
 #include "chunk.h"
@@ -126,7 +126,7 @@ struct UIState {
 };
 
 struct CallFrame {
-  ObjFunction *function; // Voltando para ObjFunction estável
+  ObjFunction *function; // Voltando para ObjFunction estÃ¡vel
   uint8_t *ip;
   SapphireValue *slots;
 };
@@ -239,3 +239,11 @@ public:
 extern thread_local VM *g_current_vm;
 
 #endif
+
+
+
+
+
+
+
+

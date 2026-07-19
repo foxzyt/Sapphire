@@ -1,4 +1,4 @@
-#include "opencl_api.h"
+﻿#include "opencl_api.h"
 #include "vm.h"
 #include "object.h"
 #include "value.h"
@@ -40,8 +40,8 @@ static SapphireValue ocl_init(int arg_count, SapphireValue* args) {
 }
 
 static SapphireValue ocl_createBuffer(int arg_count, SapphireValue* args) {
-    if(arg_count != 1 || !std::holds_alternative<double>(args[0]._value)) return SapphireValue(-1.0);
-    size_t size = (size_t)std::get<double>(args[0]._value) * sizeof(double); // Assume double buffers for Sapphire
+    if(arg_count != 1 || args[0].type != ValType::VAL_NUMBER) return SapphireValue(-1.0);
+    size_t size = (size_t)args[0].as.number * sizeof(double); // Assume double buffers for Sapphire
     
     cl_int ret;
     cl_mem mem_obj = clCreateBuffer(context, CL_MEM_READ_WRITE, size, NULL, &ret);
@@ -53,17 +53,17 @@ static SapphireValue ocl_createBuffer(int arg_count, SapphireValue* args) {
 }
 
 static SapphireValue ocl_writeBuffer(int arg_count, SapphireValue* args) {
-    if(arg_count != 2 || !std::holds_alternative<double>(args[0]._value)) return SapphireValue(false);
-    if(!std::holds_alternative<std::shared_ptr<SapphireArray>>(args[1]._value)) return SapphireValue(false);
+    if(arg_count != 2 || args[0].type != ValType::VAL_NUMBER) return SapphireValue(false);
+    if(!is_obj_type(args[1], OBJ_ARRAY)) return SapphireValue(false);
     
-    int id = (int)std::get<double>(args[0]._value);
+    int id = (int)args[0].as.number;
     if(buffers.find(id) == buffers.end()) return SapphireValue(false);
     
-    auto array = std::get<std::shared_ptr<SapphireArray>>(args[1]._value);
+    auto array = static_cast<ObjArray*>(args[1].as.obj);
     std::vector<double> host_data(array->elements.size());
     for(size_t i=0; i<array->elements.size(); ++i) {
-        if(std::holds_alternative<double>(array->elements[i]._value)) {
-            host_data[i] = std::get<double>(array->elements[i]._value);
+        if(array->elements[i].type == ValType::VAL_NUMBER) {
+            host_data[i] = array->elements[i].as.number;
         } else {
             host_data[i] = 0.0;
         }
@@ -74,13 +74,13 @@ static SapphireValue ocl_writeBuffer(int arg_count, SapphireValue* args) {
 }
 
 static SapphireValue ocl_readBuffer(int arg_count, SapphireValue* args) {
-    if(arg_count != 2 || !std::holds_alternative<double>(args[0]._value)) return SapphireValue(false);
-    if(!std::holds_alternative<std::shared_ptr<SapphireArray>>(args[1]._value)) return SapphireValue(false);
+    if(arg_count != 2 || args[0].type != ValType::VAL_NUMBER) return SapphireValue(false);
+    if(!is_obj_type(args[1], OBJ_ARRAY)) return SapphireValue(false);
     
-    int id = (int)std::get<double>(args[0]._value);
+    int id = (int)args[0].as.number;
     if(buffers.find(id) == buffers.end()) return SapphireValue(false);
     
-    auto array = std::get<std::shared_ptr<SapphireArray>>(args[1]._value);
+    auto array = static_cast<ObjArray*>(args[1].as.obj);
     std::vector<double> host_data(array->elements.size());
     
     cl_int ret = clEnqueueReadBuffer(queue, buffers[id], CL_TRUE, 0, host_data.size() * sizeof(double), host_data.data(), 0, NULL, NULL);
@@ -95,8 +95,8 @@ static SapphireValue ocl_readBuffer(int arg_count, SapphireValue* args) {
 static SapphireValue ocl_compile(int arg_count, SapphireValue* args) {
     if(arg_count != 2 || !is_obj_type(args[0], OBJ_STRING) || !is_obj_type(args[1], OBJ_STRING)) return SapphireValue(-1.0);
     
-    ObjString* source_obj = static_cast<ObjString*>(std::get<Obj*>(args[0]._value));
-    ObjString* name_obj = static_cast<ObjString*>(std::get<Obj*>(args[1]._value));
+    ObjString* source_obj = static_cast<ObjString*>(args[0].as.obj);
+    ObjString* name_obj = static_cast<ObjString*>(args[1].as.obj);
     
     const char* source_str = source_obj->chars.c_str();
     size_t source_size = source_obj->chars.size();
@@ -119,17 +119,17 @@ static SapphireValue ocl_compile(int arg_count, SapphireValue* args) {
 }
 
 static SapphireValue ocl_execute(int arg_count, SapphireValue* args) {
-    if(arg_count < 2 || !std::holds_alternative<double>(args[0]._value) || !std::holds_alternative<double>(args[1]._value)) return SapphireValue(false);
+    if(arg_count < 2 || args[0].type != ValType::VAL_NUMBER || args[1].type != ValType::VAL_NUMBER) return SapphireValue(false);
     
-    int kernel_id = (int)std::get<double>(args[0]._value);
+    int kernel_id = (int)args[0].as.number;
     if(kernels.find(kernel_id) == kernels.end()) return SapphireValue(false);
     cl_kernel kernel = kernels[kernel_id];
     
-    size_t global_item_size = (size_t)std::get<double>(args[1]._value);
+    size_t global_item_size = (size_t)args[1].as.number;
     
     for(int i=2; i<arg_count; ++i) {
-        if(std::holds_alternative<double>(args[i]._value)) {
-            int buf_id = (int)std::get<double>(args[i]._value);
+        if(args[i].type == ValType::VAL_NUMBER) {
+            int buf_id = (int)args[i].as.number;
             cl_mem mem = buffers[buf_id];
             clSetKernelArg(kernel, i-2, sizeof(cl_mem), (void *)&mem);
         }
@@ -159,3 +159,13 @@ void define_opencl_natives(VM* vm) {
 }
 
 #endif
+
+
+
+
+
+
+
+
+
+

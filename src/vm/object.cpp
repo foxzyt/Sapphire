@@ -21,6 +21,8 @@ void free_object(Obj* object) {
         case OBJ_NAMED_ARG: delete static_cast<ObjNamedArg*>(object); break;
         case OBJ_MAP: delete static_cast<ObjMap*>(object); break;
         case OBJ_PROMISE: delete static_cast<ObjPromise*>(object); break;
+        case OBJ_ARRAY: delete static_cast<ObjArray*>(object); break;
+        case OBJ_LRU: delete static_cast<ObjLRU*>(object); break;
     }
 }
 
@@ -34,7 +36,7 @@ static void print_function(ObjFunction* function) {
 }
 
 void print_object(const SapphireValue& value) {
-    Obj* obj = std::get<Obj*>(value._value);
+    Obj* obj = value.as.obj;
     switch (obj->type) {
         case OBJ_STRING:
             std::cout << static_cast<ObjString*>(obj)->chars;
@@ -53,8 +55,8 @@ void print_object(const SapphireValue& value) {
             break;
         case OBJ_BOUND_METHOD: {
             ObjBoundMethod* bound = static_cast<ObjBoundMethod*>(obj);
-            if (std::holds_alternative<Obj*>(bound->method._value)) {
-                Obj* method_obj = std::get<Obj*>(bound->method._value);
+            if (bound->method.type == ValType::VAL_OBJ) {
+                Obj* method_obj = bound->method.as.obj;
                 if (method_obj->type == OBJ_CLOSURE) {
                     print_function(static_cast<ObjClosure*>(method_obj)->function);
                 } else if (method_obj->type == OBJ_NATIVE) {
@@ -83,6 +85,24 @@ void print_object(const SapphireValue& value) {
                 first = false;
             }
             std::cout << "}";
+            break;
+        }
+        case OBJ_PROMISE:
+            std::cout << "<promise>";
+            break;
+        case OBJ_ARRAY: {
+            ObjArray* arr = static_cast<ObjArray*>(obj);
+            std::cout << "[";
+            for (size_t i = 0; i < arr->elements.size(); ++i) {
+                print_value(arr->elements[i]);
+                if (i < arr->elements.size() - 1) std::cout << ", ";
+            }
+            std::cout << "]";
+            break;
+        }
+        case OBJ_LRU: {
+            ObjLRU* lru = static_cast<ObjLRU*>(obj);
+            std::cout << "<lru_cache size=" << lru->items.size() << " cap=" << lru->capacity << ">";
             break;
         }
     }
@@ -189,8 +209,21 @@ ObjPromise* new_promise(VM* vm) {
     auto* promise_obj = new ObjPromise();
     promise_obj->type = OBJ_PROMISE;
     promise_obj->state = PromiseState::PENDING;
-    promise_obj->value = SapphireValue();
     register_object(vm, promise_obj);
     return promise_obj;
 }
 
+ObjArray* new_array(VM* vm) {
+    auto* arr = new ObjArray();
+    arr->type = OBJ_ARRAY;
+    register_object(vm, arr);
+    return arr;
+}
+
+ObjLRU* new_lru(VM* vm, int capacity) {
+    auto* lru = new ObjLRU();
+    lru->type = OBJ_LRU;
+    lru->capacity = capacity;
+    register_object(vm, lru);
+    return lru;
+}

@@ -2,268 +2,363 @@
 #include <SFML/Window.hpp>
 #include <iostream>
 #include <fstream>
+#include <vector>
 #include "beryl.h"
 #ifdef _WIN32
 #include <windows.h>
 #include <commdlg.h>
+#include <shlobj.h>
 #endif
+#include <cstdint>
+#include <cmath>
+
+using namespace sf;
+using namespace std;
+
+// Colors based on GitHub Dark Dimmed / Modern Cyber aesthetic
+const Color bg_color(13, 17, 23);
+const Color panel_color(22, 27, 34);
+const Color input_color(33, 38, 45);
+const Color focus_color(88, 166, 255);
+const Color text_color(201, 209, 217);
+const Color muted_color(139, 148, 158);
+const Color primary_color(35, 134, 54); // Green for build button
+const Color primary_hover(46, 160, 67);
+const Color error_color(248, 81, 73);
+
+float lerp_anim(float a, float b, float f) {
+    return a + f * (b - a);
+}
+
+Color lerpColor(Color a, Color b, float f) {
+    return Color(
+        (uint8_t)lerp_anim(a.r, b.r, f),
+        (uint8_t)lerp_anim(a.g, b.g, f),
+        (uint8_t)lerp_anim(a.b, b.b, f),
+        (uint8_t)lerp_anim(a.a, b.a, f)
+    );
+}
+
+ConvexShape createRoundedRect(float width, float height, float radius, int points = 8) {
+    ConvexShape shape(points * 4);
+    float x = 0, y = 0;
+    for (int i = 0; i < points; i++) {
+        float angle = (180.0f + 90.0f * i / (points - 1)) * 3.14159f / 180.0f;
+        shape.setPoint(i, Vector2f(x + radius + radius * cos(angle), y + radius + radius * sin(angle)));
+    }
+    x = width - radius * 2;
+    for (int i = 0; i < points; i++) {
+        float angle = (270.0f + 90.0f * i / (points - 1)) * 3.14159f / 180.0f;
+        shape.setPoint(points + i, Vector2f(x + radius + radius * cos(angle), y + radius + radius * sin(angle)));
+    }
+    y = height - radius * 2;
+    for (int i = 0; i < points; i++) {
+        float angle = (0.0f + 90.0f * i / (points - 1)) * 3.14159f / 180.0f;
+        shape.setPoint(points * 2 + i, Vector2f(x + radius + radius * cos(angle), y + radius + radius * sin(angle)));
+    }
+    x = 0;
+    for (int i = 0; i < points; i++) {
+        float angle = (90.0f + 90.0f * i / (points - 1)) * 3.14159f / 180.0f;
+        shape.setPoint(points * 3 + i, Vector2f(x + radius + radius * cos(angle), y + radius + radius * sin(angle)));
+    }
+    return shape;
+}
+
+struct AnimValue {
+    float current = 0.0f;
+    float target = 0.0f;
+    void update(float dt) { current = lerp_anim(current, target, dt * 15.0f); }
+};
 
 struct TextBox {
-    sf::RectangleShape rect;
-    std::string value;
+    ConvexShape rect;
+    string value;
     bool isFocused = false;
-    std::string label;
-    sf::Text labelText;
-    sf::Text text;
+    Text labelText;
+    Text text;
+    float mx, my, mw;
+    AnimValue focusAnim;
 
-    TextBox(sf::Font& font, const std::string& lbl, float x, float y, float width, const std::string& defaultValue = "", bool hasBrowseBtn = false) 
-        : labelText(font, lbl, 18), text(font, defaultValue, 18) {
-        label = lbl;
-        value = defaultValue;
-        
-        labelText.setPosition({x, y});
-        labelText.setFillColor(sf::Color(200, 200, 200));
-
-        rect.setPosition({x, y + 25});
-        rect.setSize({width, 30});
-        rect.setFillColor(sf::Color(50, 50, 50));
-        rect.setOutlineThickness(1);
-        rect.setOutlineColor(sf::Color(100, 100, 100));
-
-        text.setPosition({x + 5, y + 28});
-        text.setFillColor(sf::Color::White);
+    TextBox(Font& font, const string& lbl, float x, float y, float width, const string& def = "") 
+        : labelText(font, lbl, 14), text(font, def, 14) {
+        value = def; mx = x; my = y; mw = width;
+        labelText.setPosition(Vector2f(x, y));
+        labelText.setFillColor(muted_color);
+        rect = createRoundedRect(width, 36, 6);
+        rect.setPosition(Vector2f(x, y + 22));
+        rect.setFillColor(input_color);
+        rect.setOutlineThickness(1.5f);
+        text.setPosition(Vector2f(x + 12, y + 30));
+        text.setFillColor(text_color);
     }
 
-    void draw(sf::RenderWindow& window) {
-        if (isFocused) rect.setOutlineColor(sf::Color(0, 122, 204));
-        else rect.setOutlineColor(sf::Color(100, 100, 100));
-        
+    void update(float dt) {
+        focusAnim.target = isFocused ? 1.0f : 0.0f;
+        focusAnim.update(dt);
+    }
+
+    void draw(RenderWindow& window) {
+        Color outColor = lerpColor(Color(48, 54, 61), focus_color, focusAnim.current);
+        rect.setOutlineColor(outColor);
         window.draw(labelText);
         window.draw(rect);
-        
-        std::string displayStr = value + (isFocused ? "_" : "");
-        text.setString(displayStr);
+        text.setString(value + (isFocused ? "|" : ""));
         window.draw(text);
     }
 
-    std::string browseFile(bool isSave) {
+    bool handleClick(float mx_in, float my_in) {
+        isFocused = rect.getGlobalBounds().contains(Vector2f(mx_in, my_in));
+        return isFocused;
+    }
+
+    void handleInput(uint32_t unicode) {
+        if (!isFocused) return;
+        if (unicode == 8 && !value.empty()) value.pop_back(); // Backspace
+        else if (unicode >= 32 && unicode < 127) value += (char)unicode;
+    }
+    
+    string browseFile(bool isSave) {
 #ifdef _WIN32
-        char filename[MAX_PATH];
-        filename[0] = '\0';
         OPENFILENAMEA ofn;
+        char fileName[MAX_PATH] = "";
         ZeroMemory(&ofn, sizeof(ofn));
         ofn.lStructSize = sizeof(ofn);
-        ofn.hwndOwner = NULL;
-        ofn.lpstrFilter = "All Files\0*.*\0Sapphire Scripts (*.sp)\0*.sp\0";
-        ofn.lpstrFile = filename;
+        ofn.lpstrFile = fileName;
         ofn.nMaxFile = MAX_PATH;
-        ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
-        if (isSave) ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
-
-        if (isSave ? GetSaveFileNameA(&ofn) : GetOpenFileNameA(&ofn)) {
-            value = std::string(filename);
-            return value;
+        ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+        if (isSave) {
+            ofn.lpstrFilter = "Executable (*.exe)\0*.exe\0";
+            if (GetSaveFileNameA(&ofn)) { value = fileName; return value; }
+        } else {
+            ofn.lpstrFilter = "Sapphire Script (*.sp)\0*.sp\0All Files (*.*)\0*.*\0";
+            if (GetOpenFileNameA(&ofn)) { value = fileName; return value; }
         }
 #endif
-        return value;
-    }
-
-    bool checkBrowseClicked(sf::Vector2f mousePos) {
-        // Browse button is drawn next to it manually in the main loop for simplicity
-        return false;
-    }
-
-    void handleClick(sf::Vector2f mousePos) {
-        isFocused = rect.getGlobalBounds().contains(mousePos);
-    }
-
-    void handleTextEntered(const sf::Event::TextEntered& textEvent) {
-        if (!isFocused) return;
-        if (textEvent.unicode == '\b') { // Backspace
-            if (!value.empty()) value.pop_back();
-        } else if (textEvent.unicode < 128 && textEvent.unicode > 31) {
-            value += static_cast<char>(textEvent.unicode);
-        }
+        return "";
     }
 };
 
-struct CheckBox {
-    sf::RectangleShape box;
-    bool checked;
-    sf::Text labelText;
+struct ToggleSwitch {
+    ConvexShape track;
+    CircleShape thumb;
+    Text labelText;
+    bool isChecked;
+    float mx, my;
+    AnimValue checkAnim;
+    AnimValue hoverAnim;
 
-    CheckBox(sf::Font& font, const std::string& lbl, float x, float y, bool defaultChecked = false) 
-        : labelText(font, lbl, 18) {
-        checked = defaultChecked;
-
-        box.setPosition({x, y});
-        box.setSize({20, 20});
-        box.setFillColor(checked ? sf::Color(0, 122, 204) : sf::Color(50, 50, 50));
-        box.setOutlineThickness(1);
-        box.setOutlineColor(sf::Color(100, 100, 100));
-
-        labelText.setPosition({x + 30, y - 2});
-        labelText.setFillColor(sf::Color(200, 200, 200));
+    ToggleSwitch(Font& font, const string& lbl, float x, float y, bool def = false) 
+        : labelText(font, lbl, 14) {
+        isChecked = def; mx = x; my = y;
+        checkAnim.current = def ? 1.0f : 0.0f;
+        checkAnim.target = checkAnim.current;
+        labelText.setPosition(Vector2f(x + 50, y + 2));
+        labelText.setFillColor(text_color);
+        track = createRoundedRect(40, 20, 10);
+        track.setPosition(Vector2f(x, y));
+        thumb.setRadius(7);
+        thumb.setOrigin(Vector2f(7, 7));
     }
 
-    void draw(sf::RenderWindow& window) {
-        box.setFillColor(checked ? sf::Color(0, 122, 204) : sf::Color(50, 50, 50));
-        window.draw(box);
+    void update(float dt, float mouseX, float mouseY) {
+        checkAnim.target = isChecked ? 1.0f : 0.0f;
+        checkAnim.update(dt);
+        
+        bool isHovered = track.getGlobalBounds().contains(Vector2f(mouseX, mouseY));
+        hoverAnim.target = isHovered ? 1.0f : 0.0f;
+        hoverAnim.update(dt);
+    }
+
+    void draw(RenderWindow& window) {
+        Color baseTrack = lerpColor(input_color, Color(60, 60, 70), hoverAnim.current);
+        track.setFillColor(lerpColor(baseTrack, primary_color, checkAnim.current));
+        float thumbX = lerp_anim(mx + 10, mx + 30, checkAnim.current);
+        thumb.setPosition(Vector2f(thumbX, my + 10));
+        thumb.setFillColor(Color(255, 255, 255));
+        window.draw(track);
+        window.draw(thumb);
         window.draw(labelText);
     }
 
-    void handleClick(sf::Vector2f mousePos) {
-        if (box.getGlobalBounds().contains(mousePos)) {
-            checked = !checked;
+    bool handleClick(float mx_in, float my_in) {
+        if (track.getGlobalBounds().contains(Vector2f(mx_in, my_in))) {
+            isChecked = !isChecked;
+            return true;
         }
+        return false;
     }
 };
 
-void run_native_beryl_ui(const std::string& runner_path) {
-    sf::RenderWindow window(sf::VideoMode({1000, 800}), "Beryl C++ Native UI");
-    window.setFramerateLimit(60);
+struct Button {
+    ConvexShape rect;
+    Text text;
+    float mx, my, mw, mh;
+    bool isPrimary;
+    AnimValue hoverAnim;
+    AnimValue pressAnim;
 
-    sf::Font font;
-    if (!font.openFromFile("C:/Windows/Fonts/arial.ttf")) {
-        std::cerr << "Could not load font." << std::endl;
+    Button(Font& font, const string& lbl, float x, float y, float w, float h, bool primary = false) 
+        : text(font, lbl, 16) {
+        mx = x; my = y; mw = w; mh = h; isPrimary = primary;
+        rect = createRoundedRect(w, h, 8);
+        rect.setPosition(Vector2f(x, y));
+        FloatRect tb = text.getLocalBounds();
+        text.setPosition(Vector2f(x + w/2.0f - tb.size.x/2.0f, y + h/2.0f - tb.size.y/2.0f - 4));
+        text.setFillColor(Color::White);
     }
 
-    sf::Text title(font, "Beryl Native Packager", 28);
-    title.setPosition({50, 20});
-    title.setFillColor(sf::Color::White);
+    void update(float dt, float mouseX, float mouseY, bool isMouseDown) {
+        bool isHovered = rect.getGlobalBounds().contains(Vector2f(mouseX, mouseY));
+        hoverAnim.target = isHovered ? 1.0f : 0.0f;
+        hoverAnim.update(dt);
+        pressAnim.target = (isHovered && isMouseDown) ? 1.0f : 0.0f;
+        pressAnim.update(dt);
+    }
 
-    TextBox tbEntry(font, "Entry File (.sp):", 50, 70, 700, "main.sp");
-    TextBox tbOutput(font, "Output File (.exe):", 50, 140, 700, "app.exe");
-    TextBox tbAuthor(font, "Author:", 50, 210, 700, "Beryl User");
-    TextBox tbVersion(font, "Version:", 50, 280, 700, "1.0.0");
-    TextBox tbIcon(font, "Icon Path (.ico) (optional):", 50, 350, 700, "");
+    void draw(RenderWindow& window) {
+        Color base = isPrimary ? primary_color : input_color;
+        Color hover = isPrimary ? primary_hover : Color(48, 54, 61);
+        Color target = lerpColor(base, hover, hoverAnim.current);
+        target = lerpColor(target, Color(target.r/2, target.g/2, target.b/2), pressAnim.current);
+        rect.setFillColor(target);
+        window.draw(rect);
+        window.draw(text);
+    }
 
-    CheckBox cbNoConsole(font, "Hide Console Window (-noconsole)", 50, 430, false);
-    CheckBox cbOptimize(font, "Optimize Bytecode", 50, 470, true);
-    CheckBox cbSoftMode(font, "Soft Mode (Disable Type Checking)", 50, 510, false);
-    CheckBox cbAdmin(font, "Require Admin Privileges (Manifest)", 50, 550, false);
+    bool isClicked(float mx_in, float my_in) {
+        return rect.getGlobalBounds().contains(Vector2f(mx_in, my_in));
+    }
+};
 
-    sf::RectangleShape btnEntryBrowse({80, 30});
-    btnEntryBrowse.setPosition({760, 95});
-    btnEntryBrowse.setFillColor(sf::Color(70, 70, 70));
-    sf::Text tBrowseEntry(font, "Browse", 16);
-    tBrowseEntry.setPosition({770, 100});
+void run_beryl_ui() {
+    ContextSettings settings;
+    settings.antiAliasingLevel = 8;
+    RenderWindow window(VideoMode(sf::Vector2u(800, 640)), "Beryl App Packager", Style::Titlebar | Style::Close, State::Windowed, settings);
+    window.setFramerateLimit(60);
+
+    Font font;
+    // Load a font, in SFML 3 it's openFromFile, in 2 it's loadFromFile.
+    // We will use openFromFile because the original code used it.
+    if (!font.openFromFile("C:/Windows/Fonts/segoeui.ttf")) {
+        if (!font.openFromFile("C:/Windows/Fonts/arial.ttf")) {
+            cerr << "Could not load font." << endl;
+        }
+    }
+
+    TextBox tbEntry(font, "Entry Script (.sp)", 40, 80, 580);
+    Button btnEntryBrowse(font, "Browse", 630, 102, 120, 36);
+    TextBox tbOutput(font, "Output Executable (.exe)", 40, 150, 580, "app.exe");
+    Button btnOutputBrowse(font, "Browse", 630, 172, 120, 36);
+
+    TextBox tbAssets(font, "Assets Folder (Optional)", 40, 220, 580);
+
+    ToggleSwitch tsConsole(font, "Hide Console Window", 40, 320, true);
+    ToggleSwitch tsEncrypt(font, "Encrypt Bytecode", 40, 360, true);
+    ToggleSwitch tsCompress(font, "Compress Assets", 300, 320, false);
+    ToggleSwitch tsAdmin(font, "Require Admin", 300, 360, false);
+
+    Button btnBuild(font, "Package Application", 200, 480, 400, 50, true);
+
+    Text title(font, "Beryl", 32);
+    title.setFillColor(Color::White);
+    title.setPosition(Vector2f(40, 20));
     
-    sf::RectangleShape btnOutBrowse({80, 30});
-    btnOutBrowse.setPosition({760, 165});
-    btnOutBrowse.setFillColor(sf::Color(70, 70, 70));
-    sf::Text tBrowseOut(font, "Browse", 16);
-    tBrowseOut.setPosition({770, 170});
+    Text subtitle(font, "Sapphire Native Packager", 14);
+    subtitle.setFillColor(focus_color);
+    subtitle.setPosition(Vector2f(130, 35));
+    
+    Text statusText(font, "Ready", 14);
+    statusText.setFillColor(muted_color);
+    statusText.setPosition(Vector2f(40, 560));
 
-    sf::RectangleShape btnIconBrowse({80, 30});
-    btnIconBrowse.setPosition({760, 375});
-    btnIconBrowse.setFillColor(sf::Color(70, 70, 70));
-    sf::Text tBrowseIcon(font, "Browse", 16);
-    tBrowseIcon.setPosition({770, 380});
-
-    sf::RectangleShape button({250, 50});
-    button.setPosition({50, 620});
-    button.setFillColor(sf::Color(0, 122, 204));
-
-    sf::Text btnText(font, "GENERATE & PACK", 20);
-    btnText.setPosition({80, 632});
-    btnText.setFillColor(sf::Color::White);
-
-    sf::Text status(font, "Ready.", 18);
-    status.setPosition({320, 635});
-    status.setFillColor(sf::Color(150, 150, 150));
-
+    Clock clock;
     while (window.isOpen()) {
+        float dt = clock.restart().asSeconds();
+        Vector2i mousePos = Mouse::getPosition(window);
+        bool mouseDown = Mouse::isButtonPressed(Mouse::Button::Left);
+
         while (const std::optional event = window.pollEvent()) {
-            if (event->is<sf::Event::Closed>()) {
+            if (event->is<Event::Closed>()) {
                 window.close();
             }
-            if (const auto* mb = event->getIf<sf::Event::MouseButtonPressed>()) {
-                if (mb->button == sf::Mouse::Button::Left) {
-                    sf::Vector2f mPos = sf::Vector2f(sf::Mouse::getPosition(window));
-                    tbEntry.handleClick(mPos);
-                    tbOutput.handleClick(mPos);
-                    tbAuthor.handleClick(mPos);
-                    tbVersion.handleClick(mPos);
-                    tbIcon.handleClick(mPos);
-                    cbNoConsole.handleClick(mPos);
-                    cbOptimize.handleClick(mPos);
-                    cbSoftMode.handleClick(mPos);
-                    cbAdmin.handleClick(mPos);
+            else if (const auto* mouseBtn = event->getIf<Event::MouseButtonPressed>()) {
+                if (mouseBtn->button == Mouse::Button::Left) {
+                    tbEntry.handleClick(mouseBtn->position.x, mouseBtn->position.y);
+                    tbOutput.handleClick(mouseBtn->position.x, mouseBtn->position.y);
+                    tbAssets.handleClick(mouseBtn->position.x, mouseBtn->position.y);
+                    
+                    tsConsole.handleClick(mouseBtn->position.x, mouseBtn->position.y);
+                    tsEncrypt.handleClick(mouseBtn->position.x, mouseBtn->position.y);
+                    tsCompress.handleClick(mouseBtn->position.x, mouseBtn->position.y);
+                    tsAdmin.handleClick(mouseBtn->position.x, mouseBtn->position.y);
 
-                    if (btnEntryBrowse.getGlobalBounds().contains(mPos)) {
-                        tbEntry.browseFile(false);
-                    }
-                    if (btnOutBrowse.getGlobalBounds().contains(mPos)) {
-                        tbOutput.browseFile(true);
-                    }
-                    if (btnIconBrowse.getGlobalBounds().contains(mPos)) {
-                        tbIcon.browseFile(false);
-                    }
-
-                    if (button.getGlobalBounds().contains(mPos)) {
-                        std::ofstream confFile("BerylConfig.txt");
-                        if (confFile.is_open()) {
-                            confFile << "EntryFile=" << tbEntry.value << "\n";
-                            confFile << "OutputFile=" << tbOutput.value << "\n";
-                            confFile << "Author=" << tbAuthor.value << "\n";
-                            confFile << "Version=" << tbVersion.value << "\n";
-                            confFile << "IconPath=" << tbIcon.value << "\n";
-                            confFile << "NoConsole=" << (cbNoConsole.checked ? "true" : "false") << "\n";
-                            confFile << "Optimize=" << (cbOptimize.checked ? "true" : "false") << "\n";
-                            confFile << "SoftMode=" << (cbSoftMode.checked ? "true" : "false") << "\n";
-                            confFile << "RequireAdmin=" << (cbAdmin.checked ? "true" : "false") << "\n";
-                            confFile.close();
-                        }
- 
-                        // Empacotar
-                        BerylConfig config = parse_beryl_config("BerylConfig.txt");
-                        if (config.EntryFile.empty()) {
-                            status.setFillColor(sf::Color::Red);
-                            status.setString("Error: Entry File is empty.");
+                    if (btnEntryBrowse.isClicked(mouseBtn->position.x, mouseBtn->position.y)) tbEntry.browseFile(false);
+                    if (btnOutputBrowse.isClicked(mouseBtn->position.x, mouseBtn->position.y)) tbOutput.browseFile(true);
+                    
+                    if (btnBuild.isClicked(mouseBtn->position.x, mouseBtn->position.y)) {
+                        statusText.setFillColor(Color(220, 220, 100));
+                        statusText.setString("Building...");
+                        window.draw(statusText);
+                        window.display();
+                        
+                        BerylConfig cfg;
+                        cfg.EntryFile = tbEntry.value;
+                        cfg.OutputFile = tbOutput.value;
+                        cfg.AssetsFolder = tbAssets.value;
+                        cfg.NoConsole = tsConsole.isChecked;
+                        cfg.Encrypt = tsEncrypt.isChecked;
+                        cfg.Compress = tsCompress.isChecked;
+                        cfg.RequireAdmin = tsAdmin.isChecked;
+                        
+                        if (pack_executable(cfg, "runner.exe")) {
+                            statusText.setFillColor(primary_hover);
+                            statusText.setString("Success! Application packaged successfully.");
                         } else {
-                            if (pack_executable(config, runner_path)) {
-                                status.setFillColor(sf::Color::Green);
-                                status.setString("Success! Created " + config.OutputFile);
-                            } else {
-                                status.setFillColor(sf::Color::Red);
-                                status.setString("Error! Check terminal for details.");
-                            }
+                            statusText.setFillColor(error_color);
+                            statusText.setString("Failed to package application. Check console for details.");
                         }
                     }
                 }
             }
-            if (const auto* te = event->getIf<sf::Event::TextEntered>()) {
-                tbEntry.handleTextEntered(*te);
-                tbOutput.handleTextEntered(*te);
-                tbAuthor.handleTextEntered(*te);
-                tbVersion.handleTextEntered(*te);
-                tbIcon.handleTextEntered(*te);
+            else if (const auto* textEv = event->getIf<Event::TextEntered>()) {
+                tbEntry.handleInput(textEv->unicode);
+                tbOutput.handleInput(textEv->unicode);
+                tbAssets.handleInput(textEv->unicode);
             }
         }
 
-        window.clear(sf::Color(30, 30, 30));
+        tbEntry.update(dt);
+        tbOutput.update(dt);
+        tbAssets.update(dt);
+        
+        tsConsole.update(dt, mousePos.x, mousePos.y);
+        tsEncrypt.update(dt, mousePos.x, mousePos.y);
+        tsCompress.update(dt, mousePos.x, mousePos.y);
+        tsAdmin.update(dt, mousePos.x, mousePos.y);
+
+        btnEntryBrowse.update(dt, mousePos.x, mousePos.y, mouseDown);
+        btnOutputBrowse.update(dt, mousePos.x, mousePos.y, mouseDown);
+        btnBuild.update(dt, mousePos.x, mousePos.y, mouseDown);
+
+        window.clear(bg_color);
         
         window.draw(title);
+        window.draw(subtitle);
+
         tbEntry.draw(window);
-        window.draw(btnEntryBrowse); window.draw(tBrowseEntry);
-        
+        btnEntryBrowse.draw(window);
         tbOutput.draw(window);
-        window.draw(btnOutBrowse); window.draw(tBrowseOut);
+        btnOutputBrowse.draw(window);
+        tbAssets.draw(window);
+
+        tsConsole.draw(window);
+        tsEncrypt.draw(window);
+        tsCompress.draw(window);
+        tsAdmin.draw(window);
+
+        btnBuild.draw(window);
         
-        tbAuthor.draw(window);
-        tbVersion.draw(window);
-        tbIcon.draw(window);
-        window.draw(btnIconBrowse); window.draw(tBrowseIcon);
-
-        cbNoConsole.draw(window);
-        cbOptimize.draw(window);
-        cbSoftMode.draw(window);
-        cbAdmin.draw(window);
-
-        window.draw(button);
-        window.draw(btnText);
-        window.draw(status);
+        window.draw(statusText);
 
         window.display();
     }

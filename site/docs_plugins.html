@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spark & Plugins — Sapphire Docs</title>
+    <meta name="description" content="Learn how to build, test and distribute Sapphire plugins using the Spark package manager.">
+    <link rel="icon" href="assets/logo.svg">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="dark-mode">
+    <!-- Mobile Sidebar Toggle -->
+    <button class="sidebar-toggle" aria-label="Open menu">☰</button>
+    <div class="sidebar-overlay"></div>
+
+    <div class="docs-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-inner">
+                <div class="sidebar-header">
+                    <a href="../index.html" class="sidebar-logo">
+                        <div class="logo-gem">💎</div>
+                        Sapphire
+                    </a>
+                    <button id="sidebar-theme-toggle" aria-label="Toggle theme">🌙</button>
+                </div>
+                <div class="sidebar-nav-body">
+                <nav>
+                    <h4>Part 1: The Core</h4>
+                    <ul>
+                        <li><a href="docs_intro.html">1. Intro & Variables</a></li>
+                        <li><a href="docs_control_flow.html">2. Control Flow & Functions</a></li>
+                        <li><a href="docs_data_structures.html">3. Lists & Maps</a></li>
+                        <li><a href="docs_std_basic.html">4. Math & System Modules</a></li>
+                    </ul>
+
+                    <h4>Part 2: Advanced</h4>
+                    <ul>
+                        <li><a href="docs_oop.html">5. Object-Oriented (OOP)</a></li>
+                        <li><a href="docs_exceptions.html">6. Exceptions Handling</a></li>
+                        <li><a href="docs_async.html">7. Async & Await</a></li>
+                        <li><a href="docs_threading.html">8. Multi-threading</a></li>
+                    </ul>
+
+                    <h4>Part 3: I/O & UI</h4>
+                    <ul>
+                        <li><a href="docs_file_io.html">9. File I/O</a></li>
+                        <li><a href="docs_http.html">10. HTTP Requests</a></li>
+                        <li><a href="docs_ui_engine.html">11. UI Engine</a></li>
+                        <li><a href="docs_sqlite.html">12. SQLite Database</a></li>
+                    </ul>
+
+                    <h4>Part 4: Spark & Plugins</h4>
+                    <ul>
+                        <li><a href="docs_plugins.html" class="active">13. Creating Plugins</a></li>
+                    </ul>
+                </nav>
+                </div>
+                <div class="sidebar-footer">
+                    <span class="version-badge">💎 v1.0.6</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="docs-content">
+
+            <div class="article-toc">
+                <strong>📑 On this page</strong>
+                <ul>
+                    <li><a href="#intro">O que é um Plugin Sapphire?</a></li>
+                    <li><a href="#structure">Estrutura de um Projeto</a></li>
+                    <li><a href="#spark-commands">Comandos do Spark</a></li>
+                    <li><a href="#quirks">Quirks e Comportamentos (Global vs Local)</a></li>
+                    <li><a href="#testing">Testes Automatizados</a></li>
+                    <li><a href="#c-api">Módulos Nativos (C-API)</a></li>
+                </ul>
+            </div>
+
+            <h1 id="intro">Criando Plugins com o Spark</h1>
+            <p>O <b>Spark</b> é o gerenciador de pacotes e projetos oficial da linguagem Sapphire. Com ele, você pode não apenas baixar bibliotecas prontas feitas pela comunidade, mas também criar os seus próprios <b>Plugins</b> e módulos compartilháveis de maneira simples e elegante.</p>
+            <p>Seja para dividir o seu código em partes menores ou publicar um módulo na web, o Spark cuida de tudo para você, como uma experiência análoga ao <i>Cargo</i> no Rust ou o <i>NPM</i> no Node.js.</p>
+
+            <h2 id="structure">Estrutura de um Projeto</h2>
+            <p>Tudo começa com o arquivo de manifesto <code>sapphire.json</code>. Este arquivo descreve as informações do seu plugin, versão, dependências e quem é você.</p>
+            
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">Terminal</span>
+                </div>
+                <pre><code>$ spark init
+Name: meu_plugin
+Author: Seu Nome
+Description: Um plugin incrível
+Version: 1.0.0</code></pre>
+            </div>
+            
+            <p>Isso gerará a seguinte estrutura de pastas:</p>
+            <pre><code>meu_plugin/
+├── sapphire.json      (O manifesto e dependências)
+├── PLUGIN.txt         (Usado internamente pelo ecossistema)
+├── src/
+│   └── main.sp        (Arquivo de entrada opcional)
+└── tests/             (Onde os testes unitários residem)</code></pre>
+
+
+            <h2 id="spark-commands">Comandos do Spark</h2>
+            <p>O Spark possui várias ferramentas embarcadas que agilizam o seu trabalho no dia-a-dia:</p>
+            <ul>
+                <li><code>spark init</code>: Inicia um novo projeto (como no exemplo acima).</li>
+                <li><code>spark install &lt;repo/nome&gt;</code>: Baixa um plugin do GitHub (ex: <code>foxzyt/sapphire-json</code>).
+                <li><code>spark install --save-dev &lt;repo/nome&gt;</code>: Instala uma dependência mas apenas para ambiente de desenvolvimento.</li>
+                <li><code>spark purge</code>: Desinstala e limpa plugins que não estão mais sendo utilizados.</li>
+                <li><code>spark test [dir]</code>: Varre a pasta de testes e executa suas rotinas.</li>
+                <li><code>spark clean</code>: Remove artefatos temporários do projeto.</li>
+            </ul>
+
+            <h2 id="quirks">Quirks e Comportamentos (Global vs Local)</h2>
+            <p>O Spark possui um comportamento de resolução duplo quando busca por plugins (o famoso Bug de Escopo resolvido). O escopo divide-se em <b>Global</b> e <b>Local</b>:</p>
+            <ul>
+                <li><b>Local:</b> Fica na pasta <code>./plugins/</code> dentro do seu projeto atual. Tem precedência máxima.</li>
+                <li><b>Global:</b> Fica na pasta <code>%AppData%\Sapphire\plugins</code> (Windows) ou equivalente em outros SOs. É usado de forma secundária.</li>
+            </ul>
+            <p>Se o Spark encontrar o mesmo plugin nas duas pastas, a versão <b>Local</b> sempre vence. Portanto, usar `--save-dev` ou focar no escopo local é ótimo para evitar conflitos de versão entre múltiplos projetos na sua máquina!</p>
+
+
+            <h2 id="testing">Testes Automatizados</h2>
+            <p>Você pode testar seus módulos nativamente com o Spark sem precisar de nenhuma biblioteca extra! Basta criar a pasta <code>tests/</code> (ou qualquer pasta e passa-la como argumento: <code>spark test minha_pasta/</code>) e colocar seus scripts `.sp` lá dentro.</p>
+            
+            <p>Você pode criar um arquivo chamado <b>SparkTestConfig.txt</b> para forçar o Spark a avaliar a saída do seu script em vez de apenas o código de término (Exit Code). O layout é simples:</p>
+            
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">SparkTestConfig.txt</span>
+                </div>
+                <pre><code>[math_test.sp]
+EXPECT: SUCESSO
+
+[network_test.sp]
+EXPECT: HTTP 200</code></pre>
+            </div>
+
+            <p>No seu arquivo <code>math_test.sp</code>, você então executa a lógica e imprime a palavra de sucesso esperada:</p>
+
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                </div>
+                <pre><code><span class="token-keyword">var</span> resultado = 10 + 20<span class="token-punctuation">;</span>
+<span class="token-keyword">if</span> (resultado == 30) {
+    <span class="token-function">print</span>(<span class="token-string">"SUCESSO"</span>)<span class="token-punctuation">;</span>
+} <span class="token-keyword">else</span> {
+    <span class="token-function">print</span>(<span class="token-string">"FALHA"</span>)<span class="token-punctuation">;</span>
+}</code></pre>
+            </div>
+
+            <p>Rodando <code>spark test</code>, o terminal lhe dirá exatamente quais testes passaram e quais falharam! ✅</p>
+
+            <h2 id="c-api">Módulos Nativos (C-API)</h2>
+            <p>Além de escrever bibliotecas inteiramente em Sapphire, o <b>Spark</b> suporta empacotamento de DLLs e Shared Objects (arquivos <code>.so</code> no Linux/macOS) que expandem a linguagem com código nativo C++.</p>
+            
+            <p>Uma função de extensão em C++ requer a assinatura <code>SapphireValue native_func(int argCount, SapphireValue* args)</code>. O ecossistema agora usa a arquitetura <b>Tagged Union</b> para velocidade extrema.</p>
+            
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">C++</span>
+                </div>
+                <pre><code>#include "sapphire_plugin.h"
+
+// Recebe dois números e retorna a soma como um Valor Nativo
+SapphireValue native_soma(int argCount, SapphireValue* args) {
+    if (argCount != 2 || args[0].type != ValType::NUMBER || args[1].type != ValType::NUMBER) {
+        return create_nil_value();
+    }
+    
+    double a = args[0].as.number;
+    double b = args[1].as.number;
+    
+    SapphireValue result;
+    result.type = ValType::NUMBER;
+    result.as.number = a + b;
+    
+    return result;
+}
+
+// Registro no módulo
+extern "C" void register_plugin(PluginContext* ctx) {
+    ctx->define_native("soma_nativa", native_soma);
+}</code></pre>
+            </div>
+            
+            <p>E no seu código Sapphire, o módulo pode ser carregado magicamente pelo interpretador:</p>
+            
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                </div>
+                <pre><code><span class="token-keyword">var</span> lib = <span class="token-function">import</span>(<span class="token-string">"meu_plugin_nativo"</span>)<span class="token-punctuation">;</span>
+<span class="token-function">print</span>(lib.soma_nativa(10, 50))<span class="token-punctuation">;</span> <span class="token-comment">// Imprime 60</span></code></pre>
+            </div>
+            
+        </main>
+    </div>
+</body>
+</html>
