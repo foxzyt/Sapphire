@@ -2141,6 +2141,9 @@ void display_info() {
       "files into .exe executables)",
       "topaz <command>                  : Executes the Topaz help command "
       "(plugin and version manager)",
+      "citrine <command>                : Executes the Citrine static analysis linter",
+      "garnet <command>                 : Executes the Garnet parallel test runner",
+      "amethyst <command>               : Executes the Amethyst automatic code formatter",
       "",
       "Thank you!",
       "",

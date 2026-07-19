@@ -143,6 +143,13 @@ add_executable(beryl src/beryl/main.cpp src/beryl/beryl.cpp src/beryl/beryl_ui.c
 add_executable(citrine src/linter/main.cpp src/linter/citrine.cpp)
 target_link_libraries(citrine PUBLIC sapphire_core)
 
+add_executable(garnet src/test_runner/main.cpp src/test_runner/garnet.cpp)
+target_link_libraries(garnet PUBLIC sapphire_core)
+
+add_executable(amethyst src/formatter/main.cpp src/formatter/amethyst.cpp)
+target_link_libraries(amethyst PUBLIC sapphire_core)
+
+
 # Build new modular topaz (v2) - full-featured package manager
 option(BUILD_TOPAZ "Build new modular topaz package manager" ON)
 if(BUILD_TOPAZ)
