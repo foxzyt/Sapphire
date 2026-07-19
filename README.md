@@ -7,7 +7,9 @@
 **[Website](https://foxzyt.github.io/Sapphire)** . **[Documentation](https://foxzyt.github.io/Sapphire/site/docs_intro.html)** . **[Avaliable Plugins](https://github.com/foxzyt/sapphire-mine)**
 
 
-Sapphire is a hybrid programming language designed for performance and clarity. It combines the speed of compiled languages with the syntax of high-level scripting, making it suitable for tools, UI-driven applications, and system-level tasks.
+Sapphire is a hybrid, **time-aware** programming language designed for performance and clarity. It combines the speed of compiled languages with the syntax of high-level scripting, making it suitable for tools, UI-driven applications, and system-level tasks. 
+
+Sapphire is designed to understand and work together with **physical time** at the core virtual machine level, offering first-class primitives for real-time execution bounds (within/fallback), temporal loops (every), bytecode-level retroactive rollbacks (try/undo), and automatic memory decay (fade).
 
 > **Note:** Sapphire currently only supports **Windows**.
 
@@ -59,7 +61,7 @@ Performance results based on the best recorded execution times for Sapphire (v1.
 ## Language Guide
 
 ### Variables and Data Types
-Variables can be declared implicitly or explicitly using `var`.
+Variables can be declared implicitly or explicitly using `var`. Sapphire also supports `const` for immutable variables.
 
 ```javascript
 // Implicit declaration
@@ -72,17 +74,53 @@ var counter = 0
 const pi = 3.1415
 ```
 
-### Functions
-Functions are declared using the `function` keyword and require a return type.
+### Nullish Coalescing & Optional Chaining
+Safely handle default values and potential `nil` references.
 
 ```javascript
+var input = nil
+var username = input ?? "Guest" // username becomes "Guest"
+
+var user = nil
+var email = user?.profile?.email // Safely returns nil instead of crashing!
+```
+
+### Functions & Arrow Functions
+Standard functions can take arguments and return values. For short expressions, concise arrow functions can be used.
+
+```javascript
+// Standard function
 function greet(name) {
     return "Hello, " + name
 }
 
-function print_message() {
-    print("This function returns nothing.")
+// Arrow function (concise)
+var square = (x) => x * x
+print(square(5)) // Outputs 25
+```
+
+### Classes & Object-Oriented Programming (OOP)
+Sapphire supports object-oriented paradigms with classes, inheritance, and constructors.
+
+```javascript
+class Animal {
+    function init(name) {
+        this.name = name
+    }
+    
+    function speak() {
+        print(this.name + " makes a sound.")
+    }
 }
+
+class Dog extends Animal {
+    function speak() {
+        print(this.name + " barks! 🐶")
+    }
+}
+
+var my_dog = Dog("Rex")
+my_dog.speak() // Outputs: Rex barks! 🐶
 ```
 
 ### Control Flow
@@ -100,6 +138,44 @@ while (current < limit) {
     }
     current = current + 1
 }
+```
+
+### Time-Aware & Retroactive Control Flow
+Sapphire is uniquely time-aware, offering native primitives for managing real-time physics and state rollback.
+
+```javascript
+// 1. Time-Bound Execution (within / fallback)
+within (15ms) {
+    var solution = calculateComplexPathfinding()
+    applyPhysics(solution)
+} fallback {
+    // Runs instantly if the within block takes more than 15 milliseconds physical time
+    applySimplifiedPhysics()
+}
+
+// 2. Temporal Loop (every)
+every (1s) {} // Suspends execution for exactly 1 second (1000ms)
+print("1 second elapsed!")
+
+// 3. Retroactive Rollback (try / undo)
+var balance = 100
+try {
+    balance = balance - 50
+    if (balance < 60) {
+        print("Insufficient balance, reversing transaction!")
+        undo; // Natively rolls back memory mutation, restoring balance to 100!
+    }
+}
+print(balance) // Outputs: 100
+
+// 4. Chrono-Generative Memory (fade)
+// Decays from 100 to nil over 500 milliseconds using a linear curve
+fade(500ms, linear) var health = 100
+print(health) // 100
+every (250ms) {}
+print(health) // Around 50
+every (300ms) {}
+print(health) // nil (expired/garbage collected!)
 ```
 
 ### Arrays

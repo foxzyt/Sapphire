@@ -78,6 +78,7 @@
                     <li><a href="#arithmetic">Arithmetic</a></li>
                     <li><a href="#comparison">Comparison Operators</a></li>
                     <li><a href="#nullish">Nullish Coalescing</a></li>
+                    <li><a href="#chrono-memory">Chrono-Generative Memory</a></li>
                     <li><a href="#first-program">Your First Program</a></li>
                 </ul>
             </div>
@@ -312,6 +313,36 @@ data = <span class="token-string">"Now I am a string!"</span><span class="token-
                 <div class="output-container">
                     > Guest<br>
                     > nil
+                </div>
+            </div>
+
+            <h2 id="chrono-memory">Chrono-Generative Memory (Temporal Decay)</h2>
+            <p>Sapphire introduces a unique, biological-inspired memory paradigm: <b>Chrono-Generative Memory</b>. Instead of values living indefinitely until out-of-scope or garbage collected, variables declared with the <code>fade</code> modifier experience physical real-time mathematical degradation (decay) and are automatically garbage collected (becoming <code>nil</code>) once their half-life expires.</p>
+            
+            <p>Syntactically, you define a fade variable by specifying its duration (e.g. <code>50ms</code> or <code>10s</code>) and optionally its decay curve (<code>linear</code> or <code>exponential</code>):</p>
+            
+            <div class="snippet-container">
+                <div class="snippet-header">
+                    <span class="snippet-lang">sapphire</span>
+                    <div class="snippet-actions">
+                        <button class="btn-copy">Copy</button>
+                        <button class="btn-run">Run / Output</button>
+                    </div>
+                </div>
+                <pre><code><span class="token-comment">// Decays from 100 to 0 linearly over 100 milliseconds</span>
+<span class="token-keyword">fade</span>(<span class="token-number">100ms</span><span class="token-punctuation">,</span> <span class="token-keyword">linear</span>) <span class="token-keyword">var</span> fadingVal = <span class="token-number">100</span><span class="token-punctuation">;</span>
+<span class="token-function">print</span>(<span class="token-string">"Initial value: "</span> + fadingVal)<span class="token-punctuation">;</span> // 100
+
+<span class="token-comment">// Sleep for 50ms</span>
+<span class="token-keyword">every</span> (<span class="token-number">50ms</span>) {}
+<span class="token-function">print</span>(<span class="token-string">"Value after 50ms: "</span> + fadingVal)<span class="token-punctuation">;</span> // Around 50
+
+<span class="token-keyword">every</span> (<span class="token-number">60ms</span>) {}
+<span class="token-function">print</span>(<span class="token-string">"Value after 110ms total: "</span> + fadingVal)<span class="token-punctuation">;</span> // nil (expirado!)</code></pre>
+                <div class="output-container">
+                    > Initial value: 100<br>
+                    > Value after 50ms: 50<br>
+                    > Value after 110ms total: nil
                 </div>
             </div>
 
