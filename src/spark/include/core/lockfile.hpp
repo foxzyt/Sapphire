@@ -158,14 +158,23 @@ public:
             }
         }
         
-        std::ofstream file(lockfile_path_);
+        fs::path temp_path = lockfile_path_.string() + ".tmp";
+        std::ofstream file(temp_path);
         if (!file.is_open()) {
-            std::cerr << "[!] Failed to open lock file for writing: " << lockfile_path_ << std::endl;
+            std::cerr << "[!] Failed to open lock file for writing: " << temp_path << std::endl;
             return false;
         }
         
         file << j.dump(2);
         file.close();
+        
+        std::error_code ec;
+        fs::rename(temp_path, lockfile_path_, ec);
+        if (ec) {
+            // Fallback for cross-device or if overwrite fails (e.g. Windows sometimes)
+            fs::copy_file(temp_path, lockfile_path_, fs::copy_options::overwrite_existing, ec);
+            fs::remove(temp_path, ec);
+        }
         
         std::cout << "[*] Lock file written to: " << lockfile_path_ << std::endl;
         
