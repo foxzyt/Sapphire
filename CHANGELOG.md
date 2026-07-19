@@ -198,7 +198,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Matrix operations: `zeros_matrix()`, `ones_matrix()`, `identity()`, `dot()`
   - Shape manipulation: `reshape()`, `transpose()`, `flatten()`
   - Slicing: `slice()`, `filter()` (boolean indexing)
-  - Advanced linear algebra: `matmul()`, `determinant()`, `inverse()`
+- **Performance Optimizations (v1.0.10+):** The Sapphire VM underwent a massive performance rewrite, transitioning from `std::variant` to a lightweight Tagged Union (`SapphireValue`). Inlined heavily used check functions (like `is_falsey`) and implemented direct fast-paths for math operators (`OP_ADD`, `OP_LESS`, etc.) and `OP_CALL`. Loop evaluation and standard function calls are now dramatically faster, pushing execution speeds to ~0.14s for deep recursive calls like `fib(30)`.
+- **Spark Test CLI Engine:** `spark test` now reads an explicit `SparkTestConfig.txt` which specifies expected console output, regex, and assertions for each test execution.
+- **Spark Plugin Documentation:** Added extensive C++ Plugin API documentation on how to write Sapphire extensions dynamically, viewable at `site/docs_plugins.html`.
+- **Advanced linear algebra:** `matmul()`, `determinant()`, `inverse()`
   - Broadcasting: `add_scalar()`, `sub_scalar()`, `mul_scalar()`, `div_scalar()`
   - Random generation: `rand()`, `randn()`, `randint()`, `choice()`
   - Utilities: `abs()`, `pow()`, `sqrt_list()`, `sort()`, `reverse()`, `print_vector()`
