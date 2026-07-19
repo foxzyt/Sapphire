@@ -36,45 +36,42 @@ inline int cmd_search(const std::string& query) {
     const char* REGISTRY_FILE = "registry.json";
 
     try {
-        httplib::SSLClient cli("raw.githubusercontent.com");
+        httplib::SSLClient cli("api.github.com");
         cli.set_follow_location(true);
         cli.set_connection_timeout(15);
         cli.set_read_timeout(30);
         cli.enable_server_certificate_verification(false);
 
-        std::string url_path = std::string("/") + REGISTRY_OWNER
+        std::string url_path = std::string("/repos/") + REGISTRY_OWNER
                               + "/" + REGISTRY_REPO
-                              + "/" + REGISTRY_BRANCH
-                              + "/" + REGISTRY_FILE;
+                              + "/contents";
 
-        auto res = cli.Get(url_path.c_str());
+        httplib::Headers headers = {
+            {"User-Agent", "Sapphire-Mine/2.2"},
+            {"Accept", "application/vnd.github.v3+json"}
+        };
+        auto res = cli.Get(url_path.c_str(), headers);
 
         if (!res) {
-            std::cerr << termcolor::red << "[!] Failed to connect to registry" << termcolor::reset << std::endl;
+            std::cerr << termcolor::red << "[!] Failed to connect to registry API" << termcolor::reset << std::endl;
             return 1;
         }
 
         if (res->status == 404) {
-            std::cerr << termcolor::yellow << "[!] Registry file not found" << termcolor::reset << std::endl;
+            std::cerr << termcolor::yellow << "[!] Registry repository not found" << termcolor::reset << std::endl;
             std::cout << "Registry URL: https://github.com/" << REGISTRY_OWNER << "/" << REGISTRY_REPO << std::endl;
             return 1;
         }
 
         if (res->status != 200) {
-            std::cerr << termcolor::red << "[!] HTTP " << res->status << " fetching registry" << termcolor::reset << std::endl;
+            std::cerr << termcolor::red << "[!] HTTP " << res->status << " fetching registry contents" << termcolor::reset << std::endl;
             return 1;
         }
 
-        nlohmann::json registry = nlohmann::json::parse(res->body);
+        nlohmann::json contents = nlohmann::json::parse(res->body);
 
-        if (!registry.is_object() || !registry.contains("plugins")) {
+        if (!contents.is_array()) {
             std::cerr << termcolor::red << "[!] Invalid registry format" << termcolor::reset << std::endl;
-            return 1;
-        }
-
-        nlohmann::json plugins = registry["plugins"];
-        if (!plugins.is_array()) {
-            std::cerr << termcolor::red << "[!] Invalid plugins format in registry" << termcolor::reset << std::endl;
             return 1;
         }
 
@@ -82,59 +79,37 @@ inline int cmd_search(const std::string& query) {
         std::string query_lower = query;
         std::transform(query_lower.begin(), query_lower.end(), query_lower.begin(), ::tolower);
 
-        std::vector<nlohmann::json> results;
-
-        for (const auto& plugin : plugins) {
-            if (!plugin.contains("name")) continue;
-
-            std::string name = plugin["name"].get<std::string>();
-            std::string name_lower = name;
-            std::transform(name_lower.begin(), name_lower.end(), name_lower.begin(), ::tolower);
-
-            // Search in name and description
-            bool matches = (name_lower.find(query_lower) != std::string::npos);
-
-            if (!matches && plugin.contains("description")) {
-                std::string desc = plugin["description"].get<std::string>();
-                std::string desc_lower = desc;
-                std::transform(desc_lower.begin(), desc_lower.end(), desc_lower.begin(), ::tolower);
-                matches = (desc_lower.find(query_lower) != std::string::npos);
-            }
-
-            if (matches) {
-                results.push_back(plugin);
+        std::vector<std::string> matching_plugins;
+        for (const auto& item : contents) {
+            if (item.contains("name") && item.contains("type") && item["type"] == "file") {
+                std::string file_name = item["name"].get<std::string>();
+                if (file_name.size() > 5 && file_name.substr(file_name.size() - 5) == ".json") {
+                    std::string plugin_name = file_name.substr(0, file_name.size() - 5);
+                    if (plugin_name == "registry" || plugin_name == "package") continue;
+                    
+                    std::string plugin_name_lower = plugin_name;
+                    std::transform(plugin_name_lower.begin(), plugin_name_lower.end(), plugin_name_lower.begin(), ::tolower);
+                    if (plugin_name_lower.find(query_lower) != std::string::npos) {
+                        matching_plugins.push_back(plugin_name);
+                    }
+                }
             }
         }
 
-        if (results.empty()) {
+        if (matching_plugins.empty()) {
             std::cout << termcolor::yellow << "[*] No plugins found matching '" << query << "'" << termcolor::reset << std::endl;
             return 0;
         }
 
-        std::cout << termcolor::green << "[OK] Found " << results.size() << " plugin(s)" << termcolor::reset << std::endl;
+        std::cout << termcolor::green << "[OK] Found " << matching_plugins.size() << " plugin(s)" << termcolor::reset << std::endl;
         std::cout << std::endl;
 
-        for (const auto& plugin : results) {
-            std::string name = plugin.value("name", "Unknown");
-            std::string author = plugin.value("author", "Unknown");
-            std::string description = plugin.value("description", "");
-            std::string version = plugin.value("latest_version", "N/A");
-            std::string url = plugin.value("url", "");
-
-            std::cout << termcolor::bold << termcolor::cyan << name << termcolor::reset << std::endl;
-            std::cout << "  " << termcolor::yellow << "Author:" << termcolor::reset << " " << author << std::endl;
-            std::cout << "  " << termcolor::yellow << "Version:" << termcolor::reset << " " << version << std::endl;
-
-            if (!description.empty()) {
-                std::cout << "  " << termcolor::yellow << "Description:" << termcolor::reset << " " << description << std::endl;
-            }
-
-            if (!url.empty()) {
-                std::cout << "  " << termcolor::yellow << "URL:" << termcolor::reset << " " << url << std::endl;
-            }
-
-            std::cout << std::endl;
+        for (const auto& plugin_name : matching_plugins) {
+            // Optional: fetch specific JSON for each to get author/desc, but to avoid rate limits, we just show the name.
+            std::cout << termcolor::bold << termcolor::cyan << plugin_name << termcolor::reset << std::endl;
         }
+
+
 
         std::cout << "Install with: " << termcolor::green << "spark install <name>" << termcolor::reset << std::endl;
 
