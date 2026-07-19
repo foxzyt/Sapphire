@@ -6,6 +6,7 @@
 #include <cmath>
 #include <algorithm>
 #include "vm.h"
+#include "compiler/compiler.h"
 #include "preprocessor/preprocessor.h"
 
 namespace quartz {
@@ -294,18 +295,26 @@ void execute_single_benchmark(const BenchmarkDef& bench, int duration_ms, Benchm
     result.name = bench.name;
     result.category = bench.category;
     
-    // Warmup pass
-    VM warmup_vm;
     Preprocessor prep;
     std::string processed = prep.process(bench.code);
-    for (int w = 0; w < 5; ++w) {
-        try {
-            warmup_vm.interpret(processed);
-        } catch (...) {}
+
+    // Warmup pass
+    VM warmup_vm;
+    ObjFunction* warmup_func = compile(&warmup_vm, processed);
+    if (warmup_func != nullptr) {
+        for (int w = 0; w < 5; ++w) {
+            warmup_vm.call_and_run(warmup_func);
+        }
     }
     
     // Benchmarking loop
     VM vm;
+    ObjFunction* func = compile(&vm, processed);
+    if (func == nullptr) {
+        std::cerr << "Compile error in benchmark: " << bench.name << "\n";
+        return;
+    }
+    
     size_t start_mem = vm.bytes_allocated;
     
     auto start = std::chrono::high_resolution_clock::now();
@@ -317,7 +326,10 @@ void execute_single_benchmark(const BenchmarkDef& bench, int duration_ms, Benchm
     while (std::chrono::high_resolution_clock::now() < end_limit) {
         auto iter_start = std::chrono::high_resolution_clock::now();
         try {
-            vm.interpret(processed);
+            bool run_success = vm.call_and_run(func);
+            if (!run_success) {
+                break;
+            }
             iterations++;
             auto iter_end = std::chrono::high_resolution_clock::now();
             double lat = std::chrono::duration<double, std::nano>(iter_end - iter_start).count();
