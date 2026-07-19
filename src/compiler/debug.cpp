@@ -99,6 +99,11 @@ int disassemble_instruction(const Chunk& chunk, int offset) {
         case OP_TRY_START:     return jump_instruction("OP_TRY_START", 1, chunk, offset);
         case OP_TRY_END:       return simple_instruction("OP_TRY_END", offset);
         case OP_THROW:         return simple_instruction("OP_THROW", offset);
+        case OP_WITHIN_START:  return jump_instruction("OP_WITHIN_START", 1, chunk, offset);
+        case OP_WITHIN_END:    return simple_instruction("OP_WITHIN_END", offset);
+        case OP_EVERY_TICK:    return simple_instruction("OP_EVERY_TICK", offset);
+        case OP_UNDO:          return simple_instruction("OP_UNDO", offset);
+        case OP_DEFINE_FADE:   return simple_instruction("OP_DEFINE_FADE", offset);
         default:
             std::cout << "Instrucao desconhecida: " << (int)instruction << std::endl;
             return offset + 1;

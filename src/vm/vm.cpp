@@ -3205,7 +3205,31 @@ bool VM::run(int target_frame_count) {
     std::string src_tmp;
     std::string resolved_path_tmp;
     ObjFunction* func_tmp;
+    int timer_counter = 0;
     SapphireValue val_tmp;
+
+    auto evaluate_fade = [](SapphireValue val) -> SapphireValue {
+        if (val.type == ValType::VAL_OBJ && val.as.obj->type == OBJ_FADE) {
+            ObjFade* fade = (ObjFade*)val.as.obj;
+            auto now = std::chrono::steady_clock::now();
+            auto ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now).time_since_epoch().count();
+            uint64_t elapsed = ms - fade->created_at_ms;
+            
+            if (elapsed >= fade->duration_ms) {
+                return SapphireValue(); // NIL (faded)
+            }
+            
+            if (fade->value.type == ValType::VAL_NUMBER) {
+                double progress = (double)elapsed / fade->duration_ms;
+                double multiplier = 1.0;
+                if (fade->curve_type == "linear") multiplier = 1.0 - progress;
+                else if (fade->curve_type == "exponential") multiplier = std::exp(-5.0 * progress);
+                return SapphireValue(fade->value.as.number * multiplier);
+            }
+            return fade->value;
+        }
+        return val;
+    };
 
 #ifndef _MSC_VER
     if (!table_initialized) {
@@ -3266,6 +3290,11 @@ bool VM::run(int target_frame_count) {
         dispatch_table[OP_GET_ITERATOR] = &&op_OP_GET_ITERATOR;
         dispatch_table[OP_ITER_NEXT_IN] = &&op_OP_ITER_NEXT_IN;
         dispatch_table[OP_ITER_NEXT_OF] = &&op_OP_ITER_NEXT_OF;
+        dispatch_table[OP_WITHIN_START] = &&op_OP_WITHIN_START;
+        dispatch_table[OP_WITHIN_END] = &&op_OP_WITHIN_END;
+        dispatch_table[OP_EVERY_TICK] = &&op_OP_EVERY_TICK;
+        dispatch_table[OP_UNDO] = &&op_OP_UNDO;
+        dispatch_table[OP_DEFINE_FADE] = &&op_OP_DEFINE_FADE;
         table_initialized = true;
     }
 #endif
@@ -3275,12 +3304,25 @@ bool VM::run(int target_frame_count) {
 #define PUSH(val) (*(top++) = val)
 #define POP() (*(--top))
 
+#define CHECK_TIMERS() \
+    if (!within_timers.empty()) { \
+        if (++timer_counter >= 16) { \
+            timer_counter = 0; \
+            auto now = std::chrono::steady_clock::now(); \
+            auto ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now).time_since_epoch().count(); \
+            if (ms >= within_timers.back().end_time_ms) { \
+                ip = within_timers.back().fallback_ip; \
+                within_timers.pop_back(); \
+            } \
+        } \
+    }
+
 #ifdef _MSC_VER
     #define TARGET(op) case op:
-    #define NEXT_CODE() goto loop_start
+    #define NEXT_CODE() do { CHECK_TIMERS(); goto loop_start; } while(0)
 #else
     #define TARGET(op) op_##op:
-    #define NEXT_CODE() goto *dispatch_table[READ_BYTE()]
+    #define NEXT_CODE() do { CHECK_TIMERS(); goto *dispatch_table[READ_BYTE()]; } while(0)
 #endif
 
 #ifdef _MSC_VER
@@ -3321,7 +3363,7 @@ TARGET(OP_DUP)
 
 TARGET(OP_GET_LOCAL) {
     uint8_t slot = READ_BYTE();
-    PUSH(slots[slot]);
+    PUSH(evaluate_fade(slots[slot]));
     NEXT_CODE();
 }
 
@@ -3338,7 +3380,7 @@ TARGET(OP_GET_GLOBAL) {
             return false;
         }
         PUSH(SapphireValue());
-    } else PUSH(it->second);
+    } else PUSH(evaluate_fade(it->second));
     NEXT_CODE();
 }
 
@@ -3899,11 +3941,53 @@ TARGET(OP_TRY_START) {
         std::cerr << "[SAPPHIRE ERROR] Too many nested try blocks." << std::endl;
         return false;
     }
+    
+    {
+        UndoBackup backup;
+        backup.globals = globals;
+        backup.locals.assign(stack, top);
+        backup.stack_top = top;
+        backup.frame_count = frame_count;
+        undo_stack.push_back(std::move(backup));
+    }
+    
     NEXT_CODE();
 }
 
 TARGET(OP_TRY_END) {
     if (catch_count > 0) catch_count--;
+    if (!undo_stack.empty()) undo_stack.pop_back();
+    NEXT_CODE();
+}
+
+TARGET(OP_UNDO) {
+    if (undo_stack.empty()) {
+        std::cerr << "Runtime Error: 'undo' called outside of a try block.\n";
+        return false;
+    }
+    
+    UndoBackup& backup = undo_stack.back();
+    globals = backup.globals;
+    for (size_t i = 0; i < backup.locals.size(); ++i) {
+        stack[i] = backup.locals[i];
+    }
+    top = stack + backup.locals.size();
+    frame_count = backup.frame_count;
+    frame = &frames[frame_count - 1];
+    slots = frame->slots;
+    
+    if (catch_count > 0) {
+        CatchBlock block = catch_blocks[--catch_count];
+        uint8_t* jump_op = block.catch_ip - 3;
+        if (*jump_op == OP_JUMP) {
+            uint16_t jump_offset = (jump_op[1] << 8) | jump_op[2];
+            ip = jump_op + 3 + jump_offset;
+        } else {
+            ip = block.catch_ip;
+        }
+    }
+    
+    undo_stack.pop_back();
     NEXT_CODE();
 }
 
@@ -3935,6 +4019,60 @@ TARGET(OP_THROW) {
 
 TARGET(OP_GET_ITERATOR) {
     PUSH(SapphireValue((double)0));
+    NEXT_CODE();
+}
+
+TARGET(OP_WITHIN_START) {
+    uint16_t fallback_offset = READ_SHORT();
+    SapphireValue limit_val = POP();
+    if (limit_val.type != ValType::VAL_NUMBER) {
+        std::cerr << "Runtime Error: within time limit must be a number." << std::endl;
+        return false;
+    }
+    
+    WithinTimer timer;
+    auto now = std::chrono::steady_clock::now();
+    auto ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now).time_since_epoch().count();
+    timer.end_time_ms = ms + (uint64_t)limit_val.as.number;
+    timer.fallback_ip = ip + fallback_offset;
+    
+    within_timers.push_back(timer);
+    NEXT_CODE();
+}
+
+TARGET(OP_WITHIN_END) {
+    if (!within_timers.empty()) {
+        within_timers.pop_back();
+    }
+    NEXT_CODE();
+}
+
+TARGET(OP_EVERY_TICK) {
+    SapphireValue time_val = POP();
+    if (time_val.type == ValType::VAL_NUMBER) {
+        std::this_thread::sleep_for(std::chrono::milliseconds((int)time_val.as.number));
+        timer_counter = 16; // Force timer check after sleep
+    }
+    NEXT_CODE();
+}
+
+TARGET(OP_DEFINE_FADE) {
+    SapphireValue initial_val = POP();
+    SapphireValue curve_val = POP();
+    SapphireValue time_val = POP();
+    
+    if (time_val.type != ValType::VAL_NUMBER || curve_val.type != ValType::VAL_OBJ || curve_val.as.obj->type != OBJ_STRING) {
+        std::cerr << "Runtime Error: Invalid fade arguments." << std::endl;
+        return false;
+    }
+    
+    ObjString* curve_str = (ObjString*)curve_val.as.obj;
+    ObjFade* fade = new_fade(this, initial_val, time_val.as.number, curve_str->chars);
+    
+    auto now = std::chrono::steady_clock::now();
+    fade->created_at_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now).time_since_epoch().count();
+    
+    PUSH(SapphireValue((Obj*)fade));
     NEXT_CODE();
 }
 
@@ -4404,6 +4542,7 @@ bool VM::call_and_run(ObjFunction* function) {
 
     return result;
 }
+
 
 
 

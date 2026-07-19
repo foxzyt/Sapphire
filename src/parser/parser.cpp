@@ -623,27 +623,34 @@ void Parser::try_statement() {
     
     patch_jump(try_jump);
     
-    consume(TokenType::TOKEN_CATCH, "Expect 'catch' after try block.");
-    consume(TokenType::TOKEN_LEFT_PAREN, "Expect '(' after 'catch'.");
-    consume(TokenType::TOKEN_IDENTIFIER, "Expect exception variable name.");
-    
-    Compiler* current = current_compiler;
-    if (current->local_count == 256) {
-        error("Too many local variables in function.");
+    if (match(TokenType::TOKEN_CATCH)) {
+        consume(TokenType::TOKEN_LEFT_PAREN, "Expect '(' after 'catch'.");
+        consume(TokenType::TOKEN_IDENTIFIER, "Expect exception variable name.");
+        
+        Compiler* current = current_compiler;
+        if (current->local_count == 256) {
+            error("Too many local variables in function.");
+        }
+        
+        Local* local = &current->locals[current->local_count++];
+        local->name = previous;
+        local->depth = current->scope_depth;
+        local->type = TokenType::TOKEN_VOID;
+        local->is_const = true;
+        
+        consume(TokenType::TOKEN_RIGHT_PAREN, "Expect ')' after catch exception name.");
+        consume(TokenType::TOKEN_LEFT_BRACE, "Expect '{' before catch block.");
+        
+        begin_scope();
+        block();
+        end_scope();
+    } else {
+        // Empty catch means we just drop the exception (if any) or it's just for undo.
+        // OP_TRY_START will jump here if an exception occurs. To propagate it, we'd need to re-throw,
+        // but for retroactive 'try/undo', we don't throw. If an exception actually happens, 
+        // this will just resume after the try block, effectively suppressing it.
+        // Wait, if it's an undo, the VM manually jumps PAST this block using the OP_JUMP right before it.
     }
-    
-    Local* local = &current->locals[current->local_count++];
-    local->name = previous;
-    local->depth = current->scope_depth;
-    local->type = TokenType::TOKEN_VOID;
-    local->is_const = true;
-    
-    consume(TokenType::TOKEN_RIGHT_PAREN, "Expect ')' after catch exception name.");
-    consume(TokenType::TOKEN_LEFT_BRACE, "Expect '{' before catch block.");
-    
-    begin_scope();
-    block();
-    end_scope();
     
     patch_jump(skip_catch);
 }
@@ -676,6 +683,56 @@ void Parser::continue_statement() {
 
     consume(TokenType::TOKEN_SEMICOLON, "Expect ';' after 'continue'.");
     emit_loop(current_compiler->current_loop->start);
+}
+
+
+void Parser::undo_statement() {
+    emit_byte(OP_UNDO);
+    consume(TokenType::TOKEN_SEMICOLON, "Expect ';' after 'undo'.");
+}
+
+void Parser::within_statement() {
+    consume(TokenType::TOKEN_LEFT_PAREN, "Expect '(' after 'within'.");
+    expression(); // Time in ms
+    if (match(TokenType::TOKEN_IDENTIFIER)) {
+        if (previous.literal == "s") {
+            emit_constant(1000.0);
+            emit_byte(OP_MULTIPLY);
+        } else if (previous.literal != "ms") {
+            error("Invalid time unit. Expected 's' or 'ms'.");
+        }
+    }
+    consume(TokenType::TOKEN_RIGHT_PAREN, "Expect ')' after within time.");
+    
+    int jump_to_fallback = emit_jump(OP_WITHIN_START);
+    
+    statement();
+    
+    emit_byte(OP_WITHIN_END);
+    int skip_fallback = emit_jump(OP_JUMP);
+    
+    patch_jump(jump_to_fallback);
+    if (match(TokenType::TOKEN_FALLBACK)) {
+        statement();
+    }
+    patch_jump(skip_fallback);
+}
+
+void Parser::every_statement() {
+    consume(TokenType::TOKEN_LEFT_PAREN, "Expect '(' after 'every'.");
+    expression(); // Time
+    if (match(TokenType::TOKEN_IDENTIFIER)) {
+        if (previous.literal == "s") {
+            emit_constant(1000.0);
+            emit_byte(OP_MULTIPLY);
+        } else if (previous.literal != "ms") {
+            error("Invalid time unit. Expected 's' or 'ms'.");
+        }
+    }
+    consume(TokenType::TOKEN_RIGHT_PAREN, "Expect ')' after every time.");
+    
+    emit_byte(OP_EVERY_TICK);
+    statement();
 }
 
 void Parser::enum_declaration() {
@@ -907,7 +964,7 @@ void Parser::declaration() {
         function_declaration(true);
     } else if (check(TokenType::TOKEN_INT) || check(TokenType::TOKEN_BOOL) || check(TokenType::TOKEN_STRING) ||
                check(TokenType::TOKEN_DOUBLE) || check(TokenType::TOKEN_FLOAT) || check(TokenType::TOKEN_VOID) ||
-               check(TokenType::TOKEN_CONST) || check(TokenType::TOKEN_VAR) ||
+               check(TokenType::TOKEN_CONST) || check(TokenType::TOKEN_VAR) || check(TokenType::TOKEN_FADE) ||
                (check(TokenType::TOKEN_IDENTIFIER) && check_next(TokenType::TOKEN_IDENTIFIER))) {
         declaration_statement();
     } else {
@@ -946,6 +1003,12 @@ void Parser::statement() {
         try_statement();
     } else if (match(TokenType::TOKEN_THROW)) {
         throw_statement();
+    } else if (match(TokenType::TOKEN_WITHIN)) {
+        within_statement();
+    } else if (match(TokenType::TOKEN_EVERY)) {
+        every_statement();
+    } else if (match(TokenType::TOKEN_UNDO)) {
+        undo_statement();
     } else if (match(TokenType::TOKEN_SPAWN)) {
         spawn_statement();
     } else {
@@ -955,6 +1018,32 @@ void Parser::statement() {
 
 void Parser::declaration_statement() {
     bool is_const = false;
+    bool has_fade = false;
+
+    if (match(TokenType::TOKEN_FADE)) {
+        has_fade = true;
+        consume(TokenType::TOKEN_LEFT_PAREN, "Expect '(' after 'fade'.");
+        expression(); // Tempo de decaimento
+        if (match(TokenType::TOKEN_IDENTIFIER)) {
+            if (previous.literal == "s") {
+                emit_constant(1000.0);
+                emit_byte(OP_MULTIPLY);
+            } else if (previous.literal != "ms") {
+                error("Invalid time unit. Expected 's' or 'ms'.");
+            }
+        }
+        
+        if (match(TokenType::TOKEN_COMMA)) {
+            if (match(TokenType::TOKEN_LINEAR) || match(TokenType::TOKEN_EXPONENTIAL)) {
+                emit_constant(new_string(vm, previous.literal));
+            } else {
+                expression(); // Função
+            }
+        } else {
+            emit_constant(new_string(vm, "linear")); // Default
+        }
+        consume(TokenType::TOKEN_RIGHT_PAREN, "Expect ')' after fade args.");
+    }
 
     if (match(TokenType::TOKEN_CONST)) {
         is_const = true;
@@ -1033,6 +1122,10 @@ void Parser::declaration_statement() {
             error("Declarations must be initialized.");
         }
         emit_byte(OP_NIL);
+    }
+    
+    if (has_fade) {
+        emit_byte(OP_DEFINE_FADE);
     }
 
     consume(TokenType::TOKEN_SEMICOLON, "Expected ';' after variable declaration.");

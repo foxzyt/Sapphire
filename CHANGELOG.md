@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
+### Added
+- **Novel Paradigms (within/fallback, every, try/undo, and fade):**
+  - Added full disassembly support for new opcodes (`OP_WITHIN_START`, `OP_WITHIN_END`, `OP_EVERY_TICK`, `OP_UNDO`, `OP_DEFINE_FADE`).
+  - Fixed time-bound flow control (`within` / `fallback`) timeout fallback execution.
+  - Implemented unit scaling (`s` to milliseconds) in the compiler/parser for `within`, `every`, and `fade` blocks.
 - Renomeado **Spack (sapphire packer)** para **Beryl**. Todas as referências internas de build, caminhos de arquivos (`src/spack` para `src/beryl`), assinaturas de rodapés de executáveis compactados (`SPACK_V1`/`SPACK_V2` para `BERYL_V1`/`BERYL_V2`), arquivos de configuração padrão (`SpackConfig.txt` para `BerylConfig.txt`), interface gráfica do empacotador e documentação foram atualizados para Beryl.
 
 ### Added
