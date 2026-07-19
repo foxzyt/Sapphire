@@ -49,12 +49,18 @@ sapphire tests/test_map.sp
 
 Performance results based on the best recorded execution times for Sapphire (v1.0.9) compared to standard benchmarks in similar environments.
 
-| Language | Recursion Time (Fib 30) | Loop Time (1M iterations) |
+| Language / Runtime | Recursion Time (Fib 30) | Loop Time (1M iterations) |
 | :--- | :--- | :--- |
-| **Sapphire** | **0.251s** | **0.061s** |
-| **Python 3.12** | ~0.350s - 0.450s | ~0.070s - 0.090s |
-| **JavaScript (Node.js)** | ~0.150s - 0.250s | ~0.005s - 0.010s |
-| **PHP 8.3** | ~0.200s - 0.300s | ~0.030s - 0.050s |
+| **Sapphire** | **~0.160s - 0.170s** | **~0.037s - 0.038s** |
+| **CPython 3.12** | ~0.350s - 0.450s | ~0.055s - 0.075s |
+| **PyPy 7.3 (JIT)** | ~0.080s - 0.120s | ~0.015s - 0.025s |
+| **Lua 5.4** | ~0.180s - 0.220s | ~0.020s - 0.030s |
+| **Ruby 3.3 (CRuby)** | ~0.500s - 0.700s | ~0.040s - 0.060s |
+| **PHP 8.3 (JIT)** | ~0.200s - 0.250s | ~0.020s - 0.030s |
+| **JavaScript (Node.js V8)** | ~0.050s - 0.080s | ~0.003s - 0.005s |
+| **Perl 5.38** | ~0.400s - 0.500s | ~0.035s - 0.045s |
+| **Tcl 8.6** | ~1.200s - 1.500s | ~0.080s - 0.100s |
+| **R 4.3** | ~0.800s - 1.000s | ~0.050s - 0.070s |
 
 *Note: Sapphire results reflect the fastest recorded times from the provided test data. Variations in runtime may occur due to OS background processes and environment overhead. Variations in the other languages might also occur due to the value being an estimate.*
 
@@ -168,7 +174,7 @@ try {
 }
 print(balance) // Outputs: 100
 
-// 4. Chrono-Generative Memory (fade)
+// 4. Fade
 // Decays from 100 to nil over 500 milliseconds using a linear curve
 fade(500ms, linear) var health = 100
 print(health) // 100
