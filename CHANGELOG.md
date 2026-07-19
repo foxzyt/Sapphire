@@ -221,6 +221,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   scope.
 - **Array assignment semantics:** Dynamic array writes now support appending at the next index when assigning to `len(array)`, matching the behavior used by Infinitum vector helpers.
 - **Parser compatibility:** Function declarations now accept optional explicit return-type annotations such as `function main() void {}` and `function foo() string {}` while preserving the newer no-return-type syntax.
+- **`spark.lock` Race Condition:** Resolved an issue where abrupt interruptions during package installation would leave `spark.lock` partially written or corrupted by implementing atomic renames (`std::filesystem::rename`).
+- **SemVer Constraint Parsing:** Fixed parser bug handling comma or space separated version constraints, enabling advanced constraint parsing.
+- **Package Signature/Integrity Validation:** Added SHA256 checksum verification during plugin downloads and unzipping to guarantee package integrity.
+- **Plugin Resolution Fallback:** `resolver.hpp` now gracefully falls back to checking the `versions/` subdirectory when `PLUGIN.txt` is absent from the root (e.g. Vividry directory layout).
+- **Install Rollback Mechanism:** `spark install` now atomically rolls back the `sapphire.json` and `spark.lock` state if an installation/download step fails (e.g., HTTP 404), preventing ghost packages.
+- **Silent Directory Filtering in `list`:** `spark list` now silently skips malformed plugin directories without throwing disruptive error logs.
+- **Dependency Protections on Purge:** `spark purge` now checks whether a plugin is required by other installed plugins and issues a strong warning and confirmation prompt before allowing removal.
+- **Ghost Registry Removal:** `spark search` no longer points to a dead `registry.json` file, using the GitHub API `contents` endpoint instead to fetch available plugins dynamically.
+- **Sapphire Executable Overwrites:** Fixed `spark sapphire use` throwing "Access Denied" errors when overwriting running binaries (`sapphire.exe`, `runner.exe`) on Windows by securely staging them using `.old` files. Also fully updated `spack.exe` references to `beryl.exe`.
+- **Empty Version Metadata Validation:** `spark check` now explicitly flags and counts errors for missing/empty version fields in `PLUGIN.txt`.
+- **Mermaid Graph Rendering:** `spark tree --format mermaid` now correctly renders isolated root nodes that have no child dependencies instead of skipping them.
+- **Miniz Compilation Linker Error:** Configured `CMakeLists.txt` to explicitly compile C files along with C++ allowing static compilation of the `miniz` library without undefined reference errors.
 
 ## [1.0.9] - 2026-07-15
 
