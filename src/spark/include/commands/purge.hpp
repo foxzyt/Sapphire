@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <string>
 #include <vector>
+#include "commands/uninstall.hpp"
 
 namespace spark {
 namespace commands {
@@ -45,6 +46,20 @@ inline int cmd_purge(const std::string& plugin_name, const std::string& version 
         std::cout << "  Version: " << version << std::endl;
     }
     std::cout << std::string(40, '-') << std::endl;
+
+    // Check if plugin is required by others
+    if (is_plugin_required_by_others(plugin_name)) {
+        std::cerr << termcolor::yellow << "[!] Warning: Plugin '" << plugin_name << "' is required by other plugins" << termcolor::reset << std::endl;
+        std::cerr << termcolor::yellow << "    Purging it may break dependent plugins and cause silent downgrades" << termcolor::reset << std::endl;
+        std::cout << termcolor::bold << termcolor::red << "Are you absolutely sure you want to purge it? (y/N): " << termcolor::reset;
+        std::string response;
+        std::getline(std::cin, response);
+        response = trim(response);
+        if (response != "y" && response != "Y") {
+            std::cout << termcolor::yellow << "[*] Purge cancelled." << termcolor::reset << std::endl;
+            return 0;
+        }
+    }
 
     int removed_count = 0;
 
