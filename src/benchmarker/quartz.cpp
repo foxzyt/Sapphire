@@ -183,7 +183,7 @@ static std::vector<BenchmarkDef> get_all_benchmarks() {
         {
             "concur_undo_backup", "Concurrency & Time-flow",
             "Try-undo memory rollback context initialization.",
-            "for (var i = 0; i < 10; i = i + 1) { try { var x = 10; } undo {} }"
+            "for (var i = 0; i < 10; i = i + 1) { try { var x = 10; undo; } }"
         },
         {
             "concur_time_within", "Concurrency & Time-flow",
@@ -218,19 +218,19 @@ static std::vector<BenchmarkDef> get_all_benchmarks() {
         {
             "concur_undo_rollback", "Concurrency & Time-flow",
             "Executing undo rollback variables restore.",
-            "var x = 0; try { x = 1; throw \"err\"; } undo {}"
+            "var x = 0; try { x = 1; throw \"err\"; } undo; "
         },
 
         // --- CATEGORY: HARDWARE & INTEGRATIONS (41-50) ---
         {
             "hw_json_parse", "Hardware & Integrations",
             "JSON parsing native calls.",
-            "for (var i = 0; i < 50; i = i + 1) { JSON.parse(\"{\\\"x\\\":10,\\\"y\\\":[1,2,3]}\"); }"
+            "var s = JSON.stringify({\"x\": 10, \"y\": [1, 2, 3]}); for (var i = 0; i < 50; i = i + 1) { JSON.parse(s); }"
         },
         {
             "hw_json_stringify", "Hardware & Integrations",
-            "JSON stringify native calls.",
-            "var o = JSON.parse(\"{\\\"x\\\":10}\"); for (var i = 0; i < 50; i = i + 1) { JSON.stringify(o); }"
+            "JSON serialization native calls.",
+            "var o = {\"x\": 10}; for (var i = 0; i < 50; i = i + 1) { JSON.stringify(o); }"
         },
         {
             "hw_clock_overhead", "Hardware & Integrations",

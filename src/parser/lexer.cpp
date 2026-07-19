@@ -42,6 +42,13 @@ static std::map<std::string, TokenType> keywords = {
     {"of",       TokenType::TOKEN_OF},
     {"foreach",  TokenType::TOKEN_FOREACH},
     {"class",    TokenType::TOKEN_CLASS},
+    {"within",   TokenType::TOKEN_WITHIN},
+    {"fallback", TokenType::TOKEN_FALLBACK},
+    {"every",    TokenType::TOKEN_EVERY},
+    {"undo",     TokenType::TOKEN_UNDO},
+    {"fade",     TokenType::TOKEN_FADE},
+    {"linear",   TokenType::TOKEN_LINEAR},
+    {"exponential", TokenType::TOKEN_EXPONENTIAL},
 };
 
 Lexer::Lexer(const std::string& source) : source(source) {}
