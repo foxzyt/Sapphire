@@ -7,7 +7,7 @@
 **[Website](https://foxzyt.github.io/Sapphire)** . **[Documentation](https://foxzyt.github.io/Sapphire/site/docs_intro.html)** . **[Avaliable Plugins](https://github.com/foxzyt/sapphire-mine)**
 
 
-Sapphire is a hybrid, **time-aware** programming language designed for performance and clarity. It combines the speed of compiled languages with the syntax of high-level scripting, making it suitable for tools, UI-driven applications, and system-level tasks. 
+Sapphire is a hybrid, multi-paradigm and general purpose, **time-aware** programming language designed for performance and clarity. It combines the speed of compiled languages and its low-level tools with the syntax of high-level scripting, making it suitable for tools, UI-driven applications, scripts, and system-level tasks. 
 
 Sapphire is designed to understand and work together with **physical time** at the core virtual machine level, offering first-class primitives for real-time execution bounds (within/fallback), temporal loops (every), bytecode-level retroactive rollbacks (try/undo), and automatic memory decay (fade).
 
@@ -15,7 +15,7 @@ Sapphire is designed to understand and work together with **physical time** at t
 <summary><b>TL;DR: Some more info about Sapphire (Click to expand)</b></summary>
 
 * Sapphire runs on top of the **Corundum virtual machine**, custom-made and built from the ground up by me with NO technical assistance from AI whatsoever.
-* I am building a JIT-based virtual machine with NO LLVM, just raw Assembly, called **Rubellite**, and it will be released in version 1.0.9.
+* I am building a JIT-based virtual machine with no LLVM, just raw Assembly, called **Rubellite**, and it will be released in version 1.0.9.
 * Did you know? Sapphire's entire toolchain names are based on **gems and minerals**, such as Beryl, Topaz, Quartz, etc.
 * Did you know that Sapphire has an **Incremental Mark-and-Sweep** garbage collector that minimizes the "stop-the-world" effects while taking the burden of memory management off the user.
 * FYI: **Generative AI** was used when expanding Sapphire's standard library and some parts of the toolchain.
@@ -237,10 +237,26 @@ print(config["theme"])
 config["debug"] = false
 ```
 
+## Carat
+Carat is the official name for the Sapphire language full toolchain, which includes (as of version 1.0.9 (being developed)):
+
+* **Sapphire**: The official runtime, which includes the Corundum and Rubellite virtual machines.
+* **Beryl**: The official bundler for the language (transforms .sp scripts into .exe files).
+* **Topaz**: The package manager and version manager (such as npm and nvm).
+* **Citrine**: An advanced linter with 200+ hand-written lint rules. It can: fix your code, explain the errors and undo changes (if Citrine fails in correcting your code).
+* **Garnet**: Simple, yet powerful test runner for Sapphire.
+* **Amethyst**: A code formatter that automatically formats your code (obviously) and checks it if you want to apply the correnctions yourself.
+* **Quartz**: The official benchmarker for the language, with 50 default benchmarks to measure exactly the performance of the entire language. It can compare two benchmarks, and it shows you how many Ops/Sec, latency (in microseconds), StdDev (in %) and how many bytes were allocated by the GC.
+
+All of them **simple** to use, and very **fast**. 
+
+> **Note:** Some errors with CMD formatting might appear, and some errors in Topaz might ALSO appear (like being unable to uninstall plugins and etc), but don't worry, I will fix it, as they are being developed and aren't production-ready.
+
 ## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
 
 ## Note
 
-Sapphire is not affiliated in anyway with SapphireFoxx or the Sapphire Language by Nithinbekal.
+Sapphire is **not** affiliated in anyway with SapphireFoxx or the Sapphire Language by Nithinbekal.
+Sapphire is also **not** production-ready and I would advise you NOT TO USE it in serious projects, just to study about interpreters and VM implementations/prepare yourself for established languages (Sapphire is a pretty good spot to start, as it has pretty simple syntax that remembers C++, but with high-level keywords!).
