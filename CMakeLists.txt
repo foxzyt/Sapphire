@@ -8,6 +8,10 @@ if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
 endif()
 
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
 include(FetchContent)
 
 # Fetch OpenCL Headers
@@ -43,7 +47,7 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/SFML/SFML.git
     GIT_TAG        3.0.2
 )
-set(SFML_STATIC_LIBRARIES ON)
+# set(SFML_STATIC_LIBRARIES ON)
 set(SFML_BUILD_AUDIO OFF)
 set(SFML_BUILD_NETWORK ON)
 set(SFML_BUILD_GRAPHICS ON)
@@ -51,14 +55,10 @@ set(SFML_BUILD_WINDOW ON)
 set(SFML_BUILD_SYSTEM ON)
 FetchContent_MakeAvailable(sfml)
 
-# Fetch OpenSSL
-FetchContent_Declare(
-    openssl
-    GIT_REPOSITORY https://github.com/openssl/openssl.git
-    GIT_TAG        openssl-3.3.2
-)
+# Use system OpenSSL package (provided by MSYS2/MinGW or locally in libs/openssl)
 set(OPENSSL_USE_STATIC_LIBS TRUE)
-FetchContent_MakeAvailable(openssl)
+set(OPENSSL_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libs/openssl")
+find_package(OpenSSL REQUIRED)
 
 # Fetch nlohmann/json
 FetchContent_Declare(
@@ -88,9 +88,6 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release)
-endif()
 
 # Compiler-specific optimizations
 if(MSVC)
@@ -130,8 +127,8 @@ else()
     set(VM_INCLUDE_DIR src/vm/)
 endif()
 
-# Find SFML from FetchContent
-find_package(SFML 3 COMPONENTS Graphics Window System REQUIRED)
+# Find SFML from FetchContent (redundant with FetchContent_MakeAvailable)
+# find_package(SFML 3 COMPONENTS Graphics Window System REQUIRED)
 
 add_compile_definitions(HAS_OPENCL)
 
@@ -178,6 +175,7 @@ target_link_libraries(sapphire_core PUBLIC
     SFML::System
     OpenSSL::SSL
     OpenSSL::Crypto
+    nlohmann_json::nlohmann_json
 )
 
 target_link_libraries(sapphire_core PUBLIC OpenCL sqlite3)
