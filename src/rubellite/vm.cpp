@@ -3752,10 +3752,8 @@ NEXT_OPCODE:
                 goto NEXT_OPCODE;
             }
             TARGET_OP_CLOSURE: {
-                uint16_t constant = (chunk->code[offset + 1] << 8) | chunk->code[offset + 2];
-                ObjFunction* function = (ObjFunction*)chunk->constants[constant].as.obj;
                 emit_trampoline((void*)&jit_trampoline_generic);
-                offset += 3 + function->upvalueCount * 2; 
+                offset += 3; 
                 goto NEXT_OPCODE;
             }
             TARGET_OP_JUMP_IF_NIL:
