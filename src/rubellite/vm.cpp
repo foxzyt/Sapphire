@@ -3286,6 +3286,8 @@ extern "C" void jit_trampoline_generic(VM* vm, int opcode) { fprintf(stderr, "Na
 bool VM::run(int target_frame_count) {
     CallFrame* frame = &frames[frame_count - 1];
     Chunk* chunk = &frame->function->chunk;
+    printf("[JIT] Compiling chunk of size %zu\n", chunk->code.size());
+    fflush(stdout);
     
     JitAssembler jit;
     
@@ -3726,10 +3728,13 @@ NEXT_OPCODE:
             }
             TARGET_OP_GET_GLOBAL:
             TARGET_OP_SET_GLOBAL:
-            TARGET_OP_DEFINE_GLOBAL:
+            TARGET_OP_DEFINE_GLOBAL: {
+                emit_trampoline((void*)&jit_trampoline_generic);
+                offset += 3;
+                goto NEXT_OPCODE;
+            }
             TARGET_OP_MAKE_NAMED_ARG:
             TARGET_OP_ASYNC_CALL: {
-                // Direct callout for variables
                 emit_trampoline((void*)&jit_trampoline_generic);
                 offset += 2;
                 goto NEXT_OPCODE;
@@ -3738,7 +3743,7 @@ NEXT_OPCODE:
             TARGET_OP_SET_PROPERTY: {
                 uint8_t instruction = chunk->code[offset];
                 emit_trampoline(instruction == OP_GET_PROPERTY ? (void*)&jit_trampoline_get_property : (void*)&jit_trampoline_set_property);
-                offset += 2;
+                offset += 3;
                 goto NEXT_OPCODE;
             }
             TARGET_OP_CALL: {
@@ -3747,8 +3752,10 @@ NEXT_OPCODE:
                 goto NEXT_OPCODE;
             }
             TARGET_OP_CLOSURE: {
+                uint16_t constant = (chunk->code[offset + 1] << 8) | chunk->code[offset + 2];
+                ObjFunction* function = (ObjFunction*)chunk->constants[constant].as.obj;
                 emit_trampoline((void*)&jit_trampoline_generic);
-                offset += 2; 
+                offset += 3 + function->upvalueCount * 2; 
                 goto NEXT_OPCODE;
             }
             TARGET_OP_JUMP_IF_NIL:
@@ -3808,7 +3815,11 @@ JIT_END:
     typedef void (*JitFunc)();
     JitFunc func = (JitFunc)jit.finalize();
     if (func) {
+        printf("[JIT] Entering JIT function at %p...\n", func);
+        fflush(stdout);
         func();
+        printf("[JIT] Exited JIT function.\n");
+        fflush(stdout);
     }
     
     return true;
