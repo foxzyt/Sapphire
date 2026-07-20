@@ -43,7 +43,7 @@ Add the `build/Release` directory to your system **PATH**.
 
 ## Running Tests
 
-Sapphire includes a test suite located in the `tests/` directory. These tests are automatically executed via GitHub Actions on every push (`.github/workflows/ci.yml`).
+Sapphire includes a test suite located in the `tests/` directory. These tests are automatically executed via GitHub Actions on every push (`.github/workflows/ci.yml`) to ensure the language's core functionalities still work (there are more than 20 tests in the folder).
 
 To run the tests manually:
 ```bash
@@ -248,7 +248,7 @@ Carat is the official name for the Sapphire language full toolchain, which inclu
 
 All of them **simple** to use, and very **fast**. 
 
-> **Note:** Some errors with CMD formatting might appear, and some errors in Topaz might ALSO appear (like being unable to uninstall plugins and etc), but don't worry, I will fix it, as they are being developed and aren't production-ready.
+> **Note:** Some errors with CMD formatting might appear, and some errors in Topaz might ALSO appear (like being unable to uninstall plugins and etc), but don't worry, I will fix it, as they are being developed and are early-stage implementations.
 
 ## License
 
@@ -257,7 +257,7 @@ This project is licensed under the MIT License. See the `LICENSE` file for detai
 ## Note
 
 Sapphire is **not** affiliated in anyway with SapphireFoxx or the Sapphire Language by Nithinbekal.
-Sapphire is also **not** completely stable and I would advise you NOT TO USE it in serious projects, just to study about interpreters and VM implementations/prepare yourself for established languages (Sapphire is a pretty good spot to start, as it has pretty simple syntax that remembers C++, but with high-level keywords!). But it is pretty close to being finished though, as I have a deadline to release the first LTS version in 1.1.0. 
+Sapphire is also **not** completely stable and I would advise you not to use it in serious projects, just to study about interpreters and VM implementations/prepare yourself for established languages (Sapphire is a pretty good spot to start, as it has pretty simple syntax that remembers C++, but with high-level keywords!). But it is pretty close to being finished though, as I have a deadline to release the first LTS version in 1.1.0. It is also not completely broken, just some small bugs that I have to fix (such as in Carat), although the runtime is stable!
 And I have to admit some things: When I started this project, I had NO idea of what was SemVer (that's why I started at 1.0.0, but in reality I should have started at 0.1) and NO idea how to use Git. That's why I lost code, and that's why the versioning is confusing. Since 1.0.8, I've been using Git MUCH more actively and using it **right** for the first time. About the versioning- yes, I know it's crap, that's why in the first LTS version I will fix the versioning once and for all and start using the SemVer standard. I am saying this because I am not going to deceive any collaborators or anyone, really, and I want to be honest about the current shape of Sapphire.
 
 Please steal my code, :D!
