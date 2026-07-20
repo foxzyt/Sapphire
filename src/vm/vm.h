@@ -237,8 +237,6 @@ private:
   std::vector<std::string> module_search_paths;
   std::unordered_set<std::string> loaded_modules;
   std::string find_and_load_module(const std::string &module_name, std::string& out_resolved_path);
-
-  void define_native(const std::string &name, NativeFn function);
   void define_ui_natives();
   void mark_roots();
   void trace_references();
@@ -249,6 +247,7 @@ private:
 
   friend void debug_print_stack(VM *vm);
 public:
+  void define_native(const std::string &name, NativeFn function);
   ObjClass* ui_component_class = nullptr;
 };
 

@@ -4,6 +4,7 @@
 #include <condition_variable>
 #include <thread>
 #include <sstream>
+#include <iomanip>
 #include "vm.h"
 #include "compiler.h"
 #include "object.h"
@@ -58,6 +59,55 @@ thread_local VM* g_current_vm = nullptr;
 static std::mutex thread_mutex;
 static std::map<int, std::thread> active_threads;
 static int next_thread_id = 1;
+
+std::string get_current_timestamp() {
+    auto now = std::chrono::system_clock::now();
+    std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+    std::tm* now_tm = std::localtime(&now_c);
+    std::stringstream ss;
+    ss << std::put_time(now_tm, "%Y-%m-%d %H:%M:%S");
+    return ss.str();
+}
+
+static SapphireValue native_logger_info(int arg_count, SapphireValue* args) {
+    std::cout << "\033[94m[" << get_current_timestamp() << "] [INFO]\033[0m ";
+    for (int i = 0; i < arg_count; i++) {
+        print_value(args[i]);
+        if (i < arg_count - 1) std::cout << " ";
+    }
+    std::cout << "\n";
+    return SapphireValue();
+}
+
+static SapphireValue native_logger_warn(int arg_count, SapphireValue* args) {
+    std::cout << "\033[93m[" << get_current_timestamp() << "] [WARN]\033[0m ";
+    for (int i = 0; i < arg_count; i++) {
+        print_value(args[i]);
+        if (i < arg_count - 1) std::cout << " ";
+    }
+    std::cout << "\n";
+    return SapphireValue();
+}
+
+static SapphireValue native_logger_error(int arg_count, SapphireValue* args) {
+    std::cout << "\033[91m[" << get_current_timestamp() << "] [ERROR]\033[0m ";
+    for (int i = 0; i < arg_count; i++) {
+        print_value(args[i]);
+        if (i < arg_count - 1) std::cout << " ";
+    }
+    std::cout << "\n";
+    return SapphireValue();
+}
+
+static SapphireValue native_logger_debug(int arg_count, SapphireValue* args) {
+    std::cout << "\033[90m[" << get_current_timestamp() << "] [DEBUG]\033[0m ";
+    for (int i = 0; i < arg_count; i++) {
+        print_value(args[i]);
+        if (i < arg_count - 1) std::cout << " ";
+    }
+    std::cout << "\n";
+    return SapphireValue();
+}
 
 static SapphireValue native_spawn(int arg_count, SapphireValue* args) {
     if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) return SapphireValue();
@@ -281,6 +331,23 @@ static SapphireValue native_io_open_file_dialog(int arg_count, SapphireValue* ar
 
     if (GetOpenFileNameA(&ofn)) {
         return new_string(g_current_vm, std::string(filename));
+    }
+#elif defined(__APPLE__)
+    // macOS: Use zenity or similar (requires user to install)
+    // For now, return empty string as native file dialog is complex
+    return new_string(g_current_vm, "");
+#elif defined(__linux__)
+    // Linux: Use zenity if available
+    FILE* pipe = popen("zenity --file-selection --file-filter='Sapphire Scripts | *.sp' --file-filter='All Files | *.*' 2>/dev/null", "r");
+    if (pipe) {
+        char buffer[PATH_MAX];
+        if (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+            // Remove trailing newline
+            buffer[strcspn(buffer, "\n")] = '\0';
+            pclose(pipe);
+            return new_string(g_current_vm, std::string(buffer));
+        }
+        pclose(pipe);
     }
 #endif
     return new_string(g_current_vm, "");
@@ -2698,6 +2765,15 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     define_native("listLength", native_list_util_length);
     define_native("listRemoveAt", native_list_util_remove_at);
     define_native("listContains", native_list_util_contains);
+
+    // --- Logger ---
+    ObjString* logger_name = new_string(this, "Logger");
+    ObjClass* logger_class = new_class(this, logger_name);
+    logger_class->methods["info"] = SapphireValue(new_native(this, native_logger_info));
+    logger_class->methods["warn"] = SapphireValue(new_native(this, native_logger_warn));
+    logger_class->methods["error"] = SapphireValue(new_native(this, native_logger_error));
+    logger_class->methods["debug"] = SapphireValue(new_native(this, native_logger_debug));
+    globals["Logger"] = SapphireValue(logger_class);
 
     // --- System ---
     define_native("getEnv", native_system_get_env);

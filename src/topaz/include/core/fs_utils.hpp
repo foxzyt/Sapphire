@@ -23,13 +23,27 @@ inline fs::path get_plugin_dir() {
     fs::path plugin_dir = fs::path(appdata) / "Sapphire" / "plugins";
     fs::create_directories(plugin_dir);
     return plugin_dir;
-#else
-    // For non-Windows systems, use ~/.local/share/Sapphire/plugins/
+#elif defined(__APPLE__)
     const char* home = std::getenv("HOME");
     if (!home) {
         throw std::runtime_error("Could not access HOME environment variable");
     }
-    fs::path plugin_dir = fs::path(home) / ".local" / "share" / "Sapphire" / "plugins";
+    fs::path plugin_dir = fs::path(home) / "Library" / "Application Support" / "Sapphire" / "plugins";
+    fs::create_directories(plugin_dir);
+    return plugin_dir;
+#else
+    // For Linux systems, use ~/.local/share/Sapphire/plugins/ or XDG_DATA_HOME
+    const char* home = std::getenv("HOME");
+    if (!home) {
+        throw std::runtime_error("Could not access HOME environment variable");
+    }
+    const char* xdg_data = std::getenv("XDG_DATA_HOME");
+    fs::path plugin_dir;
+    if (xdg_data) {
+        plugin_dir = fs::path(xdg_data) / "Sapphire" / "plugins";
+    } else {
+        plugin_dir = fs::path(home) / ".local" / "share" / "Sapphire" / "plugins";
+    }
     fs::create_directories(plugin_dir);
     return plugin_dir;
 #endif

@@ -6,18 +6,34 @@
 #include <string>
 #include <vector>
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
 namespace fs = std::filesystem;
 
 // Helpers
 fs::path get_plugin_dir() {
-  const char *appdata = getenv("APPDATA");
-  if (!appdata)
+  const char *config_dir = nullptr;
+#ifdef _WIN32
+  config_dir = getenv("APPDATA");
+#elif defined(__APPLE__)
+  config_dir = getenv("HOME");
+  if (config_dir) {
+    static std::string path = std::string(config_dir) + "/Library/Application Support";
+    config_dir = path.c_str();
+  }
+#elif defined(__linux__)
+  config_dir = getenv("XDG_DATA_HOME");
+  if (!config_dir) {
+    config_dir = getenv("HOME");
+    if (config_dir) {
+      static std::string path = std::string(config_dir) + "/.local/share";
+      config_dir = path.c_str();
+    }
+  }
+#endif
+
+  if (!config_dir)
     return "";
-  fs::path plugin_dir = fs::path(appdata) / "Sapphire" / "plugins";
+
+  fs::path plugin_dir = fs::path(config_dir) / "Sapphire" / "plugins";
   fs::create_directories(plugin_dir);
   return plugin_dir;
 }

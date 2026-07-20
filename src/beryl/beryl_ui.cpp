@@ -4,13 +4,18 @@
 #include <fstream>
 #include <vector>
 #include "beryl.h"
+#include <cstdint>
+#include <cmath>
+
 #ifdef _WIN32
 #include <windows.h>
 #include <commdlg.h>
 #include <shlobj.h>
+#elif defined(__APPLE__)
+#include <limits.h>
+#elif defined(__linux__)
+#include <limits.h>
 #endif
-#include <cstdint>
-#include <cmath>
 
 using namespace sf;
 using namespace std;
@@ -133,6 +138,42 @@ struct TextBox {
             ofn.lpstrFilter = "Sapphire Script (*.sp)\0*.sp\0All Files (*.*)\0*.*\0";
             if (GetOpenFileNameA(&ofn)) { value = fileName; return value; }
         }
+#elif defined(__linux__)
+        // Linux: Use zenity for file dialogs
+        char buffer[PATH_MAX];
+        FILE* pipe;
+        if (isSave) {
+            pipe = popen("zenity --file-selection --save --file-filter='Executable | *.exe' 2>/dev/null", "r");
+        } else {
+            pipe = popen("zenity --file-selection --file-filter='Sapphire Scripts | *.sp' --file-filter='All Files | *.*' 2>/dev/null", "r");
+        }
+        if (pipe) {
+            if (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+                buffer[strcspn(buffer, "\n")] = '\0';
+                pclose(pipe);
+                value = buffer;
+                return value;
+            }
+            pclose(pipe);
+        }
+#elif defined(__APPLE__)
+        // macOS: Use osascript for file dialogs
+        char buffer[PATH_MAX];
+        FILE* pipe;
+        if (isSave) {
+            pipe = popen("osascript -e 'POSIX path of (choose file name with prompt \"Save as\" default name \"app.exe\")' 2>/dev/null", "r");
+        } else {
+            pipe = popen("osascript -e 'POSIX path of (choose file with prompt \"Open file\" of type {\"sp\"})' 2>/dev/null", "r");
+        }
+        if (pipe) {
+            if (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+                buffer[strcspn(buffer, "\n")] = '\0';
+                pclose(pipe);
+                value = buffer;
+                return value;
+            }
+            pclose(pipe);
+        }
 #endif
         return "";
     }
@@ -239,15 +280,46 @@ void run_beryl_ui() {
     Font font;
     // Load a font, in SFML 3 it's openFromFile, in 2 it's loadFromFile.
     // We will use openFromFile because the original code used it.
+    bool font_loaded = false;
+#ifdef _WIN32
     if (!font.openFromFile("C:/Windows/Fonts/segoeui.ttf")) {
         if (!font.openFromFile("C:/Windows/Fonts/arial.ttf")) {
-            cerr << "Could not load font." << endl;
+            font_loaded = false;
+        } else {
+            font_loaded = true;
         }
+    } else {
+        font_loaded = true;
+    }
+#elif defined(__APPLE__)
+    if (!font.openFromFile("/System/Library/Fonts/Helvetica.ttc") &&
+        !font.openFromFile("/System/Library/Fonts/SFNSDisplay.ttf")) {
+        font_loaded = false;
+    } else {
+        font_loaded = true;
+    }
+#elif defined(__linux__)
+    if (!font.openFromFile("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf") &&
+        !font.openFromFile("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf")) {
+        font_loaded = false;
+    } else {
+        font_loaded = true;
+    }
+#endif
+
+    if (!font_loaded) {
+        cerr << "Could not load font." << endl;
     }
 
     TextBox tbEntry(font, "Entry Script (.sp)", 40, 80, 580);
     Button btnEntryBrowse(font, "Browse", 630, 102, 120, 36);
-    TextBox tbOutput(font, "Output Executable (.exe)", 40, 150, 580, "app.exe");
+
+    // Use platform-specific default output extension
+    std::string default_output = "app";
+#ifdef _WIN32
+    default_output = "app.exe";
+#endif
+    TextBox tbOutput(font, "Output Executable", 40, 150, 580, default_output);
     Button btnOutputBrowse(font, "Browse", 630, 172, 120, 36);
 
     TextBox tbAssets(font, "Assets Folder (Optional)", 40, 220, 580);
@@ -310,7 +382,12 @@ void run_beryl_ui() {
                         cfg.Compress = tsCompress.isChecked;
                         cfg.RequireAdmin = tsAdmin.isChecked;
                         
-                        if (pack_executable(cfg, "runner.exe")) {
+                        // Use platform-specific runner extension
+                        std::string runner_exe = "runner";
+#ifdef _WIN32
+                        runner_exe = "runner.exe";
+#endif
+                        if (pack_executable(cfg, runner_exe)) {
                             statusText.setFillColor(primary_hover);
                             statusText.setString("Success! Application packaged successfully.");
                         } else {

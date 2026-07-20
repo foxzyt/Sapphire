@@ -37,52 +37,80 @@ FetchContent_MakeAvailable(sqlite3)
 add_library(sqlite3 STATIC "${sqlite3_SOURCE_DIR}/sqlite3.c")
 target_include_directories(sqlite3 PUBLIC "${sqlite3_SOURCE_DIR}")
 
-# Fetch Sapphire Libs (OpenSSL, SFML, httplib, nlohmann, freetype)
+# Fetch SFML
 FetchContent_Declare(
-    sapphire_libs
-    URL https://github.com/foxzyt/Sapphire/releases/download/v1.0.7/libs.zip
+    sfml
+    GIT_REPOSITORY https://github.com/SFML/SFML.git
+    GIT_TAG        3.0.2
 )
-FetchContent_MakeAvailable(sapphire_libs)
+set(SFML_STATIC_LIBRARIES ON)
+set(SFML_BUILD_AUDIO OFF)
+set(SFML_BUILD_NETWORK ON)
+set(SFML_BUILD_GRAPHICS ON)
+set(SFML_BUILD_WINDOW ON)
+set(SFML_BUILD_SYSTEM ON)
+FetchContent_MakeAvailable(sfml)
 
-# Define LIBS_DIR
-set(LIBS_DIR "${sapphire_libs_SOURCE_DIR}")
+# Fetch OpenSSL
+FetchContent_Declare(
+    openssl
+    GIT_REPOSITORY https://github.com/openssl/openssl.git
+    GIT_TAG        openssl-3.3.2
+)
+set(OPENSSL_USE_STATIC_LIBS TRUE)
+FetchContent_MakeAvailable(openssl)
+
+# Fetch nlohmann/json
+FetchContent_Declare(
+    nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG        v3.11.3
+)
+FetchContent_MakeAvailable(nlohmann_json)
+
+# Fetch httplib
+FetchContent_Declare(
+    httplib
+    GIT_REPOSITORY https://github.com/yhirose/cpp-httplib.git
+    GIT_TAG        v0.15.3
+)
+FetchContent_MakeAvailable(httplib)
+
+# Fetch FreeType (required by SFML)
+FetchContent_Declare(
+    freetype
+    GIT_REPOSITORY https://github.com/freetype/freetype.git
+    GIT_TAG        VER-2-13-2
+)
+FetchContent_MakeAvailable(freetype)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-if(NOT OPENSSL_ROOT_DIR)
-    set(OPENSSL_ROOT_DIR "${LIBS_DIR}/openssl")
-endif()
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
+# Compiler-specific optimizations
 if(MSVC)
     add_compile_options(/O2 /MT /DNDEBUG)
-else()
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    add_compile_options(-O2 -DNDEBUG)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-O2 -DNDEBUG)
 endif()
-
-if(NOT DEFINED OPENSSL_USE_STATIC_LIBS)
-    set(OPENSSL_USE_STATIC_LIBS TRUE)
-endif()
-find_package(OpenSSL REQUIRED)
 
 if(WIN32)
     add_compile_definitions(NOMINMAX _WIN32_WINNT=0x0A00)
 endif()
 
-if(WIN32 AND CMAKE_COMPILER_IS_GNUCXX)
+# Static linking for GCC/MinGW on Windows
+if(WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
 endif()
 
-if(NOT DEFINED SFML_STATIC_LIBRARIES)
-    set(SFML_STATIC_LIBRARIES ON)
-endif()
-if(NOT SFML_DIR)
-    set(SFML_DIR "${LIBS_DIR}/SFML-3.0.2/lib/cmake/SFML")
-endif()
+# Find SFML from FetchContent
 find_package(SFML 3 COMPONENTS Graphics Window System REQUIRED)
 
 add_compile_definitions(HAS_OPENCL)
@@ -122,8 +150,7 @@ target_include_directories(sapphire_core PUBLIC
     src/graphics/
     src/utils/
     src/preprocessor/
-    "${LIBS_DIR}"
-    ${OPENSSL_INCLUDE_DIR}
+    ${httplib_SOURCE_DIR}
 )
 
 # 3. Linka o OpenSSL à biblioteca principal
@@ -197,6 +224,30 @@ if(WIN32)
     if(NOT MSVC)
         list(APPEND COMMON_LIBS -pthread)
     endif()
+elseif(APPLE)
+    # macOS specific libraries
+    list(APPEND COMMON_LIBS
+        "-framework Cocoa"
+        "-framework IOKit"
+        "-framework OpenGL"
+    )
+    find_library(PTHREAD_LIBRARY pthread)
+    if(PTHREAD_LIBRARY)
+        list(APPEND COMMON_LIBS ${PTHREAD_LIBRARY})
+    else()
+        list(APPEND COMMON_LIBS -pthread)
+    endif()
+elseif(UNIX)
+    # Linux specific libraries
+    list(APPEND COMMON_LIBS
+        pthread
+        dl
+        GL
+        X11
+        Xcursor
+        Xrandr
+        Xi
+    )
 endif()
 
 target_link_libraries(sapphire PRIVATE ${COMMON_LIBS})
@@ -236,6 +287,19 @@ if(BUILD_TOPAZ_STANDALONE)
         if(NOT MSVC)
             target_link_libraries(topaz_standalone PRIVATE -pthread)
         endif()
+    elseif(APPLE)
+        target_link_libraries(topaz_standalone PRIVATE
+            "-framework Cocoa"
+            "-framework IOKit"
+        )
+        find_library(PTHREAD_LIBRARY pthread)
+        if(PTHREAD_LIBRARY)
+            target_link_libraries(topaz_standalone PRIVATE ${PTHREAD_LIBRARY})
+        else()
+            target_link_libraries(topaz_standalone PRIVATE -pthread)
+        endif()
+    elseif(UNIX)
+        target_link_libraries(topaz_standalone PRIVATE pthread dl)
     endif()
 endif()
 

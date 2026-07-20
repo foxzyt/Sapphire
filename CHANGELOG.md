@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Cross-Platform Support:** Complete refactoring to support Linux, macOS, and Windows across all core components.
+  - Converted all dependencies (SFML, OpenSSL, httplib, nlohmann/json, FreeType) to use CMake FetchContent instead of pre-built binaries.
+  - Added platform-specific library linking for macOS (Cocoa, IOKit, OpenGL frameworks) and Linux (pthread, dl, GL, X11, Xcursor, Xrandr, Xi).
+  - Added compiler-specific optimizations for MSVC, GCC, and Clang.
+  - Updated `runner.cpp` to use platform-specific executable path resolution (`GetModuleFileNameA` on Windows, `_NSGetExecutablePath` on macOS, `/proc/self/exe` on Linux).
+  - Updated `beryl/main.cpp` to use platform-specific executable extensions (`.exe` on Windows, no extension on Linux/macOS).
+  - Updated `beryl.cpp` to conditionally compile Windows PE-specific functions (`modify_pe_subsystem`, `inject_icon`) only on Windows.
+  - Updated `vm.cpp` to add Linux support for file dialog using zenity when available.
+  - Updated `topaz.cpp` to use platform-specific config directories (APPDATA on Windows, ~/Library/Application Support on macOS, ~/.local/share or XDG_DATA_HOME on Linux).
+  - Updated `beryl/beryl_ui.cpp` to use platform-specific font loading (Segoe UI/Arial on Windows, Helvetica/SFNS on macOS, DejaVu/Liberation on Linux) and file dialogs (Windows API, zenity on Linux, osascript on macOS).
+  - Updated `topaz/include/commands/upgrade.hpp` to use platform-specific executable path resolution and update scripts (batch on Windows, shell scripts on Linux/macOS).
+  - Updated `topaz/include/core/sapphire_version.hpp` to use platform-specific binary names (with .exe on Windows, without on Linux/macOS) and config directories.
+  - Updated `topaz/include/core/fs_utils.hpp` to use platform-specific plugin directories (APPDATA on Windows, ~/Library/Application Support on macOS, ~/.local/share or XDG_DATA_HOME on Linux).
+  - Removed unnecessary `windows.h` include from `citrine.cpp`.
+- **Multi-Compiler Support:** Added explicit support for MSVC, GCC, and Clang compilers with appropriate optimization flags.
 - **Novel Paradigms (within/fallback, every, try/undo, and fade):**
   - Added full disassembly support for new opcodes (`OP_WITHIN_START`, `OP_WITHIN_END`, `OP_EVERY_TICK`, `OP_UNDO`, `OP_DEFINE_FADE`).
   - Fixed time-bound flow control (`within` / `fallback`) timeout fallback execution.

@@ -20,6 +20,12 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#elif defined(__APPLE__)
+#include <mach-o/dyld.h>
+#include <limits.h>
+#elif defined(__linux__)
+#include <unistd.h>
+#include <limits.h>
 #endif
 
 namespace fs = std::filesystem;
@@ -64,11 +70,18 @@ BerylConfig parse_beryl_config(const std::string& path) {
         else if (key == "SoftMode")      config.SoftMode      = (value == "true" || value == "1");
         else config.CustomFields[key] = value;
     }
-    if (config.OutputFile.empty()) config.OutputFile = "app.exe";
+    if (config.OutputFile.empty()) {
+#ifdef _WIN32
+        config.OutputFile = "app.exe";
+#else
+        config.OutputFile = "app";
+#endif
+    }
     return config;
 }
 
 bool modify_pe_subsystem(const std::string& exe_path, bool no_console) {
+#ifdef _WIN32
     std::fstream file(exe_path, std::ios::in | std::ios::out | std::ios::binary);
     if (!file.is_open()) return false;
     file.seekg(0x3C);
@@ -86,6 +99,12 @@ bool modify_pe_subsystem(const std::string& exe_path, bool no_console) {
     file.seekp(subsystem_offset);
     file.write(reinterpret_cast<char*>(&subsystem), 2);
     return true;
+#else
+    // PE subsystem modification is Windows-specific
+    (void)exe_path;
+    (void)no_console;
+    return false;
+#endif
 }
 
 #ifdef _WIN32

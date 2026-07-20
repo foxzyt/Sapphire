@@ -19,6 +19,12 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#elif defined(__APPLE__)
+#include <mach-o/dyld.h>
+#include <limits.h>
+#elif defined(__linux__)
+#include <unistd.h>
+#include <limits.h>
 #endif
 
 namespace fs = std::filesystem;
@@ -31,6 +37,21 @@ std::string get_executable_path() {
     char buffer[MAX_PATH];
     GetModuleFileNameA(NULL, buffer, MAX_PATH);
     return std::string(buffer);
+#elif defined(__APPLE__)
+    char buffer[PATH_MAX];
+    uint32_t bufsize = sizeof(buffer);
+    if (_NSGetExecutablePath(buffer, &bufsize) == 0) {
+        return std::string(buffer);
+    }
+    return "";
+#elif defined(__linux__)
+    char buffer[PATH_MAX];
+    ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
+    if (len != -1) {
+        buffer[len] = '\0';
+        return std::string(buffer);
+    }
+    return "";
 #else
     return "";
 #endif

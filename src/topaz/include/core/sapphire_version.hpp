@@ -37,13 +37,15 @@ namespace topaz {
 namespace fs = std::filesystem;
 
 // Binários presentes em cada release
-// NOTA: topaz.exe (o package manager) NÃO está aqui - ele é gerenciado separadamente
+// NOTA: topaz (o package manager) NÃO está aqui - ele é gerenciado separadamente
 // via "topaz upgrade", pois o usuário já tem o topaz para usar este comando.
-static const std::vector<std::string> SAPPHIRE_BINARIES = {
-    "sapphire.exe",
-    "runner.exe",
-    "beryl.exe"
-};
+static std::vector<std::string> get_sapphire_binaries() {
+#ifdef _WIN32
+    return {"sapphire.exe", "runner.exe", "beryl.exe"};
+#else
+    return {"sapphire", "runner", "beryl"};
+#endif
+}
 
 // Repositório e branch dos binários
 constexpr const char* SAPPHIRE_REPO_OWNER = "foxzyt";
@@ -62,12 +64,23 @@ inline fs::path get_sapphire_bin_dir() {
         throw std::runtime_error("Could not access APPDATA environment variable");
     }
     fs::path bin_dir = fs::path(appdata) / "Sapphire" / "bin";
+#elif defined(__APPLE__)
+    const char* home = std::getenv("HOME");
+    if (!home) {
+        throw std::runtime_error("Could not access HOME environment variable");
+    }
+    fs::path bin_dir = fs::path(home) / "Library" / "Application Support" / "Sapphire" / "bin";
 #else
     const char* home = std::getenv("HOME");
     if (!home) {
         throw std::runtime_error("Could not access HOME environment variable");
     }
-    fs::path bin_dir = fs::path(home) / ".local" / "share" / "Sapphire" / "bin";
+    const char* xdg_data = std::getenv("XDG_DATA_HOME");
+    if (xdg_data) {
+        bin_dir = fs::path(xdg_data) / "Sapphire" / "bin";
+    } else {
+        bin_dir = fs::path(home) / ".local" / "share" / "Sapphire" / "bin";
+    }
 #endif
     fs::create_directories(bin_dir);
     return bin_dir;
@@ -153,8 +166,12 @@ inline bool is_sapphire_version_installed(const std::string& version) {
     fs::path vdir = get_sapphire_version_dir(version);
     if (!fs::exists(vdir)) return false;
 
-    // Verifica se pelo menos o sapphire.exe está presente
-    return fs::exists(vdir / "sapphire.exe") || fs::exists(vdir / "sapphire");
+    // Verifica se pelo menos o sapphire está presente (com ou sem extensão .exe)
+    std::vector<std::string> binaries = get_sapphire_binaries();
+    for (const auto& bin : binaries) {
+        if (fs::exists(vdir / bin)) return true;
+    }
+    return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -342,7 +359,8 @@ inline bool activate_sapphire_version(const std::string& version) {
               << termcolor::reset << std::endl;
 
     bool all_ok = true;
-    for (const auto& bin : SAPPHIRE_BINARIES) {
+    std::vector<std::string> binaries = get_sapphire_binaries();
+    for (const auto& bin : binaries) {
         fs::path src  = ver_dir / bin;
         fs::path dest = bin_dir / bin;
 
@@ -397,7 +415,8 @@ inline bool install_sapphire_version(const std::string& version, bool activate =
     int downloaded = 0;
     int failed = 0;
 
-    for (const auto& bin : SAPPHIRE_BINARIES) {
+    std::vector<std::string> binaries = get_sapphire_binaries();
+    for (const auto& bin : binaries) {
         std::cout << "  -> " << bin << "... ";
         std::cout.flush();
 
