@@ -3290,14 +3290,45 @@ bool VM::run(int target_frame_count) {
     jit.emit_push_reg(5); // RBP
     jit.emit_push_reg(6); // RSI
     jit.emit_push_reg(7); // RDI
+    jit.emit_push_reg(12); // R12
+    jit.emit_push_reg(13); // R13
+    jit.emit_push_reg(14); // R14
+
+    // R13 = this (VM pointer)
+    jit.emit_mov_reg_imm64(13, (uint64_t)this);
+    // R14 = &this->stack_top
+    size_t stack_top_offset = offsetof(VM, stack_top);
+    jit.emit_mov_reg_reg(14, 13);
+    jit.emit_add_reg_imm32(14, stack_top_offset);
     
+    // R12 = *R14 (load stack_top pointer)
+    jit.emit_mov_reg_mem(12, 14, 0);
+
+    // Array de labels para backpatching de pulos
+    std::vector<JitAssembler::Label> labels(chunk->count);
+
+    // Helper lambda to emit fallback calls for unsupported opcodes
+    auto emit_fallback = [&](int opcode_offset) {
+        jit.emit_mov_mem_reg(14, 0, 12); // flush r12 to vm->stack_top
+        jit.emit_mov_reg_reg(1, 13); // rcx = vm
+        jit.emit_mov_reg_imm64(2, (uint64_t)&chunk->code[opcode_offset]); // rdx = instruction pointer
+        jit.emit_mov_reg_imm64(0, (uint64_t)&jit_fallback_opcode); // rax = fallback func
+        jit.emit_call_reg(0);
+        jit.emit_mov_reg_mem(12, 14, 0); // reload r12 from vm->stack_top
+    };
+
     // Pass 1: generate assembly for each opcode
     for (int offset = 0; offset < chunk->count; ) {
+        jit.bind(labels[offset]);
         uint8_t instruction = chunk->code[offset];
         
         switch (instruction) {
             case OP_RETURN: {
+                jit.emit_mov_mem_reg(14, 0, 12); // flush r12 back to vm->stack_top
                 // Epilogo
+                jit.emit_pop_reg(14); // R14
+                jit.emit_pop_reg(13); // R13
+                jit.emit_pop_reg(12); // R12
                 jit.emit_pop_reg(7); // RDI
                 jit.emit_pop_reg(6); // RSI
                 jit.emit_pop_reg(5); // RBP
@@ -3306,26 +3337,214 @@ bool VM::run(int target_frame_count) {
                 offset++;
                 break;
             }
-            default: {
-                // Generic callout to C++ for unsupported opcodes
-                // mov rcx, vm (this)
-                jit.emit_mov_reg_imm64(1, (uint64_t)this);
-                // mov rdx, current_ip
-                jit.emit_mov_reg_imm64(2, (uint64_t)&chunk->code[offset]);
-                // mov rax, jit_fallback_opcode
-                jit.emit_mov_reg_imm64(0, (uint64_t)&jit_fallback_opcode);
-                // call rax
-                jit.emit_call_reg(0);
-                
+            case OP_POP: {
+                jit.emit_sub_reg_imm32(12, sizeof(SapphireValue));
                 offset++;
-                // Skip arguments based on opcode... 
-                // For a real JIT, we'd need to know instruction sizes.
-                // This is a minimal experimental JIT.
+                break;
+            }
+            case OP_NIL: {
+                // type = 0 (VAL_NIL)
+                jit.emit_mov_mem_reg(12, 0, 0); // set type 0
+                jit.emit_add_reg_imm32(12, sizeof(SapphireValue));
+                offset++;
+                break;
+            }
+            case OP_TRUE: {
+                // type = 1 (VAL_BOOL)
+                jit.emit_mov_reg_imm64(0, 1);
+                jit.emit_mov_mem_reg(12, 0, 0); // type = 1
+                jit.emit_mov_mem_reg(12, 8, 0); // as.boolean = true (1)
+                jit.emit_add_reg_imm32(12, sizeof(SapphireValue));
+                offset++;
+                break;
+            }
+            case OP_FALSE: {
+                jit.emit_mov_reg_imm64(0, 1);
+                jit.emit_mov_mem_reg(12, 0, 0); // type = 1
+                jit.emit_mov_reg_imm64(0, 0);
+                jit.emit_mov_mem_reg(12, 8, 0); // as.boolean = false (0)
+                jit.emit_add_reg_imm32(12, sizeof(SapphireValue));
+                offset++;
+                break;
+            }
+            case OP_CONSTANT: {
+                uint8_t constant_idx = chunk->code[offset + 1];
+                SapphireValue* val_ptr = &chunk->constants.values[constant_idx];
+                jit.emit_mov_reg_imm64(0, (uint64_t)val_ptr);
+                // Load 16 bytes from val_ptr to [r12]
+                jit.emit_mov_reg_mem(1, 0, 0);
+                jit.emit_mov_mem_reg(12, 0, 1);
+                jit.emit_mov_reg_mem(1, 0, 8);
+                jit.emit_mov_mem_reg(12, 8, 1);
+                jit.emit_add_reg_imm32(12, sizeof(SapphireValue));
+                offset += 2;
+                break;
+            }
+            case OP_ADD:
+            case OP_SUBTRACT:
+            case OP_MULTIPLY:
+            case OP_DIVIDE: {
+                JitAssembler::Label fallback_lbl;
+                JitAssembler::Label end_lbl;
+
+                jit.emit_sub_reg_imm32(12, sizeof(SapphireValue) * 2);
+
+                // Type guard a
+                jit.emit_cmp_mem8_imm8(12, 0, (uint8_t)ValType::VAL_NUMBER);
+                jit.emit_jnz(fallback_lbl);
+
+                // Type guard b
+                jit.emit_cmp_mem8_imm8(12, sizeof(SapphireValue), (uint8_t)ValType::VAL_NUMBER);
+                jit.emit_jnz(fallback_lbl);
+
+                // Load operands to xmm0 and xmm1
+                jit.emit_movsd_xmm_mem(0, 12, 8);
+                jit.emit_movsd_xmm_mem(1, 12, sizeof(SapphireValue) + 8);
+
+                if (instruction == OP_ADD) jit.emit_addsd_xmm_xmm(0, 1);
+                else if (instruction == OP_SUBTRACT) jit.emit_subsd_xmm_xmm(0, 1);
+                else if (instruction == OP_MULTIPLY) jit.emit_mulsd_xmm_xmm(0, 1);
+                else if (instruction == OP_DIVIDE) jit.emit_divsd_xmm_xmm(0, 1);
+
+                // Store result
+                jit.emit_movsd_mem_xmm(12, 8, 0); // a.as.number = result
+                jit.emit_add_reg_imm32(12, sizeof(SapphireValue)); // push result
+                jit.emit_jmp(end_lbl);
+
+                jit.bind(fallback_lbl);
+                jit.emit_add_reg_imm32(12, sizeof(SapphireValue) * 2);
+                emit_fallback(offset);
+
+                jit.bind(end_lbl);
+                offset++;
+                break;
+            }
+            case OP_EQUAL:
+            case OP_GREATER:
+            case OP_LESS: {
+                JitAssembler::Label fallback_lbl;
+                JitAssembler::Label is_true_lbl;
+                JitAssembler::Label cont_lbl;
+                JitAssembler::Label end_lbl;
+
+                jit.emit_sub_reg_imm32(12, sizeof(SapphireValue) * 2);
+
+                // Type guard a and b (assume numbers for inline optimization)
+                jit.emit_cmp_mem8_imm8(12, 0, (uint8_t)ValType::VAL_NUMBER);
+                jit.emit_jnz(fallback_lbl);
+                jit.emit_cmp_mem8_imm8(12, sizeof(SapphireValue), (uint8_t)ValType::VAL_NUMBER);
+                jit.emit_jnz(fallback_lbl);
+
+                jit.emit_movsd_xmm_mem(0, 12, 8);
+                jit.emit_movsd_xmm_mem(1, 12, sizeof(SapphireValue) + 8);
+                jit.emit_ucomisd_xmm_xmm(0, 1);
+
+                if (instruction == OP_EQUAL) jit.emit_jz(is_true_lbl);
+                else if (instruction == OP_GREATER) jit.emit_ja(is_true_lbl);
+                else if (instruction == OP_LESS) jit.emit_jb(is_true_lbl);
+
+                // False path
+                jit.emit_mov_reg_imm64(0, 1);
+                jit.emit_mov_mem_reg(12, 0, 0); // type = VAL_BOOL
+                jit.emit_mov_reg_imm64(0, 0);
+                jit.emit_mov_mem_reg(12, 8, 0); // as.boolean = false
+                jit.emit_jmp(cont_lbl);
+
+                // True path
+                jit.bind(is_true_lbl);
+                jit.emit_mov_reg_imm64(0, 1);
+                jit.emit_mov_mem_reg(12, 0, 0); // type = VAL_BOOL
+                jit.emit_mov_mem_reg(12, 8, 0); // as.boolean = true (using 1 from register 0)
+
+                jit.bind(cont_lbl);
+                jit.emit_add_reg_imm32(12, sizeof(SapphireValue)); // push result
+                jit.emit_jmp(end_lbl);
+
+                jit.bind(fallback_lbl);
+                jit.emit_add_reg_imm32(12, sizeof(SapphireValue) * 2);
+                emit_fallback(offset);
+
+                jit.bind(end_lbl);
+                offset++;
+                break;
+            }
+            case OP_GET_LOCAL: {
+                uint8_t slot = chunk->code[offset + 1];
+                SapphireValue* slot_ptr = &frame->slots[slot];
+                jit.emit_mov_reg_imm64(0, (uint64_t)slot_ptr);
+                // move 16 bytes from [rax] to [r12]
+                jit.emit_mov_reg_mem(1, 0, 0);
+                jit.emit_mov_mem_reg(12, 0, 1);
+                jit.emit_mov_reg_mem(1, 0, 8);
+                jit.emit_mov_mem_reg(12, 8, 1);
+                jit.emit_add_reg_imm32(12, sizeof(SapphireValue));
+                offset += 2;
+                break;
+            }
+            case OP_SET_LOCAL: {
+                uint8_t slot = chunk->code[offset + 1];
+                SapphireValue* slot_ptr = &frame->slots[slot];
+                jit.emit_mov_reg_imm64(0, (uint64_t)slot_ptr);
+                // move 16 bytes from [r12 - 16] to [rax] (does not pop)
+                jit.emit_mov_reg_mem(1, 12, -(int32_t)sizeof(SapphireValue));
+                jit.emit_mov_mem_reg(0, 0, 1);
+                jit.emit_mov_reg_mem(1, 12, -(int32_t)sizeof(SapphireValue) + 8);
+                jit.emit_mov_mem_reg(0, 8, 1);
+                offset += 2;
+                break;
+            }
+            case OP_JUMP: {
+                uint16_t jump = (chunk->code[offset + 1] << 8) | chunk->code[offset + 2];
+                jit.emit_jmp(labels[offset + 3 + jump]);
+                offset += 3;
+                break;
+            }
+            case OP_JUMP_IF_FALSE: {
+                uint16_t jump = (chunk->code[offset + 1] << 8) | chunk->code[offset + 2];
+                JitAssembler::Label fallback_lbl;
+                JitAssembler::Label is_false_lbl;
+                JitAssembler::Label end_lbl;
+
+                // Peek at top of stack (do not pop)
+                jit.emit_mov_reg_reg(0, 12);
+                jit.emit_sub_reg_imm32(0, sizeof(SapphireValue)); // R0 points to top val
+
+                // check if NIL
+                jit.emit_cmp_mem8_imm8(0, 0, (uint8_t)ValType::VAL_NIL);
+                jit.emit_jz(is_false_lbl); // NIL is falsey
+
+                // check if BOOL
+                jit.emit_cmp_mem8_imm8(0, 0, (uint8_t)ValType::VAL_BOOL);
+                jit.emit_jnz(end_lbl); // If not bool and not nil, it is truthy (skip jump)
+
+                // it is bool, check value
+                jit.emit_cmp_mem8_imm8(0, 8, 0); // compare as.boolean with 0
+                jit.emit_jnz(end_lbl); // if true, skip jump
+
+                jit.bind(is_false_lbl);
+                jit.emit_jmp(labels[offset + 3 + jump]);
+
+                jit.bind(end_lbl);
+                offset += 3;
+                break;
+            }
+            default: {
+                // Determine instruction length
+                int instruction_length = 1;
+                if (instruction == OP_CONSTANT || instruction == OP_GET_LOCAL || instruction == OP_SET_LOCAL || instruction == OP_GET_GLOBAL || instruction == OP_SET_GLOBAL || instruction == OP_DEFINE_GLOBAL || instruction == OP_CALL || instruction == OP_GET_PROPERTY || instruction == OP_SET_PROPERTY || instruction == OP_MAKE_NAMED_ARG || instruction == OP_ASYNC_CALL) {
+                    instruction_length = 2;
+                } else if (instruction == OP_JUMP || instruction == OP_JUMP_IF_FALSE || instruction == OP_JUMP_IF_NIL || instruction == OP_JUMP_IF_NOT_NIL || instruction == OP_LOOP) {
+                    instruction_length = 3;
+                }
+                
+                emit_fallback(offset);
+                offset += instruction_length;
                 break;
             }
         }
     }
 
+    // Finalize and run JIT
     typedef void (*JitFunc)();
     JitFunc func = (JitFunc)jit.finalize();
     if (func) {
