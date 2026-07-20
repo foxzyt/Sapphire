@@ -84,6 +84,16 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(freetype)
 
+# Fetch AsmJit (for JIT code generation in Rubellite VM)
+FetchContent_Declare(
+    asmjit
+    GIT_REPOSITORY https://github.com/asmjit/asmjit.git
+    GIT_TAG        0bd5787b54b575ed94bf32ac452153b34385c514
+)
+set(ASMJIT_BUILD_X86 ON CACHE BOOL "Build AsmJit X86 backend" FORCE)
+set(ASMJIT_BUILD_ARM OFF CACHE BOOL "Disable ARM backend" FORCE)
+FetchContent_MakeAvailable(asmjit)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -108,7 +118,7 @@ if(WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 endif()
 
 # Option to enable Rubellite JIT VM (compiled into sapphire.exe)
-option(USE_RUBELLITE "Ativar VM experimental Rubellite JIT (compilado dentro do sapphire.exe)" OFF)
+option(USE_RUBELLITE "Ativar VM experimental Rubellite JIT (compilado dentro do sapphire.exe)" ON)
 if(USE_RUBELLITE)
     add_compile_definitions(USE_RUBELLITE RUBELLITE_ENABLED)
     set(VM_SOURCES
@@ -167,6 +177,7 @@ target_include_directories(sapphire_core PUBLIC
     src/utils/
     src/preprocessor/
     ${httplib_SOURCE_DIR}
+    ${asmjit_SOURCE_DIR}
 )
 
 # 3. Linka o OpenSSL à biblioteca principal
@@ -179,7 +190,7 @@ target_link_libraries(sapphire_core PUBLIC
     nlohmann_json::nlohmann_json
 )
 
-target_link_libraries(sapphire_core PUBLIC OpenCL sqlite3)
+target_link_libraries(sapphire_core PUBLIC OpenCL sqlite3 asmjit)
 
 add_executable(sapphire src/main.cpp)
 

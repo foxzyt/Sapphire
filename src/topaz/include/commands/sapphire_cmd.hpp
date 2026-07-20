@@ -151,7 +151,7 @@ inline int cmd_sapphire_versions() {
         // Calcula tamanho total dos binários
         uintmax_t total_size = 0;
         try {
-            for (const auto& bin : SAPPHIRE_BINARIES) {
+            for (const auto& bin : get_sapphire_binaries()) {
                 fs::path bin_path = ver_dir / bin;
                 if (fs::exists(bin_path)) {
                     total_size += fs::file_size(bin_path);
@@ -213,7 +213,7 @@ inline int cmd_sapphire_current() {
 
     // Lista binários da versão ativa
     std::cout << "Binaries:" << std::endl;
-    for (const auto& bin : SAPPHIRE_BINARIES) {
+    for (const auto& bin : get_sapphire_binaries()) {
         fs::path bin_path = bin_dir / bin;
         if (fs::exists(bin_path)) {
             uintmax_t sz = 0;

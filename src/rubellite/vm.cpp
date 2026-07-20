@@ -1,4 +1,4 @@
-// Corundum VM Implementation
+// Rubellite VM Implementation
 #include <stdexcept>
 #include <mutex>
 #include <condition_variable>
