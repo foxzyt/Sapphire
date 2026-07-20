@@ -1,6 +1,9 @@
 #ifndef RUBELLITE_JIT_ASSEMBLER_H
 #define RUBELLITE_JIT_ASSEMBLER_H
 
+#define ASMJIT_STATIC 1
+#define ASMJIT_API
+
 // ============================================================================
 // AsmJit-based JIT Assembler wrapper
 // Replaces the manual x86-64 bytecode emission with AsmJit's safe assembler.
