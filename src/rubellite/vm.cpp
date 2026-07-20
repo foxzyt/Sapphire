@@ -3312,6 +3312,20 @@ bool VM::run(int target_frame_count) {
     // Array de labels para backpatching de pulos
     std::vector<JitAssembler::Label> labels(chunk->count);
 
+    static void* dispatch_table[] = {
+        &&TARGET_OP_CONSTANT, &&TARGET_OP_NIL, &&TARGET_OP_TRUE, &&TARGET_OP_FALSE,
+        &&TARGET_OP_POP, &&TARGET_OP_DUP,
+        &&TARGET_OP_GET_LOCAL, &&TARGET_OP_SET_LOCAL, &&TARGET_OP_GET_GLOBAL, &&TARGET_OP_DEFINE_GLOBAL, &&TARGET_OP_SET_GLOBAL, &&TARGET_OP_GET_PROPERTY, &&TARGET_OP_SET_PROPERTY,
+        &&TARGET_OP_BUILD_ARRAY, &&TARGET_OP_BUILD_MAP, &&TARGET_OP_GET_SUBSCRIPT, &&TARGET_OP_SET_SUBSCRIPT, &&TARGET_OP_SPREAD_ARRAY,
+        &&TARGET_OP_EQUAL, &&TARGET_OP_GREATER, &&TARGET_OP_LESS, &&TARGET_OP_NOT,
+        &&TARGET_OP_ADD, &&TARGET_OP_SUBTRACT, &&TARGET_OP_MULTIPLY, &&TARGET_OP_DIVIDE, &&TARGET_OP_MODULO, &&TARGET_OP_NEGATE,
+        &&TARGET_OP_BITWISE_AND, &&TARGET_OP_BITWISE_OR, &&TARGET_OP_BITWISE_XOR, &&TARGET_OP_BITWISE_NOT, &&TARGET_OP_LEFT_SHIFT, &&TARGET_OP_RIGHT_SHIFT,
+        &&TARGET_OP_PRINT, &&TARGET_OP_JUMP, &&TARGET_OP_JUMP_IF_FALSE, &&TARGET_OP_JUMP_IF_NIL, &&TARGET_OP_JUMP_IF_NOT_NIL, &&TARGET_OP_LOOP, &&TARGET_OP_CALL, &&TARGET_OP_CLOSURE, &&TARGET_OP_RETURN, &&TARGET_OP_IMPORT, &&TARGET_OP_MAKE_NAMED_ARG, &&TARGET_OP_INHERIT, &&TARGET_OP_GET_SUPER, &&TARGET_OP_SPAWN, &&TARGET_OP_AWAIT, &&TARGET_OP_ASYNC_CALL,
+        &&TARGET_OP_GET_ITERATOR, &&TARGET_OP_ITER_NEXT_IN, &&TARGET_OP_ITER_NEXT_OF,
+        &&TARGET_OP_TRY_START, &&TARGET_OP_TRY_END, &&TARGET_OP_THROW,
+        &&TARGET_OP_WITHIN_START, &&TARGET_OP_WITHIN_END, &&TARGET_OP_EVERY_TICK, &&TARGET_OP_UNDO, &&TARGET_OP_DEFINE_FADE
+    };
+
     // Helper lambda to emit fallback calls for unsupported opcodes
     auto emit_fallback = [&](int opcode_offset) {
         jit.emit_mov_mem_reg(14, 0, 12); // flush r12 to vm->stack_top
@@ -3322,13 +3336,15 @@ bool VM::run(int target_frame_count) {
         jit.emit_mov_reg_mem(12, 14, 0); // reload r12 from vm->stack_top
     };
 
-    // Pass 1: generate assembly for each opcode
-    for (int offset = 0; offset < chunk->count; ) {
-        jit.bind(labels[offset]);
-        uint8_t instruction = chunk->code[offset];
-        
-        switch (instruction) {
-            case OP_RETURN: {
+    int offset = 0;
+    if (chunk->count == 0) goto JIT_END;
+
+NEXT_OPCODE:
+    if (offset >= chunk->count) goto JIT_END;
+    jit.bind(labels[offset]);
+    goto *dispatch_table[chunk->code[offset]];
+
+    TARGET_OP_RETURN: {
                 jit.emit_mov_mem_reg(14, 0, 12); // flush r12 back to vm->stack_top
                 // Epilogo
                 jit.emit_pop_reg(14); // R14
@@ -3644,12 +3660,12 @@ bool VM::run(int target_frame_count) {
                 offset += 3;
                 break;
             }
-            case OP_BITWISE_AND:
-            case OP_BITWISE_OR:
-            case OP_BITWISE_XOR:
-            case OP_LEFT_SHIFT:
-            case OP_RIGHT_SHIFT:
-            case OP_MODULO: {
+            TARGET_OP_BITWISE_AND:
+            TARGET_OP_BITWISE_OR:
+            TARGET_OP_BITWISE_XOR:
+            TARGET_OP_LEFT_SHIFT:
+            TARGET_OP_RIGHT_SHIFT:
+            TARGET_OP_MODULO: {
                 JitAssembler::Label fallback_lbl;
                 JitAssembler::Label end_lbl;
 
@@ -3669,6 +3685,7 @@ bool VM::run(int target_frame_count) {
                 jit.emit_cvttsd2si_reg_xmm(0, 0); // r0 = a
                 jit.emit_cvttsd2si_reg_xmm(1, 1); // r1 = b
 
+                uint8_t instruction = chunk->code[offset];
                 if (instruction == OP_BITWISE_AND) jit.emit_and_reg_reg(0, 1);
                 else if (instruction == OP_BITWISE_OR) jit.emit_or_reg_reg(0, 1);
                 else if (instruction == OP_BITWISE_XOR) jit.emit_xor_reg_reg(0, 1);
@@ -3702,9 +3719,9 @@ bool VM::run(int target_frame_count) {
 
                 jit.bind(end_lbl);
                 offset++;
-                break;
+                goto NEXT_OPCODE;
             }
-            case OP_BITWISE_NOT: {
+            TARGET_OP_BITWISE_NOT: {
                 JitAssembler::Label fallback_lbl;
                 JitAssembler::Label end_lbl;
 
@@ -3729,13 +3746,13 @@ bool VM::run(int target_frame_count) {
 
                 jit.bind(end_lbl);
                 offset++;
-                break;
+                goto NEXT_OPCODE;
             }
-            case OP_GET_GLOBAL:
-            case OP_SET_GLOBAL:
-            case OP_DEFINE_GLOBAL:
-            case OP_MAKE_NAMED_ARG:
-            case OP_ASYNC_CALL: {
+            TARGET_OP_GET_GLOBAL:
+            TARGET_OP_SET_GLOBAL:
+            TARGET_OP_DEFINE_GLOBAL:
+            TARGET_OP_MAKE_NAMED_ARG:
+            TARGET_OP_ASYNC_CALL: {
                 // Direct callout for variables
                 auto emit_trampoline = [&](void* func) {
                     jit.emit_mov_mem_reg(14, 0, 12); 
@@ -3746,10 +3763,11 @@ bool VM::run(int target_frame_count) {
                 };
                 emit_trampoline((void*)&jit_trampoline_generic);
                 offset += 2;
-                break;
+                goto NEXT_OPCODE;
             }
-            case OP_GET_PROPERTY:
-            case OP_SET_PROPERTY: {
+            TARGET_OP_GET_PROPERTY:
+            TARGET_OP_SET_PROPERTY: {
+                uint8_t instruction = chunk->code[offset];
                 auto emit_trampoline = [&](void* func) {
                     jit.emit_mov_mem_reg(14, 0, 12); 
                     jit.emit_mov_reg_reg(1, 13); // rcx = vm
@@ -3759,9 +3777,9 @@ bool VM::run(int target_frame_count) {
                 };
                 emit_trampoline(instruction == OP_GET_PROPERTY ? (void*)&jit_trampoline_get_property : (void*)&jit_trampoline_set_property);
                 offset += 2;
-                break;
+                goto NEXT_OPCODE;
             }
-            case OP_CALL: {
+            TARGET_OP_CALL: {
                 auto emit_trampoline = [&](void* func) {
                     jit.emit_mov_mem_reg(14, 0, 12); 
                     jit.emit_mov_reg_reg(1, 13); // rcx = vm
@@ -3771,9 +3789,9 @@ bool VM::run(int target_frame_count) {
                 };
                 emit_trampoline((void*)&jit_trampoline_call);
                 offset += 2;
-                break;
+                goto NEXT_OPCODE;
             }
-            case OP_CLOSURE: {
+            TARGET_OP_CLOSURE: {
                 auto emit_trampoline = [&](void* func) {
                     jit.emit_mov_mem_reg(14, 0, 12); 
                     jit.emit_mov_reg_reg(1, 13); // rcx = vm
@@ -3783,11 +3801,11 @@ bool VM::run(int target_frame_count) {
                 };
                 emit_trampoline((void*)&jit_trampoline_generic);
                 offset += 2; 
-                break;
+                goto NEXT_OPCODE;
             }
-            case OP_JUMP_IF_NIL:
-            case OP_JUMP_IF_NOT_NIL:
-            case OP_LOOP: {
+            TARGET_OP_JUMP_IF_NIL:
+            TARGET_OP_JUMP_IF_NOT_NIL:
+            TARGET_OP_LOOP: {
                 auto emit_trampoline = [&](void* func) {
                     jit.emit_mov_mem_reg(14, 0, 12); 
                     jit.emit_mov_reg_reg(1, 13); // rcx = vm
@@ -3797,10 +3815,10 @@ bool VM::run(int target_frame_count) {
                 };
                 emit_trampoline((void*)&jit_trampoline_generic);
                 offset += 3;
-                break;
+                goto NEXT_OPCODE;
             }
-            case OP_BUILD_ARRAY:
-            case OP_BUILD_MAP: {
+            TARGET_OP_BUILD_ARRAY:
+            TARGET_OP_BUILD_MAP: {
                 // Otimização de Objetos: Trampoline direto para allocate_object
                 auto emit_trampoline = [&](void* func) {
                     jit.emit_mov_mem_reg(14, 0, 12); 
@@ -3811,9 +3829,9 @@ bool VM::run(int target_frame_count) {
                 };
                 emit_trampoline((void*)&jit_trampoline_generic);
                 offset += 3;
-                break;
+                goto NEXT_OPCODE;
             }
-            case OP_IMPORT: {
+            TARGET_OP_IMPORT: {
                 auto emit_trampoline = [&](void* func) {
                     jit.emit_mov_mem_reg(14, 0, 12); 
                     jit.emit_mov_reg_reg(1, 13);
@@ -3823,9 +3841,9 @@ bool VM::run(int target_frame_count) {
                 };
                 emit_trampoline((void*)&jit_trampoline_import);
                 offset++;
-                break;
+                goto NEXT_OPCODE;
             }
-            case OP_SPAWN: {
+            TARGET_OP_SPAWN: {
                 auto emit_trampoline = [&](void* func) {
                     jit.emit_mov_mem_reg(14, 0, 12); 
                     jit.emit_mov_reg_reg(1, 13);
@@ -3835,9 +3853,9 @@ bool VM::run(int target_frame_count) {
                 };
                 emit_trampoline((void*)&jit_trampoline_spawn);
                 offset++;
-                break;
+                goto NEXT_OPCODE;
             }
-            case OP_AWAIT: {
+            TARGET_OP_AWAIT: {
                 auto emit_trampoline = [&](void* func) {
                     jit.emit_mov_mem_reg(14, 0, 12); 
                     jit.emit_mov_reg_reg(1, 13);
@@ -3847,25 +3865,25 @@ bool VM::run(int target_frame_count) {
                 };
                 emit_trampoline((void*)&jit_trampoline_await);
                 offset++;
-                break;
+                goto NEXT_OPCODE;
             }
-            case OP_GET_SUBSCRIPT:
-            case OP_SET_SUBSCRIPT:
-            case OP_SPREAD_ARRAY:
-            case OP_PRINT:
-            case OP_INHERIT:
-            case OP_GET_SUPER:
-            case OP_GET_ITERATOR:
-            case OP_ITER_NEXT_IN:
-            case OP_ITER_NEXT_OF:
-            case OP_TRY_START:
-            case OP_TRY_END:
-            case OP_THROW:
-            case OP_WITHIN_START:
-            case OP_WITHIN_END:
-            case OP_EVERY_TICK:
-            case OP_UNDO:
-            case OP_DEFINE_FADE: {
+            TARGET_OP_GET_SUBSCRIPT:
+            TARGET_OP_SET_SUBSCRIPT:
+            TARGET_OP_SPREAD_ARRAY:
+            TARGET_OP_PRINT:
+            TARGET_OP_INHERIT:
+            TARGET_OP_GET_SUPER:
+            TARGET_OP_GET_ITERATOR:
+            TARGET_OP_ITER_NEXT_IN:
+            TARGET_OP_ITER_NEXT_OF:
+            TARGET_OP_TRY_START:
+            TARGET_OP_TRY_END:
+            TARGET_OP_THROW:
+            TARGET_OP_WITHIN_START:
+            TARGET_OP_WITHIN_END:
+            TARGET_OP_EVERY_TICK:
+            TARGET_OP_UNDO:
+            TARGET_OP_DEFINE_FADE: {
                 // General Trampoline for other opcodes without dedicated C-Callout
                 auto emit_trampoline = [&](void* func) {
                     jit.emit_mov_mem_reg(14, 0, 12); 
@@ -3876,11 +3894,10 @@ bool VM::run(int target_frame_count) {
                 };
                 emit_trampoline((void*)&jit_trampoline_generic);
                 offset++;
-                break;
+                goto NEXT_OPCODE;
             }
-        }
-    }
 
+JIT_END:
     // Finalize and run JIT
     typedef void (*JitFunc)();
     JitFunc func = (JitFunc)jit.finalize();

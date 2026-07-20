@@ -2671,6 +2671,19 @@ int main(int argc, char *argv[]) {
 
   if (command == "-h" || command == "--help" || command == "--info") {
     display_info();
+  } else if (command == "--rubellite") {
+#ifdef RUBELLITE_ENABLED
+    std::cout << "\033[32m[Sapphire] Experimental Rubellite JIT VM is enabled and active!\033[0m\n";
+    if (argc > 2) {
+      run_file(argv[2]);
+    } else {
+      run_repl();
+    }
+    return 0;
+#else
+    std::cerr << "\033[31m[Sapphire] Rubellite VM is not compiled in this build! Please build with USE_RUBELLITE=ON.\033[0m\n";
+    return 1;
+#endif
   } else if (command == "-v" || command == "--version") {
     display_version();
   } else if (command == "lsp") {
