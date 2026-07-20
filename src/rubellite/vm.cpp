@@ -3285,7 +3285,7 @@ extern "C" void jit_trampoline_generic(VM* vm, int opcode) { printf("Native Call
 
 bool VM::run(int target_frame_count) {
     CallFrame* frame = &frames[frame_count - 1];
-    Chunk* chunk = &frame->closure->function->chunk;
+    Chunk* chunk = &frame->function->chunk;
     
     JitAssembler jit;
     
@@ -3310,7 +3310,7 @@ bool VM::run(int target_frame_count) {
     jit.emit_mov_reg_mem(12, 14, 0);
 
     // Array de labels para backpatching de pulos
-    std::vector<JitAssembler::Label> labels(chunk->count);
+    std::vector<JitAssembler::Label> labels(chunk->code.size());
 
     static void* dispatch_table[] = {
         &&TARGET_OP_CONSTANT, &&TARGET_OP_NIL, &&TARGET_OP_TRUE, &&TARGET_OP_FALSE,
@@ -3332,15 +3332,27 @@ bool VM::run(int target_frame_count) {
         jit.emit_mov_reg_reg(1, 13); // rcx = vm
         jit.emit_mov_reg_imm64(2, (uint64_t)&chunk->code[opcode_offset]); // rdx = instruction pointer
         jit.emit_mov_reg_imm64(0, (uint64_t)&jit_fallback_opcode); // rax = fallback func
+        jit.emit_sub_reg_imm32(4, 32); // shadow space for Win64 ABI
         jit.emit_call_reg(0);
+        jit.emit_add_reg_imm32(4, 32);
         jit.emit_mov_reg_mem(12, 14, 0); // reload r12 from vm->stack_top
     };
 
+    auto emit_trampoline = [&](void* func) {
+        jit.emit_mov_mem_reg(14, 0, 12); 
+        jit.emit_mov_reg_reg(1, 13); // rcx = vm
+        jit.emit_mov_reg_imm64(0, (uint64_t)func); 
+        jit.emit_sub_reg_imm32(4, 32); // shadow space for Win64 ABI
+        jit.emit_call_reg(0);
+        jit.emit_add_reg_imm32(4, 32);
+        jit.emit_mov_reg_mem(12, 14, 0);
+    };
+
     int offset = 0;
-    if (chunk->count == 0) goto JIT_END;
+    if (chunk->code.size() == 0) goto JIT_END;
 
 NEXT_OPCODE:
-    if (offset >= chunk->count) goto JIT_END;
+    if (offset >= chunk->code.size()) goto JIT_END;
     jit.bind(labels[offset]);
     goto *dispatch_table[chunk->code[offset]];
 
@@ -3356,41 +3368,41 @@ NEXT_OPCODE:
                 jit.emit_pop_reg(3); // RBX
                 jit.emit_ret();
                 offset++;
-                break;
+                goto NEXT_OPCODE;
             }
-            case OP_POP: {
+            TARGET_OP_POP: {
                 jit.emit_sub_reg_imm32(12, sizeof(SapphireValue));
                 offset++;
-                break;
+                goto NEXT_OPCODE;
             }
-            case OP_NIL: {
+            TARGET_OP_NIL: {
                 // type = 0 (VAL_NIL)
                 jit.emit_mov_mem_reg(12, 0, 0); // set type 0
                 jit.emit_add_reg_imm32(12, sizeof(SapphireValue));
                 offset++;
-                break;
+                goto NEXT_OPCODE;
             }
-            case OP_TRUE: {
+            TARGET_OP_TRUE: {
                 // type = 1 (VAL_BOOL)
                 jit.emit_mov_reg_imm64(0, 1);
                 jit.emit_mov_mem_reg(12, 0, 0); // type = 1
                 jit.emit_mov_mem_reg(12, 8, 0); // as.boolean = true (1)
                 jit.emit_add_reg_imm32(12, sizeof(SapphireValue));
                 offset++;
-                break;
+                goto NEXT_OPCODE;
             }
-            case OP_FALSE: {
+            TARGET_OP_FALSE: {
                 jit.emit_mov_reg_imm64(0, 1);
                 jit.emit_mov_mem_reg(12, 0, 0); // type = 1
                 jit.emit_mov_reg_imm64(0, 0);
                 jit.emit_mov_mem_reg(12, 8, 0); // as.boolean = false (0)
                 jit.emit_add_reg_imm32(12, sizeof(SapphireValue));
                 offset++;
-                break;
+                goto NEXT_OPCODE;
             }
-            case OP_CONSTANT: {
+            TARGET_OP_CONSTANT: {
                 uint8_t constant_idx = chunk->code[offset + 1];
-                SapphireValue* val_ptr = &chunk->constants.values[constant_idx];
+                SapphireValue* val_ptr = &chunk->constants[constant_idx];
                 jit.emit_mov_reg_imm64(0, (uint64_t)val_ptr);
                 // Load 16 bytes from val_ptr to [r12]
                 jit.emit_mov_reg_mem(1, 0, 0);
@@ -3399,12 +3411,12 @@ NEXT_OPCODE:
                 jit.emit_mov_mem_reg(12, 8, 1);
                 jit.emit_add_reg_imm32(12, sizeof(SapphireValue));
                 offset += 2;
-                break;
+                goto NEXT_OPCODE;
             }
-            case OP_ADD:
-            case OP_SUBTRACT:
-            case OP_MULTIPLY:
-            case OP_DIVIDE: {
+            TARGET_OP_ADD:
+            TARGET_OP_SUBTRACT:
+            TARGET_OP_MULTIPLY:
+            TARGET_OP_DIVIDE: {
                 JitAssembler::Label fallback_lbl;
                 JitAssembler::Label end_lbl;
 
@@ -3422,6 +3434,7 @@ NEXT_OPCODE:
                 jit.emit_movsd_xmm_mem(0, 12, 8);
                 jit.emit_movsd_xmm_mem(1, 12, sizeof(SapphireValue) + 8);
 
+                uint8_t instruction = chunk->code[offset];
                 if (instruction == OP_ADD) jit.emit_addsd_xmm_xmm(0, 1);
                 else if (instruction == OP_SUBTRACT) jit.emit_subsd_xmm_xmm(0, 1);
                 else if (instruction == OP_MULTIPLY) jit.emit_mulsd_xmm_xmm(0, 1);
@@ -3438,11 +3451,11 @@ NEXT_OPCODE:
 
                 jit.bind(end_lbl);
                 offset++;
-                break;
+                goto NEXT_OPCODE;
             }
-            case OP_EQUAL:
-            case OP_GREATER:
-            case OP_LESS: {
+            TARGET_OP_EQUAL:
+            TARGET_OP_GREATER:
+            TARGET_OP_LESS: {
                 JitAssembler::Label fallback_lbl;
                 JitAssembler::Label is_true_lbl;
                 JitAssembler::Label cont_lbl;
@@ -3460,6 +3473,7 @@ NEXT_OPCODE:
                 jit.emit_movsd_xmm_mem(1, 12, sizeof(SapphireValue) + 8);
                 jit.emit_ucomisd_xmm_xmm(0, 1);
 
+                uint8_t instruction = chunk->code[offset];
                 if (instruction == OP_EQUAL) jit.emit_jz(is_true_lbl);
                 else if (instruction == OP_GREATER) jit.emit_ja(is_true_lbl);
                 else if (instruction == OP_LESS) jit.emit_jb(is_true_lbl);
@@ -3487,9 +3501,9 @@ NEXT_OPCODE:
 
                 jit.bind(end_lbl);
                 offset++;
-                break;
+                goto NEXT_OPCODE;
             }
-            case OP_GET_LOCAL: {
+            TARGET_OP_GET_LOCAL: {
                 uint8_t slot = chunk->code[offset + 1];
                 SapphireValue* slot_ptr = &frame->slots[slot];
                 jit.emit_mov_reg_imm64(0, (uint64_t)slot_ptr);
@@ -3500,9 +3514,9 @@ NEXT_OPCODE:
                 jit.emit_mov_mem_reg(12, 8, 1);
                 jit.emit_add_reg_imm32(12, sizeof(SapphireValue));
                 offset += 2;
-                break;
+                goto NEXT_OPCODE;
             }
-            case OP_SET_LOCAL: {
+            TARGET_OP_SET_LOCAL: {
                 uint8_t slot = chunk->code[offset + 1];
                 SapphireValue* slot_ptr = &frame->slots[slot];
                 jit.emit_mov_reg_imm64(0, (uint64_t)slot_ptr);
@@ -3512,9 +3526,9 @@ NEXT_OPCODE:
                 jit.emit_mov_reg_mem(1, 12, -(int32_t)sizeof(SapphireValue) + 8);
                 jit.emit_mov_mem_reg(0, 8, 1);
                 offset += 2;
-                break;
+                goto NEXT_OPCODE;
             }
-            case OP_DUP: {
+            TARGET_OP_DUP: {
                 // Copy top of stack to next slot
                 jit.emit_mov_reg_reg(0, 12);
                 jit.emit_sub_reg_imm32(0, sizeof(SapphireValue)); // R0 points to top val
@@ -3527,9 +3541,9 @@ NEXT_OPCODE:
                 
                 jit.emit_add_reg_imm32(12, sizeof(SapphireValue)); // push
                 offset++;
-                break;
+                goto NEXT_OPCODE;
             }
-            case OP_NOT: {
+            TARGET_OP_NOT: {
                 JitAssembler::Label is_false_lbl;
                 JitAssembler::Label end_lbl;
 
@@ -3560,12 +3574,10 @@ NEXT_OPCODE:
                 jit.emit_mov_mem_reg(0, 8, 1); // value = true (uses 1 from reg 1)
 
                 jit.bind(end_lbl);
-                // If we skipped to end_lbl directly (was Truthy non-bool), we must set it to false
-                // Wait, if it jumps to end_lbl, the value remains unchanged! We need another label.
                 offset++;
-                break;
+                goto NEXT_OPCODE;
             }
-            case OP_NEGATE: {
+            TARGET_OP_NEGATE: {
                 JitAssembler::Label fallback_lbl;
                 JitAssembler::Label end_lbl;
 
@@ -3587,15 +3599,15 @@ NEXT_OPCODE:
 
                 jit.bind(end_lbl);
                 offset++;
-                break;
+                goto NEXT_OPCODE;
             }
-            case OP_JUMP: {
+            TARGET_OP_JUMP: {
                 uint16_t jump = (chunk->code[offset + 1] << 8) | chunk->code[offset + 2];
                 jit.emit_jmp(labels[offset + 3 + jump]);
                 offset += 3;
-                break;
+                goto NEXT_OPCODE;
             }
-            case OP_JUMP_IF_FALSE: {
+            TARGET_OP_JUMP_IF_FALSE: {
                 uint16_t jump = (chunk->code[offset + 1] << 8) | chunk->code[offset + 2];
                 JitAssembler::Label fallback_lbl;
                 JitAssembler::Label is_false_lbl;
@@ -3622,43 +3634,7 @@ NEXT_OPCODE:
 
                 jit.bind(end_lbl);
                 offset += 3;
-                break;
-            }
-            case OP_GET_GLOBAL:
-            case OP_SET_GLOBAL:
-            case OP_DEFINE_GLOBAL:
-            case OP_GET_PROPERTY:
-            case OP_SET_PROPERTY:
-            case OP_MAKE_NAMED_ARG:
-            case OP_ASYNC_CALL:
-            case OP_CALL: {
-                emit_fallback(offset);
-                offset += 2;
-                break;
-            }
-            case OP_CLOSURE: {
-                // OP_CLOSURE has variable length (arguments)
-                // For a real JIT, we'd need to parse how many upvalues it captures
-                // For this fallback, we let the C++ interpreter handle it, but we can't easily skip it without logic
-                // For the JIT experiment, we will just fallback
-                emit_fallback(offset);
-                offset += 2; // (Approximation, real closure logic is complex)
-                break;
-            }
-            case OP_JUMP_IF_NIL:
-            case OP_JUMP_IF_NOT_NIL:
-            case OP_LOOP: {
-                emit_fallback(offset);
-                offset += 3;
-                break;
-            }
-            case OP_BUILD_ARRAY:
-            case OP_BUILD_MAP: {
-                // To optimize object creation as requested, we emit a fallback directly to a Fast Allocation Helper
-                // instead of the normal interpreter loop.
-                emit_fallback(offset); 
-                offset += 3;
-                break;
+                goto NEXT_OPCODE;
             }
             TARGET_OP_BITWISE_AND:
             TARGET_OP_BITWISE_OR:
@@ -3754,13 +3730,6 @@ NEXT_OPCODE:
             TARGET_OP_MAKE_NAMED_ARG:
             TARGET_OP_ASYNC_CALL: {
                 // Direct callout for variables
-                auto emit_trampoline = [&](void* func) {
-                    jit.emit_mov_mem_reg(14, 0, 12); 
-                    jit.emit_mov_reg_reg(1, 13); // rcx = vm
-                    jit.emit_mov_reg_imm64(0, (uint64_t)func); 
-                    jit.emit_call_reg(0);
-                    jit.emit_mov_reg_mem(12, 14, 0);
-                };
                 emit_trampoline((void*)&jit_trampoline_generic);
                 offset += 2;
                 goto NEXT_OPCODE;
@@ -3768,37 +3737,16 @@ NEXT_OPCODE:
             TARGET_OP_GET_PROPERTY:
             TARGET_OP_SET_PROPERTY: {
                 uint8_t instruction = chunk->code[offset];
-                auto emit_trampoline = [&](void* func) {
-                    jit.emit_mov_mem_reg(14, 0, 12); 
-                    jit.emit_mov_reg_reg(1, 13); // rcx = vm
-                    jit.emit_mov_reg_imm64(0, (uint64_t)func); 
-                    jit.emit_call_reg(0);
-                    jit.emit_mov_reg_mem(12, 14, 0);
-                };
                 emit_trampoline(instruction == OP_GET_PROPERTY ? (void*)&jit_trampoline_get_property : (void*)&jit_trampoline_set_property);
                 offset += 2;
                 goto NEXT_OPCODE;
             }
             TARGET_OP_CALL: {
-                auto emit_trampoline = [&](void* func) {
-                    jit.emit_mov_mem_reg(14, 0, 12); 
-                    jit.emit_mov_reg_reg(1, 13); // rcx = vm
-                    jit.emit_mov_reg_imm64(0, (uint64_t)func); 
-                    jit.emit_call_reg(0);
-                    jit.emit_mov_reg_mem(12, 14, 0);
-                };
                 emit_trampoline((void*)&jit_trampoline_call);
                 offset += 2;
                 goto NEXT_OPCODE;
             }
             TARGET_OP_CLOSURE: {
-                auto emit_trampoline = [&](void* func) {
-                    jit.emit_mov_mem_reg(14, 0, 12); 
-                    jit.emit_mov_reg_reg(1, 13); // rcx = vm
-                    jit.emit_mov_reg_imm64(0, (uint64_t)func); 
-                    jit.emit_call_reg(0);
-                    jit.emit_mov_reg_mem(12, 14, 0);
-                };
                 emit_trampoline((void*)&jit_trampoline_generic);
                 offset += 2; 
                 goto NEXT_OPCODE;
@@ -3806,13 +3754,6 @@ NEXT_OPCODE:
             TARGET_OP_JUMP_IF_NIL:
             TARGET_OP_JUMP_IF_NOT_NIL:
             TARGET_OP_LOOP: {
-                auto emit_trampoline = [&](void* func) {
-                    jit.emit_mov_mem_reg(14, 0, 12); 
-                    jit.emit_mov_reg_reg(1, 13); // rcx = vm
-                    jit.emit_mov_reg_imm64(0, (uint64_t)func); 
-                    jit.emit_call_reg(0);
-                    jit.emit_mov_reg_mem(12, 14, 0);
-                };
                 emit_trampoline((void*)&jit_trampoline_generic);
                 offset += 3;
                 goto NEXT_OPCODE;
@@ -3820,49 +3761,21 @@ NEXT_OPCODE:
             TARGET_OP_BUILD_ARRAY:
             TARGET_OP_BUILD_MAP: {
                 // Otimização de Objetos: Trampoline direto para allocate_object
-                auto emit_trampoline = [&](void* func) {
-                    jit.emit_mov_mem_reg(14, 0, 12); 
-                    jit.emit_mov_reg_reg(1, 13); // rcx = vm
-                    jit.emit_mov_reg_imm64(0, (uint64_t)func); 
-                    jit.emit_call_reg(0);
-                    jit.emit_mov_reg_mem(12, 14, 0);
-                };
                 emit_trampoline((void*)&jit_trampoline_generic);
                 offset += 3;
                 goto NEXT_OPCODE;
             }
             TARGET_OP_IMPORT: {
-                auto emit_trampoline = [&](void* func) {
-                    jit.emit_mov_mem_reg(14, 0, 12); 
-                    jit.emit_mov_reg_reg(1, 13);
-                    jit.emit_mov_reg_imm64(0, (uint64_t)func); 
-                    jit.emit_call_reg(0);
-                    jit.emit_mov_reg_mem(12, 14, 0);
-                };
                 emit_trampoline((void*)&jit_trampoline_import);
                 offset++;
                 goto NEXT_OPCODE;
             }
             TARGET_OP_SPAWN: {
-                auto emit_trampoline = [&](void* func) {
-                    jit.emit_mov_mem_reg(14, 0, 12); 
-                    jit.emit_mov_reg_reg(1, 13);
-                    jit.emit_mov_reg_imm64(0, (uint64_t)func); 
-                    jit.emit_call_reg(0);
-                    jit.emit_mov_reg_mem(12, 14, 0);
-                };
                 emit_trampoline((void*)&jit_trampoline_spawn);
                 offset++;
                 goto NEXT_OPCODE;
             }
             TARGET_OP_AWAIT: {
-                auto emit_trampoline = [&](void* func) {
-                    jit.emit_mov_mem_reg(14, 0, 12); 
-                    jit.emit_mov_reg_reg(1, 13);
-                    jit.emit_mov_reg_imm64(0, (uint64_t)func); 
-                    jit.emit_call_reg(0);
-                    jit.emit_mov_reg_mem(12, 14, 0);
-                };
                 emit_trampoline((void*)&jit_trampoline_await);
                 offset++;
                 goto NEXT_OPCODE;
@@ -3885,13 +3798,6 @@ NEXT_OPCODE:
             TARGET_OP_UNDO:
             TARGET_OP_DEFINE_FADE: {
                 // General Trampoline for other opcodes without dedicated C-Callout
-                auto emit_trampoline = [&](void* func) {
-                    jit.emit_mov_mem_reg(14, 0, 12); 
-                    jit.emit_mov_reg_reg(1, 13);
-                    jit.emit_mov_reg_imm64(0, (uint64_t)func); 
-                    jit.emit_call_reg(0);
-                    jit.emit_mov_reg_mem(12, 14, 0);
-                };
                 emit_trampoline((void*)&jit_trampoline_generic);
                 offset++;
                 goto NEXT_OPCODE;
