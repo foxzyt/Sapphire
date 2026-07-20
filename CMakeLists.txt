@@ -109,7 +109,7 @@ endif()
 
 option(USE_RUBELLITE "Ativar VM experimental Rubellite JIT" OFF)
 if(USE_RUBELLITE)
-    add_compile_definitions(USE_RUBELLITE)
+    add_compile_definitions(USE_RUBELLITE RUBELLITE_ENABLED)
     set(VM_SOURCES
         src/rubellite/object.cpp
         src/rubellite/value.cpp
