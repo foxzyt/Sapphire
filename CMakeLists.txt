@@ -53,6 +53,8 @@ set(SFML_BUILD_NETWORK ON)
 set(SFML_BUILD_GRAPHICS ON)
 set(SFML_BUILD_WINDOW ON)
 set(SFML_BUILD_SYSTEM ON)
+set(BUILD_SHARED_LIBS OFF)
+set(ASMJIT_STATIC ON)
 FetchContent_MakeAvailable(sfml)
 
 # Use system OpenSSL package (provided by MSYS2/MinGW or locally in libs/openssl)

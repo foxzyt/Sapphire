@@ -3740,53 +3740,52 @@ bool VM::run(int target_frame_count) {
     printf("[JIT] Compiling chunk of size %zu\n", chunk->code.size());
     fflush(stdout);
     
-    // OPTIMIZATION: Constant folding pass (disabled temporarily for debugging)
-    // std::vector<uint8_t> optimized_code = chunk->code;
-    // std::vector<SapphireValue> optimized_constants = chunk->constants;
-    // 
-    // for (size_t i = 0; i < optimized_code.size(); ) {
-    //     uint8_t opcode = optimized_code[i];
-    //     
-    //     // Constant folding for arithmetic operations
-    //     if ((opcode == OP_ADD || opcode == OP_SUBTRACT || opcode == OP_MULTIPLY || opcode == OP_DIVIDE) && 
-    //         i + 1 < optimized_code.size()) {
-    //         // Check if previous two opcodes are constants
-    //         if (i >= 3 && optimized_code[i-2] == OP_CONSTANT && optimized_code[i-1] == OP_CONSTANT) {
-    //             uint8_t const1_idx = optimized_code[i-1];
-    //             uint8_t const2_idx = optimized_code[i-3];
-    //             
-    //             SapphireValue val1 = optimized_constants[const1_idx];
-    //             SapphireValue val2 = optimized_constants[const2_idx];
-    //             
-    //             if (val1.type == ValType::VAL_NUMBER && val2.type == ValType::VAL_NUMBER) {
-    //                 double result = 0.0;
-    //                 if (opcode == OP_ADD) result = val2.as.number + val1.as.number;
-    //                 else if (opcode == OP_SUBTRACT) result = val2.as.number - val1.as.number;
-    //                 else if (opcode == OP_MULTIPLY) result = val2.as.number * val1.as.number;
-    //                 else if (opcode == OP_DIVIDE && val1.as.number != 0.0) result = val2.as.number / val1.as.number;
-    //                 
-    //                 // Replace with constant
-    //                 optimized_constants.push_back(SapphireValue(result));
-    //                 uint8_t new_const_idx = optimized_constants.size() - 1;
-    //                 
-    //                 // Remove the pattern: CONSTANT CONSTANT OP
-    //                 optimized_code.erase(optimized_code.begin() + i - 3, optimized_code.begin() + i + 1);
-    //                 optimized_code.insert(optimized_code.begin() + i - 3, OP_CONSTANT);
-    //                 optimized_code.insert(optimized_code.begin() + i - 2, new_const_idx);
-    //                 
-    //                 printf("[JIT OPT] Constant folding: arithmetic operation folded to constant\n");
-    //                 continue; // Re-analyze from this position
-    //             }
-    //         }
-    //     }
-    //     i++;
-    // }
-    // 
-    // // Use optimized code
-    // Chunk optimized_chunk;
-    // optimized_chunk.code = optimized_code;
-    // optimized_chunk.constants = optimized_constants;
-    // chunk = &optimized_chunk;
+    std::vector<uint8_t> optimized_code = chunk->code;
+    std::vector<SapphireValue> optimized_constants = chunk->constants;
+    
+    for (size_t i = 0; i < optimized_code.size(); ) {
+        uint8_t opcode = optimized_code[i];
+        
+        // Constant folding for arithmetic operations
+        if ((opcode == OP_ADD || opcode == OP_SUBTRACT || opcode == OP_MULTIPLY || opcode == OP_DIVIDE) && 
+            i + 1 < optimized_code.size()) {
+            // Check if previous two opcodes are constants
+            if (i >= 3 && optimized_code[i-2] == OP_CONSTANT && optimized_code[i-1] == OP_CONSTANT) {
+                uint8_t const1_idx = optimized_code[i-1];
+                uint8_t const2_idx = optimized_code[i-3];
+                
+                SapphireValue val1 = optimized_constants[const1_idx];
+                SapphireValue val2 = optimized_constants[const2_idx];
+                
+                if (val1.type == ValType::VAL_NUMBER && val2.type == ValType::VAL_NUMBER) {
+                    double result = 0.0;
+                    if (opcode == OP_ADD) result = val2.as.number + val1.as.number;
+                    else if (opcode == OP_SUBTRACT) result = val2.as.number - val1.as.number;
+                    else if (opcode == OP_MULTIPLY) result = val2.as.number * val1.as.number;
+                    else if (opcode == OP_DIVIDE && val1.as.number != 0.0) result = val2.as.number / val1.as.number;
+                    
+                    // Replace with constant
+                    optimized_constants.push_back(SapphireValue(result));
+                    uint8_t new_const_idx = optimized_constants.size() - 1;
+                    
+                    // Remove the pattern: CONSTANT CONSTANT OP
+                    optimized_code.erase(optimized_code.begin() + i - 3, optimized_code.begin() + i + 1);
+                    optimized_code.insert(optimized_code.begin() + i - 3, OP_CONSTANT);
+                    optimized_code.insert(optimized_code.begin() + i - 2, new_const_idx);
+                    
+                    printf("[JIT OPT] Constant folding: arithmetic operation folded to constant\n");
+                    continue; // Re-analyze from this position
+                }
+            }
+        }
+        i++;
+    }
+    
+    // Use optimized code
+    Chunk optimized_chunk;
+    optimized_chunk.code = optimized_code;
+    optimized_chunk.constants = optimized_constants;
+    chunk = &optimized_chunk;
     
     JitAssembler jit;
     
@@ -4432,6 +4431,10 @@ JIT_END:
         func();
         printf("[JIT] Exited JIT function.\n");
         fflush(stdout);
+    } else {
+        printf("[JIT] ERROR: Failed to finalize JIT code! No function generated.\n");
+        fflush(stdout);
+        return false;
     }
     
     return true;
