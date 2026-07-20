@@ -4,6 +4,10 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <SFML/Graphics.hpp>
+
+// Forward declaration of UIStyle
+struct UIStyle;
 
 enum class UINodeType {
     Container,
@@ -106,6 +110,28 @@ public:
     
     UINode(UINodeType type, const std::string& id) : type(type), id(id) {}
     virtual ~UINode() = default;
+    virtual void render(sf::RenderWindow& window, UIStyle* activeStyle) {}
+};
+
+// Forward declaration of UIStyle
+struct UIStyle;
+
+class UIButtonNode : public UINode {
+public:
+    using UINode::UINode;
+    void render(sf::RenderWindow& window, UIStyle* activeStyle);
+};
+
+class UITextNode : public UINode {
+public:
+    using UINode::UINode;
+    void render(sf::RenderWindow& window, UIStyle* activeStyle);
+};
+
+class UIContainerNode : public UINode {
+public:
+    using UINode::UINode;
+    void render(sf::RenderWindow& window, UIStyle* activeStyle);
 };
 
 #endif

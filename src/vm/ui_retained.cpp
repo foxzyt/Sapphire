@@ -2,7 +2,7 @@
 #include "vm.h"
 #include <iostream>
 
-extern VM* g_current_vm;
+extern thread_local VM* g_current_vm;
 
 void UIButtonNode::render(sf::RenderWindow& window, UIStyle* activeStyle) {
     UIStyle s = activeStyle ? *activeStyle : g_current_vm->ui_state.defaultStyle;
