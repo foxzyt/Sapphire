@@ -49,10 +49,12 @@ public:
 
     void emit_push_reg(uint8_t reg) {
         // reg: 0=rax, 1=rcx, 2=rdx, 3=rbx, 4=rsp, 5=rbp, 6=rsi, 7=rdi
+        if (reg >= 8) emit8(0x41);
         emit8(0x50 + (reg & 7));
     }
 
     void emit_pop_reg(uint8_t reg) {
+        if (reg >= 8) emit8(0x41);
         emit8(0x58 + (reg & 7));
     }
 
