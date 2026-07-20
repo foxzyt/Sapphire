@@ -20,6 +20,7 @@ Sapphire is designed to understand and work together with **physical time** at t
 * Did you know that Sapphire has an **Incremental Mark-and-Sweep** garbage collector that minimizes the "stop-the-world" effects while taking the burden of memory management off the user.
 * FYI: **Generative AI** was used when expanding Sapphire's standard library and some parts of the toolchain.
 * Did you know that Sapphire was initially supposed to be called **Mint**?
+* Multiplatform support IS being added to Sapphire and I hope I can make it fully work in other OSes by the time I release 1.1.0 (hopefully 1.0.9, but I'll try).
 </details>
 
 > **Note:** Sapphire currently only supports **Windows**.
