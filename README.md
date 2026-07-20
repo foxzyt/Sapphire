@@ -9,8 +9,6 @@
 
 Sapphire is a hybrid, multi-paradigm and general purpose, **time-aware** programming language designed for performance and clarity. It combines the speed of compiled languages and its low-level tools with the syntax of high-level scripting, making it suitable for tools, UI-driven applications, scripts, and system-level tasks. 
 
-Sapphire is designed to understand and work together with **physical time** at the core virtual machine level, offering first-class primitives for real-time execution bounds (within/fallback), temporal loops (every), bytecode-level retroactive rollbacks (try/undo), and automatic memory decay (fade).
-
 <details>
 <summary><b>TL;DR: Some more info about Sapphire (Click to expand)</b></summary>
 
