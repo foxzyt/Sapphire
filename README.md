@@ -1,4 +1,4 @@
-# Sapphire Programming Language (v1.0.8)
+# Sapphire Programming Language (v1.0.9)
 
 [![CI Build](https://github.com/foxzyt/Sapphire/actions/workflows/ci.yml/badge.svg)](https://github.com/foxzyt/Sapphire/actions/workflows/ci.yml)
 [![Latest Release](https://img.shields.io/github/v/release/foxzyt/Sapphire?color=blue&label=release)](https://github.com/foxzyt/Sapphire/releases/latest)
@@ -10,6 +10,17 @@
 Sapphire is a hybrid, **time-aware** programming language designed for performance and clarity. It combines the speed of compiled languages with the syntax of high-level scripting, making it suitable for tools, UI-driven applications, and system-level tasks. 
 
 Sapphire is designed to understand and work together with **physical time** at the core virtual machine level, offering first-class primitives for real-time execution bounds (within/fallback), temporal loops (every), bytecode-level retroactive rollbacks (try/undo), and automatic memory decay (fade).
+
+<details>
+<summary><b>TL;DR: Some more info about Sapphire (Click to expand)</b></summary>
+
+* Sapphire runs on top of the **Corundum virtual machine**, custom-made and built from the ground up by me with NO technical assistance from AI whatsoever.
+* I am building a JIT-based virtual machine with NO LLVM, just raw Assembly, called **Rubellite**, and it will be released in version 1.0.9.
+* Did you know? Sapphire's entire toolchain names are based on **gems and minerals**, such as Beryl, Topaz, Quartz, etc.
+* Did you know that Sapphire has an **Incremental Mark-and-Sweep** garbage collector that minimizes the "stop-the-world" effects while taking the burden of memory management off the user.
+* FYI: **Generative AI** was used when expanding Sapphire's standard library and some parts of the toolchain.
+* Did you know that Sapphire was initially supposed to be called **Mint**?
+</details>
 
 > **Note:** Sapphire currently only supports **Windows**.
 
