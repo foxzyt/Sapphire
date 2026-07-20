@@ -110,6 +110,26 @@ if(WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
 endif()
 
+option(USE_RUBELLITE "Ativar VM experimental Rubellite JIT" OFF)
+if(USE_RUBELLITE)
+    add_compile_definitions(USE_RUBELLITE)
+    set(VM_SOURCES
+        src/rubellite/object.cpp
+        src/rubellite/value.cpp
+        src/rubellite/vm.cpp
+        src/rubellite/ui_retained.cpp
+    )
+    set(VM_INCLUDE_DIR src/rubellite/)
+else()
+    set(VM_SOURCES
+        src/vm/object.cpp
+        src/vm/value.cpp
+        src/vm/vm.cpp
+        src/vm/ui_retained.cpp
+    )
+    set(VM_INCLUDE_DIR src/vm/)
+endif()
+
 # Find SFML from FetchContent
 find_package(SFML 3 COMPONENTS Graphics Window System REQUIRED)
 
@@ -119,10 +139,7 @@ add_library(sapphire_core STATIC
     src/compiler/compiler.cpp
     src/compiler/debug.cpp
     src/parser/lexer.cpp
-    src/vm/object.cpp
     src/parser/parser.cpp
-    src/vm/value.cpp
-    src/vm/vm.cpp
     src/utils/utils.cpp
     src/utils/termcolor.cpp
     src/graphics/engine.cpp
@@ -133,6 +150,7 @@ add_library(sapphire_core STATIC
     src/api/opencl_api.cpp
     src/api/sqlite_api.cpp
     src/preprocessor/preprocessor.cpp
+    ${VM_SOURCES}
 )
 
 # 2. Ativa o suporte a OpenSSL na biblioteca httplib
@@ -145,7 +163,7 @@ target_include_directories(sapphire_core PUBLIC
     src/
     src/parser/
     src/compiler/
-    src/vm/
+    ${VM_INCLUDE_DIR}
     src/api/
     src/graphics/
     src/utils/
@@ -165,7 +183,12 @@ target_link_libraries(sapphire_core PUBLIC
 target_link_libraries(sapphire_core PUBLIC OpenCL sqlite3)
 
 add_executable(sapphire src/main.cpp)
-add_executable(runner src/vm/runner.cpp src/topaz/third_party/miniz.c)
+
+if(USE_RUBELLITE)
+    add_executable(runner src/rubellite/runner.cpp src/topaz/third_party/miniz.c)
+else()
+    add_executable(runner src/vm/runner.cpp src/topaz/third_party/miniz.c)
+endif()
 add_executable(beryl src/beryl/main.cpp src/beryl/beryl.cpp src/beryl/beryl_ui.cpp src/topaz/third_party/miniz.c)
 add_executable(citrine src/linter/main.cpp src/linter/citrine.cpp)
 target_link_libraries(citrine PUBLIC sapphire_core)
