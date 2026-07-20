@@ -1,4 +1,4 @@
-# Sapphire Programming Language (v1.0.8)
+# Sapphire Programming Language (v1.0.9)
 
 [![CI Build](https://github.com/foxzyt/Sapphire/actions/workflows/ci.yml/badge.svg)](https://github.com/foxzyt/Sapphire/actions/workflows/ci.yml)
 [![Latest Release](https://img.shields.io/github/v/release/foxzyt/Sapphire?color=blue&label=release)](https://github.com/foxzyt/Sapphire/releases/latest)
