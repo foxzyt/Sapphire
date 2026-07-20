@@ -3270,18 +3270,18 @@ bool VM::call_value(SapphireValue callee, int arg_count) {
 // C++ Fallback function to execute a single opcode if not inlined
 extern "C" void jit_fallback_opcode(VM* vm, uint8_t** ip_ptr) {
     uint8_t instruction = **ip_ptr;
-    printf("JIT Fallback hit for opcode %d at %p\n", instruction, *ip_ptr);
-    throw std::runtime_error("JIT Fallback not fully implemented for this opcode");
+    fprintf(stderr, "JIT Fallback hit for opcode %d at %p. Not implemented.\n", instruction, *ip_ptr);
+    exit(1);
 }
 
 // Trampolines (Direct C-Callouts)
-extern "C" void jit_trampoline_import(VM* vm) { printf("Native Callout: IMPORT\n"); throw std::runtime_error("Not implemented"); }
-extern "C" void jit_trampoline_spawn(VM* vm) { printf("Native Callout: SPAWN\n"); throw std::runtime_error("Not implemented"); }
-extern "C" void jit_trampoline_await(VM* vm) { printf("Native Callout: AWAIT\n"); throw std::runtime_error("Not implemented"); }
-extern "C" void jit_trampoline_get_property(VM* vm) { printf("Native Callout: GET_PROPERTY\n"); throw std::runtime_error("Not implemented"); }
-extern "C" void jit_trampoline_set_property(VM* vm) { printf("Native Callout: SET_PROPERTY\n"); throw std::runtime_error("Not implemented"); }
-extern "C" void jit_trampoline_call(VM* vm) { printf("Native Callout: CALL\n"); throw std::runtime_error("Not implemented"); }
-extern "C" void jit_trampoline_generic(VM* vm, int opcode) { printf("Native Callout: Opcode %d\n", opcode); throw std::runtime_error("Not implemented"); }
+extern "C" void jit_trampoline_import(VM* vm) { fprintf(stderr, "Native Callout: IMPORT Not implemented\n"); exit(1); }
+extern "C" void jit_trampoline_spawn(VM* vm) { fprintf(stderr, "Native Callout: SPAWN Not implemented\n"); exit(1); }
+extern "C" void jit_trampoline_await(VM* vm) { fprintf(stderr, "Native Callout: AWAIT Not implemented\n"); exit(1); }
+extern "C" void jit_trampoline_get_property(VM* vm) { fprintf(stderr, "Native Callout: GET_PROPERTY Not implemented\n"); exit(1); }
+extern "C" void jit_trampoline_set_property(VM* vm) { fprintf(stderr, "Native Callout: SET_PROPERTY Not implemented\n"); exit(1); }
+extern "C" void jit_trampoline_call(VM* vm) { fprintf(stderr, "Native Callout: CALL Not implemented\n"); exit(1); }
+extern "C" void jit_trampoline_generic(VM* vm, int opcode) { fprintf(stderr, "Native Callout: Opcode %d Not implemented\n", opcode); exit(1); }
 
 bool VM::run(int target_frame_count) {
     CallFrame* frame = &frames[frame_count - 1];
