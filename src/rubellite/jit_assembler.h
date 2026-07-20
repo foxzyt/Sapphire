@@ -169,9 +169,11 @@ public:
         emit8(0x8B);
         if (offset >= -128 && offset <= 127) {
             emit8(0x40 | ((dst & 7) << 3) | (base & 7));
+            if ((base & 7) == 4) emit8(0x24);
             emit8((uint8_t)offset);
         } else {
             emit8(0x80 | ((dst & 7) << 3) | (base & 7));
+            if ((base & 7) == 4) emit8(0x24);
             emit32(offset);
         }
     }
@@ -183,9 +185,11 @@ public:
         emit8(0x89);
         if (offset >= -128 && offset <= 127) {
             emit8(0x40 | ((src & 7) << 3) | (base & 7));
+            if ((base & 7) == 4) emit8(0x24);
             emit8((uint8_t)offset);
         } else {
             emit8(0x80 | ((src & 7) << 3) | (base & 7));
+            if ((base & 7) == 4) emit8(0x24);
             emit32(offset);
         }
     }
@@ -266,9 +270,11 @@ public:
         emit8(0x80);
         if (offset >= -128 && offset <= 127) {
             emit8(0x78 | (base & 7));
+            if ((base & 7) == 4) emit8(0x24);
             emit8((uint8_t)offset);
         } else {
             emit8(0xB8 | (base & 7));
+            if ((base & 7) == 4) emit8(0x24);
             emit32(offset);
         }
         emit8(imm);
@@ -285,9 +291,11 @@ public:
         emit8(0x10);
         if (offset >= -128 && offset <= 127) {
             emit8(0x40 | ((xmm_dst & 7) << 3) | (base & 7));
+            if ((base & 7) == 4) emit8(0x24);
             emit8((uint8_t)offset);
         } else {
             emit8(0x80 | ((xmm_dst & 7) << 3) | (base & 7));
+            if ((base & 7) == 4) emit8(0x24);
             emit32(offset);
         }
     }
@@ -301,9 +309,11 @@ public:
         emit8(0x11);
         if (offset >= -128 && offset <= 127) {
             emit8(0x40 | ((xmm_src & 7) << 3) | (base & 7));
+            if ((base & 7) == 4) emit8(0x24);
             emit8((uint8_t)offset);
         } else {
             emit8(0x80 | ((xmm_src & 7) << 3) | (base & 7));
+            if ((base & 7) == 4) emit8(0x24);
             emit32(offset);
         }
     }
@@ -470,8 +480,10 @@ public:
 #ifdef _WIN32
         DWORD old_protect;
         VirtualProtect(exec_mem, size, PAGE_EXECUTE_READ, &old_protect);
+        FlushInstructionCache(GetCurrentProcess(), exec_mem, size);
 #else
         mprotect(exec_mem, size, PROT_READ | PROT_EXEC);
+        __builtin___clear_cache((char*)exec_mem, (char*)exec_mem + size);
 #endif
         return exec_mem;
     }
