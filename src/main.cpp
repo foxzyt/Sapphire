@@ -2675,7 +2675,11 @@ int main(int argc, char *argv[]) {
 #ifdef RUBELLITE_ENABLED
     std::cout << "\033[32m[Sapphire] Experimental Rubellite JIT VM is enabled and active!\033[0m\n";
     if (argc > 2) {
-      run_file(argv[2]);
+      std::string path = argv[2];
+      std::string content = load_source_script(path);
+      if (!content.empty()) {
+        run_file_mode(content, path);
+      }
     } else {
       run_repl();
     }
