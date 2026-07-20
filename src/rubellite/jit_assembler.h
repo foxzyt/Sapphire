@@ -368,6 +368,88 @@ public:
         emit8(0xC0 | ((xmm_dst & 7) << 3) | (xmm_src & 7));
     }
 
+    // cvttsd2si reg64, xmm (Convert with Truncation Scalar Double to Integer)
+    void emit_cvttsd2si_reg_xmm(uint8_t dst_reg, uint8_t src_xmm) {
+        emit8(0xF2);
+        uint8_t rex = 0x48 | ((dst_reg >> 3) << 2) | (src_xmm >> 3);
+        emit8(rex);
+        emit8(0x0F);
+        emit8(0x2C);
+        emit8(0xC0 | ((dst_reg & 7) << 3) | (src_xmm & 7));
+    }
+
+    // cvtsi2sd xmm, reg64 (Convert Integer to Scalar Double)
+    void emit_cvtsi2sd_xmm_reg(uint8_t dst_xmm, uint8_t src_reg) {
+        emit8(0xF2);
+        uint8_t rex = 0x48 | ((dst_xmm >> 3) << 2) | (src_reg >> 3);
+        emit8(rex);
+        emit8(0x0F);
+        emit8(0x2A);
+        emit8(0xC0 | ((dst_xmm & 7) << 3) | (src_reg & 7));
+    }
+
+    // and dst, src (64-bit)
+    void emit_and_reg_reg(uint8_t dst, uint8_t src) {
+        uint8_t rex = 0x48 | ((src >> 3) << 2) | (dst >> 3);
+        emit8(rex);
+        emit8(0x21);
+        emit8(0xC0 | ((src & 7) << 3) | (dst & 7));
+    }
+
+    // or dst, src (64-bit)
+    void emit_or_reg_reg(uint8_t dst, uint8_t src) {
+        uint8_t rex = 0x48 | ((src >> 3) << 2) | (dst >> 3);
+        emit8(rex);
+        emit8(0x09);
+        emit8(0xC0 | ((src & 7) << 3) | (dst & 7));
+    }
+
+    // xor dst, src (64-bit)
+    void emit_xor_reg_reg(uint8_t dst, uint8_t src) {
+        uint8_t rex = 0x48 | ((src >> 3) << 2) | (dst >> 3);
+        emit8(rex);
+        emit8(0x31);
+        emit8(0xC0 | ((src & 7) << 3) | (dst & 7));
+    }
+
+    // not reg (64-bit)
+    void emit_not_reg(uint8_t reg) {
+        uint8_t rex = 0x48 | (reg >> 3);
+        emit8(rex);
+        emit8(0xF7);
+        emit8(0xD0 | (reg & 7));
+    }
+
+    // shl reg, cl (64-bit)
+    void emit_shl_reg_cl(uint8_t reg) {
+        uint8_t rex = 0x48 | (reg >> 3);
+        emit8(rex);
+        emit8(0xD3);
+        emit8(0xE0 | (reg & 7));
+    }
+
+    // sar reg, cl (64-bit, arithmetic right shift)
+    void emit_sar_reg_cl(uint8_t reg) {
+        uint8_t rex = 0x48 | (reg >> 3);
+        emit8(rex);
+        emit8(0xD3);
+        emit8(0xF8 | (reg & 7));
+    }
+
+    // cqo (Sign-extend RAX into RDX:RAX)
+    void emit_cqo() {
+        emit8(0x48);
+        emit8(0x99);
+    }
+
+    // idiv reg (64-bit, divides RDX:RAX by reg)
+    void emit_idiv_reg(uint8_t reg) {
+        uint8_t rex = 0x48 | (reg >> 3);
+        emit8(rex);
+        emit8(0xF7);
+        emit8(0xF8 | (reg & 7));
+    }
+
     void* finalize() {
         if (code.empty()) return nullptr;
         

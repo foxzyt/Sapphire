@@ -3270,13 +3270,18 @@ bool VM::call_value(SapphireValue callee, int arg_count) {
 // C++ Fallback function to execute a single opcode if not inlined
 extern "C" void jit_fallback_opcode(VM* vm, uint8_t** ip_ptr) {
     uint8_t instruction = **ip_ptr;
-    // We would interpret the instruction here, but for full implementation,
-    // we should ideally just copy the old interpreter loop logic for one instruction.
-    // Since we deleted it, let's implement a minimal fallback that throws an error for now
-    // if we encounter an unsupported opcode, or we can use the JIT to do the whole thing.
     printf("JIT Fallback hit for opcode %d at %p\n", instruction, *ip_ptr);
     throw std::runtime_error("JIT Fallback not fully implemented for this opcode");
 }
+
+// Trampolines (Direct C-Callouts)
+extern "C" void jit_trampoline_import(VM* vm) { printf("Native Callout: IMPORT\n"); throw std::runtime_error("Not implemented"); }
+extern "C" void jit_trampoline_spawn(VM* vm) { printf("Native Callout: SPAWN\n"); throw std::runtime_error("Not implemented"); }
+extern "C" void jit_trampoline_await(VM* vm) { printf("Native Callout: AWAIT\n"); throw std::runtime_error("Not implemented"); }
+extern "C" void jit_trampoline_get_property(VM* vm) { printf("Native Callout: GET_PROPERTY\n"); throw std::runtime_error("Not implemented"); }
+extern "C" void jit_trampoline_set_property(VM* vm) { printf("Native Callout: SET_PROPERTY\n"); throw std::runtime_error("Not implemented"); }
+extern "C" void jit_trampoline_call(VM* vm) { printf("Native Callout: CALL\n"); throw std::runtime_error("Not implemented"); }
+extern "C" void jit_trampoline_generic(VM* vm, int opcode) { printf("Native Callout: Opcode %d\n", opcode); throw std::runtime_error("Not implemented"); }
 
 bool VM::run(int target_frame_count) {
     CallFrame* frame = &frames[frame_count - 1];
@@ -3642,19 +3647,214 @@ bool VM::run(int target_frame_count) {
             case OP_BITWISE_AND:
             case OP_BITWISE_OR:
             case OP_BITWISE_XOR:
-            case OP_BITWISE_NOT:
             case OP_LEFT_SHIFT:
             case OP_RIGHT_SHIFT:
-            case OP_MODULO:
+            case OP_MODULO: {
+                JitAssembler::Label fallback_lbl;
+                JitAssembler::Label end_lbl;
+
+                jit.emit_sub_reg_imm32(12, sizeof(SapphireValue) * 2);
+
+                // Type guard a and b
+                jit.emit_cmp_mem8_imm8(12, 0, (uint8_t)ValType::VAL_NUMBER);
+                jit.emit_jnz(fallback_lbl);
+                jit.emit_cmp_mem8_imm8(12, sizeof(SapphireValue), (uint8_t)ValType::VAL_NUMBER);
+                jit.emit_jnz(fallback_lbl);
+
+                // Load to XMM0 and XMM1
+                jit.emit_movsd_xmm_mem(0, 12, 8);
+                jit.emit_movsd_xmm_mem(1, 12, sizeof(SapphireValue) + 8);
+                
+                // Convert double to int64 (R0 = a, R1 = b)
+                jit.emit_cvttsd2si_reg_xmm(0, 0); // r0 = a
+                jit.emit_cvttsd2si_reg_xmm(1, 1); // r1 = b
+
+                if (instruction == OP_BITWISE_AND) jit.emit_and_reg_reg(0, 1);
+                else if (instruction == OP_BITWISE_OR) jit.emit_or_reg_reg(0, 1);
+                else if (instruction == OP_BITWISE_XOR) jit.emit_xor_reg_reg(0, 1);
+                else if (instruction == OP_LEFT_SHIFT) {
+                    jit.emit_mov_reg_reg(1, 1); // R1 is RCX (CL)
+                    jit.emit_shl_reg_cl(0);
+                }
+                else if (instruction == OP_RIGHT_SHIFT) {
+                    jit.emit_mov_reg_reg(1, 1);
+                    jit.emit_sar_reg_cl(0);
+                }
+                else if (instruction == OP_MODULO) {
+                    // RAX = R0
+                    jit.emit_mov_reg_reg(0, 0); 
+                    jit.emit_cqo(); // sign extend RAX to RDX:RAX
+                    jit.emit_idiv_reg(1); // divides by R1, remainder in RDX (reg 2)
+                    jit.emit_mov_reg_reg(0, 2); // mov result (RDX) back to R0
+                }
+
+                // Convert int64 back to double
+                jit.emit_cvtsi2sd_xmm_reg(0, 0);
+                
+                // Store result
+                jit.emit_movsd_mem_xmm(12, 8, 0); 
+                jit.emit_add_reg_imm32(12, sizeof(SapphireValue)); // push result
+                jit.emit_jmp(end_lbl);
+
+                jit.bind(fallback_lbl);
+                jit.emit_add_reg_imm32(12, sizeof(SapphireValue) * 2);
+                emit_fallback(offset);
+
+                jit.bind(end_lbl);
+                offset++;
+                break;
+            }
+            case OP_BITWISE_NOT: {
+                JitAssembler::Label fallback_lbl;
+                JitAssembler::Label end_lbl;
+
+                jit.emit_mov_reg_reg(0, 12);
+                jit.emit_sub_reg_imm32(0, sizeof(SapphireValue)); // R0 = top val
+
+                jit.emit_cmp_mem8_imm8(0, 0, (uint8_t)ValType::VAL_NUMBER);
+                jit.emit_jnz(fallback_lbl);
+
+                jit.emit_movsd_xmm_mem(0, 0, 8); // xmm0 = val
+                jit.emit_cvttsd2si_reg_xmm(0, 0); // r0 = int(val)
+                jit.emit_not_reg(0); // ~r0
+                jit.emit_cvtsi2sd_xmm_reg(0, 0); // xmm0 = double(~r0)
+                
+                jit.emit_mov_reg_reg(1, 12);
+                jit.emit_sub_reg_imm32(1, sizeof(SapphireValue));
+                jit.emit_movsd_mem_xmm(1, 8, 0); // store result
+                jit.emit_jmp(end_lbl);
+
+                jit.bind(fallback_lbl);
+                emit_fallback(offset);
+
+                jit.bind(end_lbl);
+                offset++;
+                break;
+            }
+            case OP_GET_GLOBAL:
+            case OP_SET_GLOBAL:
+            case OP_DEFINE_GLOBAL:
+            case OP_MAKE_NAMED_ARG:
+            case OP_ASYNC_CALL: {
+                // Direct callout for variables
+                auto emit_trampoline = [&](void* func) {
+                    jit.emit_mov_mem_reg(14, 0, 12); 
+                    jit.emit_mov_reg_reg(1, 13); // rcx = vm
+                    jit.emit_mov_reg_imm64(0, (uint64_t)func); 
+                    jit.emit_call_reg(0);
+                    jit.emit_mov_reg_mem(12, 14, 0);
+                };
+                emit_trampoline((void*)&jit_trampoline_generic);
+                offset += 2;
+                break;
+            }
+            case OP_GET_PROPERTY:
+            case OP_SET_PROPERTY: {
+                auto emit_trampoline = [&](void* func) {
+                    jit.emit_mov_mem_reg(14, 0, 12); 
+                    jit.emit_mov_reg_reg(1, 13); // rcx = vm
+                    jit.emit_mov_reg_imm64(0, (uint64_t)func); 
+                    jit.emit_call_reg(0);
+                    jit.emit_mov_reg_mem(12, 14, 0);
+                };
+                emit_trampoline(instruction == OP_GET_PROPERTY ? (void*)&jit_trampoline_get_property : (void*)&jit_trampoline_set_property);
+                offset += 2;
+                break;
+            }
+            case OP_CALL: {
+                auto emit_trampoline = [&](void* func) {
+                    jit.emit_mov_mem_reg(14, 0, 12); 
+                    jit.emit_mov_reg_reg(1, 13); // rcx = vm
+                    jit.emit_mov_reg_imm64(0, (uint64_t)func); 
+                    jit.emit_call_reg(0);
+                    jit.emit_mov_reg_mem(12, 14, 0);
+                };
+                emit_trampoline((void*)&jit_trampoline_call);
+                offset += 2;
+                break;
+            }
+            case OP_CLOSURE: {
+                auto emit_trampoline = [&](void* func) {
+                    jit.emit_mov_mem_reg(14, 0, 12); 
+                    jit.emit_mov_reg_reg(1, 13); // rcx = vm
+                    jit.emit_mov_reg_imm64(0, (uint64_t)func); 
+                    jit.emit_call_reg(0);
+                    jit.emit_mov_reg_mem(12, 14, 0);
+                };
+                emit_trampoline((void*)&jit_trampoline_generic);
+                offset += 2; 
+                break;
+            }
+            case OP_JUMP_IF_NIL:
+            case OP_JUMP_IF_NOT_NIL:
+            case OP_LOOP: {
+                auto emit_trampoline = [&](void* func) {
+                    jit.emit_mov_mem_reg(14, 0, 12); 
+                    jit.emit_mov_reg_reg(1, 13); // rcx = vm
+                    jit.emit_mov_reg_imm64(0, (uint64_t)func); 
+                    jit.emit_call_reg(0);
+                    jit.emit_mov_reg_mem(12, 14, 0);
+                };
+                emit_trampoline((void*)&jit_trampoline_generic);
+                offset += 3;
+                break;
+            }
+            case OP_BUILD_ARRAY:
+            case OP_BUILD_MAP: {
+                // Otimização de Objetos: Trampoline direto para allocate_object
+                auto emit_trampoline = [&](void* func) {
+                    jit.emit_mov_mem_reg(14, 0, 12); 
+                    jit.emit_mov_reg_reg(1, 13); // rcx = vm
+                    jit.emit_mov_reg_imm64(0, (uint64_t)func); 
+                    jit.emit_call_reg(0);
+                    jit.emit_mov_reg_mem(12, 14, 0);
+                };
+                emit_trampoline((void*)&jit_trampoline_generic);
+                offset += 3;
+                break;
+            }
+            case OP_IMPORT: {
+                auto emit_trampoline = [&](void* func) {
+                    jit.emit_mov_mem_reg(14, 0, 12); 
+                    jit.emit_mov_reg_reg(1, 13);
+                    jit.emit_mov_reg_imm64(0, (uint64_t)func); 
+                    jit.emit_call_reg(0);
+                    jit.emit_mov_reg_mem(12, 14, 0);
+                };
+                emit_trampoline((void*)&jit_trampoline_import);
+                offset++;
+                break;
+            }
+            case OP_SPAWN: {
+                auto emit_trampoline = [&](void* func) {
+                    jit.emit_mov_mem_reg(14, 0, 12); 
+                    jit.emit_mov_reg_reg(1, 13);
+                    jit.emit_mov_reg_imm64(0, (uint64_t)func); 
+                    jit.emit_call_reg(0);
+                    jit.emit_mov_reg_mem(12, 14, 0);
+                };
+                emit_trampoline((void*)&jit_trampoline_spawn);
+                offset++;
+                break;
+            }
+            case OP_AWAIT: {
+                auto emit_trampoline = [&](void* func) {
+                    jit.emit_mov_mem_reg(14, 0, 12); 
+                    jit.emit_mov_reg_reg(1, 13);
+                    jit.emit_mov_reg_imm64(0, (uint64_t)func); 
+                    jit.emit_call_reg(0);
+                    jit.emit_mov_reg_mem(12, 14, 0);
+                };
+                emit_trampoline((void*)&jit_trampoline_await);
+                offset++;
+                break;
+            }
             case OP_GET_SUBSCRIPT:
             case OP_SET_SUBSCRIPT:
             case OP_SPREAD_ARRAY:
             case OP_PRINT:
-            case OP_IMPORT:
             case OP_INHERIT:
             case OP_GET_SUPER:
-            case OP_SPAWN:
-            case OP_AWAIT:
             case OP_GET_ITERATOR:
             case OP_ITER_NEXT_IN:
             case OP_ITER_NEXT_OF:
@@ -3666,12 +3866,15 @@ bool VM::run(int target_frame_count) {
             case OP_EVERY_TICK:
             case OP_UNDO:
             case OP_DEFINE_FADE: {
-                emit_fallback(offset);
-                offset++;
-                break;
-            }
-            default: {
-                emit_fallback(offset);
+                // General Trampoline for other opcodes without dedicated C-Callout
+                auto emit_trampoline = [&](void* func) {
+                    jit.emit_mov_mem_reg(14, 0, 12); 
+                    jit.emit_mov_reg_reg(1, 13);
+                    jit.emit_mov_reg_imm64(0, (uint64_t)func); 
+                    jit.emit_call_reg(0);
+                    jit.emit_mov_reg_mem(12, 14, 0);
+                };
+                emit_trampoline((void*)&jit_trampoline_generic);
                 offset++;
                 break;
             }
