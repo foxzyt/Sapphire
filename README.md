@@ -156,44 +156,6 @@ while (current < limit) {
 }
 ```
 
-### Time-Aware & Retroactive Control Flow
-Sapphire is uniquely time-aware, offering native primitives for managing real-time physics and state rollback.
-
-```javascript
-// 1. Time-Bound Execution (within / fallback)
-within (15ms) {
-    var solution = calculateComplexPathfinding()
-    applyPhysics(solution)
-} fallback {
-    // Runs instantly if the within block takes more than 15 milliseconds physical time
-    applySimplifiedPhysics()
-}
-
-// 2. Temporal Loop (every)
-every (1s) {} // Suspends execution for exactly 1 second (1000ms)
-print("1 second elapsed!")
-
-// 3. Retroactive Rollback (try / undo)
-var balance = 100
-try {
-    balance = balance - 50
-    if (balance < 60) {
-        print("Insufficient balance, reversing transaction!")
-        undo; // Natively rolls back memory mutation, restoring balance to 100!
-    }
-}
-print(balance) // Outputs: 100
-
-// 4. Fade
-// Decays from 100 to nil over 500 milliseconds using a linear curve
-fade(500ms, linear) var health = 100
-print(health) // 100
-every (250ms) {}
-print(health) // Around 50
-every (300ms) {}
-print(health) // nil (expired/garbage collected!)
-```
-
 ### Arrays
 Arrays can be created using the `[]` literal syntax and accessed via indices.
 
