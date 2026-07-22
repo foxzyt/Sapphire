@@ -51,7 +51,7 @@ inline int cmd_upgrade() {
     if (_NSGetExecutablePath(buffer, &bufsize) == 0) {
         current_path = fs::path(buffer);
     } else {
-        current_path = fs::path(argv[0]);
+        current_path = fs::path("topaz");
     }
 #elif defined(__linux__)
     char buffer[PATH_MAX];
@@ -60,10 +60,10 @@ inline int cmd_upgrade() {
         buffer[len] = '\0';
         current_path = fs::path(buffer);
     } else {
-        current_path = fs::path(argv[0]);
+        current_path = fs::path("topaz");
     }
 #else
-    current_path = fs::path(argv[0]);
+    current_path = fs::path("topaz");
 #endif
 
     std::string topaz_dir = current_path.parent_path().string();

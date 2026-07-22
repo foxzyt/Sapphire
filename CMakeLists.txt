@@ -56,8 +56,21 @@ set(SFML_BUILD_SYSTEM ON)
 FetchContent_MakeAvailable(sfml)
 
 # Use system OpenSSL package (provided by MSYS2/MinGW or locally in libs/openssl)
-set(OPENSSL_USE_STATIC_LIBS TRUE)
-set(OPENSSL_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libs/openssl")
+if(NOT APPLE)
+    set(OPENSSL_USE_STATIC_LIBS TRUE)
+endif()
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/libs/openssl")
+    set(OPENSSL_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libs/openssl")
+elseif(APPLE)
+    if(EXISTS "/opt/homebrew/opt/openssl@3")
+        set(OPENSSL_ROOT_DIR "/opt/homebrew/opt/openssl@3")
+    elseif(EXISTS "/usr/local/opt/openssl@3")
+        set(OPENSSL_ROOT_DIR "/usr/local/opt/openssl@3")
+    elseif(EXISTS "/usr/local/opt/openssl")
+        set(OPENSSL_ROOT_DIR "/usr/local/opt/openssl")
+    endif()
+endif()
 find_package(OpenSSL REQUIRED)
 
 # Fetch nlohmann/json
