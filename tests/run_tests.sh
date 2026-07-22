@@ -15,6 +15,27 @@
 
 set -u
 
+# Tests that cannot run on a headless CI runner. Each entry needs a comment
+# saying why it is skipped. They are reported as SKIP in the summary, and
+# extra skips can be added via SAPPHIRE_SKIP_TESTS (space-separated names).
+SKIP_TESTS=(
+    test_animations   # opens an SFML window; render loop never exits without a display (times out on CI)
+    test_ui_advanced  # opens an SFML window; render loop never exits without a display (times out on CI)
+)
+for extra in ${SAPPHIRE_SKIP_TESTS:-}; do
+    SKIP_TESTS+=("$extra")
+done
+
+is_skipped() {
+    local t
+    for t in "${SKIP_TESTS[@]}"; do
+        if [ "$t" = "$1" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 BIN="${1:-./build/sapphire.exe}"
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EXPECTED_DIR="$TESTS_DIR/expected"
@@ -37,6 +58,7 @@ run_with_timeout() {
 
 pass=0
 fail=0
+skip=0
 missing_golden=()
 results=()
 
@@ -51,6 +73,13 @@ fi
 
 for test_file in "${tests[@]}"; do
     name="$(basename "$test_file" .sp)"
+
+    if is_skipped "$name"; then
+        skip=$((skip + 1))
+        results+=("SKIP|$name|headless-incompatible, see SKIP_TESTS")
+        continue
+    fi
+
     golden="$EXPECTED_DIR/$name.out"
     actual="$(mktemp)"
 
@@ -96,7 +125,7 @@ for line in "${results[@]}"; do
     printf '%-6s %-28s %s\n' "$status" "$name" "$note"
 done
 echo "===================================="
-echo "$pass passed, $fail failed, ${#tests[@]} total"
+echo "$pass passed, $fail failed, $skip skipped, ${#tests[@]} total"
 
 if [ ${#missing_golden[@]} -gt 0 ]; then
     echo
