@@ -1,4 +1,4 @@
-## Sapphire 1.0.8: New Syntax & Examples
+## Sapphire: Syntax & Examples
 
 ### 1. `switch` / `case` Statements
 ```cpp

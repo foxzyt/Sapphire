@@ -48,13 +48,6 @@ jobs:
           set -e
           if [ -n "$MARKDOWN" ]; then
             echo "$MARKDOWN" > release_body.md
-            # Adiciona o guia do MinGW de forma fixa caso o Copilot esqueça
-            echo "" >> release_body.md
-            
-            # Anexa os exemplos de código de forma estática para garantir que apareçam
-            cat .github/release-examples.md >> release_body.md
-
-            cat .github/release-footer.md >> release_body.md
           else
             echo "# Draft release" > release_body.md
             echo "" >> release_body.md
@@ -63,6 +56,12 @@ jobs:
             echo "## Changes" >> release_body.md
             git log --pretty=format:'- %s (%h)' "${{ steps.prev_tag.outputs.tag }}".."${{ github.sha }}" >> release_body.md
           fi
+
+          # Anexa os exemplos e o guia do MinGW em ambos os caminhos,
+          # mesmo quando o Copilot falha e usamos o fallback.
+          echo "" >> release_body.md
+          cat .github/release-examples.md >> release_body.md
+          cat .github/release-footer.md >> release_body.md
 
       - name: Criar Rascunho no GitHub
         uses: softprops/action-gh-release@v2

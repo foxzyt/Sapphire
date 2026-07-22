@@ -4,6 +4,6 @@
 
 ## Checklist
 
-- [ ] Builds locally via MSYS2 MINGW64 (see [CONTRIBUTING.md](.github/CONTRIBUTING.md))
+- [ ] Builds locally via MSYS2 MINGW64 (see [CONTRIBUTING.md](CONTRIBUTING.md))
 - [ ] `tests/run_tests.sh` passes
 - [ ] New behavior is covered by a test (`tests/test_*.sp`, ideally with a golden file in `tests/expected/`)
