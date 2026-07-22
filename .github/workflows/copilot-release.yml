@@ -82,19 +82,14 @@ jobs:
             git log --pretty=format:'- %s (%h)' "${{ steps.prev_tag.outputs.tag }}".."${{ github.sha }}" >> release_body.md
           fi
 
-      - name: Create temporary tag
-        shell: bash
-        run: |
-          set -e
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git tag "v-draft-${{ github.run_number }}" "${{ github.event.pull_request.merge_commit_sha }}"
-          git push origin "v-draft-${{ github.run_number }}"
-
       - name: Criar Rascunho no GitHub
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v-draft-${{ github.run_number }}
+          # No real tag is pushed: with draft: true, GitHub holds this tag name
+          # as pending until someone publishes the draft. Pushing the tag here
+          # used to trigger release.yml and publish a real release on every merge.
+          tag_name: v-next-${{ github.run_number }}
+          target_commitish: ${{ github.event.pull_request.merge_commit_sha }}
           name: Rascunho de Release #${{ github.run_number }}
           body_path: release_body.md
           draft: true

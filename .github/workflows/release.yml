@@ -3,7 +3,9 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      # Only real version tags (v1.0.9, v2.0, ...). Deliberately does NOT match
+      # draft tags like v-draft-*/v-next-*, which must never publish a release.
+      - 'v[0-9]*'
   workflow_dispatch:
 
 permissions:
