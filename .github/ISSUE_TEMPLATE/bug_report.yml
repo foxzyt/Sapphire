@@ -1,0 +1,45 @@
+name: Bug report
+description: Something in Sapphire doesn't behave the way it should
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Sapphire version
+      description: The release you are using (or the commit hash if built from source).
+      placeholder: v1.0.8
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: Windows 11, MSYS2 MINGW64
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal .sp snippet that reproduces the bug
+      description: The smallest Sapphire program that shows the problem.
+      render: text
+      placeholder: |
+        var x = 2;
+        print x;
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected output
+      description: What you expected the snippet to print or do.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual output
+      description: What actually happened, including any error message.
+    validations:
+      required: true
