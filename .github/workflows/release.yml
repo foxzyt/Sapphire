@@ -16,6 +16,10 @@ permissions:
 jobs:
   build-and-release:
     runs-on: windows-latest
+    env:
+      # Pin the ccache dir to the workspace so the msys2 shell (native ccache
+      # binary) and actions/cache (host runner) agree on the same location.
+      CCACHE_DIR: ${{ github.workspace }}\.ccache
 
     steps:
       - name: Checkout
@@ -27,19 +31,28 @@ jobs:
         uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
-          update: true
           install: >-
             mingw-w64-x86_64-cmake
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-make
             mingw-w64-x86_64-sfml
             mingw-w64-x86_64-openssl
+            mingw-w64-x86_64-ccache
+
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ${{ runner.os }}-ccache-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-
 
       - name: Configure CMake
         shell: msys2 {0}
         run: |
           cmake -S . -B build -G "MinGW Makefiles" \
             -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DSFML_DIR=/mingw64/lib/cmake/SFML \
             -DSFML_STATIC_LIBRARIES=ON \
             -DOPENSSL_ROOT_DIR=/mingw64 \
