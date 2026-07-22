@@ -2,9 +2,9 @@ name: CI Build and Test
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "main", "master" ]
+    branches: [ "main" ]
 
 # Cancel superseded runs when new commits are pushed to the same branch/PR.
 concurrency:
@@ -13,13 +13,17 @@ concurrency:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 jobs:
   deploy-pages:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    # Only this job needs to write to Pages; the build job runs with the
+    # read-only default from the top level.
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
     steps:

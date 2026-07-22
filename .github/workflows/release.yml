@@ -20,6 +20,18 @@ jobs:
       CCACHE_DIR: ${{ github.workspace }}\.ccache
 
     steps:
+      # workflow_dispatch can be run from any branch; without a real v* tag
+      # checked out, the release would be tagged with the branch name (e.g.
+      # "main"). Fail fast instead.
+      - name: Validate ref is a release tag
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          if [ "${{ github.ref_type }}" != "tag" ] || [[ "${{ github.ref_name }}" != v[0-9]* ]]; then
+            echo "::error::This workflow must be dispatched from a version tag (v1.2.3), not '${{ github.ref_name }}'. Push a tag and run it from there."
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
