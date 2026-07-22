@@ -87,6 +87,11 @@ enum OpCode : uint8_t {
     OP_EVERY_TICK,
     OP_UNDO,
     OP_DEFINE_FADE,
+
+    // JIT corrections (Idk why it was removed?)
+    OP_SUPER,
+    OP_THIS,
+    OP_CLASS
 };
 
 #endif //SAPPHIRE_OPCODES_H

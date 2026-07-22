@@ -1,4 +1,7 @@
 #include "citrine.h"
+#ifdef _WIN32
+#include <windows.h>
+#endif
 #include <fstream>
 #include <sstream>
 #include <regex>
