@@ -92,10 +92,4 @@ jobs:
 
     - name: Test Execute
       shell: msys2 {0}
-      run: |
-        ./build/sapphire.exe tests/test_syntax.sp
-        ./build/sapphire.exe tests/test_loop.sp
-        ./build/sapphire.exe tests/test_list.sp
-        ./build/sapphire.exe tests/test_math.sp
-        ./build/sapphire.exe tests/test_types.sp
-        ./build/sapphire.exe tests/test_map.sp
+      run: bash tests/run_tests.sh ./build/sapphire.exe
