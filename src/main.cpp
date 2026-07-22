@@ -2694,19 +2694,32 @@ int main(int argc, char *argv[]) {
 #ifdef RUBELLITE_ENABLED
     std::cout << "\033[32m[Sapphire] Rubellite JIT VM with debug output is enabled and active!\033[0m\n";
     if (argc > 2) {
-      std::string path = argv[2];
-      std::string content = load_source_script(path);
-      if (!content.empty()) {
-        VM vm;
-        g_current_vm = &vm;
-        vm.soft_mode = check_for_soft_mode(content);
-        vm.rubellite_debug = true;
-        vm.add_module_search_path(
-            std::filesystem::path(path).parent_path().string());
-        Preprocessor prep;
-        std::string processed = prep.process(content);
-        (void)vm.interpret(processed);
-        g_current_vm = nullptr;
+      std::string subcommand = argv[2];
+      if (subcommand == "-e" || subcommand == "eval") {
+        if (argc >= 4) {
+          VM vm;
+          g_current_vm = &vm;
+          vm.rubellite_debug = true;
+          vm.interpret(argv[3]);
+          g_current_vm = nullptr;
+        } else {
+          std::cerr << "Usage: sapphire --rubellite-debug -e \"<code>\"" << std::endl;
+        }
+      } else {
+        std::string path = argv[2];
+        std::string content = load_source_script(path);
+        if (!content.empty()) {
+          VM vm;
+          g_current_vm = &vm;
+          vm.soft_mode = check_for_soft_mode(content);
+          vm.rubellite_debug = true;
+          vm.add_module_search_path(
+              std::filesystem::path(path).parent_path().string());
+          Preprocessor prep;
+          std::string processed = prep.process(content);
+          (void)vm.interpret(processed);
+          g_current_vm = nullptr;
+        }
       }
     } else {
       run_repl();
