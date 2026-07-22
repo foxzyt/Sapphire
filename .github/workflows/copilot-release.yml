@@ -90,7 +90,7 @@ jobs:
           # used to trigger release.yml and publish a real release on every merge.
           tag_name: v-next-${{ github.run_number }}
           target_commitish: ${{ github.event.pull_request.merge_commit_sha }}
-          name: Rascunho de Release #${{ github.run_number }}
+          name: "Rascunho de Release #${{ github.run_number }}"
           body_path: release_body.md
           draft: true
           prerelease: false
