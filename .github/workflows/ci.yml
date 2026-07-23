@@ -2,9 +2,9 @@ name: CI Build and Test
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "development" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "development" ]
 
 # Cancel superseded runs when new commits are pushed to the same branch/PR.
 concurrency:

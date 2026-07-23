@@ -4,6 +4,11 @@ Thanks for your interest in contributing! This guide covers building the
 project and running its tests. For bug reports and feature ideas, please
 use the issue templates.
 
+## Branching
+
+Day-to-day changes land on the `development` branch — please target it
+with your pull requests. `main` is reserved for stable releases.
+
 ## Building from source (Windows / MSYS2)
 
 These are the same steps used by CI and the release builds
