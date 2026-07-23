@@ -2221,6 +2221,181 @@ static SapphireValue native_http_download(int arg_count, SapphireValue* args) {
     return false;
 }
 
+
+static httplib::Headers parse_headers(SapphireValue headers_val) {
+    httplib::Headers headers;
+    if (is_obj_type(headers_val, OBJ_MAP)) {
+        ObjMap* map_obj = static_cast<ObjMap*>(headers_val.as.obj);
+        for (const auto& pair : map_obj->items) {
+            SapphireValue str_val = native_value_to_string(1, const_cast<SapphireValue*>(&pair.second));
+            if (is_obj_type(str_val, OBJ_STRING)) {
+                headers.insert({pair.first, static_cast<ObjString*>(str_val.as.obj)->chars});
+            }
+        }
+    }
+    return headers;
+}
+
+static SapphireValue convert_response_to_map(const httplib::Result& res) {
+    if (!res) return SapphireValue(new_map(g_current_vm));
+    ObjMap* map_obj = new_map(g_current_vm);
+    g_current_vm->push(SapphireValue(map_obj));
+    
+    map_obj->items["status"] = SapphireValue((double)res->status);
+    map_obj->items["body"] = SapphireValue(new_string(g_current_vm, res->body));
+    
+    ObjMap* headers_map = new_map(g_current_vm);
+    for (const auto& pair : res->headers) {
+        headers_map->items[pair.first] = SapphireValue(new_string(g_current_vm, pair.second));
+    }
+    map_obj->items["headers"] = SapphireValue(headers_map);
+    
+    g_current_vm->pop();
+    return SapphireValue(map_obj);
+}
+
+static SapphireValue native_http_get_full(int arg_count, SapphireValue* args) {
+    if (arg_count < 1 || !is_obj_type(args[0], OBJ_STRING)) return SapphireValue();
+    std::string url_str = static_cast<ObjString*>(args[0].as.obj)->chars;
+    
+    std::string host, path = "/";
+    size_t host_start = url_str.find("://");
+    if (host_start != std::string::npos) {
+        host_start += 3;
+        size_t path_start = url_str.find("/", host_start);
+        if (path_start == std::string::npos) {
+            host = url_str;
+        } else {
+            host = url_str.substr(0, path_start);
+            path = url_str.substr(path_start);
+        }
+    } else {
+        size_t path_start = url_str.find("/");
+        if (path_start == std::string::npos) {
+            host = url_str;
+        } else {
+            host = url_str.substr(0, path_start);
+            path = url_str.substr(path_start);
+        }
+    }
+    
+    httplib::Headers headers;
+    if (arg_count >= 2) headers = parse_headers(args[1]);
+    
+    try {
+        httplib::Client cli(host.c_str());
+        cli.set_follow_location(true);
+        if (auto res = cli.Get(path.c_str(), headers)) {
+            return convert_response_to_map(res);
+        }
+    } catch (...) {}
+    
+    return SapphireValue(new_map(g_current_vm));
+}
+
+static SapphireValue native_http_post_full(int arg_count, SapphireValue* args) {
+    if (arg_count < 2 || !is_obj_type(args[0], OBJ_STRING) || !is_obj_type(args[1], OBJ_STRING)) return SapphireValue();
+    std::string url_str = static_cast<ObjString*>(args[0].as.obj)->chars;
+    std::string body = static_cast<ObjString*>(args[1].as.obj)->chars;
+    
+    std::string host, path = "/";
+    size_t host_start = url_str.find("://");
+    if (host_start != std::string::npos) {
+        host_start += 3;
+        size_t path_start = url_str.find("/", host_start);
+        if (path_start == std::string::npos) {
+            host = url_str;
+        } else {
+            host = url_str.substr(0, path_start);
+            path = url_str.substr(path_start);
+        }
+    }
+    
+    httplib::Headers headers;
+    std::string content_type = "application/json";
+    if (arg_count >= 3) {
+        headers = parse_headers(args[2]);
+        auto it = headers.find("Content-Type");
+        if (it != headers.end()) {
+            content_type = it->second;
+        }
+    }
+    
+    try {
+        httplib::Client cli(host.c_str());
+        if (auto res = cli.Post(path.c_str(), headers, body, content_type.c_str())) {
+            return convert_response_to_map(res);
+        }
+    } catch (...) {}
+    return SapphireValue(new_map(g_current_vm));
+}
+
+static SapphireValue native_http_put_full(int arg_count, SapphireValue* args) {
+    if (arg_count < 2 || !is_obj_type(args[0], OBJ_STRING) || !is_obj_type(args[1], OBJ_STRING)) return SapphireValue();
+    std::string url_str = static_cast<ObjString*>(args[0].as.obj)->chars;
+    std::string body = static_cast<ObjString*>(args[1].as.obj)->chars;
+    
+    std::string host, path = "/";
+    size_t host_start = url_str.find("://");
+    if (host_start != std::string::npos) {
+        host_start += 3;
+        size_t path_start = url_str.find("/", host_start);
+        if (path_start == std::string::npos) {
+            host = url_str;
+        } else {
+            host = url_str.substr(0, path_start);
+            path = url_str.substr(path_start);
+        }
+    }
+    
+    httplib::Headers headers;
+    std::string content_type = "application/json";
+    if (arg_count >= 3) {
+        headers = parse_headers(args[2]);
+        auto it = headers.find("Content-Type");
+        if (it != headers.end()) {
+            content_type = it->second;
+        }
+    }
+    
+    try {
+        httplib::Client cli(host.c_str());
+        if (auto res = cli.Put(path.c_str(), headers, body, content_type.c_str())) {
+            return convert_response_to_map(res);
+        }
+    } catch (...) {}
+    return SapphireValue(new_map(g_current_vm));
+}
+
+static SapphireValue native_http_delete_full(int arg_count, SapphireValue* args) {
+    if (arg_count < 1 || !is_obj_type(args[0], OBJ_STRING)) return SapphireValue();
+    std::string url_str = static_cast<ObjString*>(args[0].as.obj)->chars;
+    
+    std::string host, path = "/";
+    size_t host_start = url_str.find("://");
+    if (host_start != std::string::npos) {
+        host_start += 3;
+        size_t path_start = url_str.find("/", host_start);
+        if (path_start == std::string::npos) {
+            host = url_str;
+        } else {
+            host = url_str.substr(0, path_start);
+            path = url_str.substr(path_start);
+        }
+    }
+    
+    httplib::Headers headers;
+    if (arg_count >= 2) headers = parse_headers(args[1]);
+    
+    try {
+        httplib::Client cli(host.c_str());
+        if (auto res = cli.Delete(path.c_str(), headers)) {
+            return convert_response_to_map(res);
+        }
+    } catch (...) {}
+    return SapphireValue(new_map(g_current_vm));
+}
+
 static SapphireValue native_http_serve(int arg_count, SapphireValue* args) {
     if (arg_count != 2 || args[0].type != ValType::VAL_NUMBER || args[1].type != ValType::VAL_OBJ) {
         if (!g_current_vm->soft_mode) std::cerr << "Runtime Error: httpServer() expects a number and a function/closure." << std::endl;
