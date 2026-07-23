@@ -353,6 +353,30 @@ static SapphireValue native_io_open_file_dialog(int arg_count, SapphireValue* ar
     return new_string(g_current_vm, "");
 }
 
+
+#include <filesystem>
+static SapphireValue native_io_file_size(int arg_count, SapphireValue* args) {
+    if (arg_count != 1 || args[0].type != ValType::VAL_OBJ || args[0].as.obj->type != OBJ_STRING) return -1.0;
+    std::string path = static_cast<ObjString*>(args[0].as.obj)->chars;
+    try {
+        if (std::filesystem::exists(path) && std::filesystem::is_regular_file(path)) {
+            return (double)std::filesystem::file_size(path);
+        }
+    } catch (...) {
+        return -1.0;
+    }
+    return -1.0;
+}
+static SapphireValue native_io_is_dir(int arg_count, SapphireValue* args) {
+    if (arg_count != 1 || args[0].type != ValType::VAL_OBJ || args[0].as.obj->type != OBJ_STRING) return false;
+    std::string path = static_cast<ObjString*>(args[0].as.obj)->chars;
+    try {
+        return std::filesystem::exists(path) && std::filesystem::is_directory(path);
+    } catch (...) {
+        return false;
+    }
+}
+
 static SapphireValue native_io_exists(int arg_count, SapphireValue* args) {
     if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) return false;
     std::string path = static_cast<ObjString*>(args[0].as.obj)->chars;
@@ -457,6 +481,56 @@ static SapphireValue native_io_append_file(int arg_count, SapphireValue* args) {
     return true;
 }
 
+
+static SapphireValue native_math_tan(int arg_count, SapphireValue* args) {
+    if (arg_count < 1 || args[0].type != ValType::VAL_NUMBER) return 0.0;
+    return std::tan(args[0].as.number);
+}
+static SapphireValue native_math_asin(int arg_count, SapphireValue* args) {
+    if (arg_count < 1 || args[0].type != ValType::VAL_NUMBER) return 0.0;
+    return std::asin(args[0].as.number);
+}
+static SapphireValue native_math_acos(int arg_count, SapphireValue* args) {
+    if (arg_count < 1 || args[0].type != ValType::VAL_NUMBER) return 0.0;
+    return std::acos(args[0].as.number);
+}
+static SapphireValue native_math_atan(int arg_count, SapphireValue* args) {
+    if (arg_count < 1 || args[0].type != ValType::VAL_NUMBER) return 0.0;
+    return std::atan(args[0].as.number);
+}
+static SapphireValue native_math_atan2(int arg_count, SapphireValue* args) {
+    if (arg_count < 2 || args[0].type != ValType::VAL_NUMBER || args[1].type != ValType::VAL_NUMBER) return 0.0;
+    return std::atan2(args[0].as.number, args[1].as.number);
+}
+static SapphireValue native_math_sinh(int arg_count, SapphireValue* args) {
+    if (arg_count < 1 || args[0].type != ValType::VAL_NUMBER) return 0.0;
+    return std::sinh(args[0].as.number);
+}
+static SapphireValue native_math_cosh(int arg_count, SapphireValue* args) {
+    if (arg_count < 1 || args[0].type != ValType::VAL_NUMBER) return 0.0;
+    return std::cosh(args[0].as.number);
+}
+static SapphireValue native_math_tanh(int arg_count, SapphireValue* args) {
+    if (arg_count < 1 || args[0].type != ValType::VAL_NUMBER) return 0.0;
+    return std::tanh(args[0].as.number);
+}
+static SapphireValue native_math_exp(int arg_count, SapphireValue* args) {
+    if (arg_count < 1 || args[0].type != ValType::VAL_NUMBER) return 0.0;
+    return std::exp(args[0].as.number);
+}
+static SapphireValue native_math_log10(int arg_count, SapphireValue* args) {
+    if (arg_count < 1 || args[0].type != ValType::VAL_NUMBER) return 0.0;
+    return std::log10(args[0].as.number);
+}
+static SapphireValue native_math_trunc(int arg_count, SapphireValue* args) {
+    if (arg_count < 1 || args[0].type != ValType::VAL_NUMBER) return 0.0;
+    return std::trunc(args[0].as.number);
+}
+static SapphireValue native_math_round(int arg_count, SapphireValue* args) {
+    if (arg_count < 1 || args[0].type != ValType::VAL_NUMBER) return 0.0;
+    return std::round(args[0].as.number);
+}
+
 static SapphireValue native_math_sqrt(int arg_count, SapphireValue* args) {
     if (arg_count != 1) {
         if (!g_current_vm->soft_mode) {
@@ -477,6 +551,42 @@ static SapphireValue native_math_sqrt(int arg_count, SapphireValue* args) {
 
 
 
+
+
+static SapphireValue native_string_starts_with(int arg_count, SapphireValue* args) {
+    if (arg_count != 2 || args[0].type != ValType::VAL_OBJ || args[1].type != ValType::VAL_OBJ) return false;
+    if (args[0].as.obj->type != OBJ_STRING || args[1].as.obj->type != OBJ_STRING) return false;
+    std::string s = static_cast<ObjString*>(args[0].as.obj)->chars;
+    std::string prefix = static_cast<ObjString*>(args[1].as.obj)->chars;
+    if (prefix.length() > s.length()) return false;
+    return s.compare(0, prefix.length(), prefix) == 0;
+}
+static SapphireValue native_string_ends_with(int arg_count, SapphireValue* args) {
+    if (arg_count != 2 || args[0].type != ValType::VAL_OBJ || args[1].type != ValType::VAL_OBJ) return false;
+    if (args[0].as.obj->type != OBJ_STRING || args[1].as.obj->type != OBJ_STRING) return false;
+    std::string s = static_cast<ObjString*>(args[0].as.obj)->chars;
+    std::string suffix = static_cast<ObjString*>(args[1].as.obj)->chars;
+    if (suffix.length() > s.length()) return false;
+    return s.compare(s.length() - suffix.length(), suffix.length(), suffix) == 0;
+}
+static SapphireValue native_string_index_of(int arg_count, SapphireValue* args) {
+    if (arg_count != 2 || args[0].type != ValType::VAL_OBJ || args[1].type != ValType::VAL_OBJ) return -1.0;
+    if (args[0].as.obj->type != OBJ_STRING || args[1].as.obj->type != OBJ_STRING) return -1.0;
+    std::string s = static_cast<ObjString*>(args[0].as.obj)->chars;
+    std::string sub = static_cast<ObjString*>(args[1].as.obj)->chars;
+    size_t pos = s.find(sub);
+    if (pos == std::string::npos) return -1.0;
+    return (double)pos;
+}
+static SapphireValue native_string_last_index_of(int arg_count, SapphireValue* args) {
+    if (arg_count != 2 || args[0].type != ValType::VAL_OBJ || args[1].type != ValType::VAL_OBJ) return -1.0;
+    if (args[0].as.obj->type != OBJ_STRING || args[1].as.obj->type != OBJ_STRING) return -1.0;
+    std::string s = static_cast<ObjString*>(args[0].as.obj)->chars;
+    std::string sub = static_cast<ObjString*>(args[1].as.obj)->chars;
+    size_t pos = s.rfind(sub);
+    if (pos == std::string::npos) return -1.0;
+    return (double)pos;
+}
 
 static SapphireValue native_string_char_at(int arg_count, SapphireValue* args) {
     if (arg_count != 2 || !is_obj_type(args[0], OBJ_STRING) || args[1].type != ValType::VAL_NUMBER) {
@@ -2296,6 +2406,47 @@ static SapphireValue core_create_instance(int arg_count, SapphireValue* args) {
     return instance;
 }
 
+
+static SapphireValue native_list_util_reverse(int arg_count, SapphireValue* args) {
+    if (arg_count != 1 || args[0].type != ValType::VAL_OBJ || args[0].as.obj->type != OBJ_ARRAY) return SapphireValue();
+    auto list_obj = static_cast<ObjArray*>(args[0].as.obj);
+    std::reverse(list_obj->elements.begin(), list_obj->elements.end());
+    return args[0];
+}
+static SapphireValue native_list_util_clear(int arg_count, SapphireValue* args) {
+    if (arg_count != 1 || args[0].type != ValType::VAL_OBJ || args[0].as.obj->type != OBJ_ARRAY) return SapphireValue();
+    auto list_obj = static_cast<ObjArray*>(args[0].as.obj);
+    list_obj->elements.clear();
+    return args[0];
+}
+static SapphireValue native_list_util_index_of(int arg_count, SapphireValue* args) {
+    if (arg_count != 2 || args[0].type != ValType::VAL_OBJ || args[0].as.obj->type != OBJ_ARRAY) return -1.0;
+    auto list_obj = static_cast<ObjArray*>(args[0].as.obj);
+    auto it = std::find_if(list_obj->elements.begin(), list_obj->elements.end(),
+                           [&](const SapphireValue& v) { return values_equal(v, args[1]); });
+    if (it != list_obj->elements.end()) {
+        return (double)std::distance(list_obj->elements.begin(), it);
+    }
+    return -1.0;
+}
+static SapphireValue native_list_util_join(int arg_count, SapphireValue* args) {
+    if (arg_count < 1 || arg_count > 2 || args[0].type != ValType::VAL_OBJ || args[0].as.obj->type != OBJ_ARRAY) return SapphireValue();
+    auto list_obj = static_cast<ObjArray*>(args[0].as.obj);
+    std::string sep = "";
+    if (arg_count == 2 && args[1].type == ValType::VAL_OBJ && args[1].as.obj->type == OBJ_STRING) {
+        sep = static_cast<ObjString*>(args[1].as.obj)->chars;
+    }
+    std::string res;
+    for (size_t i = 0; i < list_obj->elements.size(); ++i) {
+        if (i > 0) res += sep;
+        SapphireValue str_val = native_value_to_string(1, &list_obj->elements[i]);
+        if (str_val.type == ValType::VAL_OBJ && str_val.as.obj->type == OBJ_STRING) {
+            res += static_cast<ObjString*>(str_val.as.obj)->chars;
+        }
+    }
+    return SapphireValue(new_string(g_current_vm, res));
+}
+
 static SapphireValue native_list_util_create(int arg_count, SapphireValue* args) {
     if (arg_count != 0) {
         if (!g_current_vm->soft_mode) {
@@ -2713,6 +2864,12 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     define_native("stringToLower", native_string_to_lower);
     define_native("stringTrim", native_string_trim);
     define_native("stringContains", native_string_contains);
+
+    define_native("stringStartsWith", native_string_starts_with);
+    define_native("stringEndsWith", native_string_ends_with);
+    define_native("stringIndexOf", native_string_index_of);
+    define_native("stringLastIndexOf", native_string_last_index_of);
+
     define_native("getQuote", native_get_quote);
 
     const char* appdata_path = getenv("APPDATA");
@@ -2728,12 +2885,30 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     define_native("writeFile", native_io_write_file);
     define_native("readFile", native_io_read_file);
     define_native("exists", native_io_exists);
+
+    define_native("fileSize", native_io_file_size);
+    define_native("isDir", native_io_is_dir);
+
     define_native("deleteFile", native_io_delete_file);
     define_native("appendFile", native_io_append_file);
     define_native("openFileDialog", native_io_open_file_dialog);
 
     // --- Math ---
     define_native("sqrt", native_math_sqrt);
+
+    define_native("tan", native_math_tan);
+    define_native("asin", native_math_asin);
+    define_native("acos", native_math_acos);
+    define_native("atan", native_math_atan);
+    define_native("atan2", native_math_atan2);
+    define_native("sinh", native_math_sinh);
+    define_native("cosh", native_math_cosh);
+    define_native("tanh", native_math_tanh);
+    define_native("exp", native_math_exp);
+    define_native("log10", native_math_log10);
+    define_native("trunc", native_math_trunc);
+    define_native("round", native_math_round);
+
     define_native("rand", native_math_rand);
     define_native("abs", native_math_abs);
     define_native("floor", native_math_floor);
@@ -2765,6 +2940,12 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     define_native("listLength", native_list_util_length);
     define_native("listRemoveAt", native_list_util_remove_at);
     define_native("listContains", native_list_util_contains);
+
+    define_native("listReverse", native_list_util_reverse);
+    define_native("listClear", native_list_util_clear);
+    define_native("listIndexOf", native_list_util_index_of);
+    define_native("listJoin", native_list_util_join);
+
 
     // --- Logger ---
     ObjString* logger_name = new_string(this, "Logger");
