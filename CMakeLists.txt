@@ -172,9 +172,48 @@ add_library(sapphire_core STATIC
     src/api/sapphire_api.cpp
     src/api/opencl_api.cpp
     src/api/sqlite_api.cpp
+    src/api/postgres_api.cpp
+    src/api/mysql_api.cpp
     src/preprocessor/preprocessor.cpp
     ${VM_SOURCES}
 )
+
+
+# Search for PostgreSQL
+find_package(PostgreSQL QUIET)
+if(PostgreSQL_FOUND)
+    message(STATUS "PostgreSQL found. Enabling PostgreSQL bindings.")
+    add_compile_definitions(USE_POSTGRESQL)
+    list(APPEND COMMON_LIBS PostgreSQL::PostgreSQL)
+else()
+    message(WARNING "PostgreSQL NOT found. pgConnect, pgQuery, etc. will not be available.")
+endif()
+
+# Search for MySQL / MariaDB
+# We will use pkg-config or try to find libmysqlclient
+find_package(PkgConfig QUIET)
+if(PKG_CONFIG_FOUND)
+    pkg_check_modules(MYSQL mysqlclient QUIET)
+    if(MYSQL_FOUND)
+        message(STATUS "MySQL (pkg-config) found. Enabling MySQL bindings.")
+        add_compile_definitions(USE_MYSQL)
+        include_directories(${MYSQL_INCLUDE_DIRS})
+        link_directories(${MYSQL_LIBRARY_DIRS})
+        list(APPEND COMMON_LIBS ${MYSQL_LIBRARIES})
+    else()
+        # Fallback: check mariadb
+        pkg_check_modules(MARIADB libmariadb QUIET)
+        if(MARIADB_FOUND)
+            message(STATUS "MariaDB (pkg-config) found. Enabling MySQL bindings.")
+            add_compile_definitions(USE_MYSQL)
+            include_directories(${MARIADB_INCLUDE_DIRS})
+            link_directories(${MARIADB_LIBRARY_DIRS})
+            list(APPEND COMMON_LIBS ${MARIADB_LIBRARIES})
+        else()
+            message(WARNING "MySQL/MariaDB NOT found. mysqlConnect, mysqlQuery, etc. will not be available.")
+        endif()
+    endif()
+endif()
 
 # 2. Ativa o suporte a OpenSSL na biblioteca httplib
 target_compile_definitions(sapphire_core PUBLIC

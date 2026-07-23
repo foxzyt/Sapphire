@@ -14,7 +14,11 @@
 #include "termcolor.h"
 #include "sapphire_api.h"
 #include "opencl_api.h"
+
 #include "sqlite_api.h"
+#include "../api/mysql_api.h"
+#include "../api/postgres_api.h"
+
 #include "utils.h"
 #include "opcodes.h"
 #include "httplib.h"
@@ -3219,7 +3223,11 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     register_graphics_engine(this);
     register_vec2d_class(this);
     register_vec3d_class(this);
+    
     define_sqlite_natives(this);
+    define_mysql_natives(this);
+    define_postgres_natives(this);
+
 
     if (init_ui) {
         g_current_vm = this;
