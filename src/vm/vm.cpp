@@ -44,6 +44,7 @@
 #include "vec2d.h"
 #include "vec3d.h"
 #include <thread>
+#include "builtins/builtins.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -3116,6 +3117,55 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     define_native("deleteFile", native_io_delete_file);
     define_native("appendFile", native_io_append_file);
     define_native("openFileDialog", native_io_open_file_dialog);
+
+    // --- IO Advanced (v1.1.0) ---
+    define_native("IO.listDir",          native_io_list_dir);
+    define_native("IO.listDirRecursive", native_io_list_dir_recursive);
+    define_native("IO.copyFile",         native_io_copy_file);
+    define_native("IO.moveFile",         native_io_move_file);
+    define_native("IO.rename",           native_io_rename);
+    define_native("IO.makeDir",          native_io_make_dir);
+    define_native("IO.makeAllDirs",      native_io_make_all_dirs);
+    define_native("IO.getTempDir",       native_io_get_temp_dir);
+    define_native("IO.readLines",        native_io_read_lines);
+    define_native("IO.readBinary",       native_io_read_binary);
+    define_native("IO.writeBinary",      native_io_write_binary);
+    define_native("IO.getAbsolutePath",  native_io_get_absolute_path);
+    define_native("IO.getParentDir",     native_io_get_parent_dir);
+    define_native("IO.getExtension",     native_io_get_extension);
+    define_native("IO.getBasename",      native_io_get_basename);
+    define_native("IO.isFile",           native_io_is_file);
+    // Also register short aliases for backward compat
+    define_native("listDir",          native_io_list_dir);
+    define_native("copyFile",         native_io_copy_file);
+    define_native("moveFile",         native_io_move_file);
+    define_native("makeDir",          native_io_make_dir);
+    define_native("makeAllDirs",      native_io_make_all_dirs);
+    define_native("getTempDir",       native_io_get_temp_dir);
+    define_native("readLines",        native_io_read_lines);
+    define_native("isFile",           native_io_is_file);
+
+    // --- Crypto (v1.1.0) ---
+    define_native("Crypto.sha256",        native_crypto_sha256);
+    define_native("Crypto.sha1",          native_crypto_sha1);
+    define_native("Crypto.md5",           native_crypto_md5);
+    define_native("Crypto.hmacSha256",    native_crypto_hmac_sha256);
+    define_native("Crypto.base64Encode",  native_crypto_base64_encode);
+    define_native("Crypto.base64Decode",  native_crypto_base64_decode);
+    define_native("Crypto.randomBytes",   native_crypto_random_bytes);
+    define_native("Crypto.randomHex",     native_crypto_random_hex);
+    define_native("Crypto.uuid4",         native_crypto_uuid4);
+    define_native("Crypto.aesEncrypt",    native_crypto_aes_encrypt);
+    define_native("Crypto.aesDecrypt",    native_crypto_aes_decrypt);
+
+    // --- Net (v1.1.0) ---
+    define_native("Net.tcpConnect",    native_net_tcp_connect);
+    define_native("Net.tcpSend",       native_net_tcp_send);
+    define_native("Net.tcpReceive",    native_net_tcp_receive);
+    define_native("Net.tcpClose",      native_net_tcp_close);
+    define_native("Net.resolve",       native_net_resolve);
+    define_native("Net.localIP",       native_net_local_ip);
+    define_native("Net.isPortOpen",    native_net_is_port_open);
 
     // --- Math ---
     define_native("sqrt", native_math_sqrt);

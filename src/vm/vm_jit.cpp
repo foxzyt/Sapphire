@@ -3,6 +3,10 @@
 #include "value.h"
 #include "environment.h"
 #include "jit_assembler.h"
+#include <cstdio>
+
+// Forward declaration for interpreter fallback
+bool vm_interpreter_fallback(VM* vm, int target_frame_count);
 
 bool VM::run(int target_frame_count) {
     CallFrame* frame = &frames[frame_count - 1];
@@ -15,54 +19,62 @@ bool VM::run(int target_frame_count) {
     std::vector<uint8_t> optimized_code = chunk->code;
     std::vector<SapphireValue> optimized_constants = chunk->constants;
     
+    // FIX v1.1.0: constant folding with proper bounds guards to prevent OOB access
     for (size_t i = 0; i < optimized_code.size(); ) {
         uint8_t opcode = optimized_code[i];
-        
-        if ((opcode == OP_ADD || opcode == OP_SUBTRACT || opcode == OP_MULTIPLY || opcode == OP_DIVIDE) && 
-            i >= 3 && optimized_code[i-2] == OP_CONSTANT && optimized_code[i-1] == OP_CONSTANT) {
-            uint8_t const1_idx = optimized_code[i-1];
-            uint8_t const2_idx = optimized_code[i-3];
-            
-            SapphireValue val1 = optimized_constants[const1_idx];
-            SapphireValue val2 = optimized_constants[const2_idx];
-            
-            if (val1.type == ValType::VAL_NUMBER && val2.type == ValType::VAL_NUMBER) {
-                double result = 0.0;
-                if (opcode == OP_ADD) result = val2.as.number + val1.as.number;
-                else if (opcode == OP_SUBTRACT) result = val2.as.number - val1.as.number;
-                else if (opcode == OP_MULTIPLY) result = val2.as.number * val1.as.number;
-                else if (opcode == OP_DIVIDE && val1.as.number != 0.0) result = val2.as.number / val1.as.number;
-                
-                optimized_constants.push_back(SapphireValue(result));
-                uint8_t new_const_idx = optimized_constants.size() - 1;
-                
-                optimized_code.erase(optimized_code.begin() + i - 3, optimized_code.begin() + i + 1);
-                optimized_code.insert(optimized_code.begin() + i - 3, OP_CONSTANT);
-                optimized_code.insert(optimized_code.begin() + i - 2, new_const_idx);
-                continue;
-            }
-        } else if (opcode == OP_JUMP_IF_FALSE && i >= 1 && optimized_code[i-1] == OP_CONSTANT) {
-            uint8_t const_idx = optimized_code[i-1];
-            SapphireValue val = optimized_constants[const_idx];
-            
-            if (is_falsey(val)) {
-                optimized_code[i] = OP_JUMP;
-            } else {
-                optimized_code.erase(optimized_code.begin() + i, optimized_code.begin() + i + 3);
-                if (i >= 1 && optimized_code[i-1] == OP_CONSTANT) {
-                    bool used = false;
-                    for (size_t j = 0; j < optimized_code.size(); j++) {
-                        if (j != i-1 && optimized_code[j] == OP_CONSTANT && optimized_code[j+1] == const_idx) {
-                            used = true;
-                            break;
-                        }
+
+        // Constant folding: CONST A, CONST B, OP → CONST (A op B)
+        // Guard: need at least 4 bytes before current position (OP_CONSTANT, idx, OP_CONSTANT, idx)
+        if ((opcode == OP_ADD || opcode == OP_SUBTRACT || opcode == OP_MULTIPLY || opcode == OP_DIVIDE) &&
+            i >= 4 &&
+            optimized_code[i - 2] == OP_CONSTANT &&
+            optimized_code[i - 4] == OP_CONSTANT) {
+
+            uint8_t const1_idx = optimized_code[i - 1]; // top of stack
+            uint8_t const2_idx = optimized_code[i - 3]; // second on stack
+
+            // Bounds-check constant indices before accessing
+            if (const1_idx < optimized_constants.size() && const2_idx < optimized_constants.size()) {
+                SapphireValue val1 = optimized_constants[const1_idx];
+                SapphireValue val2 = optimized_constants[const2_idx];
+
+                if (val1.type == ValType::VAL_NUMBER && val2.type == ValType::VAL_NUMBER) {
+                    double result = 0.0;
+                    bool valid = true;
+                    if (opcode == OP_ADD)      result = val2.as.number + val1.as.number;
+                    else if (opcode == OP_SUBTRACT) result = val2.as.number - val1.as.number;
+                    else if (opcode == OP_MULTIPLY) result = val2.as.number * val1.as.number;
+                    else if (opcode == OP_DIVIDE) {
+                        if (val1.as.number != 0.0) result = val2.as.number / val1.as.number;
+                        else valid = false; // skip folding for div-by-zero
                     }
-                    if (!used) {
-                        optimized_code.erase(optimized_code.begin() + i - 2, optimized_code.begin() + i);
-                        i -= 2;
+
+                    if (valid && optimized_constants.size() < 255) {
+                        optimized_constants.push_back(SapphireValue(result));
+                        uint8_t new_const_idx = static_cast<uint8_t>(optimized_constants.size() - 1);
+                        // Replace 4-byte sequence (CONST idx CONST idx) + opcode (1) = 5 bytes → 2 bytes
+                        optimized_code.erase(optimized_code.begin() + (i - 4), optimized_code.begin() + i + 1);
+                        optimized_code.insert(optimized_code.begin() + (i - 4), new_const_idx);
+                        optimized_code.insert(optimized_code.begin() + (i - 4), OP_CONSTANT);
+                        // i now points to the new OP_CONSTANT; restart from same position
+                        i = (i >= 4) ? (i - 4) : 0;
+                        continue;
                     }
                 }
-                continue;
+            }
+        } else if (opcode == OP_JUMP_IF_FALSE && i >= 2 && optimized_code[i - 2] == OP_CONSTANT) {
+            uint8_t const_idx = optimized_code[i - 1];
+            if (const_idx < optimized_constants.size()) {
+                SapphireValue val = optimized_constants[const_idx];
+                if (is_falsey(val)) {
+                    optimized_code[i] = OP_JUMP;
+                } else {
+                    // Always-true branch: remove the conditional jump (3 bytes)
+                    if (i + 3 <= optimized_code.size()) {
+                        optimized_code.erase(optimized_code.begin() + i, optimized_code.begin() + i + 3);
+                    }
+                    continue;
+                }
             }
         }
         i++;
@@ -732,13 +744,17 @@ NEXT_OPCODE:
 
     TARGET_OP_JUMP: {
         uint16_t jump = (chunk->code[offset + 1] << 8) | chunk->code[offset + 2];
-        jit.emit_jmp(labels[offset + 3 + jump]);
+        size_t target = offset + 3 + jump;
+        if (target < labels.size()) {
+            jit.emit_jmp(labels[target]);
+        }
         offset += 3;
         goto NEXT_OPCODE;
     }
 
     TARGET_OP_JUMP_IF_FALSE: {
         uint16_t jump = (chunk->code[offset + 1] << 8) | chunk->code[offset + 2];
+        size_t target = offset + 3 + jump;
         JitAssembler::Label is_false_lbl, end_lbl;
 
         jit.emit_mov_reg_reg(0, 12);
@@ -755,7 +771,9 @@ NEXT_OPCODE:
         jit.emit_jmp(end_lbl);
 
         jit.bind(is_false_lbl);
-        jit.emit_jmp(labels[offset + 3 + jump]);
+        if (target < labels.size()) {
+            jit.emit_jmp(labels[target]);
+        }
 
         jit.bind(end_lbl);
         jit.emit_sub_reg_imm32(12, sizeof(SapphireValue));
@@ -765,6 +783,7 @@ NEXT_OPCODE:
 
     TARGET_OP_JUMP_IF_NIL: {
         uint16_t jump = (chunk->code[offset + 1] << 8) | chunk->code[offset + 2];
+        size_t target = offset + 3 + jump;
         JitAssembler::Label not_nil_lbl, end_lbl;
 
         jit.emit_mov_reg_reg(0, 12);
@@ -773,7 +792,9 @@ NEXT_OPCODE:
         jit.emit_cmp_mem8_imm8(0, 0, 0);
         jit.emit_jnz(not_nil_lbl);
 
-        jit.emit_jmp(labels[offset + 3 + jump]);
+        if (target < labels.size()) {
+            jit.emit_jmp(labels[target]);
+        }
 
         jit.bind(not_nil_lbl);
         jit.emit_sub_reg_imm32(12, sizeof(SapphireValue));
@@ -784,6 +805,7 @@ NEXT_OPCODE:
 
     TARGET_OP_JUMP_IF_NOT_NIL: {
         uint16_t jump = (chunk->code[offset + 1] << 8) | chunk->code[offset + 2];
+        size_t target = offset + 3 + jump;
         JitAssembler::Label is_nil_lbl, end_lbl;
 
         jit.emit_mov_reg_reg(0, 12);
@@ -792,7 +814,9 @@ NEXT_OPCODE:
         jit.emit_cmp_mem8_imm8(0, 0, 0);
         jit.emit_jz(is_nil_lbl);
 
-        jit.emit_jmp(labels[offset + 3 + jump]);
+        if (target < labels.size()) {
+            jit.emit_jmp(labels[target]);
+        }
 
         jit.bind(is_nil_lbl);
         jit.emit_sub_reg_imm32(12, sizeof(SapphireValue));
@@ -803,7 +827,13 @@ NEXT_OPCODE:
 
     TARGET_OP_LOOP: {
         uint16_t jump = (chunk->code[offset + 1] << 8) | chunk->code[offset + 2];
-        jit.emit_jmp(labels[offset + 3 - jump]);
+        // FIX v1.1.0: guard against underflow on backward jump
+        if (jump <= offset + 3) {
+            size_t target = offset + 3 - jump;
+            if (target < labels.size()) {
+                jit.emit_jmp(labels[target]);
+            }
+        }
         offset += 3;
         goto NEXT_OPCODE;
     }
@@ -1073,7 +1103,7 @@ JIT_END:
     }
     
     JitFunc func = (JitFunc)jit.finalize(&jit_error, &jit_error_msg);
-    
+
     if (func) {
         if (rubellite_debug) {
             printf("[JIT DEBUG] JIT code finalized successfully. Executing...\n");
@@ -1083,13 +1113,21 @@ JIT_END:
             printf("[JIT DEBUG] JIT execution completed.\n");
         }
     } else {
-        printf("[JIT] ERROR: Failed to finalize JIT code! (error=%d, code_size=%zu)\n", jit_error, jit.code_size());
-        if (!jit_error_msg.empty()) {
-            printf("[JIT] ERROR details: %s\n", jit_error_msg.c_str());
+        // FIX v1.1.0: fallback to interpreter instead of hard failing.
+        // The JIT may fail on platforms without executable memory or on edge-case
+        // bytecode sequences. The interpreter is always correct.
+        if (rubellite_debug || !soft_mode) {
+            printf("[JIT] Warning: JIT compilation failed (error=%d, code_size=%zu). "
+                   "Falling back to interpreter.\n", jit_error, jit.code_size());
+            if (!jit_error_msg.empty()) {
+                printf("[JIT] Details: %s\n", jit_error_msg.c_str());
+            }
         }
-        return false;
+        // Reset instruction pointer to beginning of the frame's chunk and interpret
+        frame->ip = frame->function->chunk.code.data();
+        return vm_interpreter_fallback(this, target_frame_count);
     }
-    
+
     return true;
 }
 

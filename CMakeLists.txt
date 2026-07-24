@@ -154,6 +154,8 @@ set(VM_SOURCES
     src/vm/builtins/thread.cpp
     src/vm/builtins/ui.cpp
     src/vm/builtins/core.cpp
+    src/vm/builtins/crypto.cpp
+    src/vm/builtins/net.cpp
 )
 set(VM_INCLUDE_DIR src/vm/)
 

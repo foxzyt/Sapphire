@@ -33,6 +33,44 @@ SapphireValue native_io_print_color(int arg_count, SapphireValue* args);
 SapphireValue native_io_read_input(int arg_count, SapphireValue* args);
 SapphireValue native_io_delete_file(int arg_count, SapphireValue* args);
 SapphireValue native_io_append_file(int arg_count, SapphireValue* args);
+// NEW in v1.1.0 — Advanced IO
+SapphireValue native_io_list_dir(int arg_count, SapphireValue* args);
+SapphireValue native_io_list_dir_recursive(int arg_count, SapphireValue* args);
+SapphireValue native_io_copy_file(int arg_count, SapphireValue* args);
+SapphireValue native_io_move_file(int arg_count, SapphireValue* args);
+SapphireValue native_io_rename(int arg_count, SapphireValue* args);
+SapphireValue native_io_make_dir(int arg_count, SapphireValue* args);
+SapphireValue native_io_make_all_dirs(int arg_count, SapphireValue* args);
+SapphireValue native_io_get_temp_dir(int arg_count, SapphireValue* args);
+SapphireValue native_io_read_lines(int arg_count, SapphireValue* args);
+SapphireValue native_io_read_binary(int arg_count, SapphireValue* args);
+SapphireValue native_io_write_binary(int arg_count, SapphireValue* args);
+SapphireValue native_io_get_absolute_path(int arg_count, SapphireValue* args);
+SapphireValue native_io_get_parent_dir(int arg_count, SapphireValue* args);
+SapphireValue native_io_get_extension(int arg_count, SapphireValue* args);
+SapphireValue native_io_get_basename(int arg_count, SapphireValue* args);
+SapphireValue native_io_is_file(int arg_count, SapphireValue* args);
+// NEW in v1.1.0 — Crypto module
+SapphireValue native_crypto_sha256(int arg_count, SapphireValue* args);
+SapphireValue native_crypto_sha1(int arg_count, SapphireValue* args);
+SapphireValue native_crypto_md5(int arg_count, SapphireValue* args);
+SapphireValue native_crypto_hmac_sha256(int arg_count, SapphireValue* args);
+SapphireValue native_crypto_base64_encode(int arg_count, SapphireValue* args);
+SapphireValue native_crypto_base64_decode(int arg_count, SapphireValue* args);
+SapphireValue native_crypto_random_bytes(int arg_count, SapphireValue* args);
+SapphireValue native_crypto_random_hex(int arg_count, SapphireValue* args);
+SapphireValue native_crypto_uuid4(int arg_count, SapphireValue* args);
+SapphireValue native_crypto_aes_encrypt(int arg_count, SapphireValue* args);
+SapphireValue native_crypto_aes_decrypt(int arg_count, SapphireValue* args);
+// NEW in v1.1.0 — Net module
+SapphireValue native_net_tcp_connect(int arg_count, SapphireValue* args);
+SapphireValue native_net_tcp_send(int arg_count, SapphireValue* args);
+SapphireValue native_net_tcp_receive(int arg_count, SapphireValue* args);
+SapphireValue native_net_tcp_close(int arg_count, SapphireValue* args);
+SapphireValue native_net_resolve(int arg_count, SapphireValue* args);
+SapphireValue native_net_local_ip(int arg_count, SapphireValue* args);
+SapphireValue native_net_is_port_open(int arg_count, SapphireValue* args);
+
 SapphireValue native_json_parse(int arg_count, SapphireValue* args);
 SapphireValue native_json_stringify(int arg_count, SapphireValue* args);
 SapphireValue native_list_util_reverse(int arg_count, SapphireValue* args);

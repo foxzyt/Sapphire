@@ -5,6 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-07-24
+
+### Added
+- **Módulo `Crypto`**: Primitivas criptográficas via OpenSSL (sem novas dependências).
+  - `Crypto.sha256(str)` — hash SHA-256 em hex
+  - `Crypto.sha1(str)` — hash SHA-1 em hex
+  - `Crypto.md5(str)` — hash MD5 em hex
+  - `Crypto.hmacSha256(key, data)` — HMAC-SHA256 em hex
+  - `Crypto.base64Encode(str)` / `Crypto.base64Decode(str)` — codificação Base64
+  - `Crypto.randomBytes(n)` — bytes aleatórios criptograficamente seguros (CSPRNG via `RAND_bytes`)
+  - `Crypto.randomHex(n)` — hex aleatório seguro
+  - `Crypto.uuid4()` — UUID versão 4 RFC 4122
+  - `Crypto.aesEncrypt(key, iv, data)` / `Crypto.aesDecrypt(key, iv, data)` — AES-256-CBC
+- **Módulo `Net`**: TCP raw cross-platform via POSIX/Winsock (sem novas dependências).
+  - `Net.tcpConnect(host, port)` — conecta e retorna handle
+  - `Net.tcpSend(handle, data)` — envia dados por socket TCP
+  - `Net.tcpReceive(handle, maxBytes)` — recebe dados
+  - `Net.tcpClose(handle)` — fecha o socket
+  - `Net.resolve(hostname)` — resolução DNS → IP string
+  - `Net.localIP()` — IP local da máquina
+  - `Net.isPortOpen(host, port, timeoutMs)` — verifica se porta está acessível (com timeout)
+- **IO Avançado** (`IO.*`): 15 novas funções de filesystem via `std::filesystem`.
+  - `IO.listDir(path)` — lista arquivos no diretório
+  - `IO.listDirRecursive(path)` — lista recursivamente
+  - `IO.copyFile(src, dst)` — copia arquivo
+  - `IO.moveFile(src, dst)` / `IO.rename(old, new)` — move/renomeia
+  - `IO.makeDir(path)` / `IO.makeAllDirs(path)` — cria diretórios (recursivo)
+  - `IO.getTempDir()` — caminho temporário do SO
+  - `IO.readLines(path)` — retorna array de linhas do arquivo
+  - `IO.readBinary(path)` / `IO.writeBinary(path, data)` — leitura/escrita binária
+  - `IO.getAbsolutePath(path)` / `IO.getParentDir(path)` / `IO.getExtension(path)` / `IO.getBasename(path)` — manipulação de paths
+  - `IO.isFile(path)` — verifica se é arquivo regular
+
+### Fixed
+- **GC (Garbage Collector) — Bugs Críticos Corrigidos:**
+  - `mark_value`: a checagem de `OBJ_ARRAY` era código inacessível (unreachable) — arrays nunca eram marcados corretamente, causando coleta prematura de seus elementos.
+  - `blacken_object`: adicionados casos faltantes para `OBJ_MAP`, `OBJ_ARRAY`, `OBJ_LRU`, `OBJ_PROMISE`, `OBJ_NAMED_ARG`, `OBJ_FADE` — objetos filhos podem ser coletados prematuramente (potencial use-after-free silencioso).
+  - `mark_roots`: adicionada marcação do `event_loop_queue` e `current_promise` para garantir que promises ativas não sejam coletadas.
+  - `native_io_exists`: corrigida para usar `std::filesystem::exists()` em vez de abrir `ifstream` (que tinha side effects indesejados).
+  - Threshold adaptativo: novo cálculo `max(1MB, bytes_allocated × 1.5)` em vez de `bytes_allocated × 2`, reduzindo pausas em workloads de alocação constante.
+- **JIT (Rubellite) — Estabilizações:**
+  - Bounds guard na otimização de constant folding: o acesso retroativo em `optimized_code[i-3]` sem verificação de bounds causava UB quando `i < 3`.
+  - Todos os `labels[offset + N]` agora verificam limites antes de emitir saltos, prevenindo acesso out-of-bounds no array de labels.
+  - Fallback para interpreter: quando `jit.finalize()` falha (por falta de memória executável ou bytecode edge-case), o JIT agora passa o controle de volta ao interpreter em vez de retornar `false` e parar a execução.
+  - OP_LOOP: adicionado guard de underflow na aritmética do salto retroativo.
+
 ## [Unreleased]
 
 ### Added
