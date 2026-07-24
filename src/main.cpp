@@ -2113,8 +2113,8 @@ void display_info() {
       "",
       "** SAPPHIRE INFORMATIONS: **",
       "",
-      "Version: 1.1.0 (build 0001-07242026 (July 24, 2026))",
-      "Release Date: July 24, 2026",
+      "Version: 1.0.9 (build 0223-07182026 (July 18, 2026))",
+      "Release Date: July 18, 2026",
       "",
       "Developed by: Bernardo Alvim",
       "Protected by MIT License",
@@ -2158,7 +2158,7 @@ void display_info() {
 }
 
 void display_version() {
-  std::cout << "Sapphire 1.1.0 (build 0001-07242026)" << std::endl;
+  std::cout << "Sapphire 1.0.9 (build 0223-07182026)" << std::endl;
 }
 
 std::string load_source_script(const std::string &path) {

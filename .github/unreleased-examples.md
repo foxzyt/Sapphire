@@ -1,6 +1,6 @@
-# Sapphire v1.1.0 — Exemplos de Uso
+# Sapphire — Unreleased Features: Usage Examples
 
-Este documento apresenta exemplos didáticos das novas funcionalidades introduzidas no **Sapphire v1.1.0**.
+This document shows usage examples for the new features currently in the `[Unreleased]` section of the CHANGELOG (targeting the next release after **v1.0.9**).
 
 ---
 

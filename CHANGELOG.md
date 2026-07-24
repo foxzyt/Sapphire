@@ -5,55 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0] - 2026-07-24
-
-### Added
-- **Módulo `Crypto`**: Primitivas criptográficas via OpenSSL (sem novas dependências).
-  - `Crypto.sha256(str)` — hash SHA-256 em hex
-  - `Crypto.sha1(str)` — hash SHA-1 em hex
-  - `Crypto.md5(str)` — hash MD5 em hex
-  - `Crypto.hmacSha256(key, data)` — HMAC-SHA256 em hex
-  - `Crypto.base64Encode(str)` / `Crypto.base64Decode(str)` — codificação Base64
-  - `Crypto.randomBytes(n)` — bytes aleatórios criptograficamente seguros (CSPRNG via `RAND_bytes`)
-  - `Crypto.randomHex(n)` — hex aleatório seguro
-  - `Crypto.uuid4()` — UUID versão 4 RFC 4122
-  - `Crypto.aesEncrypt(key, iv, data)` / `Crypto.aesDecrypt(key, iv, data)` — AES-256-CBC
-- **Módulo `Net`**: TCP raw cross-platform via POSIX/Winsock (sem novas dependências).
-  - `Net.tcpConnect(host, port)` — conecta e retorna handle
-  - `Net.tcpSend(handle, data)` — envia dados por socket TCP
-  - `Net.tcpReceive(handle, maxBytes)` — recebe dados
-  - `Net.tcpClose(handle)` — fecha o socket
-  - `Net.resolve(hostname)` — resolução DNS → IP string
-  - `Net.localIP()` — IP local da máquina
-  - `Net.isPortOpen(host, port, timeoutMs)` — verifica se porta está acessível (com timeout)
-- **IO Avançado** (`IO.*`): 15 novas funções de filesystem via `std::filesystem`.
-  - `IO.listDir(path)` — lista arquivos no diretório
-  - `IO.listDirRecursive(path)` — lista recursivamente
-  - `IO.copyFile(src, dst)` — copia arquivo
-  - `IO.moveFile(src, dst)` / `IO.rename(old, new)` — move/renomeia
-  - `IO.makeDir(path)` / `IO.makeAllDirs(path)` — cria diretórios (recursivo)
-  - `IO.getTempDir()` — caminho temporário do SO
-  - `IO.readLines(path)` — retorna array de linhas do arquivo
-  - `IO.readBinary(path)` / `IO.writeBinary(path, data)` — leitura/escrita binária
-  - `IO.getAbsolutePath(path)` / `IO.getParentDir(path)` / `IO.getExtension(path)` / `IO.getBasename(path)` — manipulação de paths
-  - `IO.isFile(path)` — verifica se é arquivo regular
-
-### Fixed
-- **GC (Garbage Collector) — Bugs Críticos Corrigidos:**
-  - `mark_value`: a checagem de `OBJ_ARRAY` era código inacessível (unreachable) — arrays nunca eram marcados corretamente, causando coleta prematura de seus elementos.
-  - `blacken_object`: adicionados casos faltantes para `OBJ_MAP`, `OBJ_ARRAY`, `OBJ_LRU`, `OBJ_PROMISE`, `OBJ_NAMED_ARG`, `OBJ_FADE` — objetos filhos podem ser coletados prematuramente (potencial use-after-free silencioso).
-  - `mark_roots`: adicionada marcação do `event_loop_queue` e `current_promise` para garantir que promises ativas não sejam coletadas.
-  - `native_io_exists`: corrigida para usar `std::filesystem::exists()` em vez de abrir `ifstream` (que tinha side effects indesejados).
-  - Threshold adaptativo: novo cálculo `max(1MB, bytes_allocated × 1.5)` em vez de `bytes_allocated × 2`, reduzindo pausas em workloads de alocação constante.
-- **JIT (Rubellite) — Estabilizações:**
-  - Bounds guard na otimização de constant folding: o acesso retroativo em `optimized_code[i-3]` sem verificação de bounds causava UB quando `i < 3`.
-  - Todos os `labels[offset + N]` agora verificam limites antes de emitir saltos, prevenindo acesso out-of-bounds no array de labels.
-  - Fallback para interpreter: quando `jit.finalize()` falha (por falta de memória executável ou bytecode edge-case), o JIT agora passa o controle de volta ao interpreter em vez de retornar `false` e parar a execução.
-  - OP_LOOP: adicionado guard de underflow na aritmética do salto retroativo.
-
 ## [Unreleased]
 
 ### Added
+- **`Crypto` module**: Cryptographic primitives via OpenSSL (no new dependencies).
+  - `Crypto.sha256(str)` — SHA-256 hash as hex string
+  - `Crypto.sha1(str)` — SHA-1 hash as hex string
+  - `Crypto.md5(str)` — MD5 hash as hex string
+  - `Crypto.hmacSha256(key, data)` — HMAC-SHA256 as hex string
+  - `Crypto.base64Encode(str)` / `Crypto.base64Decode(str)` — Base64 encoding/decoding
+  - `Crypto.randomBytes(n)` — cryptographically secure random bytes (CSPRNG via `RAND_bytes`)
+  - `Crypto.randomHex(n)` — cryptographically secure random hex string
+  - `Crypto.uuid4()` — RFC 4122 UUID v4
+  - `Crypto.aesEncrypt(key, iv, data)` / `Crypto.aesDecrypt(key, iv, data)` — AES-256-CBC
+- **`Net` module**: Raw TCP networking cross-platform via POSIX/Winsock (no new dependencies).
+  - `Net.tcpConnect(host, port)` — connects and returns a socket handle (number)
+  - `Net.tcpSend(handle, data)` — sends data over a TCP socket
+  - `Net.tcpReceive(handle, maxBytes)` — receives data from a TCP socket
+  - `Net.tcpClose(handle)` — closes the socket
+  - `Net.resolve(hostname)` — DNS resolution → IP string
+  - `Net.localIP()` — local machine IP address
+  - `Net.isPortOpen(host, port, timeoutMs)` — checks if a port is reachable (with timeout)
+- **Advanced IO** (`IO.*`): 15 new filesystem functions via `std::filesystem`.
+  - `IO.listDir(path)` — lists files in a directory (returns array)
+  - `IO.listDirRecursive(path)` — recursive directory listing
+  - `IO.copyFile(src, dst)` — copies a file
+  - `IO.moveFile(src, dst)` / `IO.rename(old, new)` — moves / renames a file
+  - `IO.makeDir(path)` / `IO.makeAllDirs(path)` — creates directory (recursive)
+  - `IO.getTempDir()` — returns the OS temporary directory path
+  - `IO.readLines(path)` — reads a file and returns an array of lines
+  - `IO.readBinary(path)` / `IO.writeBinary(path, data)` — binary read/write
+  - `IO.getAbsolutePath(path)` / `IO.getParentDir(path)` / `IO.getExtension(path)` / `IO.getBasename(path)` — path manipulation helpers
+  - `IO.isFile(path)` — checks whether the path is a regular file
+
+### Fixed
+- **GC (Garbage Collector) — Critical Bug Fixes:**
+  - `mark_value`: the `OBJ_ARRAY` check was unreachable code — array child values were never marked, silently enabling premature collection and potential use-after-free.
+  - `blacken_object`: added missing cases for `OBJ_MAP`, `OBJ_ARRAY`, `OBJ_LRU`, `OBJ_PROMISE`, `OBJ_NAMED_ARG`, `OBJ_FADE` — child objects of these types could be prematurely collected.
+  - `mark_roots`: added marking of `event_loop_queue` and `current_promise` to prevent active promises from being collected mid-flight.
+  - `native_io_exists`: fixed to use `std::filesystem::exists()` instead of opening an `ifstream` (which had unintended side effects).
+  - Adaptive GC threshold: new formula `max(1MB, bytes_allocated × 1.5)` instead of `× 2`, reducing pause frequency under constant-allocation workloads.
+- **JIT (Rubellite) — Stability Fixes:**
+  - Bounds guard in constant folding: the look-back `optimized_code[i-3]` was accessed without bounds check, causing UB when `i < 3`.
+  - All `labels[offset + N]` accesses now check array bounds before emitting jumps, preventing out-of-bounds crashes.
+  - Interpreter fallback: when `jit.finalize()` fails (e.g., no executable memory, unsupported platform), execution now falls back to the bytecode interpreter instead of returning `false` and halting.
+  - `OP_LOOP`: added underflow guard in backward-jump offset arithmetic.
+
 - **Cross-Platform Support:** Complete refactoring to support Linux, macOS, and Windows across all core components.
   - Converted all dependencies (SFML, OpenSSL, httplib, nlohmann/json, FreeType) to use CMake FetchContent instead of pre-built binaries.
   - Added platform-specific library linking for macOS (Cocoa, IOKit, OpenGL frameworks) and Linux (pthread, dl, GL, X11, Xcursor, Xrandr, Xi).
