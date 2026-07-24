@@ -1,17 +1,25 @@
 #include "vm.h"
+
+#ifndef JIT_ABI
+#ifdef _WIN32
+#define JIT_ABI
+#else
+#define JIT_ABI __attribute__((ms_abi))
+#endif
+#endif
 #include "object.h"
 #include "value.h"
 #include "environment.h"
 #include "jit_assembler.h"
 
-extern "C" void jit_fallback_opcode(VM* vm, uint8_t** ip_ptr) {
+extern "C" JIT_ABI void jit_fallback_opcode(VM* vm, uint8_t** ip_ptr) {
     uint8_t instruction = **ip_ptr;
     fprintf(stderr, "JIT Fallback hit for opcode %d at %p. Not implemented.\n", instruction, *ip_ptr);
     exit(1);
 }
 
 // Trampolines (Direct C-Callouts) - Implemented with full functionality
-extern "C" void jit_trampoline_import(VM* vm) {
+extern "C" JIT_ABI void jit_trampoline_import(VM* vm) {
     // Import module - simplified implementation
     if (vm->stack_top - vm->stack < 1) return;
     SapphireValue module_name = vm->stack_top[-1];
@@ -26,7 +34,7 @@ extern "C" void jit_trampoline_import(VM* vm) {
     vm->push(SapphireValue());
 }
 
-extern "C" void jit_trampoline_spawn(VM* vm) {
+extern "C" JIT_ABI void jit_trampoline_spawn(VM* vm) {
     // Spawn thread for async execution
     if (vm->stack_top - vm->stack < 1) return;
     SapphireValue script_path = vm->stack_top[-1];
@@ -42,14 +50,14 @@ extern "C" void jit_trampoline_spawn(VM* vm) {
     vm->push(SapphireValue((double)next_thread_id++));
 }
 
-extern "C" void jit_trampoline_await(VM* vm) {
+extern "C" JIT_ABI void jit_trampoline_await(VM* vm) {
     // Await promise/result
     if (vm->stack_top - vm->stack < 1) return;
     vm->stack_top--; // Pop the promise
     vm->push(SapphireValue()); // Return nil for now
 }
 
-extern "C" void jit_trampoline_get_property(VM* vm) {
+extern "C" JIT_ABI void jit_trampoline_get_property(VM* vm) {
     // Get property from object
     if (vm->stack_top - vm->stack < 2) return;
     SapphireValue obj = vm->stack_top[-2];
@@ -74,7 +82,7 @@ extern "C" void jit_trampoline_get_property(VM* vm) {
     vm->push(SapphireValue());
 }
 
-extern "C" void jit_trampoline_set_property(VM* vm) {
+extern "C" JIT_ABI void jit_trampoline_set_property(VM* vm) {
     // Set property on object
     if (vm->stack_top - vm->stack < 3) return;
     SapphireValue obj = vm->stack_top[-3];
@@ -93,7 +101,7 @@ extern "C" void jit_trampoline_set_property(VM* vm) {
     vm->push(value);
 }
 
-extern "C" void jit_trampoline_call(VM* vm) {
+extern "C" JIT_ABI void jit_trampoline_call(VM* vm) {
     // Call function - simplified implementation
     if (vm->stack_top - vm->stack < 1) return;
     uint8_t arg_count = vm->stack_top[-1].as.number;
@@ -108,7 +116,7 @@ extern "C" void jit_trampoline_call(VM* vm) {
     vm->push(SapphireValue());
 }
 
-extern "C" void jit_trampoline_get_global(VM* vm, const std::string* name_ptr) {
+extern "C" JIT_ABI void jit_trampoline_get_global(VM* vm, const std::string* name_ptr) {
     std::string name = *name_ptr;
     if (vm->globals.count(name)) {
         vm->push(vm->globals[name]);
@@ -117,13 +125,13 @@ extern "C" void jit_trampoline_get_global(VM* vm, const std::string* name_ptr) {
     }
 }
 
-extern "C" void jit_trampoline_define_global(VM* vm, const std::string* name_ptr) {
+extern "C" JIT_ABI void jit_trampoline_define_global(VM* vm, const std::string* name_ptr) {
     std::string name = *name_ptr;
     vm->globals[name] = vm->stack_top[-1];
     vm->pop();
 }
 
-extern "C" void jit_trampoline_set_global(VM* vm, const std::string* name_ptr) {
+extern "C" JIT_ABI void jit_trampoline_set_global(VM* vm, const std::string* name_ptr) {
     std::string name = *name_ptr;
     if (vm->globals.count(name)) {
         vm->globals[name] = vm->stack_top[-1];
@@ -131,7 +139,7 @@ extern "C" void jit_trampoline_set_global(VM* vm, const std::string* name_ptr) {
     vm->pop();
 }
 
-extern "C" void jit_trampoline_build_array(VM* vm, uint8_t count) {
+extern "C" JIT_ABI void jit_trampoline_build_array(VM* vm, uint8_t count) {
     ObjArray* array = new_array(vm);
     for (int i = count - 1; i >= 0; i--) {
         array->elements.push_back(vm->stack_top[-i - 1]);
@@ -140,7 +148,7 @@ extern "C" void jit_trampoline_build_array(VM* vm, uint8_t count) {
     vm->push(array);
 }
 
-extern "C" void jit_trampoline_build_map(VM* vm, uint8_t count) {
+extern "C" JIT_ABI void jit_trampoline_build_map(VM* vm, uint8_t count) {
     ObjMap* map = new_map(vm);
     for (int i = 0; i < count; i++) {
         SapphireValue value = vm->stack_top[-1];
@@ -154,7 +162,7 @@ extern "C" void jit_trampoline_build_map(VM* vm, uint8_t count) {
     vm->push(map);
 }
 
-extern "C" void jit_trampoline_closure(VM* vm, SapphireValue* constant_val_ptr) {
+extern "C" JIT_ABI void jit_trampoline_closure(VM* vm, SapphireValue* constant_val_ptr) {
     SapphireValue constant_val = *constant_val_ptr;
     ObjFunction* func = static_cast<ObjFunction*>(constant_val.as.obj);
     
@@ -162,7 +170,7 @@ extern "C" void jit_trampoline_closure(VM* vm, SapphireValue* constant_val_ptr) 
     vm->push(closure);
 }
 
-extern "C" void jit_trampoline_make_named_arg(VM* vm, SapphireValue* constant_val_ptr) {
+extern "C" JIT_ABI void jit_trampoline_make_named_arg(VM* vm, SapphireValue* constant_val_ptr) {
     SapphireValue constant_val = *constant_val_ptr;
     SapphireValue value = vm->stack_top[-1];
     vm->stack_top--;
@@ -171,7 +179,7 @@ extern "C" void jit_trampoline_make_named_arg(VM* vm, SapphireValue* constant_va
     vm->push(narg);
 }
 
-extern "C" void jit_trampoline_generic(VM* vm, int opcode) {
+extern "C" JIT_ABI void jit_trampoline_generic(VM* vm, int opcode) {
     // Generic fallback for unimplemented opcodes
     // This should never be called if all opcodes are implemented
     fprintf(stderr, "JIT Warning: Using generic fallback for opcode %d\n", opcode);
@@ -470,7 +478,7 @@ extern "C" void jit_trampoline_generic(VM* vm, int opcode) {
     }
 }
 
-extern "C" void jit_print_value(SapphireValue* val) {
+extern "C" JIT_ABI void jit_print_value(SapphireValue* val) {
     printf("[JIT PRINT] Called with val=%p\n", val);
     print_value(*val);
     printf("\n");
