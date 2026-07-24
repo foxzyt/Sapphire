@@ -58,6 +58,11 @@
 static std::random_device rd;
 static std::mt19937 gen(rd());
 
+#ifdef USE_RUBELLITE
+#include "vm_trampolines.cpp"
+#endif
+
+
 thread_local VM* g_current_vm = nullptr;
 
 static std::mutex thread_mutex;
@@ -3679,6 +3684,7 @@ bool VM::call_value(SapphireValue callee, int arg_count) {
         // std::cout << "    [CALL_VALUE SPY] Despachando chamada para objeto tipo: " << obj->type << std::endl;
         // Eu nem tiro mais os debugs, vai que eu preciso Â¯\_(ãƒ„)_/Â¯
 
+#ifndef USE_RUBELLITE
 bool VM::run(int target_frame_count) {
     CallFrame* frame = &frames[frame_count - 1];
     uint8_t* ip = frame->ip;
@@ -4671,6 +4677,10 @@ TARGET(OP_ITER_NEXT_OF) {
 #undef top
 }
 
+#else
+#include "vm_jit.cpp"
+#endif
+
 bool VM::run_function(ObjFunction* function) {
     // std::cout << "  [VM DEBUG] Entrando em run_function..." << std::endl;
     if (function == nullptr) return false;
@@ -4853,166 +4863,17 @@ SapphireValue VM::getGlobal(const std::string& name) {
 }
 
 // --- FunÃ§Ãµes do Coletor de Lixo ---
-void VM::mark_object(Obj* object) {
-    if (object == nullptr || object->is_marked) return;
 
-    object->is_marked = true;
-    gray_stack.push_back(object);
-}
 
-void VM::mark_value(SapphireValue value) {
-    if (value.type == ValType::VAL_OBJ) {
-        mark_object(value.as.obj);
-    } else if (is_obj_type(value, OBJ_ARRAY)) {
-        auto array = static_cast<ObjArray*>(value.as.obj);
-        for (SapphireValue& val : array->elements) {
-            mark_value(val);
-        }
-    }
-}
 
-void VM::blacken_object(Obj* object) {
-    switch (object->type) {
-        case OBJ_CLOSURE: {
-            ObjClosure* closure = (ObjClosure*)object;
-            mark_object((Obj*)closure->function);
-            break;
-        }
-        case OBJ_FUNCTION: {
-            ObjFunction* function = (ObjFunction*)object;
-            mark_object((Obj*)function->name);
-            for (SapphireValue& constant : function->chunk.constants) {
-                mark_value(constant);
-            }
-            break;
-        }
-        case OBJ_INSTANCE: {
-            ObjInstance* instance = (ObjInstance*)object;
-            mark_object((Obj*)instance->klass);
-            for (auto const& [key, val] : instance->fields) {
-                mark_value(val);
-            }
-            break;
-        }
-        case OBJ_CLASS: {
-            ObjClass* klass = (ObjClass*)object;
-            mark_object((Obj*)klass->name);
-            for (auto const& [key, val] : klass->methods) {
-                mark_value(val);
-            }
-            break;
-        }
-        case OBJ_BOUND_METHOD: {
-            ObjBoundMethod* bound = (ObjBoundMethod*)object;
-            mark_value(bound->receiver);
-            mark_value(bound->method);
-            break;
-        }
-        case OBJ_NATIVE:
-        case OBJ_STRING:
-            break;
-    }
-}
 
-void VM::mark_roots() {
-    for (SapphireValue* slot = stack; slot < stack_top; slot++) {
-        mark_value(*slot);
-    }
-    for (int i = 0; i < frame_count; i++) {
-        mark_object((Obj*)frames[i].function);
-    }
-    for (auto const& [key, val] : globals) {
-        mark_value(val);
-    }
-}
 
-void VM::write_barrier(Obj* object, SapphireValue value) {
-    if (gc_state == GCState::GC_TRACE) {
-        if (object->is_marked) {
-            mark_value(value);
-        }
-    }
-}
 
-void VM::step_gc() {
-    if (gc_state == GCState::GC_IDLE) {
-        if (bytes_allocated > next_gc_threshold) {
-            gc_state = GCState::GC_MARK_ROOTS;
-        } else {
-            return;
-        }
-    }
 
-    if (gc_state == GCState::GC_MARK_ROOTS) {
-        mark_roots();
-        gc_state = GCState::GC_TRACE;
-        return;
-    }
 
-    if (gc_state == GCState::GC_TRACE) {
-        int trace_limit = 500;
-        while (!gray_stack.empty() && trace_limit > 0) {
-            Obj* object = gray_stack.back();
-            gray_stack.pop_back();
-            blacken_object(object);
-            trace_limit--;
-        }
-        if (gray_stack.empty()) {
-            // Remark phase: rescan roots to catch anything mutated during tracing
-            mark_roots();
-            if (gray_stack.empty()) {
-                gc_state = GCState::GC_SWEEP;
-                sweep_previous = nullptr;
-                sweep_current = objects;
-            }
-        }
-        return;
-    }
 
-    if (gc_state == GCState::GC_SWEEP) {
-        int sweep_limit = 500;
-        while (sweep_current != nullptr && sweep_limit > 0) {
-            Obj* object = sweep_current;
-            if (object->is_marked) {
-                object->is_marked = false;
-                sweep_previous = object;
-                sweep_current = object->next;
-            } else {
-                Obj* unreached = object;
-                sweep_current = object->next;
-                if (sweep_previous != nullptr) {
-                    sweep_previous->next = sweep_current;
-                } else {
-                    objects = sweep_current;
-                }
-                
-                size_t size = 0;
-                switch (unreached->type) {
-                    case OBJ_STRING: size = sizeof(ObjString); break;
-                    case OBJ_FUNCTION: size = sizeof(ObjFunction); break;
-                    case OBJ_NATIVE: size = sizeof(ObjNative); break;
-                    case OBJ_CLOSURE: size = sizeof(ObjClosure); break;
-                    case OBJ_CLASS: size = sizeof(ObjClass); break;
-                    case OBJ_INSTANCE: size = sizeof(ObjInstance); break;
-                    case OBJ_BOUND_METHOD: size = sizeof(ObjBoundMethod); break;
-                    case OBJ_NAMED_ARG: size = sizeof(ObjNamedArg); break;
-                }
-                if (bytes_allocated >= size) bytes_allocated -= size;
-                else bytes_allocated = 0;
 
-                free_object(unreached);
-            }
-            sweep_limit--;
-        }
 
-        if (sweep_current == nullptr) {
-            gc_state = GCState::GC_IDLE;
-            next_gc_threshold = bytes_allocated * 2;
-            if (next_gc_threshold < 1024 * 1024) next_gc_threshold = 1024 * 1024;
-        }
-        return;
-    }
-}
 
 bool VM::call_and_run(ObjFunction* function) {
     if (function == nullptr) return false;

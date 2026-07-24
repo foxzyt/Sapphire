@@ -196,6 +196,7 @@ public:
   UIState ui_state;
   ScriptConfig config;
   bool soft_mode = false;
+  bool rubellite_debug = false;
   SapphireValue stack[STACK_MAX];
   Obj *objects = nullptr;
   SapphireValue *stack_top;

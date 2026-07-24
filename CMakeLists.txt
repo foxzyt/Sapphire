@@ -136,22 +136,26 @@ endif()
 option(USE_RUBELLITE "Ativar VM experimental Rubellite JIT (compilado dentro do sapphire.exe)" ON)
 if(USE_RUBELLITE)
     add_compile_definitions(USE_RUBELLITE RUBELLITE_ENABLED)
-    set(VM_SOURCES
-        src/rubellite/object.cpp
-        src/rubellite/value.cpp
-        src/rubellite/vm.cpp
-        src/rubellite/ui_retained.cpp
-    )
-    set(VM_INCLUDE_DIR src/rubellite/)
-else()
-    set(VM_SOURCES
-        src/vm/object.cpp
-        src/vm/value.cpp
-        src/vm/vm.cpp
-        src/vm/ui_retained.cpp
-    )
-    set(VM_INCLUDE_DIR src/vm/)
 endif()
+
+set(VM_SOURCES
+    src/vm/object.cpp
+    src/vm/value.cpp
+    src/vm/vm.cpp
+    src/vm/gc.cpp
+    src/vm/ui_retained.cpp
+    src/vm/builtins/math.cpp
+    src/vm/builtins/string.cpp
+    src/vm/builtins/io.cpp
+    src/vm/builtins/list.cpp
+    src/vm/builtins/map.cpp
+    src/vm/builtins/json.cpp
+    src/vm/builtins/http.cpp
+    src/vm/builtins/thread.cpp
+    src/vm/builtins/ui.cpp
+    src/vm/builtins/core.cpp
+)
+set(VM_INCLUDE_DIR src/vm/)
 
 # Find SFML from FetchContent (redundant with FetchContent_MakeAvailable)
 # find_package(SFML 3 COMPONENTS Graphics Window System REQUIRED)
@@ -249,11 +253,7 @@ target_link_libraries(sapphire_core PUBLIC OpenCL sqlite3 asmjit)
 add_executable(sapphire src/main.cpp)
 
 # Runner executável (usa a mesma VM que o sapphire.exe)
-if(USE_RUBELLITE)
-    add_executable(runner src/rubellite/runner.cpp src/topaz/third_party/miniz.c)
-else()
-    add_executable(runner src/vm/runner.cpp src/topaz/third_party/miniz.c)
-endif()
+add_executable(runner src/vm/runner.cpp src/topaz/third_party/miniz.c)
 
 add_executable(beryl src/beryl/main.cpp src/beryl/beryl.cpp src/beryl/beryl_ui.cpp src/topaz/third_party/miniz.c)
 add_executable(citrine src/linter/main.cpp src/linter/citrine.cpp)
