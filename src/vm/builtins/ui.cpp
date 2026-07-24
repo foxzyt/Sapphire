@@ -1386,3 +1386,29 @@ UIStyle resolve_style(const std::string& id, const std::string& styleName) {
     }
     return base;
 }
+
+SapphireValue create_declarative_node(const std::string& type, int arg_count, SapphireValue* args) {
+    ObjInstance* node = new_instance(g_current_vm, g_current_vm->ui_component_class);
+    node->fields["type"] = new_string(g_current_vm, type);
+    
+    if (arg_count > 0 && is_obj_type(args[0], OBJ_MAP)) {
+        ObjMap* map = static_cast<ObjMap*>(args[0].as.obj);
+        for (auto& pair : map->items) {
+            node->fields[pair.first] = pair.second;
+        }
+    }
+    // Check if the first argument is positional (not named), just in case backward compatibility is needed
+    if (arg_count > 0 && is_obj_type(args[0], OBJ_STRING)) {
+        if (type == "Text" || type == "Display") node->fields["text"] = new_string(g_current_vm, valueToStringC(args[0]));
+        else node->fields["label"] = new_string(g_current_vm, valueToStringC(args[0]));
+    }
+    
+    // Parse all named arguments (overriding positional if specified)
+    for (int i = 0; i < arg_count; i++) {
+        if (is_obj_type(args[i], OBJ_NAMED_ARG)) {
+            ObjNamedArg* narg = static_cast<ObjNamedArg*>(args[i].as.obj);
+            node->fields[narg->name->chars] = narg->value;
+        }
+    }
+    return node;
+}

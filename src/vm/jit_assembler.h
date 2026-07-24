@@ -16,7 +16,7 @@ public:
         : m_codeHolder(),
           m_runtime(std::make_unique<asmjit::JitRuntime>())
     {
-        m_env.init(asmjit::Arch::kX86);
+        m_env.init(asmjit::Arch::kX64);
         m_codeHolder.init(m_env);
         m_assembler = std::make_unique<asmjit::x86::Assembler>(&m_codeHolder);
     }

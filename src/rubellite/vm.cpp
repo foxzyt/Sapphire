@@ -76,128 +76,29 @@ std::string get_current_timestamp() {
     return ss.str();
 }
 
-static SapphireValue native_logger_info(int arg_count, SapphireValue* args) {
-    std::cout << "\033[94m[" << get_current_timestamp() << "] [INFO]\033[0m ";
-    for (int i = 0; i < arg_count; i++) {
-        print_value(args[i]);
-        if (i < arg_count - 1) std::cout << " ";
-    }
-    std::cout << "\n";
-    return SapphireValue();
-}
 
-static SapphireValue native_logger_warn(int arg_count, SapphireValue* args) {
-    std::cout << "\033[93m[" << get_current_timestamp() << "] [WARN]\033[0m ";
-    for (int i = 0; i < arg_count; i++) {
-        print_value(args[i]);
-        if (i < arg_count - 1) std::cout << " ";
-    }
-    std::cout << "\n";
-    return SapphireValue();
-}
 
-static SapphireValue native_logger_error(int arg_count, SapphireValue* args) {
-    std::cout << "\033[91m[" << get_current_timestamp() << "] [ERROR]\033[0m ";
-    for (int i = 0; i < arg_count; i++) {
-        print_value(args[i]);
-        if (i < arg_count - 1) std::cout << " ";
-    }
-    std::cout << "\n";
-    return SapphireValue();
-}
 
-static SapphireValue native_logger_debug(int arg_count, SapphireValue* args) {
-    std::cout << "\033[90m[" << get_current_timestamp() << "] [DEBUG]\033[0m ";
-    for (int i = 0; i < arg_count; i++) {
-        print_value(args[i]);
-        if (i < arg_count - 1) std::cout << " ";
-    }
-    std::cout << "\n";
-    return SapphireValue();
-}
 
-static SapphireValue native_spawn(int arg_count, SapphireValue* args) {
-    if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) return SapphireValue();
-    std::string script_path = static_cast<ObjString*>(args[0].as.obj)->chars;
-    
-    int tid;
-    {
-        std::lock_guard<std::mutex> lock(thread_mutex);
-        tid = next_thread_id++;
-        active_threads[tid] = std::thread([script_path]() {
-            try {
-                std::string src = load_file_as_string(script_path);
-                ScriptConfig config;
-                VM thread_vm(config, false, nullptr);
-                thread_vm.interpret(src);
-            } catch (...) {}
-        });
-    }
-    return SapphireValue((double)tid);
-}
+
+
+
+
+
 
 static std::mutex global_mutexes_lock;
 static std::map<int, std::shared_ptr<std::mutex>> global_mutexes;
 static int next_mutex_id = 1;
 
-static SapphireValue native_mutex_new(int arg_count, SapphireValue* args) {
-    std::lock_guard<std::mutex> lock(global_mutexes_lock);
-    int id = next_mutex_id++;
-    global_mutexes[id] = std::make_shared<std::mutex>();
-    return SapphireValue((double)id);
-}
 
-static SapphireValue native_mutex_lock(int arg_count, SapphireValue* args) {
-    if(arg_count != 1 || args[0].type != ValType::VAL_NUMBER) return SapphireValue(false);
-    int id = (int)args[0].as.number;
-    std::shared_ptr<std::mutex> m;
-    {
-        std::lock_guard<std::mutex> lock(global_mutexes_lock);
-        if(!global_mutexes.count(id)) return SapphireValue(false);
-        m = global_mutexes[id];
-    }
-    m->lock();
-    return SapphireValue(true);
-}
 
-static SapphireValue native_mutex_unlock(int arg_count, SapphireValue* args) {
-    if(arg_count != 1 || args[0].type != ValType::VAL_NUMBER) return SapphireValue(false);
-    int id = (int)args[0].as.number;
-    std::shared_ptr<std::mutex> m;
-    {
-        std::lock_guard<std::mutex> lock(global_mutexes_lock);
-        if(!global_mutexes.count(id)) return SapphireValue(false);
-        m = global_mutexes[id];
-    }
-    m->unlock();
-    return SapphireValue(true);
-}
 
-static SapphireValue native_join(int arg_count, SapphireValue* args) {
-    if (arg_count != 1 || args[0].type != ValType::VAL_NUMBER) return SapphireValue(false);
-    int tid = (int)args[0].as.number;
-    
-    std::thread t;
-    {
-        std::lock_guard<std::mutex> lock(thread_mutex);
-        if (active_threads.count(tid)) {
-            t = std::move(active_threads[tid]);
-            active_threads.erase(tid);
-        }
-    }
-    
-    if (t.joinable()) {
-        t.join();
-        return SapphireValue(true);
-    }
-    return SapphireValue(false);
-}
 
-static SapphireValue native_system_core_count(int arg_count, SapphireValue* args) {
-    unsigned int cores = std::thread::hardware_concurrency();
-    if (cores == 0) cores = 4;
-    return SapphireValue((double)cores);
-}
+
+
+
+
+
 
 static SapphireValue convertJsonToSapphire(VM* vm, const nlohmann::json& j);
 
@@ -233,420 +134,56 @@ static SapphireValue convertJsonToSapphire(VM* vm, const nlohmann::json& j) {
 
 
 static const auto clock_start_time = std::chrono::high_resolution_clock::now();
-static SapphireValue clock_native(int arg_count, SapphireValue* args) {
-    if (arg_count != 0) return {};
-    auto now = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> diff = now - clock_start_time;
-    return diff.count();
-}
-
-static SapphireValue assert_native(int arg_count, SapphireValue* args) {
-    if (arg_count < 1) {
-        throw std::runtime_error("assert() expects at least 1 argument.");
-    }
-    bool condition = !is_falsey(args[0]);
-    if (!condition) {
-        std::string message = "Assertion failed.";
-        if (arg_count >= 2 && args[1].type == ValType::VAL_OBJ) {
-            Obj* obj = args[1].as.obj;
-            if (obj->type == OBJ_STRING) {
-                message = static_cast<ObjString*>(obj)->chars;
-            }
-        }
-        throw std::runtime_error(message);
-    }
-    return true;
-}
-
-
-static UIStyle resolve_style(const std::string& id, const std::string& styleName = "") {
-    UIStyle base = g_current_vm->ui_state.defaultStyle;
-    if (!styleName.empty()) {
-        auto sIt = g_current_vm->ui_state.stylesheets.find(styleName);
-        if (sIt != g_current_vm->ui_state.stylesheets.end()) {
-            base = sIt->second;
-        }
-    } else if (g_current_vm->ui_state.activeStyle) {
-        base = *g_current_vm->ui_state.activeStyle;
-    }
-    
-    auto it = g_current_vm->ui_state.idOverrides.find(id);
-    if (it != g_current_vm->ui_state.idOverrides.end()) {
-        const auto& props = it->second;
-        if (props.bgColor) base.bgColor = *props.bgColor;
-        if (props.textColor) base.textColor = *props.textColor;
-        if (props.accentColor) base.accentColor = *props.accentColor;
-        if (props.borderRadius) base.borderRadius = *props.borderRadius;
-        if (props.fontSize) base.fontSize = *props.fontSize;
-        if (props.padding) base.padding = *props.padding;
-    }
-    return base;
-}
-
-static SapphireValue io_readline_native(int arg_count, SapphireValue* args) {
-    if (arg_count != 0) {
-        if (!g_current_vm->soft_mode) {
-            std::cerr << "Runtime Error: IO.readLine() expects 0 arguments." << std::endl;
-        }
-        return {};
-    }
-    std::string line;
-    std::getline(std::cin, line);
-    return new_string(g_current_vm, line);
-}
-
-static SapphireValue native_io_write_file(int arg_count, SapphireValue* args) {
-    if (arg_count != 2 || !is_obj_type(args[0], OBJ_STRING) || !is_obj_type(args[1], OBJ_STRING)) {
-        return false;
-    }
-    std::string path = static_cast<ObjString*>(args[0].as.obj)->chars;
-    std::string content = static_cast<ObjString*>(args[1].as.obj)->chars;
-
-    std::ofstream file(path);
-    if (!file.is_open()) return false;
-    file << content;
-    file.close();
-    return true;
-}
-
-static SapphireValue native_io_read_file(int arg_count, SapphireValue* args) {
-    if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) return {};
-    std::string path = static_cast<ObjString*>(args[0].as.obj)->chars;
-
-    std::ifstream file(path);
-    if (!file.is_open()) return {};
-
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    return new_string(g_current_vm, buffer.str());
-}
-
-static SapphireValue native_io_open_file_dialog(int arg_count, SapphireValue* args) {
-#ifdef _WIN32
-    char filename[MAX_PATH];
-    filename[0] = '\0';
-
-    OPENFILENAMEA ofn;
-    ZeroMemory(&ofn, sizeof(ofn));
-    ofn.lStructSize = sizeof(ofn);
-    ofn.hwndOwner = NULL;
-    ofn.lpstrFilter = "All Files\0*.*\0Sapphire Scripts (*.sp)\0*.sp\0";
-    ofn.lpstrFile = filename;
-    ofn.nMaxFile = MAX_PATH;
-    ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
-    ofn.lpstrDefExt = "sp";
-
-    if (GetOpenFileNameA(&ofn)) {
-        return new_string(g_current_vm, std::string(filename));
-    }
-#elif defined(__APPLE__)
-    // macOS: Use zenity or similar (requires user to install)
-    // For now, return empty string as native file dialog is complex
-    return new_string(g_current_vm, "");
-#elif defined(__linux__)
-    // Linux: Use zenity if available
-    FILE* pipe = popen("zenity --file-selection --file-filter='Sapphire Scripts | *.sp' --file-filter='All Files | *.*' 2>/dev/null", "r");
-    if (pipe) {
-        char buffer[PATH_MAX];
-        if (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
-            // Remove trailing newline
-            buffer[strcspn(buffer, "\n")] = '\0';
-            pclose(pipe);
-            return new_string(g_current_vm, std::string(buffer));
-        }
-        pclose(pipe);
-    }
-#endif
-    return new_string(g_current_vm, "");
-}
-
-static SapphireValue native_io_exists(int arg_count, SapphireValue* args) {
-    if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) return false;
-    std::string path = static_cast<ObjString*>(args[0].as.obj)->chars;
-    std::ifstream file(path);
-    return file.good();
-}
-
-static SapphireValue native_io_print_color(int arg_count, SapphireValue* args) {
-    if (arg_count < 2 || !is_obj_type(args[1], OBJ_STRING)) return {};
-    std::string color = static_cast<ObjString*>(args[1].as.obj)->chars;
-
-    std::string code = "\033[0m";
-    if (color == "red") code = "\033[31m";
-    else if (color == "green") code = "\033[32m";
-    else if (color == "yellow") code = "\033[33m";
-    else if (color == "blue") code = "\033[34m";
-    else if (color == "cyan") code = "\033[36m";
-    else if (color == "magenta") code = "\033[35m";
-    else if (color == "white") code = "\033[37m";
-    else if (color == "black") code = "\033[30m";
-    else if (color.size() == 7 && color[0] == '#') {
-        try {
-            int r = std::stoi(color.substr(1, 2), nullptr, 16);
-            int g = std::stoi(color.substr(3, 2), nullptr, 16);
-            int b = std::stoi(color.substr(5, 2), nullptr, 16);
-            code = "\033[38;2;" + std::to_string(r) + ";" + std::to_string(g) + ";" + std::to_string(b) + "m";
-        } catch(...) {}
-    } else if (color.substr(0, 4) == "rgb(" && color.back() == ')') {
-        try {
-            std::string inner = color.substr(4, color.size() - 5);
-            size_t p1 = inner.find(',');
-            size_t p2 = inner.find(',', p1 + 1);
-            if (p1 != std::string::npos && p2 != std::string::npos) {
-                int r = std::stoi(inner.substr(0, p1));
-                int g = std::stoi(inner.substr(p1 + 1, p2 - p1 - 1));
-                int b = std::stoi(inner.substr(p2 + 1));
-                code = "\033[38;2;" + std::to_string(r) + ";" + std::to_string(g) + ";" + std::to_string(b) + "m";
-            }
-        } catch(...) {}
-    }
-
-    std::cout << code;
-    print_value(args[0]);
-    std::cout << "\033[0m"; // Sem std::endl
-    return {};
-}
-
-static SapphireValue native_io_read_input(int arg_count, SapphireValue* args) {
-    std::string result = "";
-#ifdef _WIN32
-    // Check if there are console events
-    HANDLE hInput = GetStdHandle(STD_INPUT_HANDLE);
-    DWORD numEvents = 0;
-    if (GetNumberOfConsoleInputEvents(hInput, &numEvents) && numEvents > 0) {
-        while (_kbhit()) {
-            int ch = _getch();
-            result += (char)ch;
-        }
-    }
-#else
-    struct termios oldt, newt;
-    tcgetattr(STDIN_FILENO, &oldt);
-    newt = oldt;
-    newt.c_lflag &= ~(ICANON | ECHO);
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-    
-    struct timeval tv = {0, 0};
-    fd_set fds;
-    FD_ZERO(&fds);
-    FD_SET(STDIN_FILENO, &fds);
-    
-    if (select(STDIN_FILENO + 1, &fds, NULL, NULL, &tv) > 0) {
-        char buf[256];
-        ssize_t bytes = read(STDIN_FILENO, buf, sizeof(buf) - 1);
-        if (bytes > 0) {
-            buf[bytes] = '\0';
-            result = buf;
-        }
-    }
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-#endif
-    return new_string(g_current_vm, result);
-}
-
-static SapphireValue native_io_delete_file(int arg_count, SapphireValue* args) {
-    if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) return false;
-    std::string path = static_cast<ObjString*>(args[0].as.obj)->chars;
-    return std::remove(path.c_str()) == 0;
-}
-
-static SapphireValue native_io_append_file(int arg_count, SapphireValue* args) {
-    if (arg_count != 2 || !is_obj_type(args[0], OBJ_STRING) || !is_obj_type(args[1], OBJ_STRING)) {
-        return false;
-    }
-    std::string path = static_cast<ObjString*>(args[0].as.obj)->chars;
-    std::string content = static_cast<ObjString*>(args[1].as.obj)->chars;
-
-    std::ofstream file(path, std::ios_base::app);
-    if (!file.is_open()) return false;
-    file << content;
-    file.close();
-    return true;
-}
-
-static SapphireValue native_math_sqrt(int arg_count, SapphireValue* args) {
-    if (arg_count != 1) {
-        if (!g_current_vm->soft_mode) {
-            std::cerr << "Runtime Error: sqrt() expects 1 argument." << std::endl;
-        }
-        return {};
-    }
-    if (args[0].type != ValType::VAL_NUMBER) {
-        if (!g_current_vm->soft_mode) {
-            std::cerr << "Runtime Error: Argument for sqrt() must be a number." << std::endl;
-        }
-        return {};
-    }
-    double number = args[0].as.number;
-    return sqrt(number);
-}
 
 
 
 
 
-static SapphireValue native_string_char_at(int arg_count, SapphireValue* args) {
-    if (arg_count != 2 || !is_obj_type(args[0], OBJ_STRING) || args[1].type != ValType::VAL_NUMBER) {
-        if (!g_current_vm->soft_mode) {
-            std::cerr << "Runtime Error: stringCharAt() expects a string and a number (index)." << std::endl;
-        }
-        return {};
-    }
 
-    ObjString* str_obj = static_cast<ObjString*>(args[0].as.obj);
-    int index = static_cast<int>(args[1].as.number);
 
-    if (index < 0 || index >= str_obj->chars.length()) {
-        if (!g_current_vm->soft_mode) {
-            std::cerr << "Runtime Error: Index out of bounds for string." << std::endl;
-        }
-        return {};
-    }
 
-    return new_string(g_current_vm, std::string(1, str_obj->chars[index]));
-}
 
-static SapphireValue native_string_length(int arg_count, SapphireValue* args) {
-    if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) {
-        return SapphireValue(0.0);
-    }
-    ObjString* str_obj = static_cast<ObjString*>(args[0].as.obj);
-    return SapphireValue((double)str_obj->chars.length());
-}
 
-static SapphireValue native_string_substring(int arg_count, SapphireValue* args) {
-    if (arg_count != 3 || !is_obj_type(args[0], OBJ_STRING) || 
-        args[1].type != ValType::VAL_NUMBER || 
-        args[2].type != ValType::VAL_NUMBER) {
-        return new_string(g_current_vm, "");
-    }
-    ObjString* str_obj = static_cast<ObjString*>(args[0].as.obj);
-    int start = static_cast<int>(args[1].as.number);
-    int len = static_cast<int>(args[2].as.number);
-    
-    if (start < 0) start = 0;
-    if (start >= str_obj->chars.length()) return new_string(g_current_vm, "");
-    if (len < 0) len = 0;
-    
-    return new_string(g_current_vm, str_obj->chars.substr(start, len));
-}
 
-static SapphireValue native_string_split(int arg_count, SapphireValue* args) {
-    if (arg_count != 2 || !is_obj_type(args[0], OBJ_STRING) || !is_obj_type(args[1], OBJ_STRING)) {
-        auto arr = new_array(g_current_vm);
-        return SapphireValue(arr);
-    }
-    ObjString* str_obj = static_cast<ObjString*>(args[0].as.obj);
-    ObjString* delim_obj = static_cast<ObjString*>(args[1].as.obj);
-    
-    auto arr = new_array(g_current_vm);
-    std::string s = str_obj->chars;
-    std::string delim = delim_obj->chars;
-    
-    if (delim.empty()) {
-        for (char c : s) {
-            arr->elements.push_back(new_string(g_current_vm, std::string(1, c)));
-        }
-        return SapphireValue(arr);
-    }
-    
-    size_t pos = 0;
-    std::string token;
-    while ((pos = s.find(delim)) != std::string::npos) {
-        token = s.substr(0, pos);
-        arr->elements.push_back(new_string(g_current_vm, token));
-        s.erase(0, pos + delim.length());
-    }
-    arr->elements.push_back(new_string(g_current_vm, s));
-    
-    return SapphireValue(arr);
-}
 
-static SapphireValue native_string_replace(int arg_count, SapphireValue* args) {
-    if (arg_count != 3 || !is_obj_type(args[0], OBJ_STRING) || !is_obj_type(args[1], OBJ_STRING) || !is_obj_type(args[2], OBJ_STRING)) {
-        if (!g_current_vm->soft_mode) std::cerr << "Runtime Error: stringReplace expects 3 string arguments." << std::endl;
-        return {};
-    }
-    std::string s = static_cast<ObjString*>(args[0].as.obj)->chars;
-    std::string search = static_cast<ObjString*>(args[1].as.obj)->chars;
-    std::string replace = static_cast<ObjString*>(args[2].as.obj)->chars;
-    if (search.empty()) return new_string(g_current_vm, s);
-    size_t pos = 0;
-    while ((pos = s.find(search, pos)) != std::string::npos) {
-        s.replace(pos, search.length(), replace);
-        pos += replace.length();
-    }
-    return new_string(g_current_vm, s);
-}
 
-static SapphireValue native_string_to_upper(int arg_count, SapphireValue* args) {
-    if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) return {};
-    std::string s = static_cast<ObjString*>(args[0].as.obj)->chars;
-    std::transform(s.begin(), s.end(), s.begin(), ::toupper);
-    return new_string(g_current_vm, s);
-}
 
-static SapphireValue native_string_to_lower(int arg_count, SapphireValue* args) {
-    if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) return {};
-    std::string s = static_cast<ObjString*>(args[0].as.obj)->chars;
-    std::transform(s.begin(), s.end(), s.begin(), ::tolower);
-    return new_string(g_current_vm, s);
-}
 
-static SapphireValue native_string_trim(int arg_count, SapphireValue* args) {
-    if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) return {};
-    std::string s = static_cast<ObjString*>(args[0].as.obj)->chars;
-    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) { return !std::isspace(ch); }));
-    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) { return !std::isspace(ch); }).base(), s.end());
-    return new_string(g_current_vm, s);
-}
 
-static SapphireValue native_string_contains(int arg_count, SapphireValue* args) {
-    if (arg_count != 2 || !is_obj_type(args[0], OBJ_STRING) || !is_obj_type(args[1], OBJ_STRING)) return SapphireValue(false);
-    std::string s = static_cast<ObjString*>(args[0].as.obj)->chars;
-    std::string search = static_cast<ObjString*>(args[1].as.obj)->chars;
-    return SapphireValue(s.find(search) != std::string::npos);
-}
 
-static std::string valueToStringC(const SapphireValue& val) {
-    std::stringstream ss;
-    if (val.type == ValType::VAL_NIL) {
-        ss << "nil";
-    } else if (val.type == ValType::VAL_BOOL) {
-        ss << (val.as.boolean ? "true" : "false");
-    } else if (val.type == ValType::VAL_NUMBER) {
-        double d = val.as.number;
-        double int_part;
-        if (modf(d, &int_part) == 0.0) ss << static_cast<long long>(d);
-        else ss << d;
-    } else if (val.type == ValType::VAL_OBJ) {
-        Obj* obj = val.as.obj;
-        if (obj->type == OBJ_STRING) ss << static_cast<ObjString*>(obj)->chars;
-        else if (obj->type == OBJ_MAP) {
-            ObjMap* map = static_cast<ObjMap*>(obj);
-            ss << "{";
-            auto it = map->items.begin();
-            while (it != map->items.end()) {
-                ss << it->first << ": " << valueToStringC(it->second);
-                if (std::next(it) != map->items.end()) ss << ", ";
-                ++it;
-            }
-            ss << "}";
-        }
-        else ss << "[object]";
-    } else if (is_obj_type(val, OBJ_ARRAY)) {
-        auto arr = static_cast<ObjArray*>(val.as.obj);
-        ss << "[";
-        for (size_t i = 0; i < arr->elements.size(); ++i) {
-            ss << valueToStringC(arr->elements[i]);
-            if (i < arr->elements.size() - 1) ss << ", ";
-        }
-        ss << "]";
-    } else {
-        ss << "[unknown]";
-    }
-    return ss.str();
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 static double valueToDoubleC(const SapphireValue& val) {
     if (val.type == ValType::VAL_NUMBER) {
@@ -658,62 +195,15 @@ static double valueToDoubleC(const SapphireValue& val) {
     return 0.0;
 }
 
-static SapphireValue native_lru_create(int arg_count, SapphireValue* args) {
-    if (arg_count != 1 || args[0].type != ValType::VAL_NUMBER) {
-        return SapphireValue(new_lru(g_current_vm, 128));
-    }
-    return SapphireValue(new_lru(g_current_vm, (int)args[0].as.number));
-}
 
-static SapphireValue native_lru_has(int arg_count, SapphireValue* args) {
-    if (arg_count != 2 || args[0].type != ValType::VAL_OBJ || args[0].as.obj->type != OBJ_LRU || args[1].type != ValType::VAL_OBJ || args[1].as.obj->type != OBJ_STRING) return SapphireValue(false);
-    ObjLRU* lru = (ObjLRU*)args[0].as.obj;
-    ObjString* key = (ObjString*)args[1].as.obj;
-    return SapphireValue(lru->items.find(key->chars) != lru->items.end());
-}
 
-static SapphireValue native_lru_get(int arg_count, SapphireValue* args) {
-    if (arg_count != 2 || args[0].type != ValType::VAL_OBJ || args[0].as.obj->type != OBJ_LRU || args[1].type != ValType::VAL_OBJ || args[1].as.obj->type != OBJ_STRING) return SapphireValue();
-    ObjLRU* lru = (ObjLRU*)args[0].as.obj;
-    ObjString* key = (ObjString*)args[1].as.obj;
-    auto it = lru->items.find(key->chars);
-    if (it != lru->items.end()) {
-        lru->order.remove(key->chars);
-        lru->order.push_front(key->chars);
-        return it->second;
-    }
-    return SapphireValue();
-}
 
-static SapphireValue native_lru_put(int arg_count, SapphireValue* args) {
-    if (arg_count != 3 || args[0].type != ValType::VAL_OBJ || args[0].as.obj->type != OBJ_LRU || args[1].type != ValType::VAL_OBJ || args[1].as.obj->type != OBJ_STRING) return SapphireValue(false);
-    ObjLRU* lru = (ObjLRU*)args[0].as.obj;
-    ObjString* key = (ObjString*)args[1].as.obj;
-    SapphireValue val = args[2];
-    
-    if (lru->items.find(key->chars) != lru->items.end()) {
-        lru->order.remove(key->chars);
-    } else {
-        if (lru->items.size() >= (size_t)lru->capacity) {
-            std::string last = lru->order.back();
-            lru->order.pop_back();
-            lru->items.erase(last);
-        }
-    }
-    lru->order.push_front(key->chars);
-    lru->items[key->chars] = val;
-    return SapphireValue(true);
-}
 
-static SapphireValue native_value_to_string(int arg_count, SapphireValue* args) {
-    if (arg_count != 1) {
-        if (!g_current_vm->soft_mode) {
-            std::cerr << "Runtime Error: valueToString() expects 1 argument." << std::endl;
-        }
-        return new_string(g_current_vm, "");
-    }
-    return new_string(g_current_vm, valueToStringC(args[0]));
-}
+
+
+
+
+
 
 static void sapphire_ui_trace(const std::string& id, sf::Vector2f size, float radius) {
     g_current_vm->ui_state.lastComponentId = id;
@@ -831,212 +321,48 @@ static void draw_element_box(sf::RenderWindow& window, sf::Vector2f pos, sf::Vec
 
 
 
-static SapphireValue create_declarative_node(const std::string& type, int arg_count, SapphireValue* args) {
-    ObjInstance* node = new_instance(g_current_vm, g_current_vm->ui_component_class);
-    node->fields["type"] = new_string(g_current_vm, type);
-    
-    if (arg_count > 0 && is_obj_type(args[0], OBJ_MAP)) {
-        ObjMap* map = static_cast<ObjMap*>(args[0].as.obj);
-        for (auto& pair : map->items) {
-            node->fields[pair.first] = pair.second;
-        }
-    }
-    // Check if the first argument is positional (not named), just in case backward compatibility is needed
-    else if (arg_count > 0 && !is_obj_type(args[0], OBJ_NAMED_ARG)) {
-        if (type == "Text" || type == "Display") node->fields["text"] = new_string(g_current_vm, valueToStringC(args[0]));
-        else node->fields["label"] = new_string(g_current_vm, valueToStringC(args[0]));
-    }
-    
-    // Parse all named arguments (overriding positional if specified)
-    for (int i = 0; i < arg_count; i++) {
-        if (is_obj_type(args[i], OBJ_NAMED_ARG)) {
-            ObjNamedArg* narg = static_cast<ObjNamedArg*>(args[i].as.obj);
-            node->fields[narg->name->chars] = narg->value;
-        }
-    }
-    return node;
-}
 
-static SapphireValue native_ui_button(int arg_count, SapphireValue* args) { return create_declarative_node("Button", arg_count, args); }
-static SapphireValue native_ui_text(int arg_count, SapphireValue* args) { return create_declarative_node("Text", arg_count, args); }
-static SapphireValue native_ui_display(int arg_count, SapphireValue* args) { return create_declarative_node("Display", arg_count, args); }
-static SapphireValue native_ui_flex(int arg_count, SapphireValue* args) { return create_declarative_node("Container", arg_count, args); }
-static SapphireValue native_ui_checkbox(int arg_count, SapphireValue* args) { return create_declarative_node("Checkbox", arg_count, args); }
-static SapphireValue native_ui_slider(int arg_count, SapphireValue* args) { return create_declarative_node("Slider", arg_count, args); }
-static SapphireValue native_ui_input(int arg_count, SapphireValue* args) { return create_declarative_node("Input", arg_count, args); }
-static SapphireValue native_ui_separator(int arg_count, SapphireValue* args) { return create_declarative_node("Separator", arg_count, args); }
-static SapphireValue native_ui_menu(int arg_count, SapphireValue* args) { return create_declarative_node("Menu", arg_count, args); }
-static SapphireValue native_ui_menuitem(int arg_count, SapphireValue* args) { return create_declarative_node("MenuItem", arg_count, args); }
+
+
+
+
+
+
+
+
+
+
+
 
 // Advanced & Layouts
-static SapphireValue native_ui_grid(int arg_count, SapphireValue* args) { return create_declarative_node("Grid", arg_count, args); }
-static SapphireValue native_ui_stackpanel(int arg_count, SapphireValue* args) { return create_declarative_node("StackPanel", arg_count, args); }
-static SapphireValue native_ui_dockpanel(int arg_count, SapphireValue* args) { return create_declarative_node("DockPanel", arg_count, args); }
-static SapphireValue native_ui_wrappanel(int arg_count, SapphireValue* args) { return create_declarative_node("WrapPanel", arg_count, args); }
-static SapphireValue native_ui_scrollview(int arg_count, SapphireValue* args) { return create_declarative_node("ScrollView", arg_count, args); }
-static SapphireValue native_ui_border(int arg_count, SapphireValue* args) { return create_declarative_node("Border", arg_count, args); }
+
+
+
+
+
+
 
 // Controls
-static SapphireValue native_ui_image(int arg_count, SapphireValue* args) { return create_declarative_node("Image", arg_count, args); }
-static SapphireValue native_ui_progressbar(int arg_count, SapphireValue* args) { return create_declarative_node("ProgressBar", arg_count, args); }
-static SapphireValue native_ui_radiobox(int arg_count, SapphireValue* args) { return create_declarative_node("RadioBox", arg_count, args); }
-static SapphireValue native_ui_toggleswitch(int arg_count, SapphireValue* args) { return create_declarative_node("ToggleSwitch", arg_count, args); }
-static SapphireValue native_ui_combobox(int arg_count, SapphireValue* args) { return create_declarative_node("ComboBox", arg_count, args); }
-static SapphireValue native_ui_listbox(int arg_count, SapphireValue* args) { return create_declarative_node("ListBox", arg_count, args); }
-static SapphireValue native_ui_passwordbox(int arg_count, SapphireValue* args) { return create_declarative_node("PasswordBox", arg_count, args); }
-static SapphireValue native_ui_hyperlink(int arg_count, SapphireValue* args) { return create_declarative_node("Hyperlink", arg_count, args); }
-static SapphireValue native_ui_expander(int arg_count, SapphireValue* args) { return create_declarative_node("Expander", arg_count, args); }
+
+
+
+
+
+
+
+
+
 
 // Specialized
-static SapphireValue native_ui_datagrid(int arg_count, SapphireValue* args) { return create_declarative_node("DataGrid", arg_count, args); }
-static SapphireValue native_ui_canvas(int arg_count, SapphireValue* args) { return create_declarative_node("Canvas", arg_count, args); }
-static SapphireValue native_ui_tooltip(int arg_count, SapphireValue* args) { return create_declarative_node("Tooltip", arg_count, args); }
-static SapphireValue native_ui_popup(int arg_count, SapphireValue* args) { return create_declarative_node("Popup", arg_count, args); }
-static SapphireValue native_ui_window(int arg_count, SapphireValue* args) { return create_declarative_node("Window", arg_count, args); }
 
-static SapphireValue native_ui_animate(int arg_count, SapphireValue* args) {
-    std::cout << "native_ui_animate called with arg_count=" << arg_count << std::endl;
-    if (arg_count < 2) return false;
-    if (!is_obj_type(args[0], OBJ_STRING)) { std::cout << "arg0 not string" << std::endl; return false; }
-    if (!is_obj_type(args[1], OBJ_MAP)) { std::cout << "arg1 not map" << std::endl; return false; }
 
-    std::string id = static_cast<ObjString*>(args[0].as.obj)->chars;
-    ObjMap* dict = static_cast<ObjMap*>(args[1].as.obj);
-    std::cout << "native_ui_animate id=" << id << std::endl;
 
-    Animation anim;
-    anim.id = id;
-    if (dict->items.count("duration") && dict->items["duration"].type == ValType::VAL_NUMBER)
-        anim.duration = (float)dict->items["duration"].as.number;
-    
-    if (dict->items.count("loop") && dict->items["loop"].type == ValType::VAL_BOOL)
-        anim.loop = dict->items["loop"].as.boolean;
-    
-    if (dict->items.count("easing") && is_obj_type(dict->items["easing"], OBJ_STRING))
-        anim.easing = static_cast<ObjString*>(dict->items["easing"].as.obj)->chars;
-    
-    if (dict->items.count("keyframes") && is_obj_type(dict->items["keyframes"], OBJ_ARRAY)) {
-        auto kfs = static_cast<ObjArray*>(dict->items["keyframes"].as.obj);
-        for (auto& kfVal : kfs->elements) {
-            if (is_obj_type(kfVal, OBJ_MAP)) {
-                ObjMap* kfInst = static_cast<ObjMap*>(kfVal.as.obj);
-                Keyframe kf;
-                if (kfInst->items.count("time") && kfInst->items["time"].type == ValType::VAL_NUMBER)
-                    kf.timeOffset = (float)kfInst->items["time"].as.number;
-                
-                for (auto& [k, v] : kfInst->items) {
-                    if (k == "time") continue;
-                    if (v.type == ValType::VAL_NUMBER) {
-                        kf.numericProps[k] = (float)v.as.number;
-                        std::cout << "Parsed numeric prop: " << k << " = " << kf.numericProps[k] << std::endl;
-                    } else if (is_obj_type(v, OBJ_STRING)) {
-                        kf.colorProps[k] = hexToColor(static_cast<ObjString*>(v.as.obj)->chars);
-                        std::cout << "Parsed color prop: " << k << std::endl;
-                    } else {
-                        std::cout << "Keyframe value for " << k << " has unknown type." << std::endl;
-                    }
-                }
-                anim.keyframes.push_back(kf);
-            } else if (is_obj_type(kfVal, OBJ_INSTANCE)) {
-                ObjInstance* kfInst = static_cast<ObjInstance*>(kfVal.as.obj);
-                Keyframe kf;
-                if (kfInst->fields.count("time") && kfInst->fields["time"].type == ValType::VAL_NUMBER)
-                    kf.timeOffset = (float)kfInst->fields["time"].as.number;
-                
-                for (auto& [k, v] : kfInst->fields) {
-                    if (k == "time") continue;
-                    if (v.type == ValType::VAL_NUMBER) {
-                        kf.numericProps[k] = (float)v.as.number;
-                        std::cout << "Parsed numeric prop (instance): " << k << " = " << kf.numericProps[k] << std::endl;
-                    } else if (is_obj_type(v, OBJ_STRING)) {
-                        kf.colorProps[k] = hexToColor(static_cast<ObjString*>(v.as.obj)->chars);
-                        std::cout << "Parsed color prop (instance): " << k << std::endl;
-                    } else {
-                        std::cout << "Keyframe instance value for " << k << " has unknown type." << std::endl;
-                    }
-                }
-                anim.keyframes.push_back(kf);
-            } else {
-                std::cout << "kfVal is NOT OBJ_MAP or OBJ_INSTANCE. type index: " << (int)kfVal.type << std::endl;
-            }
-        }
-    }
 
-    g_current_vm->ui_state.animations[id] = anim;
-    
-    ActiveAnimation aa;
-    aa.animId = id;
-    aa.elapsedTime = 0.0f;
-    g_current_vm->ui_state.activeAnimations[id] = aa;
 
-    return true;
-}
 
-static SapphireValue native_ui_style(int arg_count, SapphireValue* args) {
-    if (arg_count == 0) return {};
-    
-    if (arg_count == 1 && is_obj_type(args[0], OBJ_STRING)) {
-        std::string path = static_cast<ObjString*>(args[0].as.obj)->chars;
-        std::ifstream file(path);
-        if (!file.is_open()) {
-            std::cerr << "[SAPPHIRE ERROR] Could not open style file: " << path << std::endl;
-            return {};
-        }
-        nlohmann::json j;
-        file >> j;
-        
-        for (auto& [styleName, styleData] : j.items()) {
-            UIStyle style = g_current_vm->ui_state.defaultStyle;
-            if (styleData.contains("bgColor")) style.bgColor = hexToColor(styleData["bgColor"].get<std::string>());
-            if (styleData.contains("textColor")) style.textColor = hexToColor(styleData["textColor"].get<std::string>());
-            if (styleData.contains("accentColor")) style.accentColor = hexToColor(styleData["accentColor"].get<std::string>());
-            if (styleData.contains("hoverColor")) style.hoverColor = hexToColor(styleData["hoverColor"].get<std::string>());
-            if (styleData.contains("borderColor")) style.borderColor = hexToColor(styleData["borderColor"].get<std::string>());
-            if (styleData.contains("borderThickness")) style.borderThickness = styleData["borderThickness"].get<float>();
-            if (styleData.contains("borderRadius")) style.borderRadius = styleData["borderRadius"].get<float>();
-            if (styleData.contains("padding")) style.padding = styleData["padding"].get<float>();
-            if (styleData.contains("fontAlias")) style.fontAlias = styleData["fontAlias"].get<std::string>();
-            if (styleData.contains("fontSize")) style.fontSize = styleData["fontSize"].get<unsigned int>();
-            if (styleData.contains("width")) style.width = styleData["width"].get<float>();
-            if (styleData.contains("height")) style.height = styleData["height"].get<float>();
-            if (styleData.contains("margin")) style.margin = styleData["margin"].get<float>();
-            if (styleData.contains("thickness")) style.thickness = styleData["thickness"].get<float>();
-            
-            g_current_vm->ui_state.stylesheets[styleName] = style;
-        }
-    } else if (arg_count > 0) {
-        std::string styleName = "";
-        if (!is_obj_type(args[0], OBJ_NAMED_ARG) && is_obj_type(args[0], OBJ_STRING)) {
-            styleName = static_cast<ObjString*>(args[0].as.obj)->chars;
-        }
-        UIStyle style = g_current_vm->ui_state.defaultStyle;
-        for (int i = 0; i < arg_count; i++) {
-            if (is_obj_type(args[i], OBJ_NAMED_ARG)) {
-                ObjNamedArg* narg = static_cast<ObjNamedArg*>(args[i].as.obj);
-                std::string key = narg->name->chars;
-                if (key == "name" && is_obj_type(narg->value, OBJ_STRING)) styleName = static_cast<ObjString*>(narg->value.as.obj)->chars;
-                else if (key == "bgColor" && is_obj_type(narg->value, OBJ_STRING)) style.bgColor = hexToColor(static_cast<ObjString*>(narg->value.as.obj)->chars);
-                else if (key == "textColor" && is_obj_type(narg->value, OBJ_STRING)) style.textColor = hexToColor(static_cast<ObjString*>(narg->value.as.obj)->chars);
-                else if (key == "accentColor" && is_obj_type(narg->value, OBJ_STRING)) style.accentColor = hexToColor(static_cast<ObjString*>(narg->value.as.obj)->chars);
-                else if (key == "hoverColor" && is_obj_type(narg->value, OBJ_STRING)) style.hoverColor = hexToColor(static_cast<ObjString*>(narg->value.as.obj)->chars);
-                else if (key == "borderColor" && is_obj_type(narg->value, OBJ_STRING)) style.borderColor = hexToColor(static_cast<ObjString*>(narg->value.as.obj)->chars);
-                else if (key == "borderThickness" && narg->value.type == ValType::VAL_NUMBER) style.borderThickness = (float)narg->value.as.number;
-                else if (key == "borderRadius" && narg->value.type == ValType::VAL_NUMBER) style.borderRadius = (float)narg->value.as.number;
-                else if (key == "padding" && narg->value.type == ValType::VAL_NUMBER) style.padding = (float)narg->value.as.number;
-                else if (key == "fontAlias" && is_obj_type(narg->value, OBJ_STRING)) style.fontAlias = static_cast<ObjString*>(narg->value.as.obj)->chars;
-                else if (key == "fontSize" && narg->value.type == ValType::VAL_NUMBER) style.fontSize = (unsigned int)narg->value.as.number;
-                else if (key == "width" && narg->value.type == ValType::VAL_NUMBER) style.width = (float)narg->value.as.number;
-                else if (key == "height" && narg->value.type == ValType::VAL_NUMBER) style.height = (float)narg->value.as.number;
-                else if (key == "margin" && narg->value.type == ValType::VAL_NUMBER) style.margin = (float)narg->value.as.number;
-                else if (key == "thickness" && narg->value.type == ValType::VAL_NUMBER) style.thickness = (float)narg->value.as.number;
-            }
-        }
-        if (!styleName.empty()) {
-            g_current_vm->ui_state.stylesheets[styleName] = style;
-        }
-    }
-    return {};
-}
+
+
+
 
 static void compute_sizes(std::shared_ptr<UINode> node) {
     if (!node) return;
@@ -1867,360 +1193,23 @@ static void apply_animations_to_tree(std::shared_ptr<UINode> node, float dt) {
     }
 }
 
-static SapphireValue native_ui_get_input_text(int arg_count, SapphireValue* args) {
-    if (arg_count == 1 && is_obj_type(args[0], OBJ_STRING)) {
-        std::string id = static_cast<ObjString*>(args[0].as.obj)->chars;
-        if (g_current_vm->ui_state.inputTexts.count(id)) {
-            return new_string(g_current_vm, g_current_vm->ui_state.inputTexts[id]);
-        }
-    }
-    return new_string(g_current_vm, "");
-}
 
-static SapphireValue native_ui_render(int arg_count, SapphireValue* args) {
-    if (!g_current_vm->sfml_window) return {};
-    if (arg_count < 1 || !is_obj_type(args[0], OBJ_INSTANCE)) return {};
 
-    while (const std::optional event = g_current_vm->sfml_window->pollEvent()) {
-        if (event->is<sf::Event::Closed>()) {
-            g_current_vm->sfml_window->close();
-            exit(0);
-        }
-        if (const auto* resized = event->getIf<sf::Event::Resized>()) {
-            sf::FloatRect visibleArea({0.f, 0.f}, {(float)resized->size.x, (float)resized->size.y});
-            g_current_vm->sfml_window->setView(sf::View(visibleArea));
-        }
-        // Capture click event (position + flag) for reliable cursor placement
-        if (const auto* mb = event->getIf<sf::Event::MouseButtonPressed>()) {
-            if (mb->button == sf::Mouse::Button::Left) {
-                g_current_vm->ui_state.mouseJustClicked = true;
-                g_current_vm->ui_state.mouseClickPos = sf::Vector2f((float)mb->position.x, (float)mb->position.y);
-            }
-        }
-        if (!g_current_vm->ui_state.focusedInputId.empty() && g_current_vm->ui_state.inputTexts.count(g_current_vm->ui_state.focusedInputId)) {
-            const std::string& fid = g_current_vm->ui_state.focusedInputId;
-            std::string& focusedText = g_current_vm->ui_state.inputTexts[fid];
-            size_t& cur = g_current_vm->ui_state.cursorPositions[fid];
-            // Clamp cursor to valid range (text may have been modified externally)
-            if (cur > focusedText.size()) cur = focusedText.size();
-            if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) {
-                if (keyPressed->code == sf::Keyboard::Key::Left) {
-                    if (cur > 0) cur--;
-                } else if (keyPressed->code == sf::Keyboard::Key::Right) {
-                    if (cur < focusedText.size()) cur++;
-                } else if (keyPressed->code == sf::Keyboard::Key::Home) {
-                    cur = 0;
-                } else if (keyPressed->code == sf::Keyboard::Key::End) {
-                    cur = focusedText.size();
-                } else if (keyPressed->code == sf::Keyboard::Key::Delete) {
-                    if (cur < focusedText.size()) {
-                        focusedText.erase(cur, 1);
-                        g_current_vm->ui_state.textChangedState[fid] = true;
-                    }
-                }
-            }
-            if (const auto* textEntered = event->getIf<sf::Event::TextEntered>()) {
-                if (textEntered->unicode < 128) {
-                    char c = static_cast<char>(textEntered->unicode);
-                    if (c == '\b') {
-                        if (cur > 0) {
-                            focusedText.erase(cur - 1, 1);
-                            cur--;
-                            g_current_vm->ui_state.textChangedState[fid] = true;
-                        }
-                    } else if (c >= 32 && c <= 126) {
-                        focusedText.insert(cur, 1, c);
-                        cur++;
-                        g_current_vm->ui_state.textChangedState[g_current_vm->ui_state.focusedInputId] = true;
-                    }
-                }
-            }
-        }
-    }
 
-    g_current_vm->ui_state.clickHandlers.clear();
-    int counter = 0;
-    auto rootNode = build_ui_tree(static_cast<ObjInstance*>(args[0].as.obj), counter);
-    g_current_vm->ui_state.rootNode = rootNode;
 
-    auto now = std::chrono::steady_clock::now();
-    float dt = 0.016f;
-    if (!g_current_vm->ui_state.firstRender) {
-        dt = std::chrono::duration_cast<std::chrono::duration<float>>(now - g_current_vm->ui_state.lastRenderTime).count();
-    }
-    g_current_vm->ui_state.firstRender = false;
-    g_current_vm->ui_state.lastRenderTime = now;
 
-    apply_animations_to_tree(g_current_vm->ui_state.rootNode, dt);
 
-    if (g_current_vm->ui_state.layoutEngineEnabled && g_current_vm->ui_state.rootNode) {
-        sf::Vector2u winSize = g_current_vm->sfml_window->getSize();
-        g_current_vm->ui_state.rootNode->width = (float)winSize.x;
-        g_current_vm->ui_state.rootNode->height = (float)winSize.y;
-        compute_sizes(g_current_vm->ui_state.rootNode);
-        g_current_vm->ui_state.rootNode->width = (float)winSize.x;
-        g_current_vm->ui_state.rootNode->height = (float)winSize.y;
-        place_children(g_current_vm->ui_state.rootNode, 0.0f, 0.0f);
-    }
 
-    sf::Vector2i m = sf::Mouse::getPosition(*g_current_vm->sfml_window);
-    bool mouseJustClicked = g_current_vm->ui_state.mouseJustClicked;
-    g_current_vm->ui_state.mouseJustClicked = false; // consume the click
-    hit_test_tree(g_current_vm->ui_state.rootNode, m, mouseJustClicked);
 
-    sf::Color clearColor = g_current_vm->ui_state.currentStyleColor;
-    if (g_current_vm->ui_state.activeStyle != nullptr) clearColor = g_current_vm->ui_state.activeStyle->bgColor;
-    g_current_vm->sfml_window->clear(clearColor);
-    deferred_render_nodes.clear();
-    render_ui_tree(g_current_vm->ui_state.rootNode);
-    for (auto& node : deferred_render_nodes) {
-        render_ui_tree(node);
-    }
-    g_current_vm->sfml_window->display();
 
-    for (const auto& [id, clicked] : g_current_vm->ui_state.clickState) {
-        if (clicked && g_current_vm->ui_state.clickHandlers.count(id)) {
-            g_current_vm->ui_state.clickState[id] = false;
-            return g_current_vm->ui_state.clickHandlers[id];
-        }
-    }
-    
-    for (const auto& [id, changed] : g_current_vm->ui_state.textChangedState) {
-        if (changed && g_current_vm->ui_state.changeHandlers.count(id)) {
-            g_current_vm->ui_state.textChangedState[id] = false;
-            return g_current_vm->ui_state.changeHandlers[id];
-        }
-    }
 
-    return {};
-}
 
-static SapphireValue native_len(int arg_count, SapphireValue* args) {
-    if (arg_count != 1) {
-        if (!g_current_vm->soft_mode) {
-            std::cerr << "Runtime Error: len() expects 1 argument." << std::endl;
-        }
-        return {};
-    }
 
-    SapphireValue value = args[0];
 
-    if (is_obj_type(value, OBJ_STRING)) {
-        ObjString* str = static_cast<ObjString*>(value.as.obj);
-        return (double)str->chars.length();
-    }
-    else if (is_obj_type(value, OBJ_ARRAY)) {
-        auto array_obj = static_cast<ObjArray*>(value.as.obj);
-        return (double)array_obj->elements.size();
-    }
 
-    if (!g_current_vm->soft_mode) {
-        std::cerr << "Runtime Error: len() argument must be a string or an array." << std::endl;
-    }
-    return {};
-}
 
-static SapphireValue native_http_get(int arg_count, SapphireValue* args) {
-    if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) {
-        if (!g_current_vm->soft_mode) {
-            std::cerr << "Runtime Error: HTTP.get() expects 1 string type argument (the URL)." << std::endl;
-        }
-        return {};
-    }
 
-    ObjString* url_obj = static_cast<ObjString*>(args[0].as.obj);
-    std::string url_str = url_obj->chars;
-    std::string host, path;
 
-    size_t host_start = url_str.find("://");
-    if (host_start == std::string::npos) {
-        if (!g_current_vm->soft_mode) {
-            std::cerr << "Runtime Error: Invalid URL." << std::endl;
-        }
-        return {};
-    }
-    host_start += 3;
-    size_t path_start = url_str.find('/', host_start);
-    if (path_start == std::string::npos) {
-        host = url_str;
-        path = "/";
-    } else {
-        host = url_str.substr(0, path_start);
-        path = url_str.substr(path_start);
-    }
-
-    try {
-        httplib::Client cli(host.c_str());
-        cli.set_follow_location(true);
-        auto res = cli.Get(path.c_str());
-
-        if (res && res->status == 200) {
-            return new_string(g_current_vm, res->body);
-        }
-    } catch (...) {}
-
-    return {};
-}
-
-static SapphireValue native_http_ping(int arg_count, SapphireValue* args) {
-    if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) return false;
-
-    std::string url_str = static_cast<ObjString*>(args[0].as.obj)->chars;
-
-    try {
-        httplib::Client cli(url_str.c_str());
-        cli.set_connection_timeout(std::chrono::seconds(2));
-        if (auto res = cli.Get("/")) {
-            return res->status == 200;
-        }
-    } catch (...) {}
-
-    return false;
-}
-
-static SapphireValue native_http_post(int arg_count, SapphireValue* args) {
-    if (arg_count < 2 || !is_obj_type(args[0], OBJ_STRING) || !is_obj_type(args[1], OBJ_STRING)) return {};
-
-    std::string url_str = static_cast<ObjString*>(args[0].as.obj)->chars;
-    std::string body = static_cast<ObjString*>(args[1].as.obj)->chars;
-    std::string content_type = (arg_count == 3 && is_obj_type(args[2], OBJ_STRING))
-                               ? static_cast<ObjString*>(args[2].as.obj)->chars
-                               : "application/json";
-
-    try {
-        httplib::Client cli(url_str.c_str());
-        if (auto res = cli.Post("/", body, content_type.c_str())) {
-            return new_string(g_current_vm, res->body);
-        }
-    } catch (...) {}
-
-    return {};
-}
-
-static SapphireValue native_http_download(int arg_count, SapphireValue* args) {
-    if (arg_count != 2 || !is_obj_type(args[0], OBJ_STRING) || !is_obj_type(args[1], OBJ_STRING)) return false;
-
-    std::string url_str = static_cast<ObjString*>(args[0].as.obj)->chars;
-    std::string path = static_cast<ObjString*>(args[1].as.obj)->chars;
-
-    try {
-        httplib::Client cli(url_str.c_str());
-        auto res = cli.Get("/");
-        if (res && res->status == 200) {
-            std::ofstream file(path, std::ios::binary);
-            if (!file.is_open()) return false;
-            file << res->body;
-            file.close();
-            return true;
-        }
-    } catch (...) {}
-
-    return false;
-}
-
-static SapphireValue native_http_serve(int arg_count, SapphireValue* args) {
-    if (arg_count != 2 || args[0].type != ValType::VAL_NUMBER || args[1].type != ValType::VAL_OBJ) {
-        if (!g_current_vm->soft_mode) std::cerr << "Runtime Error: httpServer() expects a number and a function/closure." << std::endl;
-        return false;
-    }
-    
-    int port = (int)args[0].as.number;
-    SapphireValue callback = args[1];
-    
-    httplib::Server svr;
-    VM* original_vm = g_current_vm;
-    
-    auto handler = [callback, original_vm](const httplib::Request& req, httplib::Response& res) {
-        std::lock_guard<std::mutex> lock(thread_mutex);
-        
-        VM* prev_vm = g_current_vm;
-        g_current_vm = original_vm;
-        
-        ObjMap* req_map = new_map(g_current_vm);
-        req_map->items["method"] = new_string(g_current_vm, req.method);
-        req_map->items["path"] = new_string(g_current_vm, req.path);
-        req_map->items["body"] = new_string(g_current_vm, req.body);
-        
-        int target_frame_count = g_current_vm->frame_count;
-        g_current_vm->push(callback);
-        g_current_vm->push(SapphireValue(req_map));
-        
-        if (g_current_vm->call_value(callback, 1)) {
-            if (g_current_vm->run(target_frame_count)) {
-                SapphireValue result = g_current_vm->pop();
-                if (is_obj_type(result, OBJ_STRING)) {
-                    res.set_content(static_cast<ObjString*>(result.as.obj)->chars, "text/plain");
-                } else if (is_obj_type(result, OBJ_MAP)) {
-                    ObjMap* map_res = static_cast<ObjMap*>(result.as.obj);
-                    std::string body = "";
-                    std::string ctype = "text/plain";
-                    if (map_res->items.count("body")) {
-                        if (is_obj_type(map_res->items["body"], OBJ_STRING)) {
-                            body = static_cast<ObjString*>(map_res->items["body"].as.obj)->chars;
-                        }
-                    }
-                    if (map_res->items.count("status")) {
-                        res.status = (int)map_res->items["status"].as.number;
-                    }
-                    if (map_res->items.count("contentType")) {
-                        if (is_obj_type(map_res->items["contentType"], OBJ_STRING)) {
-                            ctype = static_cast<ObjString*>(map_res->items["contentType"].as.obj)->chars;
-                        }
-                    }
-                    
-                    if (map_res->items.count("headers")) {
-                        if (is_obj_type(map_res->items["headers"], OBJ_MAP)) {
-                            ObjMap* headers_map = static_cast<ObjMap*>(map_res->items["headers"].as.obj);
-                            for (auto const& [key, val] : headers_map->items) {
-                                if (is_obj_type(val, OBJ_STRING)) {
-                                    std::string header_val = static_cast<ObjString*>(val.as.obj)->chars;
-                                    res.set_header(key, header_val);
-                                }
-                            }
-                        }
-                    }
-
-                    res.set_content(body, ctype);
-                }
-            }
-        }
-        
-        g_current_vm = prev_vm;
-    };
-
-    svr.Get(".*", handler);
-    svr.Post(".*", handler);
-    svr.Put(".*", handler);
-    svr.Patch(".*", handler);
-    svr.Delete(".*", handler);
-    svr.Options(".*", handler);
-
-    std::cout << "[Sapphire] HTTP Server natively listening on port " << port << "..." << std::endl;
-    bool success = svr.listen("0.0.0.0", port);
-    return success;
-}
-
-static SapphireValue native_json_parse(int arg_count, SapphireValue* args) {
-    if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) {
-        if (!g_current_vm->soft_mode) {
-            std::cerr << "Runtime Error: JSON.parse() expects 1 string argument." << std::endl;
-        }
-        return {};
-    }
-
-    ObjString* json_string_obj = static_cast<ObjString*>(args[0].as.obj);
-    const std::string& json_string = json_string_obj->chars;
-
-    try {
-        nlohmann::json parsed_json = nlohmann::json::parse(json_string);
-        return convertJsonToSapphire(g_current_vm, parsed_json);
-    } catch (const std::exception& e) {
-        if (!g_current_vm->soft_mode) {
-            std::cerr << "Runtime Error: Failed to parse JSON string: " << e.what() << std::endl;
-        }
-        return {};
-    }
-}
 
 static nlohmann::json convertSapphireToJson(SapphireValue val) {
     if (val.type == ValType::VAL_NUMBER) {
@@ -2259,16 +1248,7 @@ static nlohmann::json convertSapphireToJson(SapphireValue val) {
     return nullptr;
 }
 
-static SapphireValue native_json_stringify(int arg_count, SapphireValue* args) {
-    if (arg_count != 1) {
-        if (!g_current_vm->soft_mode) {
-            std::cerr << "Runtime Error: JSON.stringify() expects 1 argument." << std::endl;
-        }
-        return {};
-    }
-    nlohmann::json j = convertSapphireToJson(args[0]);
-    return new_string(g_current_vm, j.dump());
-}
+
 
 static SapphireValue core_create_instance(int arg_count, SapphireValue* args) {
     if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) {
@@ -2303,388 +1283,69 @@ static SapphireValue core_create_instance(int arg_count, SapphireValue* args) {
     return instance;
 }
 
-static SapphireValue native_list_util_create(int arg_count, SapphireValue* args) {
-    if (arg_count != 0) {
-        if (!g_current_vm->soft_mode) {
-            std::cerr << "Runtime Error: ListUtil.create() expects 0 arguments." << std::endl;
-        }
-        return {};
-    }
-    return new_array(g_current_vm);
-}
-
-static SapphireValue native_list_util_append(int arg_count, SapphireValue* args) {
-    if (arg_count != 2 || !is_obj_type(args[0], OBJ_ARRAY)) {
-        if (!g_current_vm->soft_mode) {
-            std::cerr << "Runtime Error: ListUtil.append() expects a list and a value." << std::endl;
-        }
-        return {};
-    }
-    auto list_obj = static_cast<ObjArray*>(args[0].as.obj);
-    list_obj->elements.push_back(args[1]);
-    return args[0];
-}
-
-static SapphireValue native_list_util_get(int arg_count, SapphireValue* args) {
-    if (arg_count != 2 || !is_obj_type(args[0], OBJ_ARRAY) || args[1].type != ValType::VAL_NUMBER) {
-        if (!g_current_vm->soft_mode) {
-            std::cerr << "Runtime Error: ListUtil.get() expects a list and an index (number)." << std::endl;
-        }
-        return {};
-    }
-    auto list_obj = static_cast<ObjArray*>(args[0].as.obj);
-    int index = static_cast<int>(args[1].as.number);
-
-    if (index < 0 || index >= list_obj->elements.size()) {
-        if (!g_current_vm->soft_mode) {
-            std::cerr << "Runtime Error: ListUtil.get(): Index out of bounds." << std::endl;
-        }
-        return {};
-    }
-    return list_obj->elements[index];
-}
-
-static SapphireValue native_list_util_set(int arg_count, SapphireValue* args) {
-    if (arg_count != 3 || !is_obj_type(args[0], OBJ_ARRAY) || args[1].type != ValType::VAL_NUMBER) {
-        if (!g_current_vm->soft_mode) {
-            std::cerr << "Runtime Error: ListUtil.set() expects a list, an index (number), and a value." << std::endl;
-        }
-        return {};
-    }
-    auto list_obj = static_cast<ObjArray*>(args[0].as.obj);
-    int index = static_cast<int>(args[1].as.number);
-    SapphireValue new_value = args[2];
-
-    if (index < 0 || index >= list_obj->elements.size()) {
-        if (!g_current_vm->soft_mode) {
-            std::cerr << "Runtime Error: ListUtil.set(): Index out of bounds." << std::endl;
-        }
-        return {};
-    }
-    list_obj->elements[index] = new_value;
-    return args[0];
-}
-
-static SapphireValue native_list_util_length(int arg_count, SapphireValue* args) {
-    if (arg_count != 1 || !is_obj_type(args[0], OBJ_ARRAY)) {
-        if (!g_current_vm->soft_mode) {
-            std::cerr << "Runtime Error: ListUtil.length() expects 1 list argument." << std::endl;
-        }
-        return 0.0;
-    }
-    auto list_obj = static_cast<ObjArray*>(args[0].as.obj);
-    return (double)list_obj->elements.size();
-}
-
-static SapphireValue native_list_util_remove_at(int arg_count, SapphireValue* args) {
-    if (arg_count != 2 || !is_obj_type(args[0], OBJ_ARRAY) || args[1].type != ValType::VAL_NUMBER) {
-        if (!g_current_vm->soft_mode) {
-            std::cerr << "Runtime Error: ListUtil.removeAt() expects a list and an index (number)." << std::endl;
-        }
-        return {};
-    }
-    auto list_obj = static_cast<ObjArray*>(args[0].as.obj);
-    int index = static_cast<int>(args[1].as.number);
-
-    if (index < 0 || index >= list_obj->elements.size()) {
-        if (!g_current_vm->soft_mode) {
-            std::cerr << "Runtime Error: ListUtil.removeAt(): Index out of bounds." << std::endl;
-        }
-        return {};
-    }
-
-    SapphireValue removed_value = list_obj->elements[index];
-    list_obj->elements.erase(list_obj->elements.begin() + index);
-    return removed_value;
-}
-
-static SapphireValue native_list_util_contains(int arg_count, SapphireValue* args) {
-    if (arg_count != 2 || !is_obj_type(args[0], OBJ_ARRAY)) {
-        if (!g_current_vm->soft_mode) {
-            std::cerr << "Runtime Error: ListUtil.contains() expects a list and a value." << std::endl;
-        }
-        return false;
-    }
-    auto list_obj = static_cast<ObjArray*>(args[0].as.obj);
-    SapphireValue value_to_find = args[1];
-
-    for (const auto& element : list_obj->elements) {
-        if (values_equal(element, value_to_find)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-static SapphireValue native_math_rand(int arg_count, SapphireValue* args) {
-    if (arg_count > 2) {
-        if (!g_current_vm->soft_mode) {
-            std::cerr << "Runtime Error: Math.rand() expects 0, 1 or 2 arguments." << std::endl;
-        }
-        return {};
-    }
-
-    double min_val = 0.0;
-    double max_val = 1.0;
-
-    if (arg_count == 1) {
-        if (args[0].type != ValType::VAL_NUMBER) {
-            if (!g_current_vm->soft_mode) {
-                std::cerr << "Runtime Error: Math.rand(max) expects a number for max value." << std::endl;
-            }
-            return {};
-        }
-        max_val = args[0].as.number;
-    } else if (arg_count == 2) {
-        if (args[0].type != ValType::VAL_NUMBER || args[1].type != ValType::VAL_NUMBER) {
-            if (!g_current_vm->soft_mode) {
-                std::cerr << "Runtime Error: Math.rand(min, max) expects numbers for min and max values." << std::endl;
-            }
-            return {};
-        }
-        min_val = args[0].as.number;
-        max_val = args[1].as.number;
-    }
-
-    if (min_val > max_val) {
-        std::swap(min_val, max_val);
-    }
-
-    std::uniform_real_distribution<double> distrib(min_val, max_val);
-    return distrib(gen);
-}
-
-static SapphireValue native_string_to_double(int arg_count, SapphireValue* args) {
-    if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) {
-        return 0.0;
-    }
-    ObjString* str = static_cast<ObjString*>(args[0].as.obj);
-    try {
-        return std::stod(str->chars);
-    } catch (const std::exception&) {
-        return 0.0;
-    }
-}
-
-static SapphireValue native_evaluate(int arg_count, SapphireValue* args) {
-    if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) {
-        return new_string(g_current_vm, "Error");
-    }
-
-    ObjString* source_string = static_cast<ObjString*>(args[0].as.obj);
-    std::string source_to_run = source_string->chars;
-
-    VM* previous_vm = g_current_vm;
-
-    ScriptConfig temp_config;
-    VM temp_vm;
-    temp_vm.globals = previous_vm->globals;
-
-    g_current_vm = &temp_vm;
-    SapphireValue result = temp_vm.interpret(source_to_run);
-    g_current_vm = previous_vm;
-
-    if (result.type == ValType::VAL_NIL) {
-        return new_string(g_current_vm, "Error");
-    }
-    else if (result.type == ValType::VAL_BOOL) {
-        return new_string(g_current_vm, result.as.boolean ? "true" : "false");
-    }
-    else if (result.type == ValType::VAL_NUMBER) {
-        double num = result.as.number;
-        std::string s = std::to_string(num);
-        s.erase(s.find_last_not_of('0') + 1, std::string::npos);
-        if (s.back() == '.') {
-            s.pop_back();
-        }
-        return new_string(g_current_vm, s);
-    }
-    else if (is_obj_type(result, OBJ_STRING)) {
-        ObjString* str_obj = static_cast<ObjString*>(result.as.obj);
-        return new_string(g_current_vm, str_obj->chars);
-    }
-
-    return new_string(g_current_vm, "Error");
-}
 
 
 
-static SapphireValue native_system_sleep(int arg_count, SapphireValue* args) {
-    if (arg_count != 1 || args[0].type != ValType::VAL_NUMBER) {
-        return {};
-    }
-    int ms = static_cast<int>(args[0].as.number);
-    std::this_thread::sleep_for(std::chrono::milliseconds(ms));
-    return {};
-}
 
-static SapphireValue native_system_exec(int arg_count, SapphireValue* args) {
-    if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) {
-        if (!g_current_vm->soft_mode) {
-            std::cerr << "Runtime Error: exec() expects 1 string argument (the command)." << std::endl;
-        }
-        return {};
-    }
-    std::string command = static_cast<ObjString*>(args[0].as.obj)->chars;
-    int result = std::system(command.c_str());
-    return (double)result;
-}
 
-static SapphireValue native_system_get_os(int arg_count, SapphireValue* args) {
-#ifdef _WIN32
-    return new_string(g_current_vm, "Windows");
-#elif __APPLE__
-    return new_string(g_current_vm, "MacOS");
-#elif __linux__
-    return new_string(g_current_vm, "Linux");
-#else
-    return new_string(g_current_vm, "Unknown");
-#endif
-}
 
-static SapphireValue native_system_get_env(int arg_count, SapphireValue* args) {
-    if (arg_count < 1 || !is_obj_type(args[0], OBJ_STRING)) {
-        return {};
-    }
 
-    std::string var_name = static_cast<ObjString*>(args[0].as.obj)->chars;
-    const char* env_value = std::getenv(var_name.c_str());
 
-    if (env_value) {
-        return new_string(g_current_vm, env_value);
-    }
 
-    if (arg_count == 2) {
-        return args[1];
-    }
 
-    return {};
-}
 
-static SapphireValue native_system_get_clipboard(int arg_count, SapphireValue* args) {
-    std::string text = sf::Clipboard::getString().toAnsiString();
-    return new_string(g_current_vm, text);
-}
 
-static SapphireValue native_debug_print_stack(int arg_count, SapphireValue* args) {
-    std::cout << "--- SAPPHIRE STACK DUMP ---" << std::endl;
-    for (SapphireValue* slot = g_current_vm->stack; slot < g_current_vm->stack_top; slot++) {
-        std::cout << "[ ";
-        print_value(*slot);
-        std::cout << " ]" << std::endl;
-    }
-    std::cout << "--- END OF STACK ---" << std::endl;
-    return {};
-}
 
-static SapphireValue native_debug_dump_globals(int arg_count, SapphireValue* args) {
-    std::cout << "--- SAPPHIRE GLOBALS DUMP ---" << std::endl;
-    for (auto const& [name, value] : g_current_vm->globals) {
-        std::cout << name << " => ";
-        print_value(value);
-        std::cout << std::endl;
-    }
-    return {};
-}
 
-static SapphireValue native_math_abs(int arg_count, SapphireValue* args) {
-    if (arg_count < 1 || args[0].type != ValType::VAL_NUMBER) return 0.0;
-    return std::abs(args[0].as.number);
-}
 
-static SapphireValue native_math_floor(int arg_count, SapphireValue* args) {
-    if (arg_count < 1 || args[0].type != ValType::VAL_NUMBER) return 0.0;
-    return std::floor(args[0].as.number);
-}
 
-static SapphireValue native_math_ceil(int arg_count, SapphireValue* args) {
-    if (arg_count < 1 || args[0].type != ValType::VAL_NUMBER) return 0.0;
-    return std::ceil(args[0].as.number);
-}
 
-static SapphireValue native_math_sin(int arg_count, SapphireValue* args) {
-    if (arg_count < 1 || args[0].type != ValType::VAL_NUMBER) return 0.0;
-    return std::sin(args[0].as.number);
-}
 
-static SapphireValue native_math_cos(int arg_count, SapphireValue* args) {
-    if (arg_count < 1 || args[0].type != ValType::VAL_NUMBER) return 0.0;
-    return std::cos(args[0].as.number);
-}
 
-static SapphireValue native_math_log(int arg_count, SapphireValue* args) {
-    if (arg_count < 1 || args[0].type != ValType::VAL_NUMBER) return 0.0;
-    return std::log(args[0].as.number);
-}
 
-static SapphireValue native_get_quote(int arg_count, SapphireValue* args) {
-    return new_string(g_current_vm, "\"");
-}
 
-static SapphireValue native_math_pow(int arg_count, SapphireValue* args) {
-    if (arg_count < 2) return 0.0;
-    return std::pow(args[0].as.number, args[1].as.number);
-}
 
-static SapphireValue native_math_min(int arg_count, SapphireValue* args) {
-    if (arg_count < 2) return args[0];
-    double a = args[0].as.number;
-    double b = args[1].as.number;
-    return std::min(a, b);
-}
 
-static SapphireValue native_math_max(int arg_count, SapphireValue* args) {
-    if (arg_count < 2) return args[0];
-    double a = args[0].as.number;
-    double b = args[1].as.number;
-    return std::max(a, b);
-}
 
-static SapphireValue native_math_clamp(int arg_count, SapphireValue* args) {
-    if (arg_count < 3) return args[0];
-    double v = args[0].as.number;
-    double lo = args[1].as.number;
-    double hi = args[2].as.number;
-    return std::clamp(v, lo, hi);
-}
 
-static SapphireValue native_math_lerp(int arg_count, SapphireValue* args) {
-    if (arg_count < 3) return args[0];
-    double a = args[0].as.number;
-    double b = args[1].as.number;
-    double t = args[2].as.number;
-    return a + t * (b - a);
-}
 
-static SapphireValue native_color_hex_to_rgb(int arg_count, SapphireValue* args) {
-    if (arg_count < 1 || !is_obj_type(args[0], OBJ_STRING)) return {};
 
-    std::string hex = static_cast<ObjString*>(args[0].as.obj)->chars;
-    if (hex[0] == '#') hex.erase(0, 1);
-    if (hex.length() != 6) return {};
 
-    uint32_t value = std::stoul(hex, nullptr, 16);
-    auto array_obj = new_array(g_current_vm);
-    array_obj->elements.push_back((double)((value >> 16) & 0xFF)); // R
-    array_obj->elements.push_back((double)((value >> 8) & 0xFF));  // G
-    array_obj->elements.push_back((double)(value & 0xFF));         // B
 
-    return array_obj;
-}
 
-static SapphireValue native_check_collision(int arg_count, SapphireValue* args) {
-    if (arg_count < 8) return false;
-    double x1 = args[0].as.number;
-    double y1 = args[1].as.number;
-    double w1 = args[2].as.number;
-    double h1 = args[3].as.number;
-    double x2 = args[4].as.number;
-    double y2 = args[5].as.number;
-    double w2 = args[6].as.number;
-    double h2 = args[7].as.number;
 
-    return (x1 < x2 + w2 && x1 + w1 > x2 && y1 < y2 + h2 && y1 + h1 > y2);
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 VM::VM() : VM(ScriptConfig{}) {
 }
