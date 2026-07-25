@@ -48,31 +48,6 @@ jobs:
           set -e
           if [ -n "$MARKDOWN" ]; then
             echo "$MARKDOWN" > release_body.md
-            # Adiciona o guia do MinGW de forma fixa caso o Copilot esqueça
-            echo "" >> release_body.md
-            
-            # Anexa os exemplos de código de forma estática para garantir que apareçam
-            cat .github/v1.0.8-examples.md >> release_body.md
-            
-            echo "## How to Compile (MinGW)" >> release_body.md
-            echo "" >> release_body.md
-            echo "To build Sapphire from source on Windows using MSYS2 and MinGW:" >> release_body.md
-            echo "" >> release_body.md
-            echo "1. Install [MSYS2](https://www.msys2.org/)." >> release_body.md
-            echo "2. Open the **MSYS2 MINGW64** terminal and install the dependencies:" >> release_body.md
-            echo "   \`\`\`bash" >> release_body.md
-            echo "   pacman -S mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc mingw-w64-x86_64-make mingw-w64-x86_64-sfml mingw-w64-x86_64-openssl" >> release_body.md
-            echo "   \`\`\`" >> release_body.md
-            echo "3. Clone the repository:" >> release_body.md
-            echo "   \`\`\`bash" >> release_body.md
-            echo "   git clone https://github.com/foxzyt/Sapphire.git" >> release_body.md
-            echo "   cd Sapphire" >> release_body.md
-            echo "   \`\`\`" >> release_body.md
-            echo "4. Configure and build:" >> release_body.md
-            echo "   \`\`\`bash" >> release_body.md
-            echo "   cmake -B build -G \"MinGW Makefiles\" -DCMAKE_BUILD_TYPE=Release -DSFML_DIR=/mingw64/lib/cmake/SFML -DSFML_STATIC_LIBRARIES=ON -DOPENSSL_ROOT_DIR=/mingw64 -DOPENSSL_USE_STATIC_LIBS=TRUE" >> release_body.md
-            echo "   cmake --build build --config Release -j 8" >> release_body.md
-            echo "   \`\`\`" >> release_body.md
           else
             echo "# Draft release" > release_body.md
             echo "" >> release_body.md
@@ -82,20 +57,21 @@ jobs:
             git log --pretty=format:'- %s (%h)' "${{ steps.prev_tag.outputs.tag }}".."${{ github.sha }}" >> release_body.md
           fi
 
-      - name: Create temporary tag
-        shell: bash
-        run: |
-          set -e
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git tag "v-draft-${{ github.run_number }}" "${{ github.event.pull_request.merge_commit_sha }}"
-          git push origin "v-draft-${{ github.run_number }}"
+          # Anexa os exemplos e o guia do MinGW em ambos os caminhos,
+          # mesmo quando o Copilot falha e usamos o fallback.
+          echo "" >> release_body.md
+          cat .github/release-examples.md >> release_body.md
+          cat .github/release-footer.md >> release_body.md
 
       - name: Criar Rascunho no GitHub
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v-draft-${{ github.run_number }}
-          name: Rascunho de Release #${{ github.run_number }}
+          # No real tag is pushed: with draft: true, GitHub holds this tag name
+          # as pending until someone publishes the draft. Pushing the tag here
+          # used to trigger release.yml and publish a real release on every merge.
+          tag_name: v-next-${{ github.run_number }}
+          target_commitish: ${{ github.event.pull_request.merge_commit_sha }}
+          name: "Rascunho de Release #${{ github.run_number }}"
           body_path: release_body.md
           draft: true
           prerelease: false

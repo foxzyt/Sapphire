@@ -3,19 +3,43 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      # Only real version tags (v1.0.9, v2.0, ...). Deliberately does NOT match
+      # draft tags like v-draft-*/v-next-*, which must never publish a release.
+      - 'v[0-9]*'
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pages: write
-  id-token: write
+  contents: read
 
 jobs:
   build-and-release:
     runs-on: windows-latest
+    permissions:
+      # Needs write to create the GitHub Release and upload the zip.
+      contents: write
+    env:
+      # Pin the ccache dir to the workspace so the msys2 shell (native ccache
+      # binary) and actions/cache (host runner) agree on the same location.
+      CCACHE_DIR: ${{ github.workspace }}\.ccache
 
     steps:
+      # workflow_dispatch can be run from any branch; without a real v* tag
+      # checked out, the release would be tagged with the branch name (e.g.
+      # "main"). Fail fast instead.
+      - name: Validate ref is a release tag
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        env:
+          # Passed via env instead of ${{ }} interpolation inside the script,
+          # so a ref name can never be executed as shell code.
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ "$REF_TYPE" != "tag" ] || [[ "$REF_NAME" != v[0-9]* ]]; then
+            echo "::error::This workflow must be dispatched from a version tag (v1.2.3), not '$REF_NAME'. Push a tag and run it from there."
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -25,19 +49,28 @@ jobs:
         uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
-          update: true
           install: >-
             mingw-w64-x86_64-cmake
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-make
             mingw-w64-x86_64-sfml
             mingw-w64-x86_64-openssl
+            mingw-w64-x86_64-ccache
+
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ${{ runner.os }}-ccache-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-
 
       - name: Configure CMake
         shell: msys2 {0}
         run: |
           cmake -S . -B build -G "MinGW Makefiles" \
             -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DSFML_DIR=/mingw64/lib/cmake/SFML \
             -DSFML_STATIC_LIBRARIES=ON \
             -DOPENSSL_ROOT_DIR=/mingw64 \
@@ -107,27 +140,9 @@ jobs:
           fi
 
           echo "" >> release_body.md
-          cat .github/v1.0.8-examples.md >> release_body.md
-          
-          echo "## How to Compile (MinGW)" >> release_body.md
-          echo "" >> release_body.md
-          echo "To build Sapphire from source on Windows using MSYS2 and MinGW:" >> release_body.md
-          echo "" >> release_body.md
-          echo "1. Install [MSYS2](https://www.msys2.org/)." >> release_body.md
-          echo "2. Open the **MSYS2 MINGW64** terminal and install the dependencies:" >> release_body.md
-          echo "   \`\`\`bash" >> release_body.md
-          echo "   pacman -S mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc mingw-w64-x86_64-make mingw-w64-x86_64-sfml mingw-w64-x86_64-openssl" >> release_body.md
-          echo "   \`\`\`" >> release_body.md
-          echo "3. Clone the repository:" >> release_body.md
-          echo "   \`\`\`bash" >> release_body.md
-          echo "   git clone https://github.com/foxzyt/Sapphire.git" >> release_body.md
-          echo "   cd Sapphire" >> release_body.md
-          echo "   \`\`\`" >> release_body.md
-          echo "4. Configure and build:" >> release_body.md
-          echo "   \`\`\`bash" >> release_body.md
-          echo "   cmake -B build -G \"MinGW Makefiles\" -DCMAKE_BUILD_TYPE=Release -DSFML_DIR=/mingw64/lib/cmake/SFML -DSFML_STATIC_LIBRARIES=ON -DOPENSSL_ROOT_DIR=/mingw64 -DOPENSSL_USE_STATIC_LIBS=TRUE" >> release_body.md
-          echo "   cmake --build build --config Release -j 8" >> release_body.md
-          echo "   \`\`\`" >> release_body.md
+          cat .github/release-examples.md >> release_body.md
+
+          cat .github/release-footer.md >> release_body.md
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
@@ -139,23 +154,3 @@ jobs:
           draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  deploy-pages:
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./site
-
-      - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v4
