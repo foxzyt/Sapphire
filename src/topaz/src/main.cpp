@@ -41,7 +41,7 @@
 namespace topaz {
 
 void print_help() {
-  std::cout << termcolor::cyan << termcolor::bold
+  std::cout << termcolor::bold
             << "Topaz Package Manager for Sapphire" << termcolor::reset
             << std::endl;
   std::cout << "Version: 2.4.0" << std::endl;
@@ -52,21 +52,21 @@ void print_help() {
   std::cout << termcolor::bold << "Topaz Self-Update:" << termcolor::reset
             << std::endl;
   std::cout
-      << "  " << termcolor::yellow << "topaz upgrade" << termcolor::reset
+      << "  " << "topaz upgrade" << termcolor::reset
       << "                 - Download and install the latest topaz version"
       << std::endl;
   std::cout << std::endl;
 
   std::cout << termcolor::bold << "Project Workflow Commands:" << termcolor::reset << std::endl;
-  std::cout << "  " << termcolor::cyan << "topaz test [dir]" << termcolor::reset
+  std::cout << "  " << "topaz test [dir]" << termcolor::reset
             << "              - Run tests (default: tests/ directory)" << std::endl;
-  std::cout << "  " << termcolor::cyan << "topaz clean" << termcolor::reset
+  std::cout << "  " << "topaz clean" << termcolor::reset
             << "                   - Clean build artifacts" << std::endl;
   std::cout << std::endl;
 
   std::cout << termcolor::bold << "Plugin/Project Commands:" << termcolor::reset
             << std::endl;
-  std::cout << "  " << termcolor::green << "topaz init [options]"
+  std::cout << "  " << "topaz init [options]"
             << termcolor::reset
             << "         - Create a new project structure (sapphire.json)"
             << std::endl;
@@ -82,13 +82,12 @@ void print_help() {
   std::cout << "      --description <desc>    - Pre-specify description"
             << std::endl;
   std::cout << std::endl;
-  std::cout << "  " << termcolor::green << "topaz expand <version>"
+  std::cout << "  " << "topaz expand <version>"
             << termcolor::reset << "         - Add a new version to the plugin"
             << std::endl;
   std::cout << std::endl;
-  std::cout << "  " << termcolor::green
-            << "topaz install [name] [version] [options]" << std::endl;
-  std::cout << "  " << termcolor::green << "topaz install" << termcolor::reset
+  std::cout << "  " << "topaz install [name] [version] [options]" << std::endl;
+  std::cout << "  " << "topaz install" << termcolor::reset
             << "                 - Install all dependencies from "
                "sapphire.json/topaz.lock"
             << std::endl;
@@ -115,7 +114,7 @@ void print_help() {
                "endpoint URL"
             << std::endl;
   std::cout << std::endl;
-  std::cout << "  " << termcolor::red << "topaz uninstall <name> [options]"
+  std::cout << "  " << "topaz uninstall <name> [options]"
             << termcolor::reset << " - Remove a plugin" << std::endl;
   std::cout << "    Options:" << std::endl;
   std::cout << "      --local                 - Remove local copy only"
@@ -123,7 +122,7 @@ void print_help() {
   std::cout << "      --global                - Remove global copy only"
             << std::endl;
   std::cout << std::endl;
-  std::cout << "  " << termcolor::yellow << "topaz update [name] [options]"
+  std::cout << "  " << "topaz update [name] [options]"
             << termcolor::reset << "  - Check/update installed plugins"
             << std::endl;
   std::cout << "    Options:" << std::endl;
@@ -131,48 +130,47 @@ void print_help() {
                "without installing"
             << std::endl;
   std::cout << std::endl;
-  std::cout << "  " << termcolor::blue << "topaz list" << termcolor::reset
+  std::cout << "  " << "topaz list" << termcolor::reset
             << "                   - List installed plugins + runtime info"
             << std::endl;
-  std::cout << "  " << termcolor::blue << "topaz info <name>"
+  std::cout << "  " << "topaz info <name>"
             << termcolor::reset
             << "              - Show detailed information about a plugin"
             << std::endl;
-  std::cout << "  " << termcolor::magenta << "topaz search <query>"
+  std::cout << "  " << "topaz search <query>"
             << termcolor::reset
             << "         - Search for plugins in the registry" << std::endl;
-  std::cout << "  " << termcolor::cyan << "topaz check" << termcolor::reset
+  std::cout << "  " << "topaz check" << termcolor::reset
             << "                  - Run diagnostic on installed plugins"
             << std::endl;
-  std::cout << "  " << termcolor::cyan << "topaz outdated [name]"
+  std::cout << "  " << "topaz outdated [name]"
             << termcolor::reset
             << "        - List plugins with newer versions available"
             << std::endl;
-  std::cout << "  " << termcolor::cyan << "topaz lock <name> [version]"
+  std::cout << "  " << "topaz lock <name> [version]"
             << termcolor::reset << "       - Generate lock file for a plugin"
             << std::endl;
   std::cout << std::endl;
-  std::cout << "  " << termcolor::cyan
-            << "topaz tree [name] [version] [options]" << termcolor::reset
+  std::cout << "  " << "topaz tree [name] [version] [options]" << termcolor::reset
             << " - Show dependency tree" << std::endl;
   std::cout << "    Options:" << std::endl;
   std::cout << "      --format <text|mermaid|json> - Graph tree output format"
             << std::endl;
   std::cout << std::endl;
-  std::cout << "  " << termcolor::red << "topaz purge <name> [version]"
+  std::cout << "  " << "topaz purge <name> [version]"
             << termcolor::reset << "  - Remove specific version(s) of a plugin"
             << std::endl;
-  std::cout << "  " << termcolor::cyan << "topaz help" << termcolor::reset
+  std::cout << "  " << "topaz help" << termcolor::reset
             << "                   - Show this help message" << std::endl;
   std::cout << std::endl;
 
   std::cout << termcolor::bold << "Cache Commands:" << termcolor::reset
             << std::endl;
-  std::cout << "  " << termcolor::yellow << "topaz cache dir"
+  std::cout << "  " << "topaz cache dir"
             << termcolor::reset
             << "              - Show cache directory path and contents"
             << std::endl;
-  std::cout << "  " << termcolor::red << "topaz cache clean [options]"
+  std::cout << "  " << "topaz cache clean [options]"
             << termcolor::reset << "      - Clean the download cache"
             << std::endl;
   std::cout << "    Options:" << std::endl;
@@ -180,61 +178,55 @@ void print_help() {
             << std::endl;
   std::cout << std::endl;
 
-  std::cout << termcolor::bold << termcolor::magenta
-            << "Sapphire Runtime Commands:" << termcolor::reset << std::endl;
-  std::cout << "  " << termcolor::green << "topaz sapphire list"
+  std::cout << termcolor::bold << "Sapphire Runtime Commands:" << termcolor::reset << std::endl;
+  std::cout << "  " << "topaz sapphire list"
             << termcolor::reset
             << "            - List available Sapphire versions (remote)"
             << std::endl;
-  std::cout << "  " << termcolor::green << "topaz sapphire install <version>"
+  std::cout << "  " << "topaz sapphire install <version>"
             << termcolor::reset << "  - Install and activate a Sapphire release"
             << std::endl;
-  std::cout << "  " << termcolor::cyan << "topaz sapphire use <version>"
+  std::cout << "  " << "topaz sapphire use <version>"
             << termcolor::reset << "       - Switch to an installed version"
             << std::endl;
-  std::cout << "  " << termcolor::cyan << "topaz sapphire current"
+  std::cout << "  " << "topaz sapphire current"
             << termcolor::reset << "         - Show the active Sapphire version"
             << std::endl;
-  std::cout << "  " << termcolor::blue << "topaz sapphire versions"
+  std::cout << "  " << "topaz sapphire versions"
             << termcolor::reset << "        - List locally installed versions"
             << std::endl;
-  std::cout << "  " << termcolor::red << "topaz sapphire uninstall <version>"
+  std::cout << "  " << "topaz sapphire uninstall <version>"
             << termcolor::reset << " - Remove an installed version"
             << std::endl;
   std::cout << std::endl;
 
-  std::cout << termcolor::magenta
-            << "Version Formatting (SemVer):" << termcolor::reset << std::endl;
-  std::cout << "  " << termcolor::cyan << "latest" << termcolor::reset
+  std::cout << "Version Formatting (SemVer):" << termcolor::reset << std::endl;
+  std::cout << "  " << "latest" << termcolor::reset
             << "                   - Resolves to the highest available version"
             << std::endl;
-  std::cout << "  " << termcolor::cyan << "1.0.0" << termcolor::reset
+  std::cout << "  " << "1.0.0" << termcolor::reset
             << "                    - Exact version match" << std::endl;
-  std::cout << "  " << termcolor::cyan << "\"^1.0.0\"" << termcolor::reset
+  std::cout << "  " << "\"^1.0.0\"" << termcolor::reset
             << "                 - Compatible updates (same major version)"
             << std::endl;
-  std::cout << "  " << termcolor::cyan << "\">1.0.0\"" << termcolor::reset
-            << " , " << termcolor::cyan << "\"<2.0.0\"" << termcolor::reset
+  std::cout << "  " << "\">1.0.0\"" << termcolor::reset
+            << " , " << "\"<2.0.0\"" << termcolor::reset
             << "      - Greater than / Less than a specific version"
             << std::endl;
-  std::cout << "  " << termcolor::cyan << "\">=1.0.0\"" << termcolor::reset
-            << ", " << termcolor::cyan << "\"<=2.0.0\"" << termcolor::reset
+  std::cout << "  " << "\">=1.0.0\"" << termcolor::reset
+            << ", " << "\"<=2.0.0\"" << termcolor::reset
             << "      - Greater or equal / Less or equal" << std::endl;
-  std::cout << termcolor::red
-            << "  * Always use quotes (\"\") for >, <, ^ to avoid terminal "
+  std::cout << "  * Always use quotes (\"\") for >, <, ^ to avoid terminal "
                "redirection!"
             << termcolor::reset << std::endl;
   std::cout << std::endl;
 
-  std::cout << termcolor::yellow
-            << "Note: When inside a Sapphire project (has main.sp or plugins/ "
+  std::cout << "Note: When inside a Sapphire project (has main.sp or plugins/ "
                "folder),"
             << termcolor::reset << std::endl;
-  std::cout << termcolor::yellow
-            << "      plugins are installed locally in ./plugins/ by default."
+  std::cout << "      plugins are installed locally in ./plugins/ by default."
             << termcolor::reset << std::endl;
-  std::cout << termcolor::yellow
-            << "      Use --global flag to install/uninstall globally."
+  std::cout << "      Use --global flag to install/uninstall globally."
             << termcolor::reset << std::endl;
 }
 
@@ -330,7 +322,7 @@ int main(int argc, char *argv[]) {
       return topaz::commands::cmd_clean(working_dir);
     } else if (command == "expand") {
       if (clean_args.empty()) {
-        std::cerr << termcolor::red << "[!] Missing version argument"
+        std::cerr << "[!] Missing version argument"
                   << termcolor::reset << std::endl;
         std::cerr << "Usage: topaz expand <version>" << std::endl;
         return 1;
@@ -360,7 +352,7 @@ int main(int argc, char *argv[]) {
                                           save_dev, no_save, frozen_lockfile);
     } else if (command == "uninstall") {
       if (clean_args.empty()) {
-        std::cerr << termcolor::red << "[!] Missing plugin name"
+        std::cerr << "[!] Missing plugin name"
                   << termcolor::reset << std::endl;
         std::cerr << "Usage: topaz uninstall <name> [--local] [--global]"
                   << std::endl;
@@ -391,7 +383,7 @@ int main(int argc, char *argv[]) {
       return topaz::commands::cmd_upgrade();
     } else if (command == "info") {
       if (clean_args.empty()) {
-        std::cerr << termcolor::red << "[!] Missing plugin name"
+        std::cerr << "[!] Missing plugin name"
                   << termcolor::reset << std::endl;
         std::cerr << "Usage: topaz info <name>" << std::endl;
         return 1;
@@ -399,7 +391,7 @@ int main(int argc, char *argv[]) {
       return topaz::commands::cmd_info(clean_args[0]);
     } else if (command == "search") {
       if (clean_args.empty()) {
-        std::cerr << termcolor::red << "[!] Missing search query"
+        std::cerr << "[!] Missing search query"
                   << termcolor::reset << std::endl;
         std::cerr << "Usage: topaz search <query>" << std::endl;
         return 1;
@@ -410,7 +402,7 @@ int main(int argc, char *argv[]) {
       return topaz::commands::cmd_outdated(outdated_name);
     } else if (command == "cache") {
       if (clean_args.empty()) {
-        std::cerr << termcolor::red << "[!] Missing cache subcommand"
+        std::cerr << "[!] Missing cache subcommand"
                   << termcolor::reset << std::endl;
         std::cerr << "Usage: topaz cache clean | topaz cache dir" << std::endl;
         return 1;
@@ -421,13 +413,13 @@ int main(int argc, char *argv[]) {
       } else if (cache_subcmd == "dir") {
         return topaz::commands::cmd_cache_dir();
       } else {
-        std::cerr << termcolor::red << "[!] Unknown cache subcommand: '"
+        std::cerr << "[!] Unknown cache subcommand: '"
                   << cache_subcmd << "'" << termcolor::reset << std::endl;
         return 1;
       }
     } else if (command == "lock") {
       if (clean_args.empty()) {
-        std::cerr << termcolor::red << "[!] Missing plugin name"
+        std::cerr << "[!] Missing plugin name"
                   << termcolor::reset << std::endl;
         std::cerr << "Usage: topaz lock <name> [version]" << std::endl;
         return 1;
@@ -443,7 +435,7 @@ int main(int argc, char *argv[]) {
       return topaz::commands::cmd_tree(tree_name, tree_version, format_opt);
     } else if (command == "purge") {
       if (clean_args.empty()) {
-        std::cerr << termcolor::red << "[!] Missing plugin name."
+        std::cerr << "[!] Missing plugin name."
                   << termcolor::reset << std::endl;
         std::cerr << "Usage: topaz purge <name> [version] [--local] [--global]"
                   << std::endl;
@@ -455,13 +447,13 @@ int main(int argc, char *argv[]) {
       return topaz::commands::cmd_purge(purge_name, purge_version, local_flag,
                                         global_flag);
     } else {
-      std::cerr << termcolor::red << "[!] Unknown command: " << command
+      std::cerr << "[!] Unknown command: " << command
                 << termcolor::reset << std::endl;
       std::cerr << "Run 'topaz help' for usage information" << std::endl;
       return 1;
     }
   } catch (const std::exception &e) {
-    std::cerr << termcolor::red << "[!] Fatal error: " << e.what()
+    std::cerr << "[!] Fatal error: " << e.what()
               << termcolor::reset << std::endl;
     return 1;
   }
