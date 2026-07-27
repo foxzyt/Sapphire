@@ -8,6 +8,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- [VM] Opcodes experimentais e suporte base para a VM Rubellite JIT
+- [System] Suporte preliminar à API OpenCL (`opencl_api.cpp`)
+- [System] Conectores de banco de dados (SQLite, MySQL, PostgreSQL)
+
+### Changed
+- [Core] A VM JIT experimental Rubellite (USE_RUBELLITE) agora vem desativada por padrão no CMakeLists, dando preferência ao interpretador bytecode estável e nativo que funciona integralmente.
+
+### Fixed
+- [Core] Corrigido bug de inicialização de classes (OBJ_CLASS) que não invocava o método `init()` quando argumentos eram passados na criação, permitindo agora que plugins como o Verba funcionem corretamente.
+- [UI] Consertado o bug em que textboxes ficavam desalinhadas ao serem arrastadas para a borda esquerda (`ui_retained.cpp`)
+- [Network] Resolvido o Memory Leak fatal nas funções de Download (HTTP_DOWNLOAD) e Fetch (`http.cpp`) causadas pelo `httplib::Client`
+- [Map] Corrigido o erro do `mapHas()` e comportamentos estranhos em dicionários usando strings longas devido a colisões e uso incorreto de offsets.
+- **UI Engine v1.1.0 — Novos Componentes e Melhorias Visuais Massivas:**
+  - `Card(...)` — Container com gradiente linear, sombra multicamada e glow no hover
+  - `Badge(count=N, ...)` — Círculo numerado para contagens e notificações
+  - `Tag(label="...", color="...")` — Etiqueta/chip inline em cápsula arredondada
+  - `Stepper(steps=N, current=K, labels=[...])` — Indicador de progresso em etapas
+  - `Spinner(width=N, thickness=N, color="...")` — Arco giratório animado automaticamente por `dt`
+  - `Notify(message, type)` — Sistema de toasts flutuantes com fade-in/out; tipos: `success`, `error`, `warning`, `info`
+  - Propriedades globais de **gradiente**: `gradientFrom`, `gradientTo`, `gradientDir` em qualquer nó
+  - Propriedades globais de **sombra**: `shadowBlur`, `shadowOffsetX`, `shadowOffsetY`, `shadowColor`
+  - Propriedade `glowColor` para halo colorido em hover (Card, Button)
+  - **Easing functions reais** aplicadas em todas as animações: `ease-in-quad`, `ease-out-quad`, `ease-in-out-cubic`, `ease-out-bounce`, `ease-out-elastic`
+  - Animação `ease-out-bounce` e `ease-out-elastic` funcionais para keyframes
+  - Debug `std::cout` removido de `apply_animations_to_tree` (era spam no terminal)
+  - `Spinner` atualiza seu ângulo automaticamente a 280°/s via `dt` em cada frame
+
 - **`Crypto` module**: Cryptographic primitives via OpenSSL (no new dependencies).
   - `Crypto.sha256(str)` — SHA-256 hash as hex string
   - `Crypto.sha1(str)` — SHA-1 hash as hex string
