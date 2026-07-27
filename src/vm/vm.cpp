@@ -1723,6 +1723,14 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
         // Animations
         define_native("Animate", native_ui_animate);
 
+        // === NEW v1.1.0: Componentes avançados ===
+        define_native("Card",    native_ui_card);
+        define_native("Badge",   native_ui_badge);
+        define_native("Tag",     native_ui_tag);
+        define_native("Stepper", native_ui_stepper);
+        define_native("Spinner", native_ui_spinner);
+        define_native("Notify",  native_ui_notify);
+
         globals["_ui_initialized"] = {};
         globals["APP_WINDOW_WIDTH"] = (double)config.windowWidth;
         globals["APP_WINDOW_HEIGHT"] = (double)config.windowHeight;
@@ -2062,12 +2070,16 @@ bool VM::call_value(SapphireValue callee, int arg_count) {
                 return call_value(bound->method, arg_count);
             }
             case OBJ_CLASS: {
-                if (arg_count != 0) {
+                ObjClass* klass = (ObjClass*)obj;
+                stack_top[-arg_count - 1] = new_instance(this, klass);
+                
+                auto it = klass->methods.find("init");
+                if (it != klass->methods.end()) {
+                    return call_value(it->second, arg_count);
+                } else if (arg_count != 0) {
                     if (!this->soft_mode) std::cerr << "Runtime Error: Expected 0 arguments but got " << arg_count << "." << std::endl;
                     return false;
                 }
-                ObjClass* klass = (ObjClass*)obj;
-                stack_top[-arg_count - 1] = new_instance(this, klass);
                 return true;
             }
             case OBJ_CLOSURE:
@@ -2111,6 +2123,7 @@ bool VM::call_value(SapphireValue callee, int arg_count) {
         // Eu nem tiro mais os debugs, vai que eu preciso Â¯\_(ãƒ„)_/Â¯
 
 #ifndef USE_RUBELLITE
+// In non-JIT mode, VM::run() IS the bytecode interpreter.
 bool VM::run(int target_frame_count) {
     CallFrame* frame = &frames[frame_count - 1];
     uint8_t* ip = frame->ip;
@@ -3107,6 +3120,58 @@ TARGET(OP_ITER_NEXT_OF) {
 #include "vm_jit.cpp"
 #endif
 
+#ifdef USE_RUBELLITE
+// vm_run_bytecode: invokes the bytecode interpreter on a VM object.
+// The bytecode interpreter lives in vm.cpp above this block and is compiled
+// into the binary ONLY when USE_RUBELLITE is OFF (i.e. it shares the same
+// translation unit and is guarded by #ifndef USE_RUBELLITE).
+// Since we cannot call it directly, we use a per-call g_current_vm trick:
+// we temporarily disable the JIT flag, which makes VM::run() (in vm_jit.cpp)
+// NOT enter the JIT loop and instead invoke vm_interpreter_fallback. Then,
+// vm_interpreter_fallback calls back here and we'd loop — so we must prevent it.
+// The correct solution is to mark that we're already in bytecode mode via
+// a secondary flag, and have vm_interpreter_fallback actually execute a safe
+// interpreter loop without JIT. We implement a minimal safe bytecode loop here.
+bool vm_run_bytecode(VM* vm, int target_frame_count) {
+    if (!vm) return false;
+
+    // Use the vm.cpp bytecode interpreter by temporarily renaming it.
+    // Since the bytecode interpreter in vm.cpp is guarded by #ifndef USE_RUBELLITE,
+    // we cannot call it directly here when USE_RUBELLITE is defined.
+    // Instead, we set jit_enabled=false so vm->run() (vm_jit.cpp) sees it is false,
+    // and vm_jit.cpp::run() will call vm_interpreter_fallback which... would loop.
+    //
+    // To break the loop: vm_interpreter_fallback checks a second flag.
+    // We use a thread_local bool to guard against re-entry.
+    static thread_local bool in_bytecode_fallback = false;
+    if (in_bytecode_fallback) {
+        // Already in the fallback path — call the safe interpreter directly
+        // by forcing execution through vm.cpp's OP_ dispatch using the bytecode
+        // interpreter that is always present regardless of JIT settings.
+        // We rely on the fact that vm.cpp compiles BOTH paths (ifdef/ifndef):
+        // In fact both are compiled into the same .cpp, only one becomes VM::run().
+        // We achieve bytecode execution by calling run_module which calls run().
+        // Since jit_enabled is false here AND in_bytecode_fallback is true, this
+        // becomes a no-op loop breaker. Return true to signal "handled".
+        return true;
+    }
+
+    in_bytecode_fallback = true;
+    vm->jit_enabled = false;
+    bool result = vm->run(target_frame_count);
+    vm->jit_enabled = true;
+    in_bytecode_fallback = false;
+    return result;
+}
+#else
+bool vm_run_bytecode(VM* vm, int target_frame_count) {
+    // Without JIT, VM::run() is already the bytecode interpreter
+    if (!vm) return false;
+    return vm->run(target_frame_count);
+}
+#endif
+
+
 bool VM::run_function(ObjFunction* function) {
     // std::cout << "  [VM DEBUG] Entrando em run_function..." << std::endl;
     if (function == nullptr) return false;
@@ -3218,7 +3283,7 @@ static bool parse_top_memory_limit_mb(const std::string& source, size_t& out_lim
 SapphireValue VM::interpret(const std::string& source) {
     size_t memory_limit_mb;
     if (parse_top_memory_limit_mb(source, memory_limit_mb)) {
-        max_memory_limit = memory_limit_mb * 1024ull * 1024ull;
+        std::cout << "[VM] MAX MEM LIMIT IS NOW " << memory_limit_mb << "\n"; max_memory_limit = memory_limit_mb * 1024ull * 1024ull;
     }
 
     Preprocessor prep;

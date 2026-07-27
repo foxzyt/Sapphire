@@ -133,7 +133,7 @@ if(WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 endif()
 
 # Option to enable Rubellite JIT VM (compiled into sapphire.exe)
-option(USE_RUBELLITE "Ativar VM experimental Rubellite JIT (compilado dentro do sapphire.exe)" ON)
+option(USE_RUBELLITE "Ativar VM experimental Rubellite JIT (compilado dentro do sapphire.exe)" OFF)
 if(USE_RUBELLITE)
     add_compile_definitions(USE_RUBELLITE RUBELLITE_ENABLED)
 endif()
