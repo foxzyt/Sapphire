@@ -5,6 +5,11 @@
 void draw_rounded_rect(sf::RenderWindow& window, sf::Vector2f pos, sf::Vector2f size, float radius, sf::Color color, sf::Color outline, float thickness);
 float lerp_val(float a, float b, float t);
 sf::Color lerp_color(sf::Color a, sf::Color b, float t);
+// === NEW v1.0.9 ===
+static float apply_easing(float t, const std::string& easing);
+static void draw_gradient_rect(sf::RenderWindow& window, sf::Vector2f pos, sf::Vector2f size, float radius, sf::Color c1, sf::Color c2, const std::string& dir);
+static void draw_shadow(sf::RenderWindow& window, sf::Vector2f pos, sf::Vector2f size, float radius, sf::Color shadowCol, float blur, float offX, float offY);
+
 
 
 void sapphire_ui_trace(const std::string& id, sf::Vector2f size, float radius) {
@@ -200,6 +205,12 @@ std::shared_ptr<UINode> build_ui_tree(ObjInstance* nodeDict, int& counter) {
     else if (typeStr == "Tooltip") type = UINodeType::Tooltip;
     else if (typeStr == "Popup") type = UINodeType::Popup;
     else if (typeStr == "Window") type = UINodeType::Window;
+    // === NEW v1.0.9 ===
+    else if (typeStr == "Card")    type = UINodeType::Card;
+    else if (typeStr == "Badge")   type = UINodeType::Badge;
+    else if (typeStr == "Tag")     type = UINodeType::Tag;
+    else if (typeStr == "Stepper") type = UINodeType::Stepper;
+    else if (typeStr == "Spinner") type = UINodeType::Spinner;
     
     std::string id = typeStr + "_" + std::to_string(counter++);
     if (nodeDict->fields.count("id") && is_obj_type(nodeDict->fields["id"], OBJ_STRING)) {
@@ -295,6 +306,34 @@ std::shared_ptr<UINode> build_ui_tree(ObjInstance* nodeDict, int& counter) {
     get_num("top", node->top);
     get_num("right", node->right);
     get_num("bottom", node->bottom);
+
+    // === NEW v1.0.9: Gradient, Shadow, Glow ===
+    get_str("gradientFrom",  node->gradientFrom);
+    get_str("gradientTo",    node->gradientTo);
+    get_str("gradientDir",   node->gradientDir);
+    get_str("shadowColor",   node->shadowColor);
+    get_num("shadowBlur",    node->shadowBlur);
+    get_num("shadowOffsetX", node->shadowOffsetX);
+    get_num("shadowOffsetY", node->shadowOffsetY);
+    get_str("glowColor",     node->glowColor);
+
+    // === NEW v1.0.9: Badge / Stepper / Spinner ===
+    float fBadge = 0; get_num("count", fBadge); if (fBadge > 0) node->badgeCount = (int)fBadge;
+    float fSteps = 3; get_num("steps", fSteps); node->steps = (int)fSteps;
+    float fCurStep = 0; get_num("current", fCurStep); node->currentStep = (int)fCurStep;
+    // stepLabels
+    if (nodeDict->fields.count("labels") && is_obj_type(nodeDict->fields["labels"], OBJ_ARRAY)) {
+        auto arr = static_cast<ObjArray*>(nodeDict->fields["labels"].as.obj);
+        for (auto& val : arr->elements) {
+            if (is_obj_type(val, OBJ_STRING))
+                node->stepLabels.push_back(static_cast<ObjString*>(val.as.obj)->chars);
+        }
+    }
+    // Persistir spinAngle entre frames
+    if (node->type == UINodeType::Spinner) {
+        if (g_current_vm->ui_state.spinnerAngles.count(node->id))
+            node->spinAngle = g_current_vm->ui_state.spinnerAngles[node->id];
+    }
 
     if (nodeDict->fields.count("options") && is_obj_type(nodeDict->fields["options"], OBJ_ARRAY)) {
         auto arr = static_cast<ObjArray*>(nodeDict->fields["options"].as.obj);
@@ -429,7 +468,14 @@ std::shared_ptr<UINode> build_ui_tree(ObjInstance* nodeDict, int& counter) {
 
 void apply_animations_to_tree(std::shared_ptr<UINode> node, float dt) {
     if (!node) return;
-    
+
+    // === NEW v1.0.9: Spinner auto-rotation ===
+    if (node->type == UINodeType::Spinner) {
+        node->spinAngle += dt * 280.0f; // graus por segundo
+        if (node->spinAngle >= 360.0f) node->spinAngle -= 360.0f;
+        g_current_vm->ui_state.spinnerAngles[node->id] = node->spinAngle;
+    }
+
     auto it = g_current_vm->ui_state.activeAnimations.find(node->id);
     if (it != g_current_vm->ui_state.activeAnimations.end()) {
         auto& aa = it->second;
@@ -442,8 +488,9 @@ void apply_animations_to_tree(std::shared_ptr<UINode> node, float dt) {
                 if (anim.loop) { aa.elapsedTime = std::fmod(aa.elapsedTime, anim.duration); t = aa.elapsedTime / anim.duration; }
                 else t = 1.0f;
             }
-            std::cout << "Anim: id=" << node->id << " dt=" << dt << " elapsed=" << aa.elapsedTime << " t=" << t << " width=" << node->width << std::endl;
-            
+            // === NEW v1.0.9: Apply easing to t ===
+            float easedT = apply_easing(t, anim.easing);
+
             if (anim.keyframes.size() >= 2) {
                 size_t kfIndex = 0;
                 for (size_t i = 0; i < anim.keyframes.size() - 1; i++) {
@@ -455,11 +502,12 @@ void apply_animations_to_tree(std::shared_ptr<UINode> node, float dt) {
                 auto& kf2 = anim.keyframes[kfIndex+1];
                 float timeSpan = kf2.timeOffset - kf1.timeOffset;
                 float localT = timeSpan > 0 ? ((t - kf1.timeOffset) / timeSpan) : 0.0f;
-                
+                float localEased = apply_easing(localT, anim.easing);
+
                 for (auto& [prop, val1] : kf1.numericProps) {
                     if (kf2.numericProps.count(prop)) {
                         float val2 = kf2.numericProps.at(prop);
-                        float interpolated = lerp_val(val1, val2, localT);
+                        float interpolated = lerp_val(val1, val2, localEased);
                         if (prop == "width") node->width = interpolated;
                         else if (prop == "height") node->height = interpolated;
                         else if (prop == "x") node->x = interpolated;
@@ -473,7 +521,7 @@ void apply_animations_to_tree(std::shared_ptr<UINode> node, float dt) {
                 for (auto& [prop, c1] : kf1.colorProps) {
                     if (kf2.colorProps.count(prop)) {
                         sf::Color c2 = kf2.colorProps.at(prop);
-                        sf::Color interpolated = lerp_color(c1, c2, localT);
+                        sf::Color interpolated = lerp_color(c1, c2, localEased);
                         if (prop == "color") {
                             char buf[10];
                             snprintf(buf, sizeof(buf), "#%02X%02X%02X%02X", interpolated.r, interpolated.g, interpolated.b, interpolated.a);
@@ -484,11 +532,12 @@ void apply_animations_to_tree(std::shared_ptr<UINode> node, float dt) {
             }
         }
     }
-    
+
     for (auto& child : node->children) {
         apply_animations_to_tree(child, dt);
     }
 }
+
 
 void compute_sizes(std::shared_ptr<UINode> node) {
     if (!node) return;
@@ -968,7 +1017,188 @@ void render_ui_tree(std::shared_ptr<UINode> node) {
                               s.borderRadius, s.bgColor, s.borderColor, s.borderThickness);
         }
     }
-    
+    // === NEW v1.0.9: Card ===
+    else if (node->type == UINodeType::Card) {
+        float r = s.borderRadius > 0 ? s.borderRadius : 12.0f;
+        float w = node->width  > 0 ? node->width  : 200.0f;
+        float h = node->height > 0 ? node->height : 120.0f;
+        // Sombra
+        if (node->shadowBlur > 0.0f || !node->shadowColor.empty()) {
+            sf::Color sc = hexToColor(node->shadowColor.empty() ? "#00000060" : node->shadowColor);
+            draw_shadow(*g_current_vm->sfml_window, {node->x, node->y}, {w, h}, r,
+                        sc, node->shadowBlur > 0 ? node->shadowBlur : 6.0f,
+                        node->shadowOffsetX != 0 ? node->shadowOffsetX : 0.0f,
+                        node->shadowOffsetY != 0 ? node->shadowOffsetY : 6.0f);
+        }
+        // Gradiente ou cor sólida
+        if (!node->gradientFrom.empty() && !node->gradientTo.empty()) {
+            draw_gradient_rect(*g_current_vm->sfml_window, {node->x, node->y}, {w, h}, r,
+                               hexToColor(node->gradientFrom), hexToColor(node->gradientTo),
+                               node->gradientDir.empty() ? "vertical" : node->gradientDir);
+            draw_rounded_rect(*g_current_vm->sfml_window, {node->x, node->y}, {w, h}, r,
+                              sf::Color::Transparent, s.borderColor, s.borderThickness);
+        } else {
+            sf::Color bg = s.bgColor.a == 0 ? sf::Color(30, 30, 46, 255) : s.bgColor;
+            draw_rounded_rect(*g_current_vm->sfml_window, {node->x, node->y}, {w, h}, r,
+                              bg, s.borderColor, s.borderThickness);
+        }
+        // Glow no hover
+        if (hovered && !node->glowColor.empty()) {
+            sf::Color gc = hexToColor(node->glowColor);
+            gc.a = 60;
+            draw_rounded_rect(*g_current_vm->sfml_window, {node->x - 3, node->y - 3}, {w + 6, h + 6}, r + 3,
+                              sf::Color::Transparent, gc, 3.0f);
+        }
+        // Título do card (label)
+        if (!node->label.empty()) {
+            std::string fa = s.fontAlias;
+            if (!g_current_vm->ui_state.fontStack.count(fa)) fa = "default";
+            if (g_current_vm->ui_state.fontStack.count(fa)) {
+                sf::Text txt(g_current_vm->ui_state.fontStack[fa], node->label, s.fontSize > 0 ? s.fontSize : 16);
+                txt.setFillColor(s.textColor);
+                txt.setPosition({node->x + s.padding, node->y + s.padding});
+                g_current_vm->sfml_window->draw(txt);
+            }
+        }
+    }
+    // === NEW v1.0.9: Badge ===
+    else if (node->type == UINodeType::Badge) {
+        float r = (node->height > 0 ? node->height : 22.0f) / 2.0f;
+        float w = node->width > 0 ? node->width : r * 2.0f;
+        sf::Color bg = s.bgColor.a == 0 ? (
+            !node->customColor.empty() ? hexToColor(node->customColor) : sf::Color(220, 53, 69, 255)
+        ) : s.bgColor;
+        draw_rounded_rect(*g_current_vm->sfml_window, {node->x, node->y}, {w, r * 2.0f}, r, bg, sf::Color::Transparent, 0.0f);
+        std::string txt = node->label.empty() ? std::to_string(node->badgeCount) : node->label;
+        if (!txt.empty()) {
+            std::string fa = s.fontAlias; if (!g_current_vm->ui_state.fontStack.count(fa)) fa = "default";
+            if (g_current_vm->ui_state.fontStack.count(fa)) {
+                unsigned int fs = s.fontSize > 0 ? s.fontSize : 11;
+                sf::Text t(g_current_vm->ui_state.fontStack[fa], txt, fs);
+                float tw = t.getLocalBounds().size.x;
+                t.setFillColor(sf::Color::White);
+                t.setPosition({node->x + w / 2.0f - tw / 2.0f, node->y + r - fs / 2.0f - 1.0f});
+                g_current_vm->sfml_window->draw(t);
+            }
+        }
+    }
+    // === NEW v1.0.9: Tag / Chip ===
+    else if (node->type == UINodeType::Tag) {
+        float h = node->height > 0 ? node->height : 26.0f;
+        float r = h / 2.0f;
+        sf::Color bg = !node->customColor.empty() ? hexToColor(node->customColor) : sf::Color(99, 102, 241, 255);
+        float w = node->width;
+        if (w <= 0 && !node->label.empty()) {
+            std::string fa = s.fontAlias; if (!g_current_vm->ui_state.fontStack.count(fa)) fa = "default";
+            if (g_current_vm->ui_state.fontStack.count(fa)) {
+                sf::Text dm(g_current_vm->ui_state.fontStack[fa], node->label, s.fontSize > 0 ? s.fontSize : 13);
+                w = dm.getLocalBounds().size.x + 20.0f;
+            } else w = 80.0f;
+        }
+        draw_rounded_rect(*g_current_vm->sfml_window, {node->x, node->y}, {w, h}, r, bg, sf::Color::Transparent, 0.0f);
+        if (!node->label.empty()) {
+            std::string fa = s.fontAlias; if (!g_current_vm->ui_state.fontStack.count(fa)) fa = "default";
+            if (g_current_vm->ui_state.fontStack.count(fa)) {
+                unsigned int fs = s.fontSize > 0 ? s.fontSize : 13;
+                sf::Text t(g_current_vm->ui_state.fontStack[fa], node->label, fs);
+                float tw = t.getLocalBounds().size.x;
+                t.setFillColor(sf::Color::White);
+                t.setPosition({node->x + w / 2.0f - tw / 2.0f, node->y + h / 2.0f - fs / 2.0f - 1.0f});
+                g_current_vm->sfml_window->draw(t);
+            }
+        }
+    }
+    // === NEW v1.0.9: Stepper ===
+    else if (node->type == UINodeType::Stepper) {
+        int n = node->steps > 0 ? node->steps : 3;
+        float w = node->width > 0 ? node->width : 300.0f;
+        float cy = node->y + (node->height > 0 ? node->height : 40.0f) / 2.0f;
+        float stepW = w / (float)(n > 1 ? n - 1 : 1);
+        float circleR = 14.0f;
+        std::string fa = s.fontAlias; if (!g_current_vm->ui_state.fontStack.count(fa)) fa = "default";
+        for (int i = 0; i < n; ++i) {
+            float cx = node->x + (n > 1 ? stepW * i : w / 2.0f);
+            bool done = (i < node->currentStep);
+            bool active = (i == node->currentStep);
+            // Linha conectora
+            if (i < n - 1) {
+                float lineX = cx + circleR;
+                float lineW = stepW - circleR * 2.0f;
+                sf::Color lc = done ? sf::Color(139, 92, 246, 255) : sf::Color(80, 80, 100, 255);
+                sf::RectangleShape line({lineW, 2.0f});
+                line.setPosition({lineX, cy - 1.0f});
+                line.setFillColor(lc);
+                g_current_vm->sfml_window->draw(line);
+            }
+            // Círculo da etapa
+            sf::Color circleCol = done   ? sf::Color(139, 92, 246, 255) :
+                                  active ? sf::Color(167, 139, 250, 255) :
+                                           sf::Color(60, 60, 80, 255);
+            sf::Color outlineCol = active ? sf::Color(167, 139, 250, 255) : sf::Color::Transparent;
+            sf::CircleShape circle(circleR);
+            circle.setOrigin({circleR, circleR});
+            circle.setPosition({cx, cy});
+            circle.setFillColor(circleCol);
+            circle.setOutlineColor(outlineCol);
+            circle.setOutlineThickness(active ? 2.5f : 0.0f);
+            g_current_vm->sfml_window->draw(circle);
+            // Número ou checkmark
+            if (g_current_vm->ui_state.fontStack.count(fa)) {
+                std::string lbl = done ? "✓" : std::to_string(i + 1);
+                unsigned int fs = 11;
+                sf::Text t(g_current_vm->ui_state.fontStack[fa], lbl, fs);
+                float tw = t.getLocalBounds().size.x;
+                t.setFillColor(sf::Color::White);
+                t.setPosition({cx - tw / 2.0f, cy - fs / 2.0f - 1.0f});
+                g_current_vm->sfml_window->draw(t);
+            }
+            // Rótulo abaixo
+            if (!node->stepLabels.empty() && (size_t)i < node->stepLabels.size() && g_current_vm->ui_state.fontStack.count(fa)) {
+                unsigned int fs = 11;
+                sf::Text lt(g_current_vm->ui_state.fontStack[fa], node->stepLabels[i], fs);
+                float tw = lt.getLocalBounds().size.x;
+                sf::Color tc = active ? sf::Color(167, 139, 250, 255) : sf::Color(180, 180, 200, 255);
+                lt.setFillColor(tc);
+                lt.setPosition({cx - tw / 2.0f, cy + circleR + 4.0f});
+                g_current_vm->sfml_window->draw(lt);
+            }
+        }
+    }
+    // === NEW v1.0.9: Spinner ===
+    else if (node->type == UINodeType::Spinner) {
+        float r = (node->width > 0 ? node->width : 36.0f) / 2.0f;
+        float cx = node->x + r;
+        float cy = node->y + r;
+        float thickness = node->thickness > 0 ? node->thickness : 4.0f;
+        // Fundo (arco cinza)
+        const int SEGMENTS = 48;
+        float startAngle = node->spinAngle * 3.14159265f / 180.0f;
+        float arcSpan = 270.0f * 3.14159265f / 180.0f; // 270 graus de arco ativo
+        sf::Color arcColor = !node->customColor.empty() ? hexToColor(node->customColor) : sf::Color(139, 92, 246, 255);
+        sf::Color trackColor = sf::Color(60, 60, 80, 200);
+        // Track (fundo do spinner)
+        sf::VertexArray track(sf::PrimitiveType::TriangleStrip, SEGMENTS * 2 + 2);
+        for (int i = 0; i <= SEGMENTS; ++i) {
+            float angle = startAngle + (float)i / SEGMENTS * 2.0f * 3.14159265f;
+            float cosA = std::cos(angle), sinA = std::sin(angle);
+            track[i*2+0] = { {cx + cosA * (r - thickness), cy + sinA * (r - thickness)}, trackColor };
+            track[i*2+1] = { {cx + cosA * r,               cy + sinA * r},               trackColor };
+        }
+        g_current_vm->sfml_window->draw(track);
+        // Arco ativo
+        sf::VertexArray arc(sf::PrimitiveType::TriangleStrip, SEGMENTS * 2 + 2);
+        int activeSegs = (int)(SEGMENTS * arcSpan / (2.0f * 3.14159265f));
+        for (int i = 0; i <= activeSegs; ++i) {
+            float angle = startAngle + (float)i / SEGMENTS * 2.0f * 3.14159265f;
+            float ratio = (float)i / (float)activeSegs;
+            sf::Color c = lerp_color(arcColor, sf::Color(arcColor.r, arcColor.g, arcColor.b, 80), ratio);
+            float cosA = std::cos(angle), sinA = std::sin(angle);
+            arc[i*2+0] = { {cx + cosA * (r - thickness), cy + sinA * (r - thickness)}, c };
+            arc[i*2+1] = { {cx + cosA * r,               cy + sinA * r},               c };
+        }
+        g_current_vm->sfml_window->draw(arc);
+    }
+
     // We update scale and rotation by using SFML transforms directly if needed, but since we use manual drawing, 
     // it's complex for generic containers. For an MVP animation, we just change X, Y, Width, Height, Opacity.
     
@@ -981,6 +1211,8 @@ void render_ui_tree(std::shared_ptr<UINode> node) {
 
 
 
+
+
 float lerp_val(float a, float b, float t) { return a + (b - a) * t; }
 sf::Color lerp_color(sf::Color a, sf::Color b, float t) {
     return sf::Color(
@@ -989,6 +1221,106 @@ sf::Color lerp_color(sf::Color a, sf::Color b, float t) {
         (uint8_t)lerp_val(a.b, b.b, t),
         (uint8_t)lerp_val(a.a, b.a, t)
     );
+}
+
+// ============================================================
+// === NEW v1.0.9: Easing Functions ===========================
+// ============================================================
+static float apply_easing(float t, const std::string& easing) {
+    t = std::clamp(t, 0.0f, 1.0f);
+    if (easing == "ease-in-quad")     return t * t;
+    if (easing == "ease-out-quad")    return t * (2.0f - t);
+    if (easing == "ease-in-out" || easing == "ease-in-out-cubic") {
+        return t < 0.5f ? 4.0f*t*t*t : (t-1.0f)*(2.0f*t-2.0f)*(2.0f*t-2.0f)+1.0f;
+    }
+    if (easing == "ease-out-bounce") {
+        if (t < 1.0f/2.75f) return 7.5625f*t*t;
+        if (t < 2.0f/2.75f) { t -= 1.5f/2.75f;   return 7.5625f*t*t + 0.75f; }
+        if (t < 2.5f/2.75f) { t -= 2.25f/2.75f;  return 7.5625f*t*t + 0.9375f; }
+        t -= 2.625f/2.75f; return 7.5625f*t*t + 0.984375f;
+    }
+    if (easing == "ease-out-elastic") {
+        if (t == 0.0f || t == 1.0f) return t;
+        float p = 0.3f;
+        return std::pow(2.0f, -10.0f*t) * std::sin((t - p/4.0f) * (2.0f * 3.14159265f) / p) + 1.0f;
+    }
+    return t; // linear default
+}
+
+// ============================================================
+// === NEW v1.0.9: Gradient Rendering =========================
+// ============================================================
+static void draw_gradient_rect(
+    sf::RenderWindow& window,
+    sf::Vector2f pos, sf::Vector2f size,
+    float radius,
+    sf::Color c1, sf::Color c2,
+    const std::string& dir = "vertical")
+{
+    if (size.x <= 0.0f || size.y <= 0.0f) return;
+
+    // Use a VertexArray with sf::PrimitiveType::Triangles for gradient fill
+    // We paint a clipped quad divided into many horizontal/vertical slices
+    const int SLICES = 32;
+    sf::VertexArray va(sf::PrimitiveType::Triangles, SLICES * 6);
+    for (int i = 0; i < SLICES; ++i) {
+        float t0 = (float)i       / (float)SLICES;
+        float t1 = (float)(i + 1) / (float)SLICES;
+        sf::Color col0 = lerp_color(c1, c2, t0);
+        sf::Color col1 = lerp_color(c1, c2, t1);
+
+        sf::Vector2f tl, tr, bl, br;
+        if (dir == "horizontal") {
+            tl = { pos.x + size.x * t0, pos.y };
+            tr = { pos.x + size.x * t1, pos.y };
+            bl = { pos.x + size.x * t0, pos.y + size.y };
+            br = { pos.x + size.x * t1, pos.y + size.y };
+        } else { // vertical (default)
+            tl = { pos.x,          pos.y + size.y * t0 };
+            tr = { pos.x + size.x, pos.y + size.y * t0 };
+            bl = { pos.x,          pos.y + size.y * t1 };
+            br = { pos.x + size.x, pos.y + size.y * t1 };
+            col0 = lerp_color(c1, c2, t0);
+            col1 = lerp_color(c1, c2, t1);
+        }
+        int base = i * 6;
+        va[base+0] = { tl, col0 };
+        va[base+1] = { tr, (dir=="horizontal"?col1:col0) };
+        va[base+2] = { bl, (dir=="horizontal"?col0:col1) };
+        va[base+3] = { tr, (dir=="horizontal"?col1:col0) };
+        va[base+4] = { br, col1 };
+        va[base+5] = { bl, (dir=="horizontal"?col0:col1) };
+    }
+    window.draw(va);
+    // Draw rounded border on top (transparent fill, just outline)
+    if (radius > 0.5f)
+        draw_rounded_rect(window, pos, size, radius, sf::Color::Transparent,
+                          sf::Color::Transparent, 0.0f);
+}
+
+// ============================================================
+// === NEW v1.0.9: Shadow Rendering ===========================
+// ============================================================
+static void draw_shadow(
+    sf::RenderWindow& window,
+    sf::Vector2f pos, sf::Vector2f size,
+    float radius,
+    sf::Color shadowCol,
+    float blur,
+    float offX, float offY)
+{
+    if (blur <= 0.0f && offX == 0.0f && offY == 0.0f) return;
+    int layers = std::max(1, (int)blur);
+    for (int i = layers; i >= 1; --i) {
+        float ratio = (float)i / (float)layers;
+        float expand = ratio * blur * 0.4f;
+        sf::Color c = shadowCol;
+        c.a = (uint8_t)(shadowCol.a * (1.0f - ratio * 0.6f));
+        draw_rounded_rect(window,
+            { pos.x + offX - expand*0.5f, pos.y + offY - expand*0.5f },
+            { size.x + expand, size.y + expand },
+            radius + expand * 0.3f, c, sf::Color::Transparent, 0.0f);
+    }
 }
 
 
@@ -1358,8 +1690,62 @@ SapphireValue native_ui_render(int arg_count, SapphireValue* args) {
         }
     }
 
+    // === NEW v1.0.9: Render notifications (toast) ===
+    {
+        sf::Vector2u winSz = g_current_vm->sfml_window->getSize();
+        float notifW = 280.0f, notifH = 54.0f, notifGap = 10.0f;
+        float notifX = winSz.x - notifW - 16.0f;
+        float notifY = 16.0f;
+
+        auto& queue = g_current_vm->ui_state.notificationQueue;
+        for (auto& n : queue) {
+            // Atualiza alpha (fade-in rápido, fade-out no final)
+            float fadeIn  = 0.3f;
+            float fadeOut = n.lifetime - 0.4f;
+            if (n.elapsed < fadeIn)
+                n.alpha = (n.elapsed / fadeIn) * 255.0f;
+            else if (n.elapsed > fadeOut)
+                n.alpha = std::max(0.0f, (1.0f - (n.elapsed - fadeOut) / 0.4f)) * 255.0f;
+            else
+                n.alpha = 255.0f;
+
+            uint8_t a = (uint8_t)std::clamp(n.alpha, 0.0f, 255.0f);
+
+            sf::Color notifBg(22, 22, 35, a);
+            sf::Color notifBorder(60, 60, 80, a);
+            sf::Color accentCol;
+            if      (n.type == "success") accentCol = sf::Color(34, 197, 94,  a);
+            else if (n.type == "error")   accentCol = sf::Color(239, 68, 68,  a);
+            else if (n.type == "warning") accentCol = sf::Color(251, 191, 36, a);
+            else                          accentCol = sf::Color(99, 102, 241, a); // info
+
+            // Background
+            draw_rounded_rect(*g_current_vm->sfml_window, {notifX, notifY}, {notifW, notifH}, 8.0f,
+                              notifBg, notifBorder, 1.0f);
+            // Barra colorida esquerda
+            draw_rounded_rect(*g_current_vm->sfml_window, {notifX, notifY}, {4.0f, notifH}, 4.0f,
+                              accentCol, sf::Color::Transparent, 0.0f);
+
+            // Texto da mensagem
+            std::string fa = "default";
+            if (g_current_vm->ui_state.fontStack.count(fa)) {
+                sf::Text t(g_current_vm->ui_state.fontStack[fa], n.message, 14);
+                t.setFillColor(sf::Color(220, 220, 230, a));
+                t.setPosition({notifX + 14.0f, notifY + notifH / 2.0f - 9.0f});
+                g_current_vm->sfml_window->draw(t);
+            }
+            notifY += notifH + notifGap;
+        }
+
+        // Avança tempo e remove expiradas
+        for (auto& n : queue) n.elapsed += dt;
+        queue.erase(std::remove_if(queue.begin(), queue.end(),
+            [](const NotificationEntry& n) { return n.elapsed >= n.lifetime; }), queue.end());
+    }
+
     return {};
 }
+
 
 
 
@@ -1412,3 +1798,70 @@ SapphireValue create_declarative_node(const std::string& type, int arg_count, Sa
     }
     return node;
 }
+
+// ============================================================
+// === NEW v1.0.9: Novos Componentes Nativos ==================
+// ============================================================
+
+// Card — container elevado com gradiente e sombra embutidos
+SapphireValue native_ui_card(int arg_count, SapphireValue* args) {
+    return create_declarative_node("Card", arg_count, args);
+}
+
+// Badge — bolinha com número
+SapphireValue native_ui_badge(int arg_count, SapphireValue* args) {
+    return create_declarative_node("Badge", arg_count, args);
+}
+
+// Tag / Chip — etiqueta colorida em cápsula
+SapphireValue native_ui_tag(int arg_count, SapphireValue* args) {
+    return create_declarative_node("Tag", arg_count, args);
+}
+
+// Stepper — indicador de progresso em etapas
+SapphireValue native_ui_stepper(int arg_count, SapphireValue* args) {
+    return create_declarative_node("Stepper", arg_count, args);
+}
+
+// Spinner — arco giratório animado
+SapphireValue native_ui_spinner(int arg_count, SapphireValue* args) {
+    return create_declarative_node("Spinner", arg_count, args);
+}
+
+// Notify — enfileira uma notificação toast
+// Notify(message, type)   -- type: "success" | "error" | "warning" | "info"
+SapphireValue native_ui_notify(int arg_count, SapphireValue* args) {
+    if (arg_count < 1) return {};
+    std::string message = "";
+    std::string type    = "info";
+
+    if (is_obj_type(args[0], OBJ_STRING))
+        message = static_cast<ObjString*>(args[0].as.obj)->chars;
+
+    if (arg_count >= 2 && is_obj_type(args[1], OBJ_STRING))
+        type = static_cast<ObjString*>(args[1].as.obj)->chars;
+
+    // Também aceita argumentos nomeados: Notify(message="...", type="success")
+    for (int i = 0; i < arg_count; i++) {
+        if (is_obj_type(args[i], OBJ_NAMED_ARG)) {
+            ObjNamedArg* narg = static_cast<ObjNamedArg*>(args[i].as.obj);
+            std::string key = narg->name->chars;
+            if (key == "message" && is_obj_type(narg->value, OBJ_STRING))
+                message = static_cast<ObjString*>(narg->value.as.obj)->chars;
+            else if (key == "type" && is_obj_type(narg->value, OBJ_STRING))
+                type = static_cast<ObjString*>(narg->value.as.obj)->chars;
+        }
+    }
+
+    if (!message.empty()) {
+        NotificationEntry entry;
+        entry.message  = message;
+        entry.type     = type;
+        entry.lifetime = 3.0f;
+        entry.elapsed  = 0.0f;
+        entry.alpha    = 0.0f;
+        g_current_vm->ui_state.notificationQueue.push_back(entry);
+    }
+    return {};
+}
+

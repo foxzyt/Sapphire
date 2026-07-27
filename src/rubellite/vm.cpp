@@ -1558,6 +1558,14 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
         // Animations
         define_native("Animate", native_ui_animate);
 
+        // === NEW v1.0.9: Componentes avançados ===
+        define_native("Card",    native_ui_card);
+        define_native("Badge",   native_ui_badge);
+        define_native("Tag",     native_ui_tag);
+        define_native("Stepper", native_ui_stepper);
+        define_native("Spinner", native_ui_spinner);
+        define_native("Notify",  native_ui_notify);
+
         globals["_ui_initialized"] = {};
         globals["APP_WINDOW_WIDTH"] = (double)config.windowWidth;
         globals["APP_WINDOW_HEIGHT"] = (double)config.windowHeight;
@@ -2032,11 +2040,10 @@ extern "C" JIT_ABI void jit_trampoline_set_property(VM* vm) {
     vm->push(value);
 }
 
-extern "C" JIT_ABI void jit_trampoline_call(VM* vm) {
+extern "C" JIT_ABI void jit_trampoline_call(VM* vm, int arg_count) {
     // Call function - simplified implementation
     if (vm->stack_top - vm->stack < 1) return;
-    uint8_t arg_count = vm->stack_top[-1].as.number;
-    vm->stack_top--;
+    // arg_count passed directly via ABI
     
     if (vm->stack_top - vm->stack < arg_count + 1) return;
     
@@ -2546,7 +2553,7 @@ bool VM::run(int target_frame_count) {
         jit.emit_mov_reg_mem(12, 14, 0);
     };
 
-    auto emit_trampoline_with_opcode = [&](void* func, int op) {
+    auto emit_trampoline_with_opcode = [&](void* func, uint64_t op) {
         jit.emit_mov_mem_reg(14, 0, 12);
         jit.emit_mov_reg_reg(1, 13);
         jit.emit_mov_reg_imm64(2, op);
@@ -2658,19 +2665,25 @@ NEXT_OPCODE:
     }
 
     TARGET_OP_GET_GLOBAL: {
-        emit_trampoline((void*)&jit_trampoline_get_global);
+        uint8_t constant_idx = chunk->code[offset + 1];
+        ObjString* name = (ObjString*)chunk->constants[constant_idx].as.obj;
+        emit_trampoline_with_opcode((void*)&jit_trampoline_get_global, (uint64_t)&name->chars);
         offset += 2;
         goto NEXT_OPCODE;
     }
 
     TARGET_OP_DEFINE_GLOBAL: {
-        emit_trampoline((void*)&jit_trampoline_define_global);
+        uint8_t constant_idx = chunk->code[offset + 1];
+        ObjString* name = (ObjString*)chunk->constants[constant_idx].as.obj;
+        emit_trampoline_with_opcode((void*)&jit_trampoline_define_global, (uint64_t)&name->chars);
         offset += 2;
         goto NEXT_OPCODE;
     }
 
     TARGET_OP_SET_GLOBAL: {
-        emit_trampoline((void*)&jit_trampoline_set_global);
+        uint8_t constant_idx = chunk->code[offset + 1];
+        ObjString* name = (ObjString*)chunk->constants[constant_idx].as.obj;
+        emit_trampoline_with_opcode((void*)&jit_trampoline_set_global, (uint64_t)&name->chars);
         offset += 2;
         goto NEXT_OPCODE;
     }
@@ -2717,69 +2730,34 @@ NEXT_OPCODE:
     }
 
     TARGET_OP_BUILD_ARRAY: {
+        // FIX: use the ms_abi trampoline instead of calling new_array() directly
+        // with wrong ABI (new_array uses System V ABI, not ms_abi)
         uint8_t count = chunk->code[offset + 1];
-        jit.emit_mov_reg_reg(1, 13);
-        jit.emit_mov_reg_imm64(0, (uint64_t)&new_array);
+        jit.emit_mov_mem_reg(14, 0, 12);
+        jit.emit_mov_reg_reg(1, 13);           // r1 (rcx in ms_abi) = VM*
+        jit.emit_mov_reg_imm64(2, count);      // r2 (rdx in ms_abi) = count
+        jit.emit_mov_reg_imm64(0, (uint64_t)&jit_trampoline_build_array);
         jit.emit_sub_reg_imm32(4, 40);
         jit.emit_call_reg(0);
         jit.emit_add_reg_imm32(4, 40);
-        jit.emit_mov_reg_reg(2, 0);
-        
-        for (int i = count - 1; i >= 0; i--) {
-            jit.emit_mov_reg_reg(0, 12);
-            jit.emit_sub_reg_imm32(0, sizeof(SapphireValue) * (i + 1));
-            jit.emit_mov_reg_reg(3, 2);
-            jit.emit_mov_reg_imm64(4, offsetof(ObjArray, elements));
-            jit.emit_add_reg_reg(3, 4);
-            jit.emit_mov_mem_reg(14, 0, 12);
-            jit.emit_mov_reg_reg(1, 13);
-            jit.emit_mov_reg_reg(2, 0);
-            jit.emit_mov_reg_imm64(3, OP_BUILD_ARRAY);
-            jit.emit_mov_reg_imm64(0, (uint64_t)&jit_trampoline_build_array);
-            jit.emit_sub_reg_imm32(4, 40);
-            jit.emit_call_reg(0);
-            jit.emit_add_reg_imm32(4, 40);
-            jit.emit_mov_reg_mem(12, 14, 0);
-        }
-        
-        jit.emit_sub_reg_imm32(12, sizeof(SapphireValue) * count);
-        jit.emit_mov_reg_reg(0, 2);
-        jit.emit_mov_mem_reg(12, 0, 0);
-        jit.emit_mov_reg_imm64(0, 3);
-        jit.emit_mov_mem_reg(12, 8, 0);
-        jit.emit_add_reg_imm32(12, sizeof(SapphireValue));
+        jit.emit_mov_reg_mem(12, 14, 0);
         
         offset += 2;
         goto NEXT_OPCODE;
     }
 
     TARGET_OP_BUILD_MAP: {
+        // FIX: use the ms_abi trampoline instead of calling new_map() directly
+        // with wrong ABI (new_map uses System V ABI, not ms_abi)
         uint8_t count = chunk->code[offset + 1];
-        jit.emit_mov_reg_reg(1, 13);
-        jit.emit_mov_reg_imm64(0, (uint64_t)&new_map);
+        jit.emit_mov_mem_reg(14, 0, 12);
+        jit.emit_mov_reg_reg(1, 13);           // r1 (rcx in ms_abi) = VM*
+        jit.emit_mov_reg_imm64(2, count);      // r2 (rdx in ms_abi) = count
+        jit.emit_mov_reg_imm64(0, (uint64_t)&jit_trampoline_build_map);
         jit.emit_sub_reg_imm32(4, 40);
         jit.emit_call_reg(0);
         jit.emit_add_reg_imm32(4, 40);
-        jit.emit_mov_reg_reg(2, 0);
-        
-        for (int i = 0; i < count; i++) {
-            jit.emit_mov_mem_reg(14, 0, 12);
-            jit.emit_mov_reg_reg(1, 13);
-            jit.emit_mov_reg_reg(2, 0);
-            jit.emit_mov_reg_imm64(3, OP_BUILD_MAP);
-            jit.emit_mov_reg_imm64(0, (uint64_t)&jit_trampoline_build_map);
-            jit.emit_sub_reg_imm32(4, 40);
-            jit.emit_call_reg(0);
-            jit.emit_add_reg_imm32(4, 40);
-            jit.emit_mov_reg_mem(12, 14, 0);
-        }
-        
-        jit.emit_sub_reg_imm32(12, sizeof(SapphireValue) * count * 2);
-        jit.emit_mov_reg_reg(0, 2);
-        jit.emit_mov_mem_reg(12, 0, 0);
-        jit.emit_mov_reg_imm64(0, 3);
-        jit.emit_mov_mem_reg(12, 8, 0);
-        jit.emit_add_reg_imm32(12, sizeof(SapphireValue));
+        jit.emit_mov_reg_mem(12, 14, 0);
         
         offset += 2;
         goto NEXT_OPCODE;
@@ -3238,15 +3216,15 @@ NEXT_OPCODE:
         jit.emit_jmp(end_lbl);
         
         jit.bind(is_closure_lbl);
-        emit_trampoline((void*)&jit_trampoline_call);
+        emit_trampoline_with_opcode((void*)&jit_trampoline_call, arg_count);
         jit.emit_jmp(end_lbl);
         
         jit.bind(is_native_lbl);
-        emit_trampoline((void*)&jit_trampoline_call);
+        emit_trampoline_with_opcode((void*)&jit_trampoline_call, arg_count);
         jit.emit_jmp(end_lbl);
         
         jit.bind(is_class_lbl);
-        emit_trampoline((void*)&jit_trampoline_call);
+        emit_trampoline_with_opcode((void*)&jit_trampoline_call, arg_count);
         
         jit.bind(end_lbl);
         offset += 2;
@@ -3614,7 +3592,7 @@ static bool parse_top_memory_limit_mb(const std::string& source, size_t& out_lim
 SapphireValue VM::interpret(const std::string& source) {
     size_t memory_limit_mb;
     if (parse_top_memory_limit_mb(source, memory_limit_mb)) {
-        max_memory_limit = memory_limit_mb * 1024ull * 1024ull;
+        std::cout << "[VM] MAX MEM LIMIT IS NOW " << memory_limit_mb << "\n"; max_memory_limit = memory_limit_mb * 1024ull * 1024ull;
     }
 
     Preprocessor prep;

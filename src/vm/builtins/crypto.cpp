@@ -1,4 +1,4 @@
-// crypto.cpp — Sapphire Crypto Module (v1.1.0)
+// crypto.cpp — Sapphire Crypto Module (v1.0.9)
 // Provides cryptographic primitives using OpenSSL (already linked via OpenSSL::Crypto).
 //
 // Exposed as Sapphire global functions:

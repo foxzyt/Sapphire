@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.9] - 2026-07-27
 
 ### Added
 - [VM] Opcodes experimentais e suporte base para a VM Rubellite JIT
@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [UI] Consertado o bug em que textboxes ficavam desalinhadas ao serem arrastadas para a borda esquerda (`ui_retained.cpp`)
 - [Network] Resolvido o Memory Leak fatal nas funções de Download (HTTP_DOWNLOAD) e Fetch (`http.cpp`) causadas pelo `httplib::Client`
 - [Map] Corrigido o erro do `mapHas()` e comportamentos estranhos em dicionários usando strings longas devido a colisões e uso incorreto de offsets.
-- **UI Engine v1.1.0 — Novos Componentes e Melhorias Visuais Massivas:**
+- **UI Engine v1.0.9 — Novos Componentes e Melhorias Visuais Massivas:**
   - `Card(...)` — Container com gradiente linear, sombra multicamada e glow no hover
   - `Badge(count=N, ...)` — Círculo numerado para contagens e notificações
   - `Tag(label="...", color="...")` — Etiqueta/chip inline em cápsula arredondada
@@ -156,7 +156,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All LSP debug log messages translated from Portuguese to English.
   - **VS Code Extension (`downloads/lsp`) updated:**
     - `extension.ts` comments translated to English.
-    - `package.json` bumped to v1.1.0 with English description.
+    - `package.json` bumped to v1.0.9 with English description.
     - Added `language-configuration.json` for bracket matching, auto-closing pairs, and `//` line comment toggling.
     - Added `syntaxes/sapphire.tmLanguage.json` TextMate grammar providing syntax highlighting for keywords, types, constants, strings (including f-strings), numbers, operators, function calls, and comments.
 
@@ -342,7 +342,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mermaid Graph Rendering:** `topaz tree --format mermaid` now correctly renders isolated root nodes that have no child dependencies instead of skipping them.
 - **Miniz Compilation Linker Error:** Configured `CMakeLists.txt` to explicitly compile C files along with C++ allowing static compilation of the `miniz` library without undefined reference errors.
 
-## [1.0.9] - 2026-07-15
+
 
 ### Added
 - **Iterators:** Added support for `for in`, `for of`, and `foreach` syntax to iterate over arrays, maps, and strings.

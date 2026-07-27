@@ -71,6 +71,15 @@ struct ActiveAnimation {
 
 #include "ui_node.h"
 
+// === NEW v1.0.9: Notificações toast ===
+struct NotificationEntry {
+  std::string message;
+  std::string type; // "success" | "error" | "warning" | "info"
+  float lifetime  = 3.0f;  // segundos até desaparecer
+  float elapsed   = 0.0f;
+  float alpha     = 0.0f;  // 0..255 — animação de entrada/saída
+};
+
 struct UIState {
   float nextPosX = 10.0f;
   float nextPosY = 10.0f;
@@ -123,6 +132,12 @@ struct UIState {
   std::map<std::string, ActiveAnimation> activeAnimations;
   std::chrono::steady_clock::time_point lastRenderTime;
   bool firstRender = true;
+
+  // === NEW v1.0.9 ===
+  std::vector<NotificationEntry> notificationQueue;   // fila de toasts
+  std::map<std::string, float> hoverLerp;             // interpolação de hover (0..1)
+  std::map<std::string, float> spinnerAngles;         // ângulo atual de cada Spinner
+  float cursorBlinkTimer = 0.0f;                      // timer do cursor piscante
 };
 
 struct CallFrame {
@@ -197,6 +212,7 @@ public:
   ScriptConfig config;
   bool soft_mode = false;
   bool rubellite_debug = false;
+  bool jit_enabled = true; // set to false to force bytecode interpreter
   SapphireValue stack[STACK_MAX];
   Obj *objects = nullptr;
   SapphireValue *stack_top;
@@ -253,6 +269,10 @@ public:
 };
 
 extern thread_local VM *g_current_vm;
+
+// Bytecode interpreter fallback — always available even when USE_RUBELLITE is active.
+// Declared here; defined in vm.cpp inside a new #ifdef USE_RUBELLITE block.
+bool vm_run_bytecode(VM* vm, int target_frame_count);
 
 #endif
 

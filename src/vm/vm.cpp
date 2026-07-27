@@ -1494,7 +1494,7 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     define_native("appendFile", native_io_append_file);
     define_native("openFileDialog", native_io_open_file_dialog);
 
-    // --- IO Advanced (v1.1.0) ---
+    // --- IO Advanced (v1.0.9) ---
     define_native("IO.listDir",          native_io_list_dir);
     define_native("IO.listDirRecursive", native_io_list_dir_recursive);
     define_native("IO.copyFile",         native_io_copy_file);
@@ -1521,7 +1521,7 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     define_native("readLines",        native_io_read_lines);
     define_native("isFile",           native_io_is_file);
 
-    // --- Crypto (v1.1.0) ---
+    // --- Crypto (v1.0.9) ---
     define_native("Crypto.sha256",        native_crypto_sha256);
     define_native("Crypto.sha1",          native_crypto_sha1);
     define_native("Crypto.md5",           native_crypto_md5);
@@ -1534,7 +1534,7 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     define_native("Crypto.aesEncrypt",    native_crypto_aes_encrypt);
     define_native("Crypto.aesDecrypt",    native_crypto_aes_decrypt);
 
-    // --- Net (v1.1.0) ---
+    // --- Net (v1.0.9) ---
     define_native("Net.tcpConnect",    native_net_tcp_connect);
     define_native("Net.tcpSend",       native_net_tcp_send);
     define_native("Net.tcpReceive",    native_net_tcp_receive);
@@ -1723,7 +1723,7 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
         // Animations
         define_native("Animate", native_ui_animate);
 
-        // === NEW v1.1.0: Componentes avançados ===
+        // === NEW v1.0.9: Componentes avançados ===
         define_native("Card",    native_ui_card);
         define_native("Badge",   native_ui_badge);
         define_native("Tag",     native_ui_tag);

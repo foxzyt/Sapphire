@@ -1,5 +1,5 @@
-// io.cpp — Sapphire IO Builtins (v1.1.0)
-// New in v1.1.0:
+// io.cpp — Sapphire IO Builtins (v1.0.9)
+// New in v1.0.9:
 //   IO.listDir(path)          -> array of filenames
 //   IO.listDirRecursive(path) -> array of full paths
 //   IO.copyFile(src, dst)     -> bool
@@ -16,7 +16,7 @@
 //   IO.getExtension(path)     -> string
 //   IO.getBasename(path)      -> string
 //   IO.isFile(path)           -> bool
-// Fixed in v1.1.0:
+// Fixed in v1.0.9:
 //   IO.exists() now uses std::filesystem::exists() instead of opening ifstream
 #include "builtins.h"
 #include "../object.h"
@@ -123,7 +123,7 @@ SapphireValue native_io_is_dir(int arg_count, SapphireValue* args) {
     } catch (...) { return false; }
 }
 
-// FIX v1.1.0: use fs::exists instead of opening ifstream (no side effects)
+// FIX v1.0.9: use fs::exists instead of opening ifstream (no side effects)
 SapphireValue native_io_exists(int arg_count, SapphireValue* args) {
     if (arg_count != 1 || !is_obj_type(args[0], OBJ_STRING)) return false;
     std::string path = get_string_arg(args, 0);
@@ -230,7 +230,7 @@ SapphireValue native_io_append_file(int arg_count, SapphireValue* args) {
 }
 
 // ─────────────────────────────────────────────
-// NEW in v1.1.0 — Advanced filesystem functions
+// NEW in v1.0.9 — Advanced filesystem functions
 // ─────────────────────────────────────────────
 
 SapphireValue native_io_list_dir(int arg_count, SapphireValue* args) {

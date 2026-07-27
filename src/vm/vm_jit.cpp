@@ -9,6 +9,11 @@
 bool vm_interpreter_fallback(VM* vm, int target_frame_count);
 
 bool VM::run(int target_frame_count) {
+    // If JIT is disabled (e.g. after a JIT failure), fall back to bytecode interpreter
+    if (!jit_enabled) {
+        return vm_interpreter_fallback(this, target_frame_count);
+    }
+
     CallFrame* frame = &frames[frame_count - 1];
     Chunk* chunk = &frame->function->chunk;
     
@@ -19,7 +24,7 @@ bool VM::run(int target_frame_count) {
     std::vector<uint8_t> optimized_code = chunk->code;
     std::vector<SapphireValue> optimized_constants = chunk->constants;
     
-    // FIX v1.1.0: constant folding with proper bounds guards to prevent OOB access
+    // FIX v1.0.9: constant folding with proper bounds guards to prevent OOB access
     for (size_t i = 0; i < optimized_code.size(); ) {
         uint8_t opcode = optimized_code[i];
 
@@ -148,7 +153,7 @@ bool VM::run(int target_frame_count) {
         jit.emit_mov_reg_mem(12, 14, 0);
     };
 
-    auto emit_trampoline_with_opcode = [&](void* func, int op) {
+    auto emit_trampoline_with_opcode = [&](void* func, uint64_t op) {
         jit.emit_mov_mem_reg(14, 0, 12);
         jit.emit_mov_reg_reg(1, 13);
         jit.emit_mov_reg_imm64(2, op);
@@ -176,7 +181,7 @@ NEXT_OPCODE:
     goto *dispatch_table[opcode];
 
     TARGET_OP_CONSTANT: {
-        uint8_t constant_idx = chunk->code[offset + 1];
+        uint16_t constant_idx = (chunk->code[offset + 1] << 8) | chunk->code[offset + 2];
         SapphireValue* val_ptr = &chunk->constants[constant_idx];
         jit.emit_mov_reg_imm64(0, (uint64_t)val_ptr);
         jit.emit_mov_reg_mem(1, 0, 0);
@@ -184,7 +189,7 @@ NEXT_OPCODE:
         jit.emit_mov_reg_mem(1, 0, 8);
         jit.emit_mov_mem_reg(12, 8, 1);
         jit.emit_add_reg_imm32(12, sizeof(SapphireValue));
-        offset += 2;
+        offset += 3;
         goto NEXT_OPCODE;
     }
 
@@ -260,20 +265,26 @@ NEXT_OPCODE:
     }
 
     TARGET_OP_GET_GLOBAL: {
-        emit_trampoline((void*)&jit_trampoline_get_global);
-        offset += 2;
+        uint16_t constant_idx = (chunk->code[offset + 1] << 8) | chunk->code[offset + 2];
+        ObjString* name = (ObjString*)chunk->constants[constant_idx].as.obj;
+        emit_trampoline_with_opcode((void*)&jit_trampoline_get_global, (uint64_t)&name->chars);
+        offset += 3;
         goto NEXT_OPCODE;
     }
 
     TARGET_OP_DEFINE_GLOBAL: {
-        emit_trampoline((void*)&jit_trampoline_define_global);
-        offset += 2;
+        uint16_t constant_idx = (chunk->code[offset + 1] << 8) | chunk->code[offset + 2];
+        ObjString* name = (ObjString*)chunk->constants[constant_idx].as.obj;
+        emit_trampoline_with_opcode((void*)&jit_trampoline_define_global, (uint64_t)&name->chars);
+        offset += 3;
         goto NEXT_OPCODE;
     }
 
     TARGET_OP_SET_GLOBAL: {
-        emit_trampoline((void*)&jit_trampoline_set_global);
-        offset += 2;
+        uint16_t constant_idx = (chunk->code[offset + 1] << 8) | chunk->code[offset + 2];
+        ObjString* name = (ObjString*)chunk->constants[constant_idx].as.obj;
+        emit_trampoline_with_opcode((void*)&jit_trampoline_set_global, (uint64_t)&name->chars);
+        offset += 3;
         goto NEXT_OPCODE;
     }
 
@@ -319,69 +330,34 @@ NEXT_OPCODE:
     }
 
     TARGET_OP_BUILD_ARRAY: {
+        // FIX: use the ms_abi trampoline instead of calling new_array() directly
+        // with wrong ABI (new_array uses System V ABI, not ms_abi)
         uint8_t count = chunk->code[offset + 1];
-        jit.emit_mov_reg_reg(1, 13);
-        jit.emit_mov_reg_imm64(0, (uint64_t)&new_array);
+        jit.emit_mov_mem_reg(14, 0, 12);
+        jit.emit_mov_reg_reg(1, 13);           // r1 (rcx in ms_abi) = VM*
+        jit.emit_mov_reg_imm64(2, count);      // r2 (rdx in ms_abi) = count
+        jit.emit_mov_reg_imm64(0, (uint64_t)&jit_trampoline_build_array);
         jit.emit_sub_reg_imm32(4, 40);
         jit.emit_call_reg(0);
         jit.emit_add_reg_imm32(4, 40);
-        jit.emit_mov_reg_reg(2, 0);
-        
-        for (int i = count - 1; i >= 0; i--) {
-            jit.emit_mov_reg_reg(0, 12);
-            jit.emit_sub_reg_imm32(0, sizeof(SapphireValue) * (i + 1));
-            jit.emit_mov_reg_reg(3, 2);
-            jit.emit_mov_reg_imm64(4, offsetof(ObjArray, elements));
-            jit.emit_add_reg_reg(3, 4);
-            jit.emit_mov_mem_reg(14, 0, 12);
-            jit.emit_mov_reg_reg(1, 13);
-            jit.emit_mov_reg_reg(2, 0);
-            jit.emit_mov_reg_imm64(3, OP_BUILD_ARRAY);
-            jit.emit_mov_reg_imm64(0, (uint64_t)&jit_trampoline_build_array);
-            jit.emit_sub_reg_imm32(4, 40);
-            jit.emit_call_reg(0);
-            jit.emit_add_reg_imm32(4, 40);
-            jit.emit_mov_reg_mem(12, 14, 0);
-        }
-        
-        jit.emit_sub_reg_imm32(12, sizeof(SapphireValue) * count);
-        jit.emit_mov_reg_reg(0, 2);
-        jit.emit_mov_mem_reg(12, 0, 0);
-        jit.emit_mov_reg_imm64(0, 3);
-        jit.emit_mov_mem_reg(12, 8, 0);
-        jit.emit_add_reg_imm32(12, sizeof(SapphireValue));
+        jit.emit_mov_reg_mem(12, 14, 0);
         
         offset += 2;
         goto NEXT_OPCODE;
     }
 
     TARGET_OP_BUILD_MAP: {
+        // FIX: use the ms_abi trampoline instead of calling new_map() directly
+        // with wrong ABI (new_map uses System V ABI, not ms_abi)
         uint8_t count = chunk->code[offset + 1];
-        jit.emit_mov_reg_reg(1, 13);
-        jit.emit_mov_reg_imm64(0, (uint64_t)&new_map);
+        jit.emit_mov_mem_reg(14, 0, 12);
+        jit.emit_mov_reg_reg(1, 13);           // r1 (rcx in ms_abi) = VM*
+        jit.emit_mov_reg_imm64(2, count);      // r2 (rdx in ms_abi) = count
+        jit.emit_mov_reg_imm64(0, (uint64_t)&jit_trampoline_build_map);
         jit.emit_sub_reg_imm32(4, 40);
         jit.emit_call_reg(0);
         jit.emit_add_reg_imm32(4, 40);
-        jit.emit_mov_reg_reg(2, 0);
-        
-        for (int i = 0; i < count; i++) {
-            jit.emit_mov_mem_reg(14, 0, 12);
-            jit.emit_mov_reg_reg(1, 13);
-            jit.emit_mov_reg_reg(2, 0);
-            jit.emit_mov_reg_imm64(3, OP_BUILD_MAP);
-            jit.emit_mov_reg_imm64(0, (uint64_t)&jit_trampoline_build_map);
-            jit.emit_sub_reg_imm32(4, 40);
-            jit.emit_call_reg(0);
-            jit.emit_add_reg_imm32(4, 40);
-            jit.emit_mov_reg_mem(12, 14, 0);
-        }
-        
-        jit.emit_sub_reg_imm32(12, sizeof(SapphireValue) * count * 2);
-        jit.emit_mov_reg_reg(0, 2);
-        jit.emit_mov_mem_reg(12, 0, 0);
-        jit.emit_mov_reg_imm64(0, 3);
-        jit.emit_mov_mem_reg(12, 8, 0);
-        jit.emit_add_reg_imm32(12, sizeof(SapphireValue));
+        jit.emit_mov_reg_mem(12, 14, 0);
         
         offset += 2;
         goto NEXT_OPCODE;
@@ -827,7 +803,7 @@ NEXT_OPCODE:
 
     TARGET_OP_LOOP: {
         uint16_t jump = (chunk->code[offset + 1] << 8) | chunk->code[offset + 2];
-        // FIX v1.1.0: guard against underflow on backward jump
+        // FIX v1.0.9: guard against underflow on backward jump
         if (jump <= offset + 3) {
             size_t target = offset + 3 - jump;
             if (target < labels.size()) {
@@ -858,15 +834,15 @@ NEXT_OPCODE:
         jit.emit_jmp(end_lbl);
         
         jit.bind(is_closure_lbl);
-        emit_trampoline((void*)&jit_trampoline_call);
+        emit_trampoline_with_opcode((void*)&jit_trampoline_call, arg_count);
         jit.emit_jmp(end_lbl);
         
         jit.bind(is_native_lbl);
-        emit_trampoline((void*)&jit_trampoline_call);
+        emit_trampoline_with_opcode((void*)&jit_trampoline_call, arg_count);
         jit.emit_jmp(end_lbl);
         
         jit.bind(is_class_lbl);
-        emit_trampoline((void*)&jit_trampoline_call);
+        emit_trampoline_with_opcode((void*)&jit_trampoline_call, arg_count);
         
         jit.bind(end_lbl);
         offset += 2;
@@ -874,8 +850,10 @@ NEXT_OPCODE:
     }
 
     TARGET_OP_CLOSURE: {
-        emit_trampoline((void*)&jit_trampoline_closure);
-        offset += 2;
+        uint16_t constant_idx = (chunk->code[offset + 1] << 8) | chunk->code[offset + 2];
+        SapphireValue* val_ptr = &chunk->constants[constant_idx];
+        emit_trampoline_with_opcode((void*)&jit_trampoline_closure, (uint64_t)val_ptr);
+        offset += 3;
         goto NEXT_OPCODE;
     }
 
@@ -896,13 +874,15 @@ NEXT_OPCODE:
 
     TARGET_OP_IMPORT: {
         emit_trampoline((void*)&jit_trampoline_import);
-        offset++;
+        offset += 3;
         goto NEXT_OPCODE;
     }
 
     TARGET_OP_MAKE_NAMED_ARG: {
-        emit_trampoline((void*)&jit_trampoline_make_named_arg);
-        offset += 2;
+        uint16_t constant_idx = (chunk->code[offset + 1] << 8) | chunk->code[offset + 2];
+        SapphireValue* val_ptr = &chunk->constants[constant_idx];
+        emit_trampoline_with_opcode((void*)&jit_trampoline_make_named_arg, (uint64_t)val_ptr);
+        offset += 3;
         goto NEXT_OPCODE;
     }
 
@@ -914,7 +894,7 @@ NEXT_OPCODE:
 
     TARGET_OP_GET_SUPER: {
         emit_trampoline_with_opcode((void*)&jit_trampoline_generic, OP_GET_SUPER);
-        offset += 2;
+        offset += 3;
         goto NEXT_OPCODE;
     }
 
@@ -988,13 +968,13 @@ NEXT_OPCODE:
         jit.emit_jmp(end_lbl);
         
         jit.bind(end_lbl);
-        offset++;
+        offset += 3;
         goto NEXT_OPCODE;
     }
 
     TARGET_OP_ITER_NEXT_OF: {
         emit_trampoline_with_opcode((void*)&jit_trampoline_generic, OP_ITER_NEXT_OF);
-        offset++;
+        offset += 3;
         goto NEXT_OPCODE;
     }
 
@@ -1089,7 +1069,7 @@ NEXT_OPCODE:
 
     TARGET_OP_CLASS: {
         emit_trampoline_with_opcode((void*)&jit_trampoline_generic, OP_CLASS);
-        offset++;
+        offset += 3;
         goto NEXT_OPCODE;
     }
 
@@ -1113,7 +1093,7 @@ JIT_END:
             printf("[JIT DEBUG] JIT execution completed.\n");
         }
     } else {
-        // FIX v1.1.0: fallback to interpreter instead of hard failing.
+        // FIX v1.0.9: fallback to interpreter instead of hard failing.
         // The JIT may fail on platforms without executable memory or on edge-case
         // bytecode sequences. The interpreter is always correct.
         if (rubellite_debug || !soft_mode) {

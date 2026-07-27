@@ -1,4 +1,4 @@
-// net.cpp — Sapphire Net Module (v1.1.0)
+// net.cpp — Sapphire Net Module (v1.0.9)
 // Low-level TCP/UDP networking via POSIX sockets (Winsock on Windows).
 // No new external dependencies — uses the OS socket API directly.
 //

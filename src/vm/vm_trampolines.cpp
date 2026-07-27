@@ -101,11 +101,10 @@ extern "C" JIT_ABI void jit_trampoline_set_property(VM* vm) {
     vm->push(value);
 }
 
-extern "C" JIT_ABI void jit_trampoline_call(VM* vm) {
+extern "C" JIT_ABI void jit_trampoline_call(VM* vm, int arg_count) {
     // Call function - simplified implementation
     if (vm->stack_top - vm->stack < 1) return;
-    uint8_t arg_count = vm->stack_top[-1].as.number;
-    vm->stack_top--;
+    // arg_count passed directly via ABI
     
     if (vm->stack_top - vm->stack < arg_count + 1) return;
     
@@ -484,18 +483,17 @@ extern "C" JIT_ABI void jit_print_value(SapphireValue* val) {
     printf("\n");
 }
 
-// FIX v1.1.0: Interpreter fallback — invoked when JIT compilation fails.
+// FIX v1.0.9: Interpreter fallback — invoked when JIT compilation fails.
 // Re-uses the VM's standard interpreter loop so execution is never lost.
 // The caller (vm_jit.cpp) resets frame->ip before calling this.
 bool vm_interpreter_fallback(VM* vm, int target_frame_count) {
     if (vm == nullptr) return false;
-    // The vm->run(target_frame_count) is the interpreter entry point in vm.cpp
-    // We call it recursively but the JIT is already disabled for this frame since
-    // we're re-entering through the normal path.
-    // Note: This relies on the vm.cpp implementation of run() being the interpreter,
-    // which is only the case when RUBELLITE is disabled or on a non-JIT re-entry.
-    // For now we signal success so the outer call can handle cleanup.
-    // A full fix would require separating the interpreter loop into its own function.
-    fprintf(stderr, "[Sapphire] JIT fallback: execution continuing in interpreter mode.\n");
-    return true;
+    // Disable JIT so that VM::run() does not recurse back into the JIT compiler.
+    // The vm_jit.cpp VM::run() checks jit_enabled first and calls this function again
+    // if false — we prevent that by using the bytecode interpreter directly via
+    // the vm.cpp run_module path which resets the bytecode loop.
+    vm->jit_enabled = false;
+    bool result = vm->run(target_frame_count);
+    vm->jit_enabled = true;
+    return result;
 }

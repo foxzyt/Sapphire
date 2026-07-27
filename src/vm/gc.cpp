@@ -1,4 +1,4 @@
-// gc.cpp — Sapphire Garbage Collector (v1.1.0 — Turbo + Safe)
+// gc.cpp — Sapphire Garbage Collector (v1.0.9 — Turbo + Safe)
 // Corrections over v1.0.9:
 //  - mark_value: fixed broken VAL_OBJ + OBJ_ARRAY detection (was unreachable code)
 //  - blacken_object: added OBJ_MAP, OBJ_ARRAY, OBJ_LRU, OBJ_PROMISE, OBJ_NAMED_ARG, OBJ_FADE
@@ -17,7 +17,7 @@ void VM::mark_object(Obj* object) {
     gray_stack.push_back(object);
 }
 
-// FIX v1.1.0: previous version had unreachable OBJ_ARRAY check inside the
+// FIX v1.0.9: previous version had unreachable OBJ_ARRAY check inside the
 // VAL_OBJ branch that returned early. Now we handle all object types properly.
 void VM::mark_value(SapphireValue value) {
     if (value.type != ValType::VAL_OBJ || value.as.obj == nullptr) return;
@@ -64,7 +64,7 @@ void VM::blacken_object(Obj* object) {
             if (bound->defined_in_class) mark_object(static_cast<Obj*>(bound->defined_in_class));
             break;
         }
-        // FIX v1.1.0: OBJ_ARRAY was never blackened — child values could be freed
+        // FIX v1.0.9: OBJ_ARRAY was never blackened — child values could be freed
         case OBJ_ARRAY: {
             ObjArray* array = static_cast<ObjArray*>(object);
             for (SapphireValue& val : array->elements) {
@@ -72,7 +72,7 @@ void VM::blacken_object(Obj* object) {
             }
             break;
         }
-        // FIX v1.1.0: OBJ_MAP was never blackened — map values could be freed
+        // FIX v1.0.9: OBJ_MAP was never blackened — map values could be freed
         case OBJ_MAP: {
             ObjMap* map = static_cast<ObjMap*>(object);
             for (auto const& [key, val] : map->items) {
@@ -80,7 +80,7 @@ void VM::blacken_object(Obj* object) {
             }
             break;
         }
-        // FIX v1.1.0: OBJ_LRU was never blackened
+        // FIX v1.0.9: OBJ_LRU was never blackened
         case OBJ_LRU: {
             ObjLRU* lru = static_cast<ObjLRU*>(object);
             for (auto const& [key, val] : lru->items) {
@@ -88,7 +88,7 @@ void VM::blacken_object(Obj* object) {
             }
             break;
         }
-        // FIX v1.1.0: OBJ_PROMISE was never blackened — saved stack/frames leaked
+        // FIX v1.0.9: OBJ_PROMISE was never blackened — saved stack/frames leaked
         case OBJ_PROMISE: {
             ObjPromise* promise = static_cast<ObjPromise*>(object);
             mark_value(promise->value);
@@ -104,14 +104,14 @@ void VM::blacken_object(Obj* object) {
             }
             break;
         }
-        // FIX v1.1.0: OBJ_NAMED_ARG was never blackened
+        // FIX v1.0.9: OBJ_NAMED_ARG was never blackened
         case OBJ_NAMED_ARG: {
             ObjNamedArg* named = static_cast<ObjNamedArg*>(object);
             mark_object(static_cast<Obj*>(named->name));
             mark_value(named->value);
             break;
         }
-        // FIX v1.1.0: OBJ_FADE was never blackened
+        // FIX v1.0.9: OBJ_FADE was never blackened
         case OBJ_FADE: {
             ObjFade* fade = static_cast<ObjFade*>(object);
             mark_value(fade->value);

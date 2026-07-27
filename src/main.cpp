@@ -704,7 +704,7 @@ static void publish_diagnostics(const std::string &uri,
     std::ostringstream capture;
     std::streambuf *old_cerr = std::cerr.rdbuf(capture.rdbuf());
 
-    VM vm;
+    VM vm; std::cout << "[DEBUG] INITIAL bytes_allocated=" << vm.bytes_allocated << "\n";
     Preprocessor prep;
     std::string processed = source;
     try {
@@ -2088,7 +2088,7 @@ int run_compiler(int argc, char *argv[]) {
 
   bool soft_mode_enabled = check_for_soft_mode(source);
 
-  VM vm;
+  VM vm; std::cout << "[DEBUG] INITIAL bytes_allocated=" << vm.bytes_allocated << "\n";
   vm.soft_mode = soft_mode_enabled;
 
   Preprocessor prep;
@@ -2113,8 +2113,8 @@ void display_info() {
       "",
       "** SAPPHIRE INFORMATIONS: **",
       "",
-      "Version: 1.0.9 (build 0223-07182026 (July 18, 2026))",
-      "Release Date: July 18, 2026",
+      "Version: 1.0.9 (build 0223-07272026 (July 27, 2026))",
+      "Release Date: July 27, 2026",
       "",
       "Developed by: Bernardo Alvim",
       "Protected by MIT License",
@@ -2299,7 +2299,7 @@ void run_ui_mode(std::string script_content, const ScriptConfig &config,
 
 void run_file_mode(const std::string &script_content,
                    const std::string &script_path) {
-  VM vm;
+  VM vm; std::cout << "[DEBUG] INITIAL bytes_allocated=" << vm.bytes_allocated << "\n";
   g_current_vm = &vm;
   vm.soft_mode = check_for_soft_mode(script_content);
   vm.add_module_search_path(
@@ -2312,7 +2312,7 @@ void run_file_mode(const std::string &script_content,
 
 void run_repl() {
   std::cout << "Sapphire REPL v1.0.9\nType 'exit' or 'quit' to close.\n";
-  VM vm;
+  VM vm; std::cout << "[DEBUG] INITIAL bytes_allocated=" << vm.bytes_allocated << "\n";
   g_current_vm = &vm;
   std::string line;
   while (true) {
@@ -2334,7 +2334,7 @@ void run_repl() {
 }
 
 void run_eval(const std::string &code) {
-  VM vm;
+  VM vm; std::cout << "[DEBUG] INITIAL bytes_allocated=" << vm.bytes_allocated << "\n";
   g_current_vm = &vm;
   ObjFunction *func = compile(&vm, code);
   if (func) {
@@ -2349,7 +2349,7 @@ void run_check(const std::string &path) {
     std::cerr << "Error: Could not read " << path << std::endl;
     return;
   }
-  VM vm;
+  VM vm; std::cout << "[DEBUG] INITIAL bytes_allocated=" << vm.bytes_allocated << "\n";
   Preprocessor prep;
   std::string processed = prep.process(source);
   ObjFunction *func = compile(&vm, processed);
@@ -2416,7 +2416,7 @@ void run_test(const std::string &path) {
       continue;
     }
 
-    VM vm;
+    VM vm; std::cout << "[DEBUG] INITIAL bytes_allocated=" << vm.bytes_allocated << "\n";
     g_current_vm = &vm;
     vm.add_module_search_path(
         std::filesystem::path(file).parent_path().string());
@@ -2524,7 +2524,7 @@ void run_disasm(const std::string &path) {
     std::cerr << "Error: Could not read " << path << std::endl;
     return;
   }
-  VM vm;
+  VM vm; std::cout << "[DEBUG] INITIAL bytes_allocated=" << vm.bytes_allocated << "\n";
   Preprocessor prep;
   std::string processed = prep.process(source);
   ObjFunction *func = compile(&vm, processed);
@@ -2697,7 +2697,7 @@ int main(int argc, char *argv[]) {
       std::string subcommand = argv[2];
       if (subcommand == "-e" || subcommand == "eval") {
         if (argc >= 4) {
-          VM vm;
+          VM vm; std::cout << "[DEBUG] INITIAL bytes_allocated=" << vm.bytes_allocated << "\n";
           g_current_vm = &vm;
           vm.rubellite_debug = true;
           vm.interpret(argv[3]);
@@ -2709,7 +2709,7 @@ int main(int argc, char *argv[]) {
         std::string path = argv[2];
         std::string content = load_source_script(path);
         if (!content.empty()) {
-          VM vm;
+          VM vm; std::cout << "[DEBUG] INITIAL bytes_allocated=" << vm.bytes_allocated << "\n";
           g_current_vm = &vm;
           vm.soft_mode = check_for_soft_mode(content);
           vm.rubellite_debug = true;

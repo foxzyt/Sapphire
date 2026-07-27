@@ -33,7 +33,7 @@ SapphireValue native_io_print_color(int arg_count, SapphireValue* args);
 SapphireValue native_io_read_input(int arg_count, SapphireValue* args);
 SapphireValue native_io_delete_file(int arg_count, SapphireValue* args);
 SapphireValue native_io_append_file(int arg_count, SapphireValue* args);
-// NEW in v1.1.0 — Advanced IO
+// NEW in v1.0.9 — Advanced IO
 SapphireValue native_io_list_dir(int arg_count, SapphireValue* args);
 SapphireValue native_io_list_dir_recursive(int arg_count, SapphireValue* args);
 SapphireValue native_io_copy_file(int arg_count, SapphireValue* args);
@@ -50,7 +50,7 @@ SapphireValue native_io_get_parent_dir(int arg_count, SapphireValue* args);
 SapphireValue native_io_get_extension(int arg_count, SapphireValue* args);
 SapphireValue native_io_get_basename(int arg_count, SapphireValue* args);
 SapphireValue native_io_is_file(int arg_count, SapphireValue* args);
-// NEW in v1.1.0 — Crypto module
+// NEW in v1.0.9 — Crypto module
 SapphireValue native_crypto_sha256(int arg_count, SapphireValue* args);
 SapphireValue native_crypto_sha1(int arg_count, SapphireValue* args);
 SapphireValue native_crypto_md5(int arg_count, SapphireValue* args);
@@ -62,7 +62,7 @@ SapphireValue native_crypto_random_hex(int arg_count, SapphireValue* args);
 SapphireValue native_crypto_uuid4(int arg_count, SapphireValue* args);
 SapphireValue native_crypto_aes_encrypt(int arg_count, SapphireValue* args);
 SapphireValue native_crypto_aes_decrypt(int arg_count, SapphireValue* args);
-// NEW in v1.1.0 — Net module
+// NEW in v1.0.9 — Net module
 SapphireValue native_net_tcp_connect(int arg_count, SapphireValue* args);
 SapphireValue native_net_tcp_send(int arg_count, SapphireValue* args);
 SapphireValue native_net_tcp_receive(int arg_count, SapphireValue* args);
@@ -176,6 +176,13 @@ SapphireValue native_ui_animate(int arg_count, SapphireValue* args);
 SapphireValue native_ui_style(int arg_count, SapphireValue* args);
 SapphireValue native_ui_get_input_text(int arg_count, SapphireValue* args);
 SapphireValue native_ui_render(int arg_count, SapphireValue* args);
+// === NEW v1.0.9 ===
+SapphireValue native_ui_card(int arg_count, SapphireValue* args);
+SapphireValue native_ui_badge(int arg_count, SapphireValue* args);
+SapphireValue native_ui_tag(int arg_count, SapphireValue* args);
+SapphireValue native_ui_stepper(int arg_count, SapphireValue* args);
+SapphireValue native_ui_spinner(int arg_count, SapphireValue* args);
+SapphireValue native_ui_notify(int arg_count, SapphireValue* args);
 
 UIStyle resolve_style(const std::string& nodeId, const std::string& styleName);
 

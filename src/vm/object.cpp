@@ -122,7 +122,7 @@ static void register_object(VM* vm, T* object) {
     if (vm->bytes_allocated > vm->max_memory_limit) {
         std::cerr << "CRITICAL ERROR: CORUNDUM VM OOM (Out of Memory) DETECTED! Aborting immediately to prevent system crash!" << std::endl;
         std::cerr << "Memory exceeded safe limit of " << vm->max_memory_limit / (1024*1024) << " MB in thread " << std::this_thread::get_id() << std::endl;
-        exit(1); // Aborta tudo imediatamente!
+        std::cerr << "[DEBUG] bytes_allocated=" << vm->bytes_allocated << " max_memory_limit=" << vm->max_memory_limit << "\n"; exit(1); // Aborta tudo imediatamente!
     }
 
     if (vm->bytes_allocated > vm->next_gc_threshold) {
