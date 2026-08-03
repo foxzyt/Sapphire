@@ -221,6 +221,12 @@ if(PKG_CONFIG_FOUND)
     endif()
 endif()
 
+# Search for libffi
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(LIBFFI REQUIRED libffi)
+include_directories(${LIBFFI_INCLUDE_DIRS})
+link_directories(${LIBFFI_LIBRARY_DIRS})
+
 # 2. Ativa o suporte a OpenSSL na biblioteca httplib
 target_compile_definitions(sapphire_core PUBLIC
     SFML_STATIC
@@ -250,14 +256,14 @@ target_link_libraries(sapphire_core PUBLIC
     nlohmann_json::nlohmann_json
 )
 
-target_link_libraries(sapphire_core PUBLIC OpenCL sqlite3 asmjit)
+target_link_libraries(sapphire_core PUBLIC OpenCL sqlite3 asmjit ${LIBFFI_LIBRARIES})
 
 add_executable(sapphire src/main.cpp)
 
 # Runner executável (usa a mesma VM que o sapphire.exe)
 add_executable(runner src/vm/runner.cpp src/topaz/third_party/miniz.c)
 
-add_executable(beryl src/beryl/main.cpp src/beryl/beryl.cpp src/beryl/beryl_ui.cpp src/topaz/third_party/miniz.c)
+add_executable(beryl src/beryl/main.cpp src/beryl/beryl.cpp src/topaz/third_party/miniz.c)
 add_executable(citrine src/linter/main.cpp src/linter/citrine.cpp)
 target_link_libraries(citrine PUBLIC sapphire_core)
 

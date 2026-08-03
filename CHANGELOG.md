@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.9] - 2026-07-27
 
 ### Added
+- [API] Implementação completa da FFI (Foreign Function Interface) utilizando `libffi` para chamadas dinâmicas com tipagem flexível (`ffiCall`).
 - [VM] Opcodes experimentais e suporte base para a VM Rubellite JIT
 - [System] Suporte preliminar à API OpenCL (`opencl_api.cpp`)
 - [System] Conectores de banco de dados (SQLite, MySQL, PostgreSQL)
