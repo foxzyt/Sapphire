@@ -183,11 +183,11 @@ inline std::vector<std::string> list_remote_sapphire_versions() {
     std::vector<std::string> versions;
 
     try {
-        httplib::SSLClient cli("api.github.com");
+        httplib::Client cli("api.github.com");
         cli.set_follow_location(true);
         cli.set_connection_timeout(15);
         cli.set_read_timeout(20);
-        cli.enable_server_certificate_verification(false);
+
 
         httplib::Headers headers = {
             {"User-Agent", "Sapphire-Topaz/2.2"},
@@ -273,11 +273,11 @@ inline bool download_sapphire_binary(
                          + "/" + filename;
 
     try {
-        httplib::SSLClient cli("raw.githubusercontent.com");
+        httplib::Client cli("raw.githubusercontent.com");
         cli.set_follow_location(true);
         cli.set_connection_timeout(20);
         cli.set_read_timeout(120); // Binários podem ser grandes
-        cli.enable_server_certificate_verification(false);
+
 
         auto res = cli.Get(url_path.c_str());
 

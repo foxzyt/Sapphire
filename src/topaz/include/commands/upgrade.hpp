@@ -87,11 +87,11 @@ inline int cmd_upgrade() {
               << termcolor::reset << std::endl;
 
     try {
-        httplib::SSLClient cli("raw.githubusercontent.com");
+        httplib::Client cli("raw.githubusercontent.com");
         cli.set_follow_location(true);
         cli.set_connection_timeout(20);
         cli.set_read_timeout(120);
-        cli.enable_server_certificate_verification(false);
+
 
         auto res = cli.Get(url_path.c_str());
 

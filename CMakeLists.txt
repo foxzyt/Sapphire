@@ -332,11 +332,12 @@ endif()
 
 
 # Build new modular topaz (v2) - full-featured package manager
-option(BUILD_TOPAZ "Build new modular topaz package manager" OFF)
-if(BUILD_TOPAZ AND OPENSSL_FOUND)
+option(BUILD_TOPAZ "Build new modular topaz package manager" ON)
+if(BUILD_TOPAZ)
+    message(STATUS "Building Topaz package manager")
     add_subdirectory(src/topaz)
-elseif(BUILD_TOPAZ)
-    message(WARNING "Skipping topaz build due to missing OpenSSL")
+else()
+    message(STATUS "Topaz build disabled")
 endif()
 
 target_compile_definitions(sapphire PRIVATE SFML_STATIC)

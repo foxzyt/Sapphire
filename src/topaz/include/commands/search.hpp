@@ -36,11 +36,11 @@ inline int cmd_search(const std::string& query) {
     const char* REGISTRY_FILE = "registry.json";
 
     try {
-        httplib::SSLClient cli("api.github.com");
+        httplib::Client cli("api.github.com");
         cli.set_follow_location(true);
         cli.set_connection_timeout(15);
         cli.set_read_timeout(30);
-        cli.enable_server_certificate_verification(false);
+
 
         std::string url_path = std::string("/repos/") + REGISTRY_OWNER
                               + "/" + REGISTRY_REPO

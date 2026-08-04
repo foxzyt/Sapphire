@@ -47,11 +47,11 @@ inline std::string install_resolve_github_version(const std::string& repo_url, c
     std::vector<std::pair<std::string, std::string>> all_versions;
 
     try {
-        httplib::SSLClient cli("api.github.com");
+        httplib::Client cli("api.github.com");
         cli.set_follow_location(true);
         cli.set_connection_timeout(10);
         cli.set_read_timeout(15);
-        cli.enable_server_certificate_verification(false);
+
 
         httplib::Headers headers = {
             {"User-Agent", "Sapphire-Mine/2.2"},

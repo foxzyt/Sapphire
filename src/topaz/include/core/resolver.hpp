@@ -9,7 +9,9 @@
 #include <unordered_set>
 #include <iostream>
 #include "termcolor.hpp"
+#ifdef OPENSSL_FOUND
 #include <openssl/evp.h>
+#endif
 #include <iomanip>
 #include <sstream>
 
@@ -31,6 +33,7 @@ private:
     
     // Calculate SHA256 checksum of a file
     std::string calculate_checksum(const fs::path& file_path) {
+#ifdef OPENSSL_FOUND
         std::ifstream file(file_path, std::ios::binary);
         if (!file.is_open()) {
             return "";
@@ -56,6 +59,9 @@ private:
         }
         
         return ss.str();
+#else
+        return ""; // Hash not available without OpenSSL
+#endif
     }
     
     // Check for version conflicts

@@ -140,14 +140,18 @@ target_include_directories(topaz PRIVATE
     ${TERMCOLOR_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../libs
     ${CMAKE_CURRENT_SOURCE_DIR}/../../src/utils
-    ${OPENSSL_INCLUDE_DIR}
 )
+if(OPENSSL_FOUND)
+    target_include_directories(topaz PRIVATE ${OPENSSL_INCLUDE_DIR})
+endif()
 
 # Link libraries
-target_link_libraries(topaz PRIVATE
-    OpenSSL::SSL
-    OpenSSL::Crypto
-)
+if(OPENSSL_FOUND)
+    target_link_libraries(topaz PRIVATE
+        OpenSSL::SSL
+        OpenSSL::Crypto
+    )
+endif()
 
 if(WIN32)
     target_link_libraries(topaz PRIVATE

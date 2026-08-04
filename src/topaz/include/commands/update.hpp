@@ -73,11 +73,11 @@ inline std::string get_latest_github_version(const std::string& repo_url) {
     std::cout << termcolor::cyan << "[*] Checking for updates at: " << api_url << termcolor::reset << std::endl;
     
     try {
-        httplib::SSLClient cli("api.github.com");
+        httplib::Client cli("api.github.com");
         cli.set_follow_location(true);
         cli.set_connection_timeout(10);
         cli.set_read_timeout(15);
-        cli.enable_server_certificate_verification(false);
+
         
         // Add User-Agent header (required by GitHub API)
         httplib::Headers headers = {

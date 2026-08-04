@@ -88,11 +88,11 @@ inline std::optional<RegistryEntry> query_registry(const std::string& plugin_nam
             return std::nullopt;
         }
         
-        httplib::SSLClient cli(host);
+        httplib::Client cli(host);
         cli.set_follow_location(true);
         cli.set_connection_timeout(10);
         cli.set_read_timeout(30);
-        cli.enable_server_certificate_verification(false);
+
         
         auto res = cli.Get(path.c_str());
         
@@ -131,11 +131,11 @@ inline bool download_file(const std::string& url, const fs::path& output_path) {
         std::cout << "[*] Connecting to host: " << host << std::endl;
         std::cout << "[*] Requesting path: " << path << std::endl;
         
-        httplib::SSLClient cli(host);
+        httplib::Client cli(host);
         cli.set_follow_location(true);
         cli.set_connection_timeout(30);
         cli.set_read_timeout(60);
-        cli.enable_server_certificate_verification(false);
+
         
         auto res = cli.Get(path.c_str());
         
@@ -264,6 +264,7 @@ inline bool download_and_extract_plugin(const std::string& plugin_name, const st
         }
         
         if (!expected_checksum.empty()) {
+#ifdef OPENSSL_FOUND
             std::cout << "[*] Verifying checksum..." << std::endl;
             std::ifstream file(zip_path, std::ios::binary);
             if (file.is_open()) {
@@ -297,6 +298,9 @@ inline bool download_and_extract_plugin(const std::string& plugin_name, const st
                     std::cout << termcolor::green << "[+] Checksum verified." << termcolor::reset << std::endl;
                 }
             }
+#else
+            std::cout << "[*] Checksum verification skipped (OpenSSL not available)" << std::endl;
+#endif
         } else {
             std::cout << termcolor::yellow << "[!] WARNING: No checksum provided by registry. Cannot verify signature." << termcolor::reset << std::endl;
         }
@@ -376,11 +380,11 @@ inline std::string fetch_latest_version_from_repo(const std::string& repo_url) {
     }
     
     try {
-        httplib::SSLClient cli("api.github.com");
+        httplib::Client cli("api.github.com");
         cli.set_follow_location(true);
         cli.set_connection_timeout(10);
         cli.set_read_timeout(15);
-        cli.enable_server_certificate_verification(false);
+
         
         // Add User-Agent header (required by GitHub API)
         httplib::Headers headers = {
