@@ -281,8 +281,14 @@ endif()
 if(OPENSSL_FOUND)
     target_link_libraries(sapphire_core PUBLIC OpenSSL::Crypto OpenSSL::SSL)
 endif()
+if(WIN32)
+    target_link_libraries(sapphire_core PUBLIC ws2_32)
+endif()
 
 add_executable(sapphire src/main.cpp)
+if(WIN32)
+    target_link_libraries(sapphire PRIVATE ws2_32)
+endif()
 
 # Runner executável (usa a mesma VM que o sapphire.exe)
 add_executable(runner src/vm/runner.cpp src/topaz/third_party/miniz.c)
@@ -299,6 +305,9 @@ target_link_libraries(amethyst PUBLIC sapphire_core)
 
 add_executable(quartz src/benchmarker/main.cpp src/benchmarker/quartz.cpp)
 target_link_libraries(quartz PUBLIC sapphire_core)
+if(WIN32)
+    target_link_libraries(quartz PRIVATE ws2_32)
+endif()
 
 
 # Build new modular topaz (v2) - full-featured package manager
