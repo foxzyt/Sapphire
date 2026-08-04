@@ -704,7 +704,7 @@ static void publish_diagnostics(const std::string &uri,
     std::ostringstream capture;
     std::streambuf *old_cerr = std::cerr.rdbuf(capture.rdbuf());
 
-    VM vm; std::cout << "[DEBUG] INITIAL bytes_allocated=" << vm.bytes_allocated << "\n";
+    VM vm;
     Preprocessor prep;
     std::string processed = source;
     try {
@@ -2088,7 +2088,7 @@ int run_compiler(int argc, char *argv[]) {
 
   bool soft_mode_enabled = check_for_soft_mode(source);
 
-  VM vm; std::cout << "[DEBUG] INITIAL bytes_allocated=" << vm.bytes_allocated << "\n";
+  VM vm;
   vm.soft_mode = soft_mode_enabled;
 
   Preprocessor prep;
@@ -2299,7 +2299,7 @@ void run_ui_mode(std::string script_content, const ScriptConfig &config,
 
 void run_file_mode(const std::string &script_content,
                    const std::string &script_path) {
-  VM vm; std::cout << "[DEBUG] INITIAL bytes_allocated=" << vm.bytes_allocated << "\n";
+  VM vm;
   g_current_vm = &vm;
   vm.soft_mode = check_for_soft_mode(script_content);
   vm.add_module_search_path(
@@ -2312,7 +2312,7 @@ void run_file_mode(const std::string &script_content,
 
 void run_repl() {
   std::cout << "Sapphire REPL v1.0.9\nType 'exit' or 'quit' to close.\n";
-  VM vm; std::cout << "[DEBUG] INITIAL bytes_allocated=" << vm.bytes_allocated << "\n";
+  VM vm;
   g_current_vm = &vm;
   std::string line;
   while (true) {
@@ -2334,7 +2334,7 @@ void run_repl() {
 }
 
 void run_eval(const std::string &code) {
-  VM vm; std::cout << "[DEBUG] INITIAL bytes_allocated=" << vm.bytes_allocated << "\n";
+  VM vm;
   g_current_vm = &vm;
   ObjFunction *func = compile(&vm, code);
   if (func) {
@@ -2349,7 +2349,7 @@ void run_check(const std::string &path) {
     std::cerr << "Error: Could not read " << path << std::endl;
     return;
   }
-  VM vm; std::cout << "[DEBUG] INITIAL bytes_allocated=" << vm.bytes_allocated << "\n";
+  VM vm;
   Preprocessor prep;
   std::string processed = prep.process(source);
   ObjFunction *func = compile(&vm, processed);
@@ -2416,7 +2416,7 @@ void run_test(const std::string &path) {
       continue;
     }
 
-    VM vm; std::cout << "[DEBUG] INITIAL bytes_allocated=" << vm.bytes_allocated << "\n";
+    VM vm;
     g_current_vm = &vm;
     vm.add_module_search_path(
         std::filesystem::path(file).parent_path().string());
@@ -2524,7 +2524,7 @@ void run_disasm(const std::string &path) {
     std::cerr << "Error: Could not read " << path << std::endl;
     return;
   }
-  VM vm; std::cout << "[DEBUG] INITIAL bytes_allocated=" << vm.bytes_allocated << "\n";
+  VM vm;
   Preprocessor prep;
   std::string processed = prep.process(source);
   ObjFunction *func = compile(&vm, processed);
@@ -2559,17 +2559,21 @@ void run_init(const std::string &name) {
   try {
     std::filesystem::create_directory(name);
     std::filesystem::create_directory(name + "/build");
+    std::filesystem::create_directory(name + "/src");
+    std::filesystem::create_directory(name + "/assets");
+    std::filesystem::create_directory(name + "/tests");
 
-    std::ofstream info(name + "/ProjectInfo.txt");
-    info << "Project=" << name << "\n"
-         << "Author=Sapphire Developer\n"
-         << "Version=1.0.0\n"
-         << "Build=1\n"
-         << "OutputFile=build/app.exe\n"
-         << "Date=" << std::time(nullptr) << "\n";
+    std::ofstream info(name + "/PROJECT.txt");
+    info << "# Manifesto do Projeto Sapphire\n"
+         << "name: " << name << "\n"
+         << "author: Sapphire Developer\n"
+         << "version: 1.0.0\n"
+         << "entry: src/main.sp\n"
+         << "output: build/app.exe\n"
+         << "description: Um aplicativo incrível construído em Sapphire\n";
     info.close();
 
-    std::ofstream theme(name + "/theme.sp");
+    std::ofstream theme(name + "/src/theme.sp");
     theme << "// Theme definitions\n"
           << "var window_width = 800;\n"
           << "var window_height = 600;\n"
@@ -2577,7 +2581,7 @@ void run_init(const std::string &name) {
           << "var primary_color = \"blue\";\n";
     theme.close();
 
-    std::ofstream main(name + "/main.sp");
+    std::ofstream main(name + "/src/main.sp");
     main << "import \"theme.sp\";\n\n"
          << "var config_window_width = window_width;\n"
          << "var config_window_height = window_height;\n"
@@ -2697,7 +2701,7 @@ int main(int argc, char *argv[]) {
       std::string subcommand = argv[2];
       if (subcommand == "-e" || subcommand == "eval") {
         if (argc >= 4) {
-          VM vm; std::cout << "[DEBUG] INITIAL bytes_allocated=" << vm.bytes_allocated << "\n";
+          VM vm;
           g_current_vm = &vm;
           vm.rubellite_debug = true;
           vm.interpret(argv[3]);
@@ -2709,7 +2713,7 @@ int main(int argc, char *argv[]) {
         std::string path = argv[2];
         std::string content = load_source_script(path);
         if (!content.empty()) {
-          VM vm; std::cout << "[DEBUG] INITIAL bytes_allocated=" << vm.bytes_allocated << "\n";
+          VM vm;
           g_current_vm = &vm;
           vm.soft_mode = check_for_soft_mode(content);
           vm.rubellite_debug = true;

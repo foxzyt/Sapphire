@@ -56,27 +56,8 @@ int main(int argc, char* argv[]) {
 #endif
     std::string runner_path = (build_dir / ("runner" + exe_ext)).string();
 
-    if (argc >= 2 && std::string(argv[1]) == "ui") {
-        std::string sapphire_path = (build_dir / ("sapphire" + exe_ext)).string();
-        std::string ui_script = (build_dir / "beryl_ui.sp").string();
-
-        if (fs::exists(sapphire_path) && fs::exists(ui_script)) {
-#ifdef _WIN32
-            // cmd.exe requires the entire command to be surrounded by quotes if it contains multiple quoted strings.
-            std::string cmd = "\"\"" + sapphire_path + "\" \"" + ui_script + "\"\"";
-            std::system(cmd.c_str());
-#else
-            std::string cmd = "\"" + sapphire_path + "\" \"" + ui_script + "\"";
-            std::system(cmd.c_str());
-#endif
-        } else {
-            std::cerr << tc_red() << "Error: Could not find sapphire" + exe_ext + " or beryl_ui.sp in " << build_dir << tc_reset() << "\n";
-            return 1;
-        }
-        return 0;
-    }
-
-    std::string config_path = "BerylConfig.txt";
+    std::string config_path = "BERYL.txt";
+    bool using_fallback = false;
     if (argc >= 3 && std::string(argv[1]) == "-c") {
         config_path = argv[2];
     } else if (argc >= 2 && std::string(argv[1]) != "-c") {
@@ -89,13 +70,17 @@ int main(int argc, char* argv[]) {
     }
 
     if (!fs::exists(config_path)) {
-        std::cerr << tc_red() << "Error: " << config_path << " not found." << tc_reset() << "\n";
-        std::cout << "Usage:\n";
-        std::cout << "  beryl <script.sp>             - Fast pack without config\n";
-        std::cout << "  beryl                         - Pack using BerylConfig.txt\n";
-        std::cout << "  beryl -c <config.txt>         - Pack using specific config file\n";
-        std::cout << "  beryl ui                      - Open Beryl graphical interface\n";
-        return 1;
+        if (config_path == "BERYL.txt" && fs::exists("PROJECT.txt")) {
+            config_path = "PROJECT.txt";
+            using_fallback = true;
+        } else {
+            std::cerr << tc_red() << "Error: " << config_path << " not found." << tc_reset() << "\n";
+            std::cout << "Usage:\n";
+            std::cout << "  beryl <script.sp>             - Fast pack without config\n";
+            std::cout << "  beryl                         - Pack using BERYL.txt (or PROJECT.txt)\n";
+            std::cout << "  beryl -c <config.txt>         - Pack using specific config file\n";
+            return 1;
+        }
     }
 
     BerylConfig config = parse_beryl_config(config_path);

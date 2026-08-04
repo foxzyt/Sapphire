@@ -17,11 +17,13 @@
 #include "../object.h"
 #include "../value.h"
 
+#ifdef OPENSSL_FOUND
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
 #include <openssl/rand.h>
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
+#endif
 
 #include <sstream>
 #include <iomanip>
@@ -29,6 +31,7 @@
 #include <vector>
 #include <string>
 
+#ifdef OPENSSL_FOUND
 // ─────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────
@@ -271,4 +274,44 @@ SapphireValue native_crypto_aes_decrypt(int arg_count, SapphireValue* args) {
     return new_string(g_current_vm,
         std::string(reinterpret_cast<char*>(out.data()),
                     static_cast<size_t>(out_len1 + out_len2)));
+}
+
+#endif // OPENSSL_FOUND
+
+// ─────────────────────────────────────────────
+// Stubs when OpenSSL is not available
+// ─────────────────────────────────────────────
+
+#ifndef OPENSSL_FOUND
+SapphireValue native_crypto_sha256(int arg_count, SapphireValue* args) { return {}; }
+SapphireValue native_crypto_sha1(int arg_count, SapphireValue* args) { return {}; }
+SapphireValue native_crypto_md5(int arg_count, SapphireValue* args) { return {}; }
+SapphireValue native_crypto_hmac_sha256(int arg_count, SapphireValue* args) { return {}; }
+SapphireValue native_crypto_base64_encode(int arg_count, SapphireValue* args) { return {}; }
+SapphireValue native_crypto_base64_decode(int arg_count, SapphireValue* args) { return {}; }
+SapphireValue native_crypto_random_bytes(int arg_count, SapphireValue* args) { return {}; }
+SapphireValue native_crypto_random_hex(int arg_count, SapphireValue* args) { return {}; }
+SapphireValue native_crypto_uuid4(int arg_count, SapphireValue* args) { return {}; }
+SapphireValue native_crypto_aes_encrypt(int arg_count, SapphireValue* args) { return {}; }
+SapphireValue native_crypto_aes_decrypt(int arg_count, SapphireValue* args) { return {}; }
+#endif
+
+// ─────────────────────────────────────────────
+// Module registration
+// ─────────────────────────────────────────────
+
+void register_crypto_module(VM* vm) {
+#ifdef OPENSSL_FOUND
+    vm->define_native("crypto_sha256", native_crypto_sha256);
+    vm->define_native("crypto_sha1", native_crypto_sha1);
+    vm->define_native("crypto_md5", native_crypto_md5);
+    vm->define_native("crypto_hmac_sha256", native_crypto_hmac_sha256);
+    vm->define_native("crypto_base64_encode", native_crypto_base64_encode);
+    vm->define_native("crypto_base64_decode", native_crypto_base64_decode);
+    vm->define_native("crypto_random_bytes", native_crypto_random_bytes);
+    vm->define_native("crypto_random_hex", native_crypto_random_hex);
+    vm->define_native("crypto_uuid4", native_crypto_uuid4);
+    vm->define_native("crypto_aes_encrypt", native_crypto_aes_encrypt);
+    vm->define_native("crypto_aes_decrypt", native_crypto_aes_decrypt);
+#endif
 }

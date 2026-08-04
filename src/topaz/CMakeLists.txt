@@ -94,10 +94,14 @@ if(NOT DEFINED OPENSSL_USE_STATIC_LIBS)
     set(OPENSSL_USE_STATIC_LIBS TRUE)
 endif()
 
-find_package(OpenSSL REQUIRED)
-
-# Define httplib with OpenSSL support
-add_compile_definitions(CPPHTTPLIB_OPENSSL_SUPPORT)
+find_package(OpenSSL QUIET)
+if(NOT OPENSSL_FOUND)
+    message(WARNING "OpenSSL not found. Topaz will not be built with SSL support.")
+    set(OPENSSL_FOUND FALSE)
+else()
+    # Define httplib with OpenSSL support only if OpenSSL is found
+    add_compile_definitions(CPPHTTPLIB_OPENSSL_SUPPORT)
+endif()
 
 # Set library paths based on local or remote
 if(USE_LOCAL_LIBS)

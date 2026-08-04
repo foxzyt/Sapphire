@@ -1522,6 +1522,7 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     define_native("isFile",           native_io_is_file);
 
     // --- Crypto (v1.0.9) ---
+#ifdef OPENSSL_FOUND
     define_native("Crypto.sha256",        native_crypto_sha256);
     define_native("Crypto.sha1",          native_crypto_sha1);
     define_native("Crypto.md5",           native_crypto_md5);
@@ -1533,6 +1534,7 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     define_native("Crypto.uuid4",         native_crypto_uuid4);
     define_native("Crypto.aesEncrypt",    native_crypto_aes_encrypt);
     define_native("Crypto.aesDecrypt",    native_crypto_aes_decrypt);
+#endif
 
     // --- Net (v1.0.9) ---
     define_native("Net.tcpConnect",    native_net_tcp_connect);
@@ -3114,66 +3116,17 @@ TARGET(OP_ITER_NEXT_OF) {
 #undef POP
 #undef NEXT_CODE
 #undef top
+    return true;
 }
 
 #else
 #include "vm_jit.cpp"
 #endif
 
-#ifdef USE_RUBELLITE
-// vm_run_bytecode: invokes the bytecode interpreter on a VM object.
-// The bytecode interpreter lives in vm.cpp above this block and is compiled
-// into the binary ONLY when USE_RUBELLITE is OFF (i.e. it shares the same
-// translation unit and is guarded by #ifndef USE_RUBELLITE).
-// Since we cannot call it directly, we use a per-call g_current_vm trick:
-// we temporarily disable the JIT flag, which makes VM::run() (in vm_jit.cpp)
-// NOT enter the JIT loop and instead invoke vm_interpreter_fallback. Then,
-// vm_interpreter_fallback calls back here and we'd loop — so we must prevent it.
-// The correct solution is to mark that we're already in bytecode mode via
-// a secondary flag, and have vm_interpreter_fallback actually execute a safe
-// interpreter loop without JIT. We implement a minimal safe bytecode loop here.
-bool vm_run_bytecode(VM* vm, int target_frame_count) {
-    if (!vm) return false;
 
-    // Use the vm.cpp bytecode interpreter by temporarily renaming it.
-    // Since the bytecode interpreter in vm.cpp is guarded by #ifndef USE_RUBELLITE,
-    // we cannot call it directly here when USE_RUBELLITE is defined.
-    // Instead, we set jit_enabled=false so vm->run() (vm_jit.cpp) sees it is false,
-    // and vm_jit.cpp::run() will call vm_interpreter_fallback which... would loop.
-    //
-    // To break the loop: vm_interpreter_fallback checks a second flag.
-    // We use a thread_local bool to guard against re-entry.
-    static thread_local bool in_bytecode_fallback = false;
-    if (in_bytecode_fallback) {
-        // Already in the fallback path — call the safe interpreter directly
-        // by forcing execution through vm.cpp's OP_ dispatch using the bytecode
-        // interpreter that is always present regardless of JIT settings.
-        // We rely on the fact that vm.cpp compiles BOTH paths (ifdef/ifndef):
-        // In fact both are compiled into the same .cpp, only one becomes VM::run().
-        // We achieve bytecode execution by calling run_module which calls run().
-        // Since jit_enabled is false here AND in_bytecode_fallback is true, this
-        // becomes a no-op loop breaker. Return true to signal "handled".
-        return true;
-    }
-
-    in_bytecode_fallback = true;
-    vm->jit_enabled = false;
-    bool result = vm->run(target_frame_count);
-    vm->jit_enabled = true;
-    in_bytecode_fallback = false;
-    return result;
-}
-#else
-bool vm_run_bytecode(VM* vm, int target_frame_count) {
-    // Without JIT, VM::run() is already the bytecode interpreter
-    if (!vm) return false;
-    return vm->run(target_frame_count);
-}
-#endif
 
 
 bool VM::run_function(ObjFunction* function) {
-    // std::cout << "  [VM DEBUG] Entrando em run_function..." << std::endl;
     if (function == nullptr) return false;
     resetStack();
     push(function);
@@ -3181,7 +3134,6 @@ bool VM::run_function(ObjFunction* function) {
         return false;
     }
     bool result = run();
-    // std::cout << "  [VM DEBUG] Saindo de run_function." << std::endl;
     return result;
 }
 

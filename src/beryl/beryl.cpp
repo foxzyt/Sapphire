@@ -47,9 +47,14 @@ BerylConfig parse_beryl_config(const std::string& path) {
     }
     std::string line;
     while (std::getline(file, line)) {
-        size_t cp = line.find("//");
-        if (cp != std::string::npos) line = line.substr(0, cp);
-        auto delim = line.find("=");
+        size_t cp_slash = line.find("//");
+        size_t cp_hash = line.find("#");
+        size_t cp = std::min(cp_slash != std::string::npos ? cp_slash : line.length(),
+                             cp_hash != std::string::npos ? cp_hash : line.length());
+        if (cp < line.length()) line = line.substr(0, cp);
+        
+        auto delim = line.find(":");
+        if (delim == std::string::npos) delim = line.find("="); // Fallback for backwards compatibility
         if (delim == std::string::npos) continue;
         std::string key = line.substr(0, delim);
         std::string value = line.substr(delim + 1);
@@ -183,28 +188,32 @@ bool inject_icon(const std::string& exe_path, const std::string& ico_path) {
 #endif
 }
 
-bool zip_directory(const std::string& dir_path, std::vector<uint8_t>& out_zip) {
+bool zip_assets_and_sources(const std::string& assets_dir, const std::string& source_dir, std::vector<uint8_t>& out_zip) {
     mz_zip_archive zip_archive;
     memset(&zip_archive, 0, sizeof(zip_archive));
     if (!mz_zip_writer_init_heap(&zip_archive, 0, 1024 * 1024 * 64)) return false; // 64MB initial heap
 
-    try {
-        for (const auto& entry : fs::recursive_directory_iterator(dir_path)) {
-            if (fs::is_regular_file(entry)) {
-                std::string path = entry.path().string();
-                std::string rel_path = fs::relative(entry.path(), dir_path).string();
-                std::replace(rel_path.begin(), rel_path.end(), '\\', '/');
-
-                if (!mz_zip_writer_add_file(&zip_archive, rel_path.c_str(), path.c_str(), nullptr, 0, MZ_BEST_COMPRESSION)) {
-                    mz_zip_writer_end(&zip_archive);
-                    return false;
+    auto add_dir = [&](const std::string& dir_path, bool only_sp) {
+        if (dir_path.empty() || !fs::exists(dir_path)) return true;
+        try {
+            for (const auto& entry : fs::recursive_directory_iterator(dir_path)) {
+                if (fs::is_regular_file(entry)) {
+                    if (only_sp && entry.path().extension() != ".sp") continue;
+                    std::string path = entry.path().string();
+                    std::string rel_path = fs::relative(entry.path(), dir_path).string();
+                    std::replace(rel_path.begin(), rel_path.end(), '\\', '/');
+                    
+                    if (!mz_zip_writer_add_file(&zip_archive, rel_path.c_str(), path.c_str(), nullptr, 0, MZ_BEST_COMPRESSION)) {
+                        return false;
+                    }
                 }
             }
-        }
-    } catch (...) {
-        mz_zip_writer_end(&zip_archive);
-        return false;
-    }
+        } catch (...) { return false; }
+        return true;
+    };
+
+    if (!add_dir(assets_dir, false)) { mz_zip_writer_end(&zip_archive); return false; }
+    if (!add_dir(source_dir, true)) { mz_zip_writer_end(&zip_archive); return false; }
 
     void* pBuf = nullptr;
     size_t sz = 0;
@@ -312,12 +321,19 @@ bool pack_executable(const BerylConfig& config, const std::string& runner_path) 
         }
     }
 
-    // 2. Zip Assets if requested
+    // 2. Zip Assets and .sp source files
     std::vector<uint8_t> assets_payload;
-    if (!config.AssetsFolder.empty() && fs::exists(config.AssetsFolder) && fs::is_directory(config.AssetsFolder)) {
-        std::cout << "Zipping assets folder: " << config.AssetsFolder << "..." << std::endl;
-        if (!zip_directory(config.AssetsFolder, assets_payload)) {
-            std::cerr << tc_red() << "Error: Failed to zip assets folder." << tc_reset() << std::endl;
+    std::string source_dir = "";
+    if (!config.EntryFile.empty()) {
+        try {
+            source_dir = fs::path(config.EntryFile).parent_path().string();
+        } catch(...) {}
+    }
+    
+    if ((!config.AssetsFolder.empty() && fs::exists(config.AssetsFolder)) || (!source_dir.empty() && fs::exists(source_dir))) {
+        std::cout << "Zipping bundle (assets + imported scripts)..." << std::endl;
+        if (!zip_assets_and_sources(config.AssetsFolder, source_dir, assets_payload)) {
+            std::cerr << tc_red() << "Error: Failed to zip bundle." << tc_reset() << std::endl;
             return false;
         }
         std::cout << "Assets zipped: " << assets_payload.size() / 1024 << " KB." << std::endl;

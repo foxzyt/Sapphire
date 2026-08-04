@@ -24,6 +24,6 @@ struct BerylConfig {
 
 BerylConfig parse_beryl_config(const std::string& path);
 bool pack_executable(const BerylConfig& config, const std::string& runner_path);
-void run_native_beryl_ui(const std::string& runner_path);
+
 
 #endif // SAPPHIRE_BERYL_H

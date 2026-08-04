@@ -73,7 +73,7 @@ elseif(APPLE)
         set(OPENSSL_ROOT_DIR "/usr/local/opt/openssl")
     endif()
 endif()
-find_package(OpenSSL REQUIRED)
+find_package(OpenSSL QUIET)
 
 # Fetch nlohmann/json
 FetchContent_Declare(
@@ -99,15 +99,17 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(freetype)
 
-# Fetch AsmJit (for JIT code generation in Rubellite VM)
-FetchContent_Declare(
-    asmjit
-    GIT_REPOSITORY https://github.com/asmjit/asmjit.git
-    GIT_TAG        0bd5787b54b575ed94bf32ac452153b34385c514
-)
-set(ASMJIT_BUILD_X86 ON CACHE BOOL "Build AsmJit X86 backend" FORCE)
-set(ASMJIT_BUILD_ARM OFF CACHE BOOL "Disable ARM backend" FORCE)
-FetchContent_MakeAvailable(asmjit)
+# Fetch AsmJit (for JIT code generation in Rubellite VM) - Only when USE_RUBELLITE is ON
+if(USE_RUBELLITE)
+    FetchContent_Declare(
+        asmjit
+        GIT_REPOSITORY https://github.com/asmjit/asmjit.git
+        GIT_TAG        0bd5787b54b575ed94bf32ac452153b34385c514
+    )
+    set(ASMJIT_BUILD_X86 ON CACHE BOOL "Build AsmJit X86 backend" FORCE)
+    set(ASMJIT_BUILD_ARM OFF CACHE BOOL "Disable ARM backend" FORCE)
+    FetchContent_MakeAvailable(asmjit)
+endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -136,6 +138,7 @@ endif()
 option(USE_RUBELLITE "Ativar VM experimental Rubellite JIT (compilado dentro do sapphire.exe)" OFF)
 if(USE_RUBELLITE)
     add_compile_definitions(USE_RUBELLITE RUBELLITE_ENABLED)
+    message(STATUS "Rubellite JIT VM enabled")
 endif()
 
 set(VM_SOURCES
@@ -195,9 +198,7 @@ else()
     message(WARNING "PostgreSQL NOT found. pgConnect, pgQuery, etc. will not be available.")
 endif()
 
-# Search for MySQL / MariaDB
-# We will use pkg-config or try to find libmysqlclient
-find_package(PkgConfig QUIET)
+# Search for MySQL / MariaDB (optional)
 if(PKG_CONFIG_FOUND)
     pkg_check_modules(MYSQL mysqlclient QUIET)
     if(MYSQL_FOUND)
@@ -219,18 +220,27 @@ if(PKG_CONFIG_FOUND)
             message(WARNING "MySQL/MariaDB NOT found. mysqlConnect, mysqlQuery, etc. will not be available.")
         endif()
     endif()
+else()
+    message(WARNING "PkgConfig not found. MySQL bindings will not be available.")
 endif()
 
-# Search for libffi
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(LIBFFI REQUIRED libffi)
-include_directories(${LIBFFI_INCLUDE_DIRS})
-link_directories(${LIBFFI_LIBRARY_DIRS})
+# Search for libffi (optional for JIT, required for FFI)
+find_package(PkgConfig QUIET)
+if(PKG_CONFIG_FOUND)
+    pkg_check_modules(LIBFFI libffi)
+    if(LIBFFI_FOUND)
+        include_directories(${LIBFFI_INCLUDE_DIRS})
+        link_directories(${LIBFFI_LIBRARY_DIRS})
+        add_compile_definitions(USE_LIBFFI)
+    endif()
+else()
+    message(WARNING "PkgConfig not found. FFI bindings will not be available.")
+endif()
 
 # 2. Ativa o suporte a OpenSSL na biblioteca httplib
 target_compile_definitions(sapphire_core PUBLIC
     SFML_STATIC
-    CPPHTTPLIB_OPENSSL_SUPPORT
+    
 )
 
 target_include_directories(sapphire_core PUBLIC
@@ -243,20 +253,34 @@ target_include_directories(sapphire_core PUBLIC
     src/utils/
     src/preprocessor/
     ${httplib_SOURCE_DIR}
-    ${asmjit_SOURCE_DIR}
 )
+if(USE_RUBELLITE)
+    target_include_directories(sapphire_core PUBLIC ${asmjit_SOURCE_DIR})
+endif()
+if(OPENSSL_FOUND)
+    target_include_directories(sapphire_core PUBLIC ${OPENSSL_INCLUDE_DIR})
+endif()
 
 # 3. Linka o OpenSSL à biblioteca principal
 target_link_libraries(sapphire_core PUBLIC
     SFML::Graphics
     SFML::Window
     SFML::System
-    OpenSSL::SSL
-    OpenSSL::Crypto
+    
+    
     nlohmann_json::nlohmann_json
 )
 
-target_link_libraries(sapphire_core PUBLIC OpenCL sqlite3 asmjit ${LIBFFI_LIBRARIES})
+target_link_libraries(sapphire_core PUBLIC OpenCL sqlite3)
+if(USE_RUBELLITE)
+    target_link_libraries(sapphire_core PUBLIC asmjit)
+endif()
+if(LIBFFI_FOUND)
+    target_link_libraries(sapphire_core PUBLIC ${LIBFFI_LIBRARIES})
+endif()
+if(OPENSSL_FOUND)
+    target_link_libraries(sapphire_core PUBLIC OpenSSL::Crypto OpenSSL::SSL)
+endif()
 
 add_executable(sapphire src/main.cpp)
 
@@ -278,12 +302,11 @@ target_link_libraries(quartz PUBLIC sapphire_core)
 
 
 # Build new modular topaz (v2) - full-featured package manager
-option(BUILD_TOPAZ "Build new modular topaz package manager" ON)
-if(BUILD_TOPAZ)
+option(BUILD_TOPAZ "Build new modular topaz package manager" OFF)
+if(BUILD_TOPAZ AND OPENSSL_FOUND)
     add_subdirectory(src/topaz)
-else()
-    # Only build old topaz if new topaz is not being built
-    add_executable(topaz src/topaz/topaz.cpp)
+elseif(BUILD_TOPAZ)
+    message(WARNING "Skipping topaz build due to missing OpenSSL")
 endif()
 
 target_compile_definitions(sapphire PRIVATE SFML_STATIC)
@@ -295,16 +318,16 @@ set(COMMON_LIBS
     SFML::Graphics
     SFML::Window
     SFML::System
-    OpenSSL::SSL
-    OpenSSL::Crypto
+    
+    
 )
 
 list(APPEND COMMON_LIBS OpenCL sqlite3)
 
 # Topaz doesn't need OpenCL, SQLite, or SFML - only OpenSSL for HTTPS
 set(TOPAZ_LIBS
-    OpenSSL::SSL
-    OpenSSL::Crypto
+    
+    
 )
 
 if(WIN32)
@@ -354,8 +377,6 @@ target_link_libraries(beryl PRIVATE ${COMMON_LIBS})
 # Topaz only needs OpenSSL for HTTPS, not OpenCL/SQLite/SFML
 if(BUILD_TOPAZ)
     target_link_libraries(topaz PRIVATE ${TOPAZ_LIBS})
-else()
-    target_link_libraries(topaz PRIVATE ${COMMON_LIBS})
 endif()
 
 # Optional: Build standalone topaz (without Sapphire dependencies)
@@ -365,7 +386,7 @@ if(BUILD_TOPAZ_STANDALONE)
         src/topaz/topaz.cpp
         src/utils/termcolor.cpp
     )
-    target_compile_definitions(topaz_standalone PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT)
+    target_compile_definitions(topaz_standalone PRIVATE )
     target_include_directories(topaz_standalone PRIVATE
         src/
         src/utils/
@@ -373,8 +394,8 @@ if(BUILD_TOPAZ_STANDALONE)
         ${OPENSSL_INCLUDE_DIR}
     )
     target_link_libraries(topaz_standalone PRIVATE
-        OpenSSL::SSL
-        OpenSSL::Crypto
+        
+        
     )
     if(WIN32)
         target_link_libraries(topaz_standalone PRIVATE
