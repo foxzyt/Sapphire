@@ -30,6 +30,9 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(opencl_headers)
 set(OPENCL_ICD_LOADER_HEADERS_DIR "${opencl_headers_SOURCE_DIR}" CACHE PATH "" FORCE)
+# Configure OpenCL ICD Loader to build statically
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(OPENCL_ICD_LOADER_HEADERS_DIR "${opencl_headers_SOURCE_DIR}" CACHE PATH "" FORCE)
 FetchContent_MakeAvailable(opencl_loader)
 
 # Fetch SQLite3 Amalgamation
@@ -74,6 +77,24 @@ elseif(APPLE)
     endif()
 endif()
 find_package(OpenSSL QUIET)
+if(OPENSSL_FOUND)
+    message(STATUS "OpenSSL found: ${OPENSSL_INCLUDE_DIR}")
+    if(WIN32)
+        # Copy OpenSSL DLLs to output directory
+        add_custom_command(TARGET sapphire POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${OPENSSL_SSL_LIBRARY}
+            $<TARGET_FILE_DIR:sapphire>
+        )
+        add_custom_command(TARGET sapphire POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${OPENSSL_CRYPTO_LIBRARY}
+            $<TARGET_FILE_DIR:sapphire>
+        )
+    endif()
+else()
+    message(WARNING "OpenSSL not found - crypto functions will be disabled")
+endif()
 
 # Fetch nlohmann/json
 FetchContent_Declare(
@@ -431,24 +452,17 @@ if(BUILD_TOPAZ_STANDALONE)
 endif()
 
 if(WIN32)
-#    add_custom_command(TARGET sapphire POST_BUILD
-#        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#        $<TARGET_FILE:OpenCL>
-#        $<TARGET_FILE_DIR:sapphire>
-#    )
-#    add_custom_command(TARGET runner POST_BUILD
-#        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#        $<TARGET_FILE:OpenCL>
-#        $<TARGET_FILE_DIR:runner>
-#    )
-#    add_custom_command(TARGET mine POST_BUILD
-#        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#        $<TARGET_FILE:OpenCL>
-#        $<TARGET_FILE_DIR:mine>
-#    )
-#    add_custom_command(TARGET beryl POST_BUILD
-#        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#        $<TARGET_FILE:OpenCL>
-#        $<TARGET_FILE_DIR:beryl>
-#    )
+    # Copy OpenSSL DLLs to output directory if found
+    if(OPENSSL_FOUND)
+        add_custom_command(TARGET sapphire POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${OPENSSL_SSL_LIBRARY}
+            $<TARGET_FILE_DIR:sapphire>
+        )
+        add_custom_command(TARGET sapphire POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${OPENSSL_CRYPTO_LIBRARY}
+            $<TARGET_FILE_DIR:sapphire>
+        )
+    endif()
 endif()
