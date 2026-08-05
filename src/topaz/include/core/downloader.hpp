@@ -163,7 +163,9 @@ inline bool download_file(const std::string& url, const fs::path& output_path) {
             if (topaz::g_verbose) std::cout << "[*] Downloaded " << res->body.size() << " bytes" << std::endl;
             return true;
         } else if (res) {
-            std::cerr << "[!] HTTP error: " << res->status << " (" << res->reason << ")" << std::endl;
+            if (topaz::g_verbose || res->status != 404) {
+                std::cerr << "[!] HTTP error: " << res->status << " (" << res->reason << ")" << std::endl;
+            }
         } else {
             std::cerr << "[!] Connection failed to " << host << std::endl;
             std::cerr << "[!] Check your internet connection" << std::endl;
@@ -319,7 +321,7 @@ inline bool download_and_extract_plugin(const std::string& plugin_name, const st
             if (topaz::g_verbose) std::cout << "[*] Checksum verification skipped (OpenSSL not available)" << std::endl;
 #endif
         } else {
-            std::cout << termcolor::yellow << "[!] WARNING: No checksum provided by registry. Cannot verify signature." << termcolor::reset << std::endl;
+            if (topaz::g_verbose) std::cout << termcolor::yellow << "[!] WARNING: No checksum provided by registry. Cannot verify signature." << termcolor::reset << std::endl;
         }
         
         // Extract to temporary directory

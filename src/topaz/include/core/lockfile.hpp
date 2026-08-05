@@ -113,7 +113,7 @@ public:
         std::string checksum = calculate_checksum(main_file);
         
         if (checksum.empty()) {
-            std::cerr << "[!] Warning: Could not calculate checksum for " << name << " v" << version << std::endl;
+            if (topaz::g_verbose) std::cerr << "[!] Warning: Could not calculate checksum for " << name << " v" << version << std::endl;
             checksum = "unknown";
         }
         

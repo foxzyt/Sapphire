@@ -208,6 +208,9 @@ public:
         
         // Check if plugin is already installed
         if (is_plugin_installed(plugin_name)) {
+            if (!topaz::g_verbose && plugin_name != project_name_) {
+                std::cout << "  " << plugin_name << " already exist." << std::endl;
+            }
             if (version == "latest") {
                 // For latest, check if we have all versions
                 auto available = get_available_versions(plugin_name);
@@ -265,6 +268,10 @@ public:
                 return;
             }
             
+            if (!topaz::g_verbose && plugin_name != project_name_) {
+                std::cout << "  Downloading " << plugin_name << " (dependency)." << std::endl;
+            }
+            
             // Download main branch (latest)
             if (!download_and_extract_plugin(plugin_name, registry_entry->repository, "latest")) {
                 std::cerr << termcolor::red << "[!] Failed to download plugin: " << plugin_name << termcolor::reset << std::endl;
@@ -316,7 +323,11 @@ public:
                 return;
             }
             
-            // Download main branch if not already installed
+            if (!topaz::g_verbose && plugin_name != project_name_) {
+                std::cout << "  Downloading " << plugin_name << " (dependency)." << std::endl;
+            }
+            
+            // Try downloading specific version if not already installed
             if (!is_plugin_installed(plugin_name)) {
                 if (!download_and_extract_plugin(plugin_name, registry_entry->repository, "latest")) {
                     std::cerr << termcolor::red << "[!] Failed to download plugin: " << plugin_name << termcolor::reset << std::endl;
