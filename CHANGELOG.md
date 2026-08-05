@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - [Topaz] Reduzida drasticamente a verbosidade do output do gerenciador de pacotes Topaz.
+- [Topaz] A saída padrão durante a instalação foi refatorada para ser mais organizada e concisa.
 - [Topaz] Adicionada a flag `--verbose` (`-v`) para habilitar os logs detalhados quando necessário.
 
 ## [1.0.9] - 2026-07-27
