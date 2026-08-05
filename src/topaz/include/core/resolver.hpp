@@ -209,17 +209,19 @@ public:
         // Check if plugin is already installed
         if (is_plugin_installed(plugin_name)) {
             if (!topaz::g_verbose && plugin_name != project_name_) {
-                std::cout << "  " << plugin_name << " already exist." << std::endl;
+                std::cout << "  Dependency '" << plugin_name << "' already exists." << std::endl;
             }
             if (version == "latest") {
                 // For latest, check if we have all versions
                 auto available = get_available_versions(plugin_name);
                 if (!available.empty()) {
-                    if (topaz::g_verbose) std::cout << termcolor::yellow << "[*] Plugin '" << plugin_name << "' already installed with versions: ";
-                    for (const auto& v : available) {
-                        std::cout << v << " ";
+                    if (topaz::g_verbose) {
+                        std::cout << termcolor::yellow << "[*] Plugin '" << plugin_name << "' already installed with versions: ";
+                        for (const auto& v : available) {
+                            std::cout << v << " ";
+                        }
+                        std::cout << termcolor::reset << std::endl;
                     }
-                    std::cout << termcolor::reset << std::endl;
                     
                     // Add all versions to lockfile
                     for (const auto& ver : available) {
@@ -269,7 +271,7 @@ public:
             }
             
             if (!topaz::g_verbose && plugin_name != project_name_) {
-                std::cout << "  Downloading " << plugin_name << " (dependency)." << std::endl;
+                std::cout << "  Downloading " << plugin_name << " (dependency)..." << std::endl;
             }
             
             // Download main branch (latest)
@@ -324,7 +326,7 @@ public:
             }
             
             if (!topaz::g_verbose && plugin_name != project_name_) {
-                std::cout << "  Downloading " << plugin_name << " (dependency)." << std::endl;
+                std::cout << "  Downloading " << plugin_name << " (dependency)..." << std::endl;
             }
             
             // Try downloading specific version if not already installed

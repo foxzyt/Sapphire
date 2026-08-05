@@ -425,7 +425,7 @@ inline int cmd_install(const std::string& plugin_name,
         if (topaz::g_verbose) std::cout << termcolor::yellow << "[*] Target: global scope (AppData)" << termcolor::reset << std::endl;
     }
     
-    if (!topaz::g_verbose) std::cout << "Download " << plugin_name << "." << std::endl;
+    if (!topaz::g_verbose) std::cout << "Downloading " << plugin_name << "..." << std::endl;
     
     // Check if already installed
     if (local_scope ? is_plugin_installed_local(plugin_name) : is_plugin_installed(plugin_name)) {
@@ -478,7 +478,7 @@ inline int cmd_install(const std::string& plugin_name,
     resolver.set_frozen_lockfile(frozen_lockfile);
     resolver.resolve_and_install(plugin_name, resolved_version);
     
-    if (!topaz::g_verbose) std::cout << "Calculating checksums.." << std::endl;
+    if (!topaz::g_verbose) std::cout << "Calculating checksums..." << std::endl;
     
     resolver.write_lockfiles();
     
