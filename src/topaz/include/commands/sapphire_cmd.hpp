@@ -42,7 +42,7 @@ inline int cmd_sapphire_list() {
               << termcolor::reset << std::endl;
     print_separator();
 
-    std::cout << termcolor::yellow
+    if (topaz::g_verbose) std::cout << termcolor::yellow
               << "[*] Fetching available versions from GitHub..."
               << termcolor::reset << std::endl;
 
@@ -224,7 +224,7 @@ inline int cmd_sapphire_current() {
             } else {
                 sz_str = std::to_string(sz / 1024) + " KB";
             }
-            std::cout << "  " << termcolor::green << "[+] " << termcolor::reset
+            if (topaz::g_verbose) std::cout << "  " << termcolor::green << "[+] " << termcolor::reset
                       << std::left << std::setw(18) << bin << sz_str << std::endl;
         } else {
             std::cout << "  " << termcolor::yellow << "[-] " << termcolor::reset
@@ -240,7 +240,7 @@ inline int cmd_sapphire_current() {
 //   Suporta SemVer: "latest", "1.0.6", "^1.0", ">=1.0.5", "<2.0"
 // ---------------------------------------------------------------------------
 inline int cmd_sapphire_install(const std::string& constraint) {
-    std::cout << termcolor::cyan
+    if (topaz::g_verbose) std::cout << termcolor::cyan
               << "[*] Resolving version constraint: '"
               << (constraint.empty() ? "latest" : constraint) << "'"
               << termcolor::reset << std::endl;
@@ -259,7 +259,7 @@ inline int cmd_sapphire_install(const std::string& constraint) {
     std::string resolved_version;
 
     if (needs_remote_resolve) {
-        std::cout << termcolor::yellow
+        if (topaz::g_verbose) std::cout << termcolor::yellow
                   << "[*] Fetching available versions from GitHub..."
                   << termcolor::reset << std::endl;
 
@@ -286,7 +286,7 @@ inline int cmd_sapphire_install(const std::string& constraint) {
             return 1;
         }
 
-        std::cout << termcolor::green
+        if (topaz::g_verbose) std::cout << termcolor::green
                   << "[*] Resolved '" << effective_constraint
                   << "' -> " << semver::with_v(resolved_version)
                   << termcolor::reset << std::endl;
@@ -299,7 +299,7 @@ inline int cmd_sapphire_install(const std::string& constraint) {
     if (is_sapphire_version_installed(resolved_version)) {
         std::string active = read_active_version();
 
-        std::cout << termcolor::yellow
+        if (topaz::g_verbose) std::cout << termcolor::yellow
                   << "[*] Sapphire " << semver::with_v(resolved_version)
                   << " is already installed."
                   << termcolor::reset << std::endl;
@@ -315,7 +315,7 @@ inline int cmd_sapphire_install(const std::string& constraint) {
                 return activate_sapphire_version(resolved_version) ? 0 : 1;
             }
         } else {
-            std::cout << termcolor::green
+            if (topaz::g_verbose) std::cout << termcolor::green
                       << "[*] " << semver::with_v(resolved_version)
                       << " is already the active version."
                       << termcolor::reset << std::endl;
@@ -392,7 +392,7 @@ inline int cmd_sapphire_uninstall(const std::string& version) {
     fs::path ver_dir   = get_sapphire_version_dir(clean);
 
     if (!fs::exists(ver_dir)) {
-        std::cout << termcolor::yellow
+        if (topaz::g_verbose) std::cout << termcolor::yellow
                   << "[*] Sapphire " << semver::with_v(clean)
                   << " is not installed."
                   << termcolor::reset << std::endl;
@@ -412,7 +412,7 @@ inline int cmd_sapphire_uninstall(const std::string& version) {
             resp.pop_back();
         }
         if (resp != "y" && resp != "Y") {
-            std::cout << termcolor::cyan
+            if (topaz::g_verbose) std::cout << termcolor::cyan
                       << "[*] Uninstall cancelled."
                       << termcolor::reset << std::endl;
             return 0;
@@ -431,14 +431,14 @@ inline int cmd_sapphire_uninstall(const std::string& version) {
             auto remaining = get_installed_sapphire_versions();
             if (!remaining.empty()) {
                 std::string newest = remaining.back();
-                std::cout << termcolor::yellow
+                if (topaz::g_verbose) std::cout << termcolor::yellow
                           << "[*] Switching active to " << semver::with_v(newest) << "..."
                           << termcolor::reset << std::endl;
                 activate_sapphire_version(newest);
             } else {
                 // Remove o arquivo .version
                 try { fs::remove(get_active_version_file()); } catch (...) {}
-                std::cout << termcolor::yellow
+                if (topaz::g_verbose) std::cout << termcolor::yellow
                           << "[*] No other versions installed. Active version cleared."
                           << termcolor::reset << std::endl;
             }

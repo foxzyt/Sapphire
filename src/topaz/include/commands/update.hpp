@@ -70,10 +70,10 @@ inline std::string get_latest_github_version(const std::string& repo_url) {
         owner_repo = owner_repo.substr(0, owner_repo.size() - 4);
     }
     
-    std::cout << termcolor::cyan << "[*] Checking for updates at: " << api_url << termcolor::reset << std::endl;
+    if (topaz::g_verbose) std::cout << termcolor::cyan << "[*] Checking for updates at: " << api_url << termcolor::reset << std::endl;
     
     try {
-        httplib::Client cli("api.github.com");
+        httplib::Client cli("https://api.github.com");
         cli.set_follow_location(true);
         cli.set_connection_timeout(10);
         cli.set_read_timeout(15);
@@ -169,7 +169,7 @@ inline int cmd_update(const std::string& plugin_name = "", bool check_only = fal
     
     if (plugin_name.empty()) {
         // Collect all installed plugins (both local and global)
-        std::cout << termcolor::cyan << "[*] Checking all installed plugins for updates..." << termcolor::reset << std::endl;
+        if (topaz::g_verbose) std::cout << termcolor::cyan << "[*] Checking all installed plugins for updates..." << termcolor::reset << std::endl;
         
         // Check global plugins
         fs::path global_dir = get_plugin_dir();
@@ -202,7 +202,7 @@ inline int cmd_update(const std::string& plugin_name = "", bool check_only = fal
             return 0;
         }
         
-        std::cout << termcolor::yellow << "[*] Found " << plugins_to_update.size() << " plugin(s) to check" << termcolor::reset << std::endl;
+        if (topaz::g_verbose) std::cout << termcolor::yellow << "[*] Found " << plugins_to_update.size() << " plugin(s) to check" << termcolor::reset << std::endl;
     } else {
         // Check if plugin exists
         if (!is_plugin_installed_anywhere(plugin_name)) {
@@ -217,7 +217,7 @@ inline int cmd_update(const std::string& plugin_name = "", bool check_only = fal
     int failed_count = 0;
     
     for (const auto& name : plugins_to_update) {
-        std::cout << termcolor::cyan << "\n[*] Checking: " << name << termcolor::reset << std::endl;
+        if (topaz::g_verbose) std::cout << termcolor::cyan << "\n[*] Checking: " << name << termcolor::reset << std::endl;
         
         // Get the plugin base directory (local or global)
         fs::path plugin_base = get_plugin_base_dir(name);
@@ -233,7 +233,7 @@ inline int cmd_update(const std::string& plugin_name = "", bool check_only = fal
         }
         
         std::string current_version = meta->version;
-        std::cout << "[*] Current version: " << current_version << std::endl;
+        if (topaz::g_verbose) std::cout << "[*] Current version: " << current_version << std::endl;
         
         // Query registry for the repository URL
         auto registry_entry = query_registry(name);
@@ -252,7 +252,7 @@ inline int cmd_update(const std::string& plugin_name = "", bool check_only = fal
             continue;
         }
         
-        std::cout << "[*] Latest version: " << latest_version << std::endl;
+        if (topaz::g_verbose) std::cout << "[*] Latest version: " << latest_version << std::endl;
         
         // Compare versions
         if (current_version == latest_version) {
@@ -262,13 +262,13 @@ inline int cmd_update(const std::string& plugin_name = "", bool check_only = fal
         }
         
         if (!is_version_older(current_version, latest_version)) {
-            std::cout << termcolor::yellow << "  [*] Current version is newer than latest (dev/pre-release)" << termcolor::reset << std::endl;
+            if (topaz::g_verbose) std::cout << termcolor::yellow << "  [*] Current version is newer than latest (dev/pre-release)" << termcolor::reset << std::endl;
             up_to_date_count++;
             continue;
         }
         
         if (check_only) {
-            std::cout << termcolor::yellow << "  [*] Update available: v" << current_version << " -> v" << latest_version << " (run without --check-only to update)" << termcolor::reset << std::endl;
+            if (topaz::g_verbose) std::cout << termcolor::yellow << "  [*] Update available: v" << current_version << " -> v" << latest_version << " (run without --check-only to update)" << termcolor::reset << std::endl;
             updated_count++;
             continue;
         }
@@ -280,11 +280,11 @@ inline int cmd_update(const std::string& plugin_name = "", bool check_only = fal
         response = trim(response);
         
         if (response == "n" || response == "N") {
-            std::cout << termcolor::yellow << "  [*] Skipping update" << termcolor::reset << std::endl;
+            if (topaz::g_verbose) std::cout << termcolor::yellow << "  [*] Skipping update" << termcolor::reset << std::endl;
             continue;
         }
         
-        std::cout << termcolor::cyan << "[*] Updating " << name << " to v" << latest_version << "..." << termcolor::reset << std::endl;
+        if (topaz::g_verbose) std::cout << termcolor::cyan << "[*] Updating " << name << " to v" << latest_version << "..." << termcolor::reset << std::endl;
         
         // Check if we already have the latest version downloaded
         // First, download the main branch to get all versions
@@ -334,7 +334,7 @@ inline int cmd_update(const std::string& plugin_name = "", bool check_only = fal
         std::cout << termcolor::green << "[OK] " << updated_count << " plugin(s) updated" << termcolor::reset << std::endl;
         return 0;
     } else if (failed_count == 0) {
-        std::cout << "[*] All plugins are up to date" << std::endl;
+        if (topaz::g_verbose) std::cout << "[*] All plugins are up to date" << std::endl;
         return 0;
     } else {
         return 1;

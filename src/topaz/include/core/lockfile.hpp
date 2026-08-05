@@ -182,7 +182,7 @@ public:
             fs::remove(temp_path, ec);
         }
         
-        std::cout << "[*] Lock file written to: " << lockfile_path_ << std::endl;
+        if (topaz::g_verbose) std::cout << "[*] Lock file written to: " << lockfile_path_ << std::endl;
         
         // Also write CHECKSUMS.txt for compatibility
         write_checksums_txt();

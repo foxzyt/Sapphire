@@ -3,6 +3,7 @@
 #include "vm.h" // Incluído para acessar a VM e registrar objetos no GC
 #include <iostream>
 #include <thread>
+#include <cmath>
 
 using enum TokenType;
 
@@ -24,6 +25,7 @@ void free_object(Obj* object) {
         case OBJ_ARRAY: delete static_cast<ObjArray*>(object); break;
         case OBJ_LRU: delete static_cast<ObjLRU*>(object); break;
         case OBJ_FADE: delete static_cast<ObjFade*>(object); break;
+        case OBJ_BIGINT: delete static_cast<ObjBigInt*>(object); break;
     }
 }
 
@@ -104,6 +106,23 @@ void print_object(const SapphireValue& value) {
         case OBJ_LRU: {
             ObjLRU* lru = static_cast<ObjLRU*>(obj);
             std::cout << "<lru_cache size=" << lru->items.size() << " cap=" << lru->capacity << ">";
+            break;
+        }
+        case OBJ_BIGINT: {
+            ObjBigInt* bigint = static_cast<ObjBigInt*>(obj);
+            if (bigint->digits.empty()) {
+                std::cout << "0";
+            } else {
+                if (bigint->is_negative) std::cout << "-";
+                for (int i = (int)bigint->digits.size() - 1; i >= 0; --i) {
+                    if (i == (int)bigint->digits.size() - 1) {
+                        std::cout << bigint->digits[i];
+                    } else {
+                        std::string s = std::to_string(bigint->digits[i]);
+                        std::cout << std::string(9 - s.length(), '0') << s;
+                    }
+                }
+            }
             break;
         }
     }
@@ -237,4 +256,132 @@ ObjFade* new_fade(VM* vm, SapphireValue value, double duration_ms, const std::st
     fade->curve_type = curve_type;
     register_object(vm, fade);
     return fade;
+}
+
+ObjBigInt* new_bigint(VM* vm) {
+    ObjBigInt* bigint = new ObjBigInt();
+    bigint->type = OBJ_BIGINT;
+    bigint->is_negative = false;
+    register_object(vm, bigint);
+    return bigint;
+}
+
+// --- BigInt Math ---
+const uint32_t BIGINT_BASE = 1000000000; // 10^9
+
+void trim_bigint(ObjBigInt* b) {
+    while (b->digits.size() > 0 && b->digits.back() == 0) {
+        b->digits.pop_back();
+    }
+    if (b->digits.empty()) b->is_negative = false;
+}
+
+ObjBigInt* new_bigint_from_double(VM* vm, double value) {
+    ObjBigInt* bigint = new_bigint(vm);
+    if (value < 0) {
+        bigint->is_negative = true;
+        value = -value;
+    }
+    if (value < 1.0) return bigint;
+    
+    while (value >= 1.0) {
+        double rem = std::fmod(value, (double)BIGINT_BASE);
+        bigint->digits.push_back(static_cast<uint32_t>(rem));
+        value = std::floor(value / (double)BIGINT_BASE);
+    }
+    return bigint;
+}
+
+int cmp_bigint_abs(ObjBigInt* a, ObjBigInt* b) {
+    if (a->digits.size() != b->digits.size()) {
+        return a->digits.size() > b->digits.size() ? 1 : -1;
+    }
+    for (int i = (int)a->digits.size() - 1; i >= 0; --i) {
+        if (a->digits[i] != b->digits[i]) {
+            return a->digits[i] > b->digits[i] ? 1 : -1;
+        }
+    }
+    return 0;
+}
+
+int cmp_bigint(ObjBigInt* a, ObjBigInt* b) {
+    if (a->is_negative != b->is_negative) {
+        return a->is_negative ? -1 : 1;
+    }
+    int abs_cmp = cmp_bigint_abs(a, b);
+    return a->is_negative ? -abs_cmp : abs_cmp;
+}
+
+ObjBigInt* add_bigint_abs(VM* vm, ObjBigInt* a, ObjBigInt* b) {
+    ObjBigInt* res = new_bigint(vm);
+    uint32_t carry = 0;
+    size_t n = std::max(a->digits.size(), b->digits.size());
+    for (size_t i = 0; i < n || carry; ++i) {
+        uint64_t sum = carry;
+        if (i < a->digits.size()) sum += a->digits[i];
+        if (i < b->digits.size()) sum += b->digits[i];
+        res->digits.push_back(sum % BIGINT_BASE);
+        carry = sum / BIGINT_BASE;
+    }
+    return res;
+}
+
+ObjBigInt* sub_bigint_abs(VM* vm, ObjBigInt* a, ObjBigInt* b) { // Assumes a >= b
+    ObjBigInt* res = new_bigint(vm);
+    uint32_t borrow = 0;
+    for (size_t i = 0; i < a->digits.size(); ++i) {
+        int64_t diff = a->digits[i] - borrow;
+        if (i < b->digits.size()) diff -= b->digits[i];
+        if (diff < 0) {
+            diff += BIGINT_BASE;
+            borrow = 1;
+        } else {
+            borrow = 0;
+        }
+        res->digits.push_back((uint32_t)diff);
+    }
+    trim_bigint(res);
+    return res;
+}
+
+ObjBigInt* add_bigint(VM* vm, ObjBigInt* a, ObjBigInt* b) {
+    if (a->is_negative == b->is_negative) {
+        ObjBigInt* res = add_bigint_abs(vm, a, b);
+        res->is_negative = a->is_negative;
+        return res;
+    }
+    if (cmp_bigint_abs(a, b) >= 0) {
+        ObjBigInt* res = sub_bigint_abs(vm, a, b);
+        res->is_negative = a->is_negative;
+        return res;
+    }
+    ObjBigInt* res = sub_bigint_abs(vm, b, a);
+    res->is_negative = b->is_negative;
+    return res;
+}
+
+ObjBigInt* sub_bigint(VM* vm, ObjBigInt* a, ObjBigInt* b) {
+    b->is_negative = !b->is_negative;
+    ObjBigInt* res = add_bigint(vm, a, b);
+    b->is_negative = !b->is_negative;
+    return res;
+}
+
+ObjBigInt* mul_bigint(VM* vm, ObjBigInt* a, ObjBigInt* b) {
+    ObjBigInt* res = new_bigint(vm);
+    if (a->digits.empty() || b->digits.empty()) return res;
+    
+    res->digits.resize(a->digits.size() + b->digits.size(), 0);
+    for (size_t i = 0; i < a->digits.size(); ++i) {
+        uint64_t carry = 0;
+        for (size_t j = 0; j < b->digits.size() || carry; ++j) {
+            uint64_t cur = res->digits[i + j] + 
+                           (uint64_t)a->digits[i] * (j < b->digits.size() ? b->digits[j] : 0) + carry;
+            res->digits[i + j] = cur % BIGINT_BASE;
+            carry = cur / BIGINT_BASE;
+        }
+    }
+    res->is_negative = (a->is_negative != b->is_negative);
+    trim_bigint(res);
+    return res;
 }

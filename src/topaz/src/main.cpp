@@ -110,8 +110,9 @@ void print_help() {
   std::cout
       << "      --frozen-lockfile       - Fail if lockfile requires updating"
       << std::endl;
-  std::cout << "      --registry <url>        - Override central registry "
-               "endpoint URL"
+  std::cout << "      --registry <url>        - Override central registry endpoint URL"
+            << std::endl;
+  std::cout << "      -v, --verbose           - Enable verbose logging"
             << std::endl;
   std::cout << std::endl;
   std::cout << "  " << "topaz uninstall <name> [options]"
@@ -251,6 +252,7 @@ int main(int argc, char *argv[]) {
   bool check_only = false;
   bool force = false;
   bool yes = false;
+  bool verbose = false;
 
   std::string registry_opt = "";
   std::string format_opt = "text";
@@ -281,6 +283,8 @@ int main(int argc, char *argv[]) {
       force = true;
     } else if (arg == "--yes" || arg == "-y") {
       yes = true;
+    } else if (arg == "--verbose" || arg == "-v") {
+      verbose = true;
     } else if (arg == "--registry" && i + 1 < argc) {
       registry_opt = argv[++i];
     } else if (arg == "--format" && i + 1 < argc) {
@@ -304,6 +308,9 @@ int main(int argc, char *argv[]) {
   }
   if (offline) {
     topaz::g_offline = true;
+  }
+  if (verbose) {
+    topaz::g_verbose = true;
   }
 
   try {

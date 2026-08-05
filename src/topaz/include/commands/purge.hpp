@@ -56,7 +56,7 @@ inline int cmd_purge(const std::string& plugin_name, const std::string& version 
         std::getline(std::cin, response);
         response = trim(response);
         if (response != "y" && response != "Y") {
-            std::cout << termcolor::yellow << "[*] Purge cancelled." << termcolor::reset << std::endl;
+            if (topaz::g_verbose) std::cout << termcolor::yellow << "[*] Purge cancelled." << termcolor::reset << std::endl;
             return 0;
         }
     }
@@ -165,7 +165,7 @@ inline int cmd_purge(const std::string& plugin_name, const std::string& version 
     std::getline(std::cin, response);
     response = trim(response);
     if (response == "n" || response == "N") {
-        std::cout << termcolor::yellow << "[*] Purge cancelled." << termcolor::reset << std::endl;
+        if (topaz::g_verbose) std::cout << termcolor::yellow << "[*] Purge cancelled." << termcolor::reset << std::endl;
         return 0;
     }
 
@@ -190,7 +190,7 @@ inline int cmd_purge(const std::string& plugin_name, const std::string& version 
         std::cout << termcolor::green << "[OK] Purge completed." << termcolor::reset << std::endl;
         return 0;
     } else {
-        std::cout << termcolor::yellow << "[*] Nothing was removed." << termcolor::reset << std::endl;
+        if (topaz::g_verbose) std::cout << termcolor::yellow << "[*] Nothing was removed." << termcolor::reset << std::endl;
         return 0;
     }
 }

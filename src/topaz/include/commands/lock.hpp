@@ -35,7 +35,7 @@ inline int cmd_lock_generate(const std::string& plugin_name, const std::string& 
         return 1;
     }
 
-    std::cout << termcolor::cyan << "[*] Generating lock file for: " << plugin_name << termcolor::reset;
+    if (topaz::g_verbose) std::cout << termcolor::cyan << "[*] Generating lock file for: " << plugin_name << termcolor::reset;
     if (version != "latest") {
         std::cout << " (version: " << version << ")";
     }
@@ -52,7 +52,7 @@ inline int cmd_lock_generate(const std::string& plugin_name, const std::string& 
         }
         // Use the last one (should be highest)
         resolved_version = versions.back();
-        std::cout << termcolor::green << "[*] Using latest version: " << resolved_version << termcolor::reset << std::endl;
+        if (topaz::g_verbose) std::cout << termcolor::green << "[*] Using latest version: " << resolved_version << termcolor::reset << std::endl;
     }
 
     // Get the plugin base directory

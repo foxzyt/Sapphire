@@ -124,7 +124,7 @@ inline int cmd_info(const std::string& plugin_name) {
     }
     
     if (!has_global && !has_local) {
-        std::cout << termcolor::yellow << "[*] Plugin not installed in any scope" << termcolor::reset << std::endl;
+        if (topaz::g_verbose) std::cout << termcolor::yellow << "[*] Plugin not installed in any scope" << termcolor::reset << std::endl;
         std::cout << std::endl;
     }
     

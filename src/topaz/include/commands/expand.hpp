@@ -65,8 +65,8 @@ inline int cmd_expand(const std::string& version, const std::filesystem::path& w
         main_file << "main();\n";
         main_file.close();
         
-        std::cout << termcolor::green << "[+] Version structure created: v" << version << termcolor::reset << std::endl;
-        std::cout << termcolor::green << "[+] Files directory: " << files_dir << termcolor::reset << std::endl;
+        if (topaz::g_verbose) std::cout << termcolor::green << "[+] Version structure created: v" << version << termcolor::reset << std::endl;
+        if (topaz::g_verbose) std::cout << termcolor::green << "[+] Files directory: " << files_dir << termcolor::reset << std::endl;
         
         // Interactive dependency addition
         std::vector<Dependency> dependencies;
@@ -101,15 +101,15 @@ inline int cmd_expand(const std::string& version, const std::filesystem::path& w
             }
             
             dependencies.emplace_back(dep_name, dep_version);
-            std::cout << termcolor::green << "[+] Added dependency: " << dep_name << ":" << dep_version << termcolor::reset << std::endl;
+            if (topaz::g_verbose) std::cout << termcolor::green << "[+] Added dependency: " << dep_name << ":" << dep_version << termcolor::reset << std::endl;
         }
         
         // Write dependencies (create empty file if no dependencies)
         write_dependencies_txt(deps_txt, dependencies);
         if (!dependencies.empty()) {
-            std::cout << termcolor::green << "[+] Dependencies written to DEPENDENCIES.txt" << termcolor::reset << std::endl;
+            if (topaz::g_verbose) std::cout << termcolor::green << "[+] Dependencies written to DEPENDENCIES.txt" << termcolor::reset << std::endl;
         } else {
-            std::cout << termcolor::green << "[+] Empty DEPENDENCIES.txt created" << termcolor::reset << std::endl;
+            if (topaz::g_verbose) std::cout << termcolor::green << "[+] Empty DEPENDENCIES.txt created" << termcolor::reset << std::endl;
         }
         
         return 0;

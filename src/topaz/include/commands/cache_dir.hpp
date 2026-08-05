@@ -25,7 +25,7 @@ inline int cmd_cache_dir() {
     std::cout << std::endl;
 
     if (!fs::exists(cache_dir)) {
-        std::cout << termcolor::yellow << "[*] Cache directory is empty or does not exist." << termcolor::reset << std::endl;
+        if (topaz::g_verbose) std::cout << termcolor::yellow << "[*] Cache directory is empty or does not exist." << termcolor::reset << std::endl;
         return 0;
     }
 

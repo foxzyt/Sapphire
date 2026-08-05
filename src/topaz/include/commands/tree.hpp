@@ -392,9 +392,9 @@ inline int cmd_tree(const std::string& plugin_name = "", const std::string& vers
         fs::path lockfile_path = version_dir / "topaz.lock";
 
         if (fs::exists(lockfile_path)) {
-            std::cout << termcolor::green << "[*] Lock file present" << termcolor::reset << std::endl;
+            if (topaz::g_verbose) std::cout << termcolor::green << "[*] Lock file present" << termcolor::reset << std::endl;
         } else {
-            std::cout << termcolor::yellow << "[*] No lock file (run: topaz lock " << plugin_name << ")" << termcolor::reset << std::endl;
+            if (topaz::g_verbose) std::cout << termcolor::yellow << "[*] No lock file (run: topaz lock " << plugin_name << ")" << termcolor::reset << std::endl;
         }
         std::cout << std::endl;
 

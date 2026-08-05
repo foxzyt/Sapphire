@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "sapphire-grad": "^1.0.1"
+  },
+  "name": "Sapphire",
+  "version": "1.0.0"
+}

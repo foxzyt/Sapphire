@@ -80,20 +80,37 @@ find_package(OpenSSL QUIET)
 if(OPENSSL_FOUND)
     message(STATUS "OpenSSL found: ${OPENSSL_INCLUDE_DIR}")
     if(WIN32)
-        # Copy OpenSSL DLLs to output directory
-        add_custom_command(TARGET sapphire POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${OPENSSL_SSL_LIBRARY}
-            $<TARGET_FILE_DIR:sapphire>
-        )
-        add_custom_command(TARGET sapphire POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${OPENSSL_CRYPTO_LIBRARY}
-            $<TARGET_FILE_DIR:sapphire>
-        )
+        # Copy OpenSSL DLLs to output directory if they exist (not static)
+        if(EXISTS "${OPENSSL_SSL_LIBRARY}" AND EXISTS "${OPENSSL_CRYPTO_LIBRARY}")
+            add_custom_command(TARGET sapphire POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${OPENSSL_SSL_LIBRARY}
+                $<TARGET_FILE_DIR:sapphire>
+            )
+            add_custom_command(TARGET sapphire POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${OPENSSL_CRYPTO_LIBRARY}
+                $<TARGET_FILE_DIR:sapphire>
+            )
+        endif()
     endif()
 else()
-    message(WARNING "OpenSSL not found - crypto functions will be disabled")
+    message(STATUS "OpenSSL not found. Downloading and building openssl-cmake automatically...")
+    FetchContent_Declare(
+        openssl_cmake
+        GIT_REPOSITORY https://github.com/janbar/openssl-cmake.git
+        GIT_TAG        master
+    )
+    FetchContent_MakeAvailable(openssl_cmake)
+    
+    set(OPENSSL_FOUND TRUE)
+    set(OPENSSL_INCLUDE_DIR "${openssl_cmake_SOURCE_DIR}/include")
+    
+    # Create aliases so the rest of the CMake file works unchanged
+    if(NOT TARGET OpenSSL::Crypto)
+        add_library(OpenSSL::Crypto ALIAS crypto)
+        add_library(OpenSSL::SSL ALIAS ssl)
+    endif()
 endif()
 
 # Fetch nlohmann/json
@@ -108,7 +125,7 @@ FetchContent_MakeAvailable(nlohmann_json)
 FetchContent_Declare(
     httplib
     GIT_REPOSITORY https://github.com/yhirose/cpp-httplib.git
-    GIT_TAG        v0.15.3
+    GIT_TAG        v0.14.3
 )
 FetchContent_MakeAvailable(httplib)
 
@@ -455,15 +472,17 @@ endif()
 if(WIN32)
     # Copy OpenSSL DLLs to output directory if found
     if(OPENSSL_FOUND)
-        add_custom_command(TARGET sapphire POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${OPENSSL_SSL_LIBRARY}
-            $<TARGET_FILE_DIR:sapphire>
-        )
-        add_custom_command(TARGET sapphire POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${OPENSSL_CRYPTO_LIBRARY}
-            $<TARGET_FILE_DIR:sapphire>
-        )
+        if(EXISTS "${OPENSSL_SSL_LIBRARY}" AND EXISTS "${OPENSSL_CRYPTO_LIBRARY}")
+            add_custom_command(TARGET sapphire POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${OPENSSL_SSL_LIBRARY}
+                $<TARGET_FILE_DIR:sapphire>
+            )
+            add_custom_command(TARGET sapphire POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${OPENSSL_CRYPTO_LIBRARY}
+                $<TARGET_FILE_DIR:sapphire>
+            )
+        endif()
     endif()
 endif()

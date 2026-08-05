@@ -31,7 +31,7 @@ inline int cmd_outdated(const std::string& plugin_name = "") {
 
     if (plugin_name.empty()) {
         // Collect all installed plugins (global + local)
-        std::cout << termcolor::cyan << "[*] Checking all installed plugins for updates..."
+        if (topaz::g_verbose) std::cout << termcolor::cyan << "[*] Checking all installed plugins for updates..."
                   << termcolor::reset << std::endl;
 
         // Global plugins
@@ -61,7 +61,7 @@ inline int cmd_outdated(const std::string& plugin_name = "") {
         }
 
         if (plugins_to_check.empty()) {
-            std::cout << termcolor::yellow << "[*] No plugins installed." << termcolor::reset << std::endl;
+            if (topaz::g_verbose) std::cout << termcolor::yellow << "[*] No plugins installed." << termcolor::reset << std::endl;
             return 0;
         }
     } else {

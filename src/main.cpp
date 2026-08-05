@@ -2311,12 +2311,12 @@ void run_file_mode(const std::string &script_content,
 }
 
 void run_repl() {
-  std::cout << "Sapphire REPL v1.0.9\nType 'exit' or 'quit' to close.\n";
+  std::cout << "Sapphire REPL v1.0.9\nType 'exit' or 'quit' to close." << std::endl;
   VM vm;
   g_current_vm = &vm;
   std::string line;
   while (true) {
-    std::cout << ">> ";
+    std::cout << ">> " << std::flush;
     if (!std::getline(std::cin, line))
       break;
     if (line == "exit" || line == "quit")

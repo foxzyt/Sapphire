@@ -19,7 +19,7 @@ inline int cmd_cache_clean(bool force = false) {
     fs::path cache_dir = get_cache_dir();
 
     if (!fs::exists(cache_dir)) {
-        std::cout << termcolor::yellow << "[*] Cache directory does not exist." << termcolor::reset << std::endl;
+        if (topaz::g_verbose) std::cout << termcolor::yellow << "[*] Cache directory does not exist." << termcolor::reset << std::endl;
         return 0;
     }
 
@@ -35,7 +35,7 @@ inline int cmd_cache_clean(bool force = false) {
         }
     } catch (...) {}
 
-    std::cout << termcolor::cyan << "[*] Cleaning cache..." << termcolor::reset << std::endl;
+    if (topaz::g_verbose) std::cout << termcolor::cyan << "[*] Cleaning cache..." << termcolor::reset << std::endl;
     std::cout << "  Files to remove: " << file_count << std::endl;
 
     std::string size_str;
@@ -56,7 +56,7 @@ inline int cmd_cache_clean(bool force = false) {
         response = trim(response);
 
         if (response == "n" || response == "N") {
-            std::cout << termcolor::yellow << "[*] Cache cleanup cancelled." << termcolor::reset << std::endl;
+            if (topaz::g_verbose) std::cout << termcolor::yellow << "[*] Cache cleanup cancelled." << termcolor::reset << std::endl;
             return 0;
         }
     }

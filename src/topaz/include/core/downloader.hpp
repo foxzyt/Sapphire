@@ -88,7 +88,7 @@ inline std::optional<RegistryEntry> query_registry(const std::string& plugin_nam
             return std::nullopt;
         }
         
-        httplib::Client cli(host);
+        httplib::Client cli("https://" + host);
         cli.set_follow_location(true);
         cli.set_connection_timeout(10);
         cli.set_read_timeout(30);
@@ -128,16 +128,24 @@ inline bool download_file(const std::string& url, const fs::path& output_path) {
             return false;
         }
         
-        std::cout << "[*] Connecting to host: " << host << std::endl;
-        std::cout << "[*] Requesting path: " << path << std::endl;
+        if (topaz::g_verbose) std::cout << "[*] Connecting to host: " << host << std::endl;
+        if (topaz::g_verbose) std::cout << "[*] Requesting path: " << path << std::endl;
         
-        httplib::Client cli(host);
-        cli.set_follow_location(true);
+        httplib::Client cli("https://" + host);
+        // Disable automatic following to handle cross-origin redirects manually
+        cli.set_follow_location(false);
         cli.set_connection_timeout(30);
         cli.set_read_timeout(60);
 
-        
         auto res = cli.Get(path.c_str());
+        
+        if (res && (res->status == 301 || res->status == 302 || res->status == 307 || res->status == 308)) {
+            std::string new_url = res->get_header_value("Location");
+            if (!new_url.empty()) {
+                if (topaz::g_verbose) std::cout << "[*] Following redirect to: " << new_url << std::endl;
+                return download_file(new_url, output_path);
+            }
+        }
         
         if (res && res->status == 200) {
             // Create parent directory if it doesn't exist
@@ -152,7 +160,7 @@ inline bool download_file(const std::string& url, const fs::path& output_path) {
             out.write(res->body.data(), res->body.size());
             out.close();
             
-            std::cout << "[*] Downloaded " << res->body.size() << " bytes" << std::endl;
+            if (topaz::g_verbose) std::cout << "[*] Downloaded " << res->body.size() << " bytes" << std::endl;
             return true;
         } else if (res) {
             std::cerr << "[!] HTTP error: " << res->status << " (" << res->reason << ")" << std::endl;
@@ -242,7 +250,7 @@ inline bool download_and_extract_plugin(const std::string& plugin_name, const st
     try {
         // Convert repo URL to ZIP URL
         std::string zip_url = github_to_zip_url(repo_url, version);
-        std::cout << "[*] Downloading from: " << zip_url << std::endl;
+        if (topaz::g_verbose) std::cout << "[*] Downloading from: " << zip_url << std::endl;
         
         // Create a unique cache key for this download
         std::string cache_key = plugin_name + "_" + version + ".zip";
@@ -250,7 +258,7 @@ inline bool download_and_extract_plugin(const std::string& plugin_name, const st
         
         // Check if already cached
         if (fs::exists(zip_path)) {
-            std::cout << "[*] Using cached download: " << cache_key << std::endl;
+            if (topaz::g_verbose) std::cout << "[*] Using cached download: " << cache_key << std::endl;
         } else {
             if (g_offline) {
                 std::cerr << "[!] Offline mode error: Cache miss for " << plugin_name << " " << version << " (download blocked)" << std::endl;
@@ -258,14 +266,23 @@ inline bool download_and_extract_plugin(const std::string& plugin_name, const st
             }
             // Download ZIP to cache
             if (!download_file(zip_url, zip_path)) {
-                std::cerr << "[!] Failed to download ZIP file" << std::endl;
-                return false;
+                if (version != "latest") {
+                    if (topaz::g_verbose) std::cout << termcolor::yellow << "[*] Failed to download tag zip. Falling back to main branch..." << termcolor::reset << std::endl;
+                    std::string fallback_url = github_to_zip_url(repo_url, "latest");
+                    if (!download_file(fallback_url, zip_path)) {
+                        std::cerr << "[!] Failed to download fallback ZIP file" << std::endl;
+                        return false;
+                    }
+                } else {
+                    std::cerr << "[!] Failed to download ZIP file" << std::endl;
+                    return false;
+                }
             }
         }
         
         if (!expected_checksum.empty()) {
 #ifdef OPENSSL_FOUND
-            std::cout << "[*] Verifying checksum..." << std::endl;
+            if (topaz::g_verbose) std::cout << "[*] Verifying checksum..." << std::endl;
             std::ifstream file(zip_path, std::ios::binary);
             if (file.is_open()) {
                 EVP_MD_CTX* ctx = EVP_MD_CTX_new();
@@ -295,11 +312,11 @@ inline bool download_and_extract_plugin(const std::string& plugin_name, const st
                     // According to user request, log warning but proceed or reject? The user said "emitindo apenas um alerta caso o pacote nao tenha assinatura... ou se prefere que bloqueie". The user approved the implementation plan. I will block if it HAS a checksum but it MISMATCHES.
                     return false;
                 } else {
-                    std::cout << termcolor::green << "[+] Checksum verified." << termcolor::reset << std::endl;
+                    if (topaz::g_verbose) std::cout << termcolor::green << "[+] Checksum verified." << termcolor::reset << std::endl;
                 }
             }
 #else
-            std::cout << "[*] Checksum verification skipped (OpenSSL not available)" << std::endl;
+            if (topaz::g_verbose) std::cout << "[*] Checksum verification skipped (OpenSSL not available)" << std::endl;
 #endif
         } else {
             std::cout << termcolor::yellow << "[!] WARNING: No checksum provided by registry. Cannot verify signature." << termcolor::reset << std::endl;
@@ -380,7 +397,7 @@ inline std::string fetch_latest_version_from_repo(const std::string& repo_url) {
     }
     
     try {
-        httplib::Client cli("api.github.com");
+        httplib::Client cli("https://api.github.com");
         cli.set_follow_location(true);
         cli.set_connection_timeout(10);
         cli.set_read_timeout(15);

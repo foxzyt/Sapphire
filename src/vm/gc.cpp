@@ -117,6 +117,10 @@ void VM::blacken_object(Obj* object) {
             mark_value(fade->value);
             break;
         }
+        case OBJ_BIGINT: {
+            // BigInt has no child SapphireValue pointers to mark
+            break;
+        }
         case OBJ_NATIVE: {
             ObjNative* native = static_cast<ObjNative*>(object);
             if (native->name) mark_object(static_cast<Obj*>(native->name));
@@ -239,6 +243,7 @@ void VM::step_gc() {
                     case OBJ_LRU:           size = sizeof(ObjLRU); break;
                     case OBJ_PROMISE:       size = sizeof(ObjPromise); break;
                     case OBJ_FADE:          size = sizeof(ObjFade); break;
+                    case OBJ_BIGINT:        size = sizeof(ObjBigInt); break;
                 }
 
                 if (bytes_allocated >= size) bytes_allocated -= size;

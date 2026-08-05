@@ -47,7 +47,7 @@ inline std::string install_resolve_github_version(const std::string& repo_url, c
     std::vector<std::pair<std::string, std::string>> all_versions;
 
     try {
-        httplib::Client cli("api.github.com");
+        httplib::Client cli("https://api.github.com");
         cli.set_follow_location(true);
         cli.set_connection_timeout(10);
         cli.set_read_timeout(15);
@@ -189,7 +189,7 @@ inline int cmd_install_project(bool local_scope = false, bool frozen_lockfile = 
     resolver.set_frozen_lockfile(frozen_lockfile);
     
     if (has_lockfile) {
-        std::cout << termcolor::cyan << "[*] Installing dependencies from lockfile..." << termcolor::reset << std::endl;
+        if (topaz::g_verbose) std::cout << termcolor::cyan << "[*] Installing dependencies from lockfile..." << termcolor::reset << std::endl;
         
         nlohmann::json lock_json;
         try {
@@ -206,7 +206,7 @@ inline int cmd_install_project(bool local_scope = false, bool frozen_lockfile = 
                 std::string dep_name = dep["name"].get<std::string>();
                 std::string dep_version = dep["version"].get<std::string>();
                 
-                std::cout << termcolor::cyan << "[*] Installing locked version: " << dep_name << " v" << dep_version << termcolor::reset << std::endl;
+                if (topaz::g_verbose) std::cout << termcolor::cyan << "[*] Installing locked version: " << dep_name << " v" << dep_version << termcolor::reset << std::endl;
                 
                 auto registry_entry = query_registry(dep_name);
                 if (!registry_entry) {
@@ -227,7 +227,7 @@ inline int cmd_install_project(bool local_scope = false, bool frozen_lockfile = 
             }
         }
     } else {
-        std::cout << termcolor::cyan << "[*] Resolving dependencies from sapphire.json..." << termcolor::reset << std::endl;
+        if (topaz::g_verbose) std::cout << termcolor::cyan << "[*] Resolving dependencies from sapphire.json..." << termcolor::reset << std::endl;
         
         std::vector<std::pair<std::string, std::string>> deps_to_resolve;
         if (manifest.contains("dependencies") && manifest["dependencies"].is_object()) {
@@ -246,7 +246,7 @@ inline int cmd_install_project(bool local_scope = false, bool frozen_lockfile = 
         }
         
         for (const auto& [name, constraint] : deps_to_resolve) {
-            std::cout << termcolor::cyan << "[*] Resolving " << name << " (" << constraint << ")..." << termcolor::reset << std::endl;
+            if (topaz::g_verbose) std::cout << termcolor::cyan << "[*] Resolving " << name << " (" << constraint << ")..." << termcolor::reset << std::endl;
             
             auto registry_entry = query_registry(name);
             if (!registry_entry) {
@@ -292,7 +292,7 @@ inline int cmd_install_project(bool local_scope = false, bool frozen_lockfile = 
             fs::path global_plugin = get_plugin_dir() / name;
             
             if (fs::exists(global_plugin)) {
-                std::cout << termcolor::cyan << "[*] Copying " << name << " to local project scope..." << termcolor::reset << std::endl;
+                if (topaz::g_verbose) std::cout << termcolor::cyan << "[*] Copying " << name << " to local project scope..." << termcolor::reset << std::endl;
                 if (fs::exists(target_local)) {
                     fs::remove_all(target_local);
                 }
@@ -354,7 +354,7 @@ inline int cmd_install(const std::string& plugin_name,
     }
     
     
-    std::cout << termcolor::cyan << "[*] Installing plugin: " << plugin_name << termcolor::reset;
+    if (topaz::g_verbose) std::cout << termcolor::cyan << "[*] Installing plugin: " << plugin_name << termcolor::reset;
     if (version != "latest") {
         std::cout << " (version: " << version << ")";
     }
@@ -367,19 +367,19 @@ inline int cmd_install(const std::string& plugin_name,
         return 1;
     }
     
-    std::cout << termcolor::blue << "[*] Repository: " << registry_entry->repository << termcolor::reset << std::endl;
+    if (topaz::g_verbose) std::cout << termcolor::blue << "[*] Repository: " << registry_entry->repository << termcolor::reset << std::endl;
     
     // Resolve version dynamically
     std::string resolved_version = version;
     bool is_semver_query = (version == "latest" || version[0] == '^' || version[0] == '>' || version[0] == '<' || version[0] == '~');
     
     if (is_semver_query) {
-        std::cout << termcolor::cyan << "[*] Resolving version constraint '" << version << "' from GitHub..." << termcolor::reset << std::endl;
+        if (topaz::g_verbose) std::cout << termcolor::cyan << "[*] Resolving version constraint '" << version << "' from GitHub..." << termcolor::reset << std::endl;
         std::string gh_resolved = install_resolve_github_version(registry_entry->repository, version);
         
         if (!gh_resolved.empty()) {
             resolved_version = gh_resolved;
-            std::cout << termcolor::green << "[*] Resolved '" << version << "' to " << resolved_version << termcolor::reset << std::endl;
+            if (topaz::g_verbose) std::cout << termcolor::green << "[*] Resolved '" << version << "' to " << resolved_version << termcolor::reset << std::endl;
         } else {
             std::cout << termcolor::red << "[!] Could not find any version matching constraint '" << version << "' on GitHub" << termcolor::reset << std::endl;
             return 1;
@@ -419,10 +419,10 @@ inline int cmd_install(const std::string& plugin_name,
     fs::path target_plugin_dir;
     if (local_scope) {
         target_plugin_dir = get_local_plugin_dir() / plugin_name;
-        std::cout << termcolor::yellow << "[*] Target: local project scope (./plugins/)" << termcolor::reset << std::endl;
+        if (topaz::g_verbose) std::cout << termcolor::yellow << "[*] Target: local project scope (./plugins/)" << termcolor::reset << std::endl;
     } else {
         target_plugin_dir = get_plugin_dir() / plugin_name;
-        std::cout << termcolor::yellow << "[*] Target: global scope (AppData)" << termcolor::reset << std::endl;
+        if (topaz::g_verbose) std::cout << termcolor::yellow << "[*] Target: global scope (AppData)" << termcolor::reset << std::endl;
     }
     
     // Check if already installed
@@ -433,7 +433,7 @@ inline int cmd_install(const std::string& plugin_name,
             std::string clean_resolved = resolved_version;
             if (clean_resolved.size() > 0 && clean_resolved[0] == 'v') clean_resolved = clean_resolved.substr(1);
             
-            std::cout << termcolor::yellow << "[*] Plugin already installed in " 
+            if (topaz::g_verbose) std::cout << termcolor::yellow << "[*] Plugin already installed in " 
                       << (local_scope ? "local" : "global") << " scope (Current: v" << meta->version << " | Target: v" << clean_resolved << ")" << termcolor::reset << std::endl;
             
             if (meta->version != clean_resolved) {
@@ -450,18 +450,18 @@ inline int cmd_install(const std::string& plugin_name,
                 response = trim(response);
                 
                 if (response == "n" || response == "N") {
-                    std::cout << termcolor::yellow << "[*] Installation cancelled" << termcolor::reset << std::endl;
+                    if (topaz::g_verbose) std::cout << termcolor::yellow << "[*] Installation cancelled" << termcolor::reset << std::endl;
                     return 0;
                 }
             } else {
-                std::cout << termcolor::green << "[*] Target version v" << clean_resolved << " is already the active version. Processing dependencies..." << termcolor::reset << std::endl;
+                if (topaz::g_verbose) std::cout << termcolor::green << "[*] Target version v" << clean_resolved << " is already the active version. Processing dependencies..." << termcolor::reset << std::endl;
             }
         }
     }
     
     std::string tag_version = resolved_version;
     if (tag_version.size() > 0 && tag_version[0] == 'v') tag_version = tag_version.substr(1);
-    std::cout << termcolor::cyan << "[*] Fetching version " << tag_version << "..." << termcolor::reset << std::endl;
+    if (topaz::g_verbose) std::cout << termcolor::cyan << "[*] Fetching version " << tag_version << "..." << termcolor::reset << std::endl;
     
     if (!download_and_extract_plugin(plugin_name, registry_entry->repository, "v" + tag_version, registry_entry->checksum)) {
         std::cerr << termcolor::red << "[!] Failed to download and extract plugin." << termcolor::reset << std::endl;
@@ -481,14 +481,14 @@ inline int cmd_install(const std::string& plugin_name,
     if (local_scope) {
         fs::path global_plugin = get_plugin_dir() / plugin_name;
         if (fs::exists(global_plugin)) {
-            std::cout << termcolor::cyan << "[*] Copying to local project scope..." << termcolor::reset << std::endl;
+            if (topaz::g_verbose) std::cout << termcolor::cyan << "[*] Copying to local project scope..." << termcolor::reset << std::endl;
             if (fs::exists(target_plugin_dir)) {
                 fs::remove_all(target_plugin_dir);
             }
             fs::create_directories(target_plugin_dir.parent_path());
             try {
                 fs::copy(global_plugin, target_plugin_dir, fs::copy_options::recursive | fs::copy_options::overwrite_existing);
-                std::cout << termcolor::green << "[+] Copied to local project scope" << termcolor::reset << std::endl;
+                if (topaz::g_verbose) std::cout << termcolor::green << "[+] Copied to local project scope" << termcolor::reset << std::endl;
             } catch (const std::exception& e) {
                 std::cerr << termcolor::red << "[!] Failed to copy to local scope: " << e.what() << termcolor::reset << std::endl;
             }
@@ -534,7 +534,7 @@ inline int cmd_install(const std::string& plugin_name,
         std::ofstream out(manifest_path);
         out << manifest.dump(2);
         out.close();
-        std::cout << "[*] Updated " << manifest_path.filename().string() << " dependencies" << std::endl;
+        if (topaz::g_verbose) std::cout << "[*] Updated " << manifest_path.filename().string() << " dependencies" << std::endl;
         
         // Write project-level lockfile
         LockFile project_lockfile(fs::current_path(), manifest["name"].get<std::string>(), manifest["version"].get<std::string>());

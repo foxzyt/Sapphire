@@ -35,7 +35,7 @@ namespace commands {
 inline int cmd_upgrade() {
     namespace fs = std::filesystem;
 
-    std::cout << termcolor::cyan
+    if (topaz::g_verbose) std::cout << termcolor::cyan
               << "[*] Checking for topaz updates..."
               << termcolor::reset << std::endl;
 
@@ -72,7 +72,7 @@ inline int cmd_upgrade() {
     topaz_name = "topaz.exe";
 #endif
 
-    std::cout << termcolor::blue
+    if (topaz::g_verbose) std::cout << termcolor::blue
               << "[*] Current topaz path: " << current_path.string()
               << termcolor::reset << std::endl;
 
@@ -82,7 +82,7 @@ inline int cmd_upgrade() {
                          + "/" + SAPPHIRE_BIN_BRANCH
                          + "/" + topaz_name;
 
-    std::cout << termcolor::cyan
+    if (topaz::g_verbose) std::cout << termcolor::cyan
               << "[*] Downloading latest " << topaz_name << " from GitHub..."
               << termcolor::reset << std::endl;
 
@@ -149,16 +149,16 @@ inline int cmd_upgrade() {
                   << "[OK] Downloaded " << size_str
                   << termcolor::reset << std::endl;
 
-        std::cout << termcolor::yellow
+        if (topaz::g_verbose) std::cout << termcolor::yellow
                   << "[*] Topaz has been updated!"
                   << termcolor::reset << std::endl;
-        std::cout << termcolor::yellow
+        if (topaz::g_verbose) std::cout << termcolor::yellow
                   << "[*] Restart topaz to use the new version."
                   << termcolor::reset << std::endl;
-        std::cout << termcolor::cyan
+        if (topaz::g_verbose) std::cout << termcolor::cyan
                   << "[*] Update saved as: " << new_path.string()
                   << termcolor::reset << std::endl;
-        std::cout << termcolor::yellow
+        if (topaz::g_verbose) std::cout << termcolor::yellow
                   << "[*] The new file will replace " << topaz_name << " on next restart."
                   << termcolor::reset << std::endl;
 
@@ -248,7 +248,7 @@ inline int cmd_upgrade() {
         std::string exec_cmd = "\"" + sh_path.string() + "\" &";
         system(exec_cmd.c_str());
 #else
-        std::cout << termcolor::yellow
+        if (topaz::g_verbose) std::cout << termcolor::yellow
                   << "[*] To finish the update, run:\n"
                   << "  mv \"" << new_path.string() << "\" \"" << current_path.string() << "\""
                   << termcolor::reset << std::endl;

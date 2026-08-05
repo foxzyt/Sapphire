@@ -60,7 +60,7 @@ static std::random_device rd;
 static std::mt19937 gen(rd());
 
 #ifdef USE_RUBELLITE
-#include "vm_trampolines.cpp"
+extern "C" bool jit_run_function(VM* vm, ObjFunction* fn);
 #endif
 
 
@@ -2124,8 +2124,7 @@ bool VM::call_value(SapphireValue callee, int arg_count) {
         // std::cout << "    [CALL_VALUE SPY] Despachando chamada para objeto tipo: " << obj->type << std::endl;
         // Eu nem tiro mais os debugs, vai que eu preciso Â¯\_(ãƒ„)_/Â¯
 
-#ifndef USE_RUBELLITE
-// In non-JIT mode, VM::run() IS the bytecode interpreter.
+// In non-JIT mode (or as fallback), VM::run() IS the bytecode interpreter.
 bool VM::run(int target_frame_count) {
     CallFrame* frame = &frames[frame_count - 1];
     uint8_t* ip = frame->ip;
@@ -2422,21 +2421,64 @@ TARGET(OP_EQUAL) {
 }
 
 TARGET(OP_GREATER) {
-    top[-2] = SapphireValue(top[-2].as.number > top[-1].as.number);
-    top--;
+    SapphireValue v1 = top[-1]; SapphireValue v2 = top[-2];
+    if (v1.type == ValType::VAL_NUMBER && v2.type == ValType::VAL_NUMBER) {
+        top[-2] = SapphireValue(v2.as.number > v1.as.number);
+        top--;
+    } else if (is_obj_type(v1, OBJ_BIGINT) || is_obj_type(v2, OBJ_BIGINT)) {
+        ObjBigInt* ba = is_obj_type(v2, OBJ_BIGINT) ? static_cast<ObjBigInt*>(v2.as.obj) : new_bigint_from_double(this, v2.type == ValType::VAL_NUMBER ? v2.as.number : 0);
+        ObjBigInt* bb = is_obj_type(v1, OBJ_BIGINT) ? static_cast<ObjBigInt*>(v1.as.obj) : new_bigint_from_double(this, v1.type == ValType::VAL_NUMBER ? v1.as.number : 0);
+        top[-2] = SapphireValue(cmp_bigint(ba, bb) > 0);
+        top--;
+    } else {
+        top[-2] = SapphireValue(false);
+        top--;
+    }
     NEXT_CODE();
 }
 
 TARGET(OP_LESS) {
-    top[-2] = SapphireValue(top[-2].as.number < top[-1].as.number);
-    top--;
+    SapphireValue v1 = top[-1]; SapphireValue v2 = top[-2];
+    if (v1.type == ValType::VAL_NUMBER && v2.type == ValType::VAL_NUMBER) {
+        top[-2] = SapphireValue(v2.as.number < v1.as.number);
+        top--;
+    } else if (is_obj_type(v1, OBJ_BIGINT) || is_obj_type(v2, OBJ_BIGINT)) {
+        ObjBigInt* ba = is_obj_type(v2, OBJ_BIGINT) ? static_cast<ObjBigInt*>(v2.as.obj) : new_bigint_from_double(this, v2.type == ValType::VAL_NUMBER ? v2.as.number : 0);
+        ObjBigInt* bb = is_obj_type(v1, OBJ_BIGINT) ? static_cast<ObjBigInt*>(v1.as.obj) : new_bigint_from_double(this, v1.type == ValType::VAL_NUMBER ? v1.as.number : 0);
+        top[-2] = SapphireValue(cmp_bigint(ba, bb) < 0);
+        top--;
+    } else {
+        top[-2] = SapphireValue(false);
+        top--;
+    }
     NEXT_CODE();
 }
 
 TARGET(OP_ADD) {
-    auto& v1 = top[-1]; auto& v2 = top[-2];
+    SapphireValue v1 = top[-1]; SapphireValue v2 = top[-2];
     if (v1.type == ValType::VAL_NUMBER && v2.type == ValType::VAL_NUMBER) {
-        top[-2].as.number += top[-1].as.number;
+        double res = v2.as.number + v1.as.number;
+        if (std::trunc(v2.as.number) == v2.as.number && std::trunc(v1.as.number) == v1.as.number && (res > 9007199254740991.0 || res < -9007199254740991.0)) {
+            ObjBigInt* ba = new_bigint_from_double(this, v2.as.number);
+            push(SapphireValue(ba));
+            ObjBigInt* bb = new_bigint_from_double(this, v1.as.number);
+            push(SapphireValue(bb));
+            ObjBigInt* r = add_bigint(this, ba, bb);
+            pop(); pop();
+            top[-2] = SapphireValue(r);
+            top--;
+        } else {
+            top[-2].as.number = res;
+            top--;
+        }
+    } else if (is_obj_type(v1, OBJ_BIGINT) || is_obj_type(v2, OBJ_BIGINT)) {
+        ObjBigInt* ba = is_obj_type(v2, OBJ_BIGINT) ? static_cast<ObjBigInt*>(v2.as.obj) : new_bigint_from_double(this, v2.type == ValType::VAL_NUMBER ? v2.as.number : 0);
+        push(SapphireValue(ba));
+        ObjBigInt* bb = is_obj_type(v1, OBJ_BIGINT) ? static_cast<ObjBigInt*>(v1.as.obj) : new_bigint_from_double(this, v1.type == ValType::VAL_NUMBER ? v1.as.number : 0);
+        push(SapphireValue(bb));
+        ObjBigInt* r = add_bigint(this, ba, bb);
+        pop(); pop();
+        top[-2] = SapphireValue(r);
         top--;
     } else if (v1.type == ValType::VAL_OBJ || v2.type == ValType::VAL_OBJ) {
         std::string s2 = valueToStringC(top[-2]);
@@ -2458,8 +2500,53 @@ TARGET(OP_ADD) {
     NEXT_CODE();
 }
 
-TARGET(OP_SUBTRACT) { double b = valueToDoubleC(POP()); double a = valueToDoubleC(POP()); PUSH(SapphireValue(a - b)); NEXT_CODE(); }
-TARGET(OP_MULTIPLY) { double b = valueToDoubleC(POP()); double a = valueToDoubleC(POP()); PUSH(SapphireValue(a * b)); NEXT_CODE(); }
+TARGET(OP_SUBTRACT) {
+    SapphireValue v1 = top[-1]; SapphireValue v2 = top[-2];
+    if (v1.type == ValType::VAL_NUMBER && v2.type == ValType::VAL_NUMBER) {
+        double res = v2.as.number - v1.as.number;
+        if (std::trunc(v2.as.number) == v2.as.number && std::trunc(v1.as.number) == v1.as.number && (res > 9007199254740991.0 || res < -9007199254740991.0)) {
+            ObjBigInt* ba = new_bigint_from_double(this, v2.as.number);
+            ObjBigInt* bb = new_bigint_from_double(this, v1.as.number);
+            top[-2] = SapphireValue(sub_bigint(this, ba, bb));
+            top--;
+        } else {
+            top[-2].as.number = res;
+            top--;
+        }
+    } else if (is_obj_type(v1, OBJ_BIGINT) || is_obj_type(v2, OBJ_BIGINT)) {
+        ObjBigInt* ba = is_obj_type(v2, OBJ_BIGINT) ? static_cast<ObjBigInt*>(v2.as.obj) : new_bigint_from_double(this, v2.type == ValType::VAL_NUMBER ? v2.as.number : 0);
+        ObjBigInt* bb = is_obj_type(v1, OBJ_BIGINT) ? static_cast<ObjBigInt*>(v1.as.obj) : new_bigint_from_double(this, v1.type == ValType::VAL_NUMBER ? v1.as.number : 0);
+        top[-2] = SapphireValue(sub_bigint(this, ba, bb));
+        top--;
+    } else {
+        double b = valueToDoubleC(POP()); double a = valueToDoubleC(POP()); PUSH(SapphireValue(a - b)); 
+    }
+    NEXT_CODE(); 
+}
+
+TARGET(OP_MULTIPLY) {
+    SapphireValue v1 = top[-1]; SapphireValue v2 = top[-2];
+    if (v1.type == ValType::VAL_NUMBER && v2.type == ValType::VAL_NUMBER) {
+        double res = v2.as.number * v1.as.number;
+        if (std::trunc(v2.as.number) == v2.as.number && std::trunc(v1.as.number) == v1.as.number && (res > 9007199254740991.0 || res < -9007199254740991.0)) {
+            ObjBigInt* ba = new_bigint_from_double(this, v2.as.number);
+            ObjBigInt* bb = new_bigint_from_double(this, v1.as.number);
+            top[-2] = SapphireValue(mul_bigint(this, ba, bb));
+            top--;
+        } else {
+            top[-2].as.number = res;
+            top--;
+        }
+    } else if (is_obj_type(v1, OBJ_BIGINT) || is_obj_type(v2, OBJ_BIGINT)) {
+        ObjBigInt* ba = is_obj_type(v2, OBJ_BIGINT) ? static_cast<ObjBigInt*>(v2.as.obj) : new_bigint_from_double(this, v2.type == ValType::VAL_NUMBER ? v2.as.number : 0);
+        ObjBigInt* bb = is_obj_type(v1, OBJ_BIGINT) ? static_cast<ObjBigInt*>(v1.as.obj) : new_bigint_from_double(this, v1.type == ValType::VAL_NUMBER ? v1.as.number : 0);
+        top[-2] = SapphireValue(mul_bigint(this, ba, bb));
+        top--;
+    } else {
+        double b = valueToDoubleC(POP()); double a = valueToDoubleC(POP()); PUSH(SapphireValue(a * b)); 
+    }
+    NEXT_CODE(); 
+}
 TARGET(OP_DIVIDE)   { double b = valueToDoubleC(POP()); double a = valueToDoubleC(POP()); PUSH(SapphireValue(a / b)); NEXT_CODE(); }
 TARGET(OP_MODULO)   { double b = valueToDoubleC(POP()); double a = valueToDoubleC(POP()); PUSH(SapphireValue(std::fmod(a, b))); NEXT_CODE(); }
 
@@ -3119,9 +3206,7 @@ TARGET(OP_ITER_NEXT_OF) {
     return true;
 }
 
-#else
-#include "vm_jit.cpp"
-#endif
+
 
 
 
@@ -3336,6 +3421,10 @@ bool VM::call_and_run(ObjFunction* function) {
 
     return result;
 }
+
+#ifdef USE_RUBELLITE
+#include "jit_rubellite.cpp"
+#endif
 
 
 

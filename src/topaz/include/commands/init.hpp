@@ -116,9 +116,9 @@ inline int cmd_init(const std::filesystem::path& working_dir,
     bool s_json = write_sapphire_json(sapphire_json_path, meta.name, meta.version, meta.author, meta.description);
     
     if (p_txt && s_json) {
-        std::cout << termcolor::green << "[+] Project structure initialized: " << plugin_dir << termcolor::reset << std::endl;
-        std::cout << termcolor::green << "[+] Generated sapphire.json and PLUGIN.txt" << termcolor::reset << std::endl;
-        std::cout << termcolor::green << "[+] Use 'topaz expand <version>' to add code versioning." << termcolor::reset << std::endl;
+        if (topaz::g_verbose) std::cout << termcolor::green << "[+] Project structure initialized: " << plugin_dir << termcolor::reset << std::endl;
+        if (topaz::g_verbose) std::cout << termcolor::green << "[+] Generated sapphire.json and PLUGIN.txt" << termcolor::reset << std::endl;
+        if (topaz::g_verbose) std::cout << termcolor::green << "[+] Use 'topaz expand <version>' to add code versioning." << termcolor::reset << std::endl;
         return 0;
     } else {
         std::cerr << termcolor::red << "[!] Failed to generate project files" << termcolor::reset << std::endl;

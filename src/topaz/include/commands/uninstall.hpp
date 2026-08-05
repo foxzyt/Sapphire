@@ -102,7 +102,7 @@ inline int cmd_uninstall(const std::string& plugin_name, bool local_only = false
         std::getline(std::cin, response);
         response = trim(response);
         if (response != "y" && response != "Y") {
-            std::cout << termcolor::yellow << "[*] Uninstall cancelled" << termcolor::reset << std::endl;
+            if (topaz::g_verbose) std::cout << termcolor::yellow << "[*] Uninstall cancelled" << termcolor::reset << std::endl;
             return 0;
         }
     }
@@ -112,14 +112,14 @@ inline int cmd_uninstall(const std::string& plugin_name, bool local_only = false
     // Remove local installation
     if (has_local && (!local_only || is_sapphire_project())) {
         fs::path local_plugin_path = get_local_plugin_dir() / plugin_name;
-        std::cout << termcolor::cyan << "[*] Removing local plugin: " << local_plugin_path << termcolor::reset << std::endl;
+        if (topaz::g_verbose) std::cout << termcolor::cyan << "[*] Removing local plugin: " << local_plugin_path << termcolor::reset << std::endl;
         
         try {
             // Remove the lock file first
             fs::path lockfile = local_plugin_path / "topaz.lock";
             if (fs::exists(lockfile)) {
                 fs::remove(lockfile);
-                std::cout << termcolor::green << "[+] Removed lockfile" << termcolor::reset << std::endl;
+                if (topaz::g_verbose) std::cout << termcolor::green << "[+] Removed lockfile" << termcolor::reset << std::endl;
             }
             
             // Remove CHECKSUMS.txt
@@ -130,7 +130,7 @@ inline int cmd_uninstall(const std::string& plugin_name, bool local_only = false
             
             // Remove the entire plugin directory
             fs::remove_all(local_plugin_path);
-            std::cout << termcolor::green << "[+] Removed plugin directory" << termcolor::reset << std::endl;
+            if (topaz::g_verbose) std::cout << termcolor::green << "[+] Removed plugin directory" << termcolor::reset << std::endl;
             removed_count++;
         } catch (const std::exception& e) {
             std::cerr << termcolor::red << "[!] Failed to remove local plugin: " << e.what() << termcolor::reset << std::endl;
@@ -140,14 +140,14 @@ inline int cmd_uninstall(const std::string& plugin_name, bool local_only = false
     // Remove global installation
     if (has_global && !local_only) {
         fs::path global_plugin_path = get_plugin_dir() / plugin_name;
-        std::cout << termcolor::cyan << "[*] Removing global plugin: " << global_plugin_path << termcolor::reset << std::endl;
+        if (topaz::g_verbose) std::cout << termcolor::cyan << "[*] Removing global plugin: " << global_plugin_path << termcolor::reset << std::endl;
         
         try {
             // Remove the lock file first
             fs::path lockfile = global_plugin_path / "topaz.lock";
             if (fs::exists(lockfile)) {
                 fs::remove(lockfile);
-                std::cout << termcolor::green << "[+] Removed lockfile" << termcolor::reset << std::endl;
+                if (topaz::g_verbose) std::cout << termcolor::green << "[+] Removed lockfile" << termcolor::reset << std::endl;
             }
             
             // Remove CHECKSUMS.txt
@@ -158,7 +158,7 @@ inline int cmd_uninstall(const std::string& plugin_name, bool local_only = false
             
             // Remove the entire plugin directory
             fs::remove_all(global_plugin_path);
-            std::cout << termcolor::green << "[+] Removed plugin directory" << termcolor::reset << std::endl;
+            if (topaz::g_verbose) std::cout << termcolor::green << "[+] Removed plugin directory" << termcolor::reset << std::endl;
             removed_count++;
         } catch (const std::exception& e) {
             std::cerr << termcolor::red << "[!] Failed to remove global plugin: " << e.what() << termcolor::reset << std::endl;
@@ -175,7 +175,7 @@ inline int cmd_uninstall(const std::string& plugin_name, bool local_only = false
                 registry.clear();
                 // Re-write with remaining plugins
                 // Actually, we just remove the entry from the lock file
-                std::cout << termcolor::cyan << "[*] Updating central lock registry..." << termcolor::reset << std::endl;
+                if (topaz::g_verbose) std::cout << termcolor::cyan << "[*] Updating central lock registry..." << termcolor::reset << std::endl;
                 // For now, we just delete the lock file since we track via directories
                 // fs::remove(registry_lock);
             }

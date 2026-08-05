@@ -183,7 +183,7 @@ inline std::vector<std::string> list_remote_sapphire_versions() {
     std::vector<std::string> versions;
 
     try {
-        httplib::Client cli("api.github.com");
+        httplib::Client cli("https://api.github.com");
         cli.set_follow_location(true);
         cli.set_connection_timeout(15);
         cli.set_read_timeout(20);
@@ -354,7 +354,7 @@ inline bool activate_sapphire_version(const std::string& version) {
         return false;
     }
 
-    std::cout << termcolor::cyan
+    if (topaz::g_verbose) std::cout << termcolor::cyan
               << "[*] Activating Sapphire " << semver::with_v(clean) << "..."
               << termcolor::reset << std::endl;
 
@@ -380,7 +380,7 @@ inline bool activate_sapphire_version(const std::string& version) {
                 fs::rename(dest, old_path, ec);
             }
             fs::copy_file(src, dest, fs::copy_options::overwrite_existing);
-            std::cout << "  " << termcolor::green << "[+] " << termcolor::reset
+            if (topaz::g_verbose) std::cout << "  " << termcolor::green << "[+] " << termcolor::reset
                       << bin << std::endl;
         } catch (const std::exception& e) {
             std::cerr << termcolor::red
@@ -408,7 +408,7 @@ inline bool install_sapphire_version(const std::string& version, bool activate =
     std::string clean = semver::normalize(version);
     fs::path ver_dir  = get_sapphire_version_dir(clean);
 
-    std::cout << termcolor::cyan
+    if (topaz::g_verbose) std::cout << termcolor::cyan
               << "[*] Downloading Sapphire " << semver::with_v(clean) << "..."
               << termcolor::reset << std::endl;
 
@@ -439,7 +439,7 @@ inline bool install_sapphire_version(const std::string& version, bool activate =
         return false;
     }
 
-    std::cout << termcolor::green
+    if (topaz::g_verbose) std::cout << termcolor::green
               << "[*] Downloaded " << downloaded << " binary(ies)"
               << (failed > 0 ? " (" + std::to_string(failed) + " skipped)" : "")
               << termcolor::reset << std::endl;

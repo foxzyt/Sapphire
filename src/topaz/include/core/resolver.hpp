@@ -133,7 +133,7 @@ private:
             return;
         }
         
-        std::cout << termcolor::cyan << "[*] Processing " << plugin_name << " v" << clean_version << termcolor::reset << std::endl;
+        if (topaz::g_verbose) std::cout << termcolor::cyan << "[*] Processing " << plugin_name << " v" << clean_version << termcolor::reset << std::endl;
         
         // Create lockfile for this specific version
         LockFile version_lockfile(version_dir, plugin_name, clean_version);
@@ -151,7 +151,7 @@ private:
         auto dependencies = parse_dependencies_txt(deps_path);
         
         if (!dependencies.empty()) {
-            std::cout << termcolor::yellow << "[*] Resolving " << dependencies.size() << " dependencies for " << plugin_name << " v" << clean_version << termcolor::reset << std::endl;
+            if (topaz::g_verbose) std::cout << termcolor::yellow << "[*] Resolving " << dependencies.size() << " dependencies for " << plugin_name << " v" << clean_version << termcolor::reset << std::endl;
         }
         
         // Add dependencies to lockfile and resolve them
@@ -212,7 +212,7 @@ public:
                 // For latest, check if we have all versions
                 auto available = get_available_versions(plugin_name);
                 if (!available.empty()) {
-                    std::cout << termcolor::yellow << "[*] Plugin '" << plugin_name << "' already installed with versions: ";
+                    if (topaz::g_verbose) std::cout << termcolor::yellow << "[*] Plugin '" << plugin_name << "' already installed with versions: ";
                     for (const auto& v : available) {
                         std::cout << v << " ";
                     }
@@ -229,7 +229,7 @@ public:
                         auto dependencies = parse_dependencies_txt(deps_path);
                         
                         if (!dependencies.empty()) {
-                            std::cout << termcolor::yellow << "[*] Resolving " << dependencies.size() << " dependencies for " << plugin_name << " v" << ver << termcolor::reset << std::endl;
+                            if (topaz::g_verbose) std::cout << termcolor::yellow << "[*] Resolving " << dependencies.size() << " dependencies for " << plugin_name << " v" << ver << termcolor::reset << std::endl;
                         }
                         
                         for (const auto& dep : dependencies) {
@@ -243,7 +243,7 @@ public:
                 fs::path version_dir = get_plugin_dir() / plugin_name / "versions" / ("v" + version);
                 if (fs::exists(version_dir)) {
                     // Version exists, but we still need to process its dependencies
-                    std::cout << termcolor::yellow << "[*] Plugin '" << plugin_name << "' v" << version << " already installed, processing dependencies" << termcolor::reset << std::endl;
+                    if (topaz::g_verbose) std::cout << termcolor::yellow << "[*] Plugin '" << plugin_name << "' v" << version << " already installed, processing dependencies" << termcolor::reset << std::endl;
                     
                     // Add to lockfile
                     installed_plugins_.push_back({plugin_name, version});
@@ -256,7 +256,7 @@ public:
         
         if (version == "latest") {
             // Download all available versions
-            std::cout << termcolor::cyan << "[*] Installing all versions of: " << plugin_name << termcolor::reset << std::endl;
+            if (topaz::g_verbose) std::cout << termcolor::cyan << "[*] Installing all versions of: " << plugin_name << termcolor::reset << std::endl;
             
             // First download the main plugin to get version info
             auto registry_entry = query_registry(plugin_name);
@@ -300,7 +300,7 @@ public:
                 auto dependencies = parse_dependencies_txt(deps_path);
                 
                 if (!dependencies.empty()) {
-                    std::cout << termcolor::yellow << "[*] Resolving " << dependencies.size() << " dependencies for " << plugin_name << " v" << ver << termcolor::reset << std::endl;
+                    if (topaz::g_verbose) std::cout << termcolor::yellow << "[*] Resolving " << dependencies.size() << " dependencies for " << plugin_name << " v" << ver << termcolor::reset << std::endl;
                 }
                 
                 for (const auto& dep : dependencies) {
@@ -346,7 +346,7 @@ public:
             install_version(plugin_name, version);
         }
         
-        std::cout << "[*] Lock files written for all installed versions" << std::endl;
+        if (topaz::g_verbose) std::cout << "[*] Lock files written for all installed versions" << std::endl;
         return true;
     }
     

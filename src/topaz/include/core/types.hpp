@@ -7,6 +7,8 @@
 
 namespace topaz {
 
+inline bool g_verbose = false;
+
 struct Dependency {
     std::string name;
     std::string version; // Ex: "latest", "1.0.0"

@@ -36,6 +36,7 @@ enum ObjType {
     OBJ_ARRAY,
     OBJ_LRU,
     OBJ_FADE,
+    OBJ_BIGINT,
 };
 
 // A struct base para todos os objetos gerenciados no "heap" pela VM
@@ -116,6 +117,11 @@ struct ObjFade : Obj {
     uint64_t created_at_ms;
 };
 
+struct ObjBigInt : Obj {
+    bool is_negative;
+    std::vector<uint32_t> digits;
+};
+
 // Funções "fábrica" para criar novos objetos (agora recebem VM*)
 ObjBoundMethod* new_bound_method(VM* vm, SapphireValue receiver, SapphireValue method, ObjClass* defined_in_class);
 ObjFunction* new_function(VM* vm);
@@ -130,6 +136,14 @@ ObjPromise* new_promise(VM* vm);
 ObjArray* new_array(VM* vm);
 ObjLRU* new_lru(VM* vm, int capacity);
 ObjFade* new_fade(VM* vm, SapphireValue value, double duration_ms, const std::string& curve_type);
+ObjBigInt* new_bigint(VM* vm);
+ObjBigInt* new_bigint_from_double(VM* vm, double value);
+
+// BigInt Arithmetic
+ObjBigInt* add_bigint(VM* vm, ObjBigInt* a, ObjBigInt* b);
+ObjBigInt* sub_bigint(VM* vm, ObjBigInt* a, ObjBigInt* b);
+ObjBigInt* mul_bigint(VM* vm, ObjBigInt* a, ObjBigInt* b);
+int cmp_bigint(ObjBigInt* a, ObjBigInt* b);
 
 // Declaração da função que imprime objetos (será implementada em object.cpp)
 void print_object(const SapphireValue& value);

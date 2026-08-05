@@ -27,7 +27,7 @@ inline int cmd_search(const std::string& query) {
         return 1;
     }
 
-    std::cout << termcolor::cyan << "[*] Searching for plugins matching: " << query << termcolor::reset << std::endl;
+    if (topaz::g_verbose) std::cout << termcolor::cyan << "[*] Searching for plugins matching: " << query << termcolor::reset << std::endl;
 
     // GitHub repository for the plugin registry
     const char* REGISTRY_OWNER = "foxzyt";
@@ -36,7 +36,7 @@ inline int cmd_search(const std::string& query) {
     const char* REGISTRY_FILE = "registry.json";
 
     try {
-        httplib::Client cli("api.github.com");
+        httplib::Client cli("https://api.github.com");
         cli.set_follow_location(true);
         cli.set_connection_timeout(15);
         cli.set_read_timeout(30);
@@ -97,7 +97,7 @@ inline int cmd_search(const std::string& query) {
         }
 
         if (matching_plugins.empty()) {
-            std::cout << termcolor::yellow << "[*] No plugins found matching '" << query << "'" << termcolor::reset << std::endl;
+            if (topaz::g_verbose) std::cout << termcolor::yellow << "[*] No plugins found matching '" << query << "'" << termcolor::reset << std::endl;
             return 0;
         }
 

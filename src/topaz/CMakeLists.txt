@@ -25,7 +25,7 @@ if(NOT USE_LOCAL_LIBS)
     FetchContent_Declare(
         httplib
         GIT_REPOSITORY https://github.com/yhirose/cpp-httplib.git
-        GIT_TAG        v0.15.3
+        GIT_TAG        v0.14.3
     )
     FetchContent_MakeAvailable(httplib)
     
@@ -87,19 +87,20 @@ endif()
 
 # Find OpenSSL
 if(NOT OPENSSL_ROOT_DIR)
-    set(OPENSSL_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../libs/openssl")
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../../libs/openssl")
+        set(OPENSSL_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../libs/openssl")
+    endif()
 endif()
 
 if(NOT DEFINED OPENSSL_USE_STATIC_LIBS)
     set(OPENSSL_USE_STATIC_LIBS TRUE)
 endif()
 
-find_package(OpenSSL QUIET)
-if(NOT OPENSSL_FOUND)
+if(NOT TARGET OpenSSL::SSL)
     message(WARNING "OpenSSL not found. Topaz will not be built with SSL support.")
     set(OPENSSL_FOUND FALSE)
 else()
-    # Define httplib with OpenSSL support only if OpenSSL is found
+    set(OPENSSL_FOUND TRUE)
     add_compile_definitions(CPPHTTPLIB_OPENSSL_SUPPORT)
 endif()
 
