@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Topaz] A saída padrão durante a instalação foi refatorada para ser mais organizada e concisa.
 - [Topaz] Adicionada a flag `--verbose` (`-v`) para habilitar os logs detalhados quando necessário.
 
+### Fixed
+- [Topaz] Corrigido problema de escopo que causava impressão indevida de versões disponíveis e melhorada gramática nos logs de instalação.
+
 ## [1.0.9] - 2026-07-27
 
 ### Added
