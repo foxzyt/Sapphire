@@ -283,7 +283,7 @@ public:
   // Error handling
   ErrorSnapshot capture_error_snapshot();
   std::string format_call_stack();
-  void report_runtime_error(const std::string& message, const std::string& code = "");
+  void report_runtime_error(const std::string& message);
 };
 
 extern thread_local VM *g_current_vm;

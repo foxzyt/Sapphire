@@ -8,8 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- [Error Handling] Implementação completa de sistema de erros rico com hierarquia de classes de erro (SyntaxError, RuntimeError, TypeError, ReferenceError, RangeError, NetworkError, DatabaseError, UIError, InternalError).
-- [Error Handling] Sistema de códigos de erro documentados (SYN_*, RUN_*, TYP_*, REF_*, RNG_*) para melhor identificação e documentação de erros.
+- [Error Handling] Implementação de sistema de erros rico com hierarquia de classes de erro (SyntaxError, RuntimeError, TypeError, ReferenceError, RangeError, NetworkError, DatabaseError, UIError, InternalError).
 - [Error Handling] Contexto rico em erros com informações sobre tokens, valores, tipos e estado do sistema.
 - [Error Handling] Sistema de sugestões de correção automática baseado no tipo de erro.
 - [Error Handling] Captura de estado de variáveis no momento do erro (variáveis locais, globais, stack size, memory usage).
@@ -21,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Topaz] Reduzida drasticamente a verbosidade do output do gerenciador de pacotes Topaz.
 - [Topaz] A saída padrão durante a instalação foi refatorada para ser mais organizada e concisa.
 - [Topaz] Adicionada a flag `--verbose` (`-v`) para habilitar os logs detalhados quando necessário.
-- [Error Handling] Mensagens de erro agora incluem contexto, sugestões e stack trace formatado.
+- [Error Handling] Mensagens de erro agora incluem contexto, sugestões e stack trace formatado, sem cores excessivas.
 
 ### Fixed
 - [Topaz] Corrigido problema de escopo que causava impressão indevida de versões disponíveis e melhorada gramática nos logs de instalação.

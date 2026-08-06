@@ -1,5 +1,4 @@
 #include "error.h"
-#include "termcolor.h"
 #include <iostream>
 #include <sstream>
 #include <algorithm>
@@ -7,25 +6,6 @@
 
 std::string SapphireError::format() const {
     std::ostringstream oss;
-    
-    // Color code based on severity
-    std::string severity_str;
-    std::string color;
-    
-    switch (severity) {
-        case ErrorSeverity::WARNING:
-            severity_str = "Warning";
-            color = tc_yellow();
-            break;
-        case ErrorSeverity::ERR:
-            severity_str = "Error";
-            color = tc_red();
-            break;
-        case ErrorSeverity::FATAL:
-            severity_str = "Fatal Error";
-            color = tc_red() + tc_bold();
-            break;
-    }
     
     // Type string
     std::string type_str;
@@ -41,29 +21,18 @@ std::string SapphireError::format() const {
         case ErrorType::INTERNAL_ERROR: type_str = "InternalError"; break;
     }
     
-    oss << "\n" << color << "[" << type_str << " " << code << "] " << severity_str << tc_reset() << "\n";
-    oss << "  " << tc_cyan() << message << tc_reset() << "\n";
-    
-    if (!location.file.empty()) {
-        oss << "  at " << location.file << ":" << location.line << ":" << location.column << "\n";
-    } else {
-        oss << "  at line " << location.line << ":" << location.column << "\n";
-    }
+    oss << "[Line " << location.line << ":" << location.column << "] " << type_str << "\n";
+    oss << "  " << message << "\n";
     
     // Show source line if available
     if (!location.source_line.empty()) {
         oss << "\n";
         oss << "  " << std::setw(4) << location.line << " | " << location.source_line << "\n";
-        oss << "     | ";
+        oss << "        ";
         for (int i = 0; i < location.column - 1; i++) oss << " ";
-        oss << color << "^";
+        oss << "^";
         for (int i = 1; i < std::max(1, location.length); i++) oss << "~";
-        oss << tc_reset() << "\n";
-    }
-    
-    // Show technical message in verbose mode
-    if (!technical_message.empty() && technical_message != message) {
-        oss << "\n  " << tc_blue() << "Technical: " << technical_message << tc_reset() << "\n";
+        oss << "\n";
     }
     
     return oss.str();
@@ -74,18 +43,11 @@ std::string SapphireError::format_with_context() const {
     
     // Show context
     if (!context.empty()) {
-        result += "\n" + tc_yellow() + "Context:" + tc_reset() + "\n";
+        result += "\n\nRelevant context:\n";
         for (const auto& ctx : context) {
-            // Indent based on depth for nested context
-            std::string indent = "";
-            for (int i = 0; i < ctx.depth; i++) indent += "  ";
-            
-            result += indent + "• " + ctx.description;
+            result += "- " + ctx.description;
             if (!ctx.value.empty()) {
-                result += " = " + tc_cyan() + ctx.value + tc_reset();
-            }
-            if (!ctx.type.empty()) {
-                result += " (" + tc_blue() + ctx.type + tc_reset() + ")";
+                result += ": " + ctx.value;
             }
             result += "\n";
         }
@@ -93,25 +55,18 @@ std::string SapphireError::format_with_context() const {
     
     // Show suggestions
     if (!suggestions.empty()) {
-        // Sort by priority
-        auto sorted_suggestions = suggestions;
-        std::sort(sorted_suggestions.begin(), sorted_suggestions.end(),
-                  [](const FixSuggestion& a, const FixSuggestion& b) {
-                      return a.priority > b.priority;
-                  });
-        
-        result += "\n" + tc_green() + "Suggestions:" + tc_reset() + "\n";
-        for (const auto& sug : sorted_suggestions) {
-            result += "  " + std::to_string(sug.priority) + ". " + sug.description + "\n";
+        result += "\n";
+        for (const auto& sug : suggestions) {
+            result += sug.description + "\n";
             if (!sug.code_snippet.empty()) {
-                result += "     " + tc_cyan() + sug.code_snippet + tc_reset() + "\n";
+                result += "  " + sug.code_snippet + "\n";
             }
         }
     }
     
     // Show stack trace if available
     if (!stack_trace.empty()) {
-        result += "\n" + tc_blue() + "Stack trace:" + tc_reset() + "\n";
+        result += "\n\nStack trace:\n";
         result += stack_trace;
     }
     

@@ -150,7 +150,7 @@ Parser::Parser(Lexer& lexer, Compiler* compiler, VM* vm)
 }
 
 // Funções de erro
-void Parser::error_at(const Token& token, const std::string& message, const std::string& code) {
+void Parser::error_at(const Token& token, const std::string& message) {
     if (panic_mode) return;
     panic_mode = true;
     had_error = true;
@@ -180,18 +180,6 @@ void Parser::error_at(const Token& token, const std::string& message, const std:
         for (char& c : source_line) { if (c == '\t') c = ' '; }
     }
 
-    // Determine error code
-    std::string error_code = code;
-    if (error_code.empty()) {
-        if (message.find("Expected") != std::string::npos) {
-            error_code = ErrorCodes::SYN_EXPECTED_EXPRESSION;
-        } else if (message.find("Unexpected") != std::string::npos) {
-            error_code = ErrorCodes::SYN_UNEXPECTED_TOKEN;
-        } else {
-            error_code = "SYN_000";
-        }
-    }
-
     // Create rich error
     SourceLocation loc;
     loc.line = token.line;
@@ -201,7 +189,6 @@ void Parser::error_at(const Token& token, const std::string& message, const std:
 
     auto error = std::make_shared<SapphireError>(
         ErrorType::SYNTAX_ERROR,
-        error_code,
         message,
         message,
         loc,
@@ -227,12 +214,12 @@ void Parser::error_at(const Token& token, const std::string& message, const std:
     error_handler->report_error(error);
 }
 
-void Parser::error(const std::string& message, const std::string& code) { 
-    error_at(previous, message, code); 
+void Parser::error(const std::string& message) { 
+    error_at(previous, message); 
 }
 
-void Parser::error_at_current(const std::string& message, const std::string& code) { 
-    error_at(current, message, code); 
+void Parser::error_at_current(const std::string& message) { 
+    error_at(current, message); 
 }
 
 // Funções de controle de tokens

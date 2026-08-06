@@ -48,7 +48,6 @@ struct FixSuggestion {
 
 class SapphireError {
 public:
-    std::string code;
     std::string message;
     std::string technical_message;
     ErrorSeverity severity;
@@ -58,10 +57,10 @@ public:
     std::vector<FixSuggestion> suggestions;
     std::string stack_trace;
 
-    SapphireError(ErrorType error_type, const std::string& error_code, 
-                  const std::string& user_message, const std::string& tech_message,
+    SapphireError(ErrorType error_type, const std::string& user_message, 
+                  const std::string& tech_message,
                   const SourceLocation& loc, ErrorSeverity sev = ErrorSeverity::ERR)
-        : type(error_type), code(error_code), message(user_message),
+        : type(error_type), message(user_message),
           technical_message(tech_message), location(loc), severity(sev) {}
 
     void add_context(const std::string& desc, const std::string& val = "", const std::string& typ = "") {
@@ -103,10 +102,11 @@ namespace ErrorCodes {
     // Syntax errors (SYN_001 - SYN_099)
     constexpr const char* SYN_MISSING_SEMICOLON = "SYN_001";
     constexpr const char* SYN_EXPECTED_EXPRESSION = "SYN_002";
-    constexpr const char* SYN_UNEXPECTED_TOKEN = "SYN_003";
-    constexpr const char* SYN_UNTERMINATED_STRING = "SYN_004";
-    constexpr const char* SYN_INVALID_IDENTIFIER = "SYN_005";
-    constexpr const char* SYN_KEYWORD_NOT_IMPLEMENTED = "SYN_006";
+    constexpr const char* SYN_EXPECTED_TOKEN = "SYN_003";
+    constexpr const char* SYN_UNEXPECTED_TOKEN = "SYN_004";
+    constexpr const char* SYN_UNTERMINATED_STRING = "SYN_005";
+    constexpr const char* SYN_INVALID_IDENTIFIER = "SYN_006";
+    constexpr const char* SYN_KEYWORD_NOT_IMPLEMENTED = "SYN_007";
     
     // Runtime errors (RUN_001 - RUN_099)
     constexpr const char* RUN_DIVISION_BY_ZERO = "RUN_001";

@@ -2027,20 +2027,8 @@ std::string VM::format_call_stack() {
     return oss.str();
 }
 
-void VM::report_runtime_error(const std::string& message, const std::string& code) {
+void VM::report_runtime_error(const std::string& message) {
     ErrorSnapshot snapshot = capture_error_snapshot();
-    
-    // Determine error code
-    std::string error_code = code;
-    if (error_code.empty()) {
-        if (message.find("division by zero") != std::string::npos) {
-            error_code = ErrorCodes::RUN_DIVISION_BY_ZERO;
-        } else if (message.find("Unhandled Exception") != std::string::npos) {
-            error_code = ErrorCodes::RUN_UNHANDLED_EXCEPTION;
-        } else {
-            error_code = "RUN_000";
-        }
-    }
     
     // Create error location
     SourceLocation loc;
@@ -2050,7 +2038,6 @@ void VM::report_runtime_error(const std::string& message, const std::string& cod
     
     auto error = std::make_shared<SapphireError>(
         ErrorType::RUNTIME_ERROR,
-        error_code,
         message,
         message,
         loc,
@@ -3125,7 +3112,7 @@ TARGET(OP_THROW) {
                 CallFrame* f = &frames[i];
                 oss << "  in " << (f->function->name != nullptr ? f->function->name->chars : "<script>") << "\n";
             }
-            report_runtime_error(oss.str(), ErrorCodes::RUN_UNHANDLED_EXCEPTION);
+            report_runtime_error(oss.str());
             return false;
         }
         
