@@ -180,7 +180,7 @@ void Parser::error_at(const Token& token, const std::string& message) {
         for (char& c : source_line) { if (c == '\t') c = ' '; }
     }
 
-    // Create rich error
+    // Create simple error
     SourceLocation loc;
     loc.line = token.line;
     loc.column = token.column;
@@ -194,22 +194,6 @@ void Parser::error_at(const Token& token, const std::string& message) {
         loc,
         ErrorSeverity::ERR
     );
-
-    // Add context
-    error->add_context("Token type", token_type_to_string(token.type));
-    error->add_context("Token literal", token.literal);
-    
-    if (previous.type != TokenType::TOKEN_ILLEGAL) {
-        error->add_context("Previous token", token_type_to_string(previous.type));
-    }
-    if (next.type != TokenType::TOKEN_ILLEGAL) {
-        error->add_context("Next token", token_type_to_string(next.type));
-    }
-
-    // Add suggestions based on error type
-    if (message.find("Expected") != std::string::npos) {
-        error->add_suggestion("Check the syntax before this line", "", 5);
-    }
 
     error_handler->report_error(error);
 }

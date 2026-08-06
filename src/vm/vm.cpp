@@ -2028,9 +2028,7 @@ std::string VM::format_call_stack() {
 }
 
 void VM::report_runtime_error(const std::string& message) {
-    ErrorSnapshot snapshot = capture_error_snapshot();
-    
-    // Create error location
+    // Create simple error location
     SourceLocation loc;
     loc.line = 0;
     loc.column = 0;
@@ -2043,21 +2041,6 @@ void VM::report_runtime_error(const std::string& message) {
         loc,
         ErrorSeverity::ERR
     );
-    
-    // Add context
-    error->add_context("Stack size", std::to_string(snapshot.stack_size));
-    error->add_context("Frame count", std::to_string(snapshot.frame_count_snapshot));
-    error->add_context("Memory usage", std::to_string(snapshot.memory_usage / 1024) + " KB");
-    
-    // Add call stack
-    error->stack_trace = format_call_stack();
-    
-    // Add suggestions
-    if (message.find("division by zero") != std::string::npos) {
-        error->add_suggestion("Check divisor before division", "if (divisor != 0) { result = a / b; }", 9);
-    } else if (message.find("Undefined") != std::string::npos) {
-        error->add_suggestion("Check if variable/function is defined", "", 7);
-    }
     
     error_handler->report_error(error);
 }
