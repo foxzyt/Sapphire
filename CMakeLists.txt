@@ -32,8 +32,12 @@ FetchContent_MakeAvailable(opencl_headers)
 set(OPENCL_ICD_LOADER_HEADERS_DIR "${opencl_headers_SOURCE_DIR}" CACHE PATH "" FORCE)
 # Configure OpenCL ICD Loader to build statically
 set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(OPENCL_ICD_LOADER_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(OPENCL_ICD_LOADER_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(OPENCL_ICD_LOADER_HEADERS_DIR "${opencl_headers_SOURCE_DIR}" CACHE PATH "" FORCE)
 FetchContent_MakeAvailable(opencl_loader)
+set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE) # restore if needed
 
 # Fetch SQLite3 Amalgamation
 FetchContent_Declare(
@@ -212,6 +216,7 @@ add_library(sapphire_core STATIC
     src/parser/parser.cpp
     src/utils/utils.cpp
     src/utils/termcolor.cpp
+    src/error/error.cpp
     src/graphics/engine.cpp
     src/graphics/vec2d.cpp
     src/graphics/vec3d.cpp

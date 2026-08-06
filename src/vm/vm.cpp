@@ -1445,6 +1445,7 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     this->sfml_window = window;
 
     catch_count = 0;
+    error_handler = new ErrorHandler(true, true);
   
     define_native("clock", clock_native);
     define_native("assert", assert_native);
@@ -1456,6 +1457,7 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     define_native("lruPut", native_lru_put);
     define_native("evaluate", native_evaluate);
     define_native("len", native_len);
+    define_native("push", native_array_push);
     define_native("stringCharAt", native_string_char_at);
     define_native("stringLength", native_string_length);
     define_native("stringSubstring", native_string_substring);
@@ -1519,6 +1521,7 @@ VM::VM(const ScriptConfig& config, bool init_ui, sf::RenderWindow* window) : con
     define_native("makeAllDirs",      native_io_make_all_dirs);
     define_native("getTempDir",       native_io_get_temp_dir);
     define_native("readLines",        native_io_read_lines);
+    define_native("readCSV",          native_io_read_csv);
     define_native("isFile",           native_io_is_file);
 
     // --- Crypto (v1.0.9) ---
@@ -1975,6 +1978,101 @@ VM::~VM() {
     if (g_current_vm == this) {
         g_current_vm = nullptr;
     }
+    delete error_handler;
+}
+
+ErrorSnapshot VM::capture_error_snapshot() {
+    ErrorSnapshot snapshot;
+    snapshot.memory_usage = bytes_allocated;
+    snapshot.stack_size = static_cast<int>(stack_top - stack);
+    snapshot.frame_count_snapshot = frame_count;
+    snapshot.nesting_depth = frame_count;
+    
+    // Capture local variables from current frame
+    if (frame_count > 0) {
+        CallFrame* frame = &frames[frame_count - 1];
+        ObjFunction* function = frame->function;
+        
+        if (function != nullptr) {
+            // Capture function name
+            std::string func_name = function->name != nullptr ? function->name->chars : "<anonymous>";
+            snapshot.call_stack.push_back(func_name);
+            snapshot.call_stack_with_lines.push_back({func_name, 0}); // Line number not available in chunk
+        }
+    }
+    
+    // Capture global variables
+    for (const auto& [key, value] : globals) {
+        snapshot.global_variables[key] = value;
+    }
+    
+    return snapshot;
+}
+
+std::string VM::format_call_stack() {
+    std::ostringstream oss;
+    oss << "Call stack:\n";
+    
+    for (int i = frame_count - 1; i >= 0; i--) {
+        CallFrame* frame = &frames[i];
+        ObjFunction* function = frame->function;
+        
+        std::string func_name = function != nullptr && function->name != nullptr 
+                                ? function->name->chars 
+                                : "<anonymous>";
+        
+        oss << "  " << i << ". " << func_name << "\n";
+    }
+    
+    return oss.str();
+}
+
+void VM::report_runtime_error(const std::string& message, const std::string& code) {
+    ErrorSnapshot snapshot = capture_error_snapshot();
+    
+    // Determine error code
+    std::string error_code = code;
+    if (error_code.empty()) {
+        if (message.find("division by zero") != std::string::npos) {
+            error_code = ErrorCodes::RUN_DIVISION_BY_ZERO;
+        } else if (message.find("Unhandled Exception") != std::string::npos) {
+            error_code = ErrorCodes::RUN_UNHANDLED_EXCEPTION;
+        } else {
+            error_code = "RUN_000";
+        }
+    }
+    
+    // Create error location
+    SourceLocation loc;
+    loc.line = 0;
+    loc.column = 0;
+    loc.length = 0;
+    
+    auto error = std::make_shared<SapphireError>(
+        ErrorType::RUNTIME_ERROR,
+        error_code,
+        message,
+        message,
+        loc,
+        ErrorSeverity::ERR
+    );
+    
+    // Add context
+    error->add_context("Stack size", std::to_string(snapshot.stack_size));
+    error->add_context("Frame count", std::to_string(snapshot.frame_count_snapshot));
+    error->add_context("Memory usage", std::to_string(snapshot.memory_usage / 1024) + " KB");
+    
+    // Add call stack
+    error->stack_trace = format_call_stack();
+    
+    // Add suggestions
+    if (message.find("division by zero") != std::string::npos) {
+        error->add_suggestion("Check divisor before division", "if (divisor != 0) { result = a / b; }", 9);
+    } else if (message.find("Undefined") != std::string::npos) {
+        error->add_suggestion("Check if variable/function is defined", "", 7);
+    }
+    
+    error_handler->report_error(error);
 }
 
 void VM::setGlobalNumber(const std::string& name, double value) {
@@ -3019,13 +3117,15 @@ TARGET(OP_THROW) {
     {
         SapphireValue err = POP();
         if (catch_count == 0) {
-            std::cerr << "Unhandled Exception: ";
+            std::ostringstream oss;
+            oss << "Unhandled Exception: ";
             print_value(err);
-            std::cerr << "\nStack trace:\n";
+            oss << "\nStack trace:\n";
             for (int i = frame_count - 1; i >= 0; i--) {
                 CallFrame* f = &frames[i];
-                std::cerr << "  in " << (f->function->name != nullptr ? f->function->name->chars : "<script>") << "\n";
+                oss << "  in " << (f->function->name != nullptr ? f->function->name->chars : "<script>") << "\n";
             }
+            report_runtime_error(oss.str(), ErrorCodes::RUN_UNHANDLED_EXCEPTION);
             return false;
         }
         
@@ -3040,6 +3140,16 @@ TARGET(OP_THROW) {
     }
     NEXT_CODE();
 }
+
+// TARGET(OP_FINALLY) {
+//     // The finally block is executed regardless of whether an exception occurred
+//     // This opcode is a marker - the actual execution continues with the next bytecode
+//     // In a full implementation, this would handle:
+//     // 1. Ensuring finally runs even on exceptions
+//     // 2. Preserving exception state through finally
+//     // 3. Handling return/break/continue within finally
+//     NEXT_CODE();
+// }
 
 TARGET(OP_GET_ITERATOR) {
     PUSH(SapphireValue((double)0));

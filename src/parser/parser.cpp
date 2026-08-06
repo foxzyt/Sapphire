@@ -1,5 +1,5 @@
 #include "parser.h"
-#include "opcodes.h"
+#include "../compiler/opcodes.h"
 #include "debug.h"
 #include "vm.h"
 #include "tokens.h"
@@ -8,10 +8,113 @@
 #include "termcolor.h"
 #include "../compiler/debug.h"
 #include "../vm/object.h"
+#include "../error/error.h"
 #include <iostream>
 #include <stdexcept>
 
 using enum TokenType;
+
+// Helper function to convert token type to string
+static std::string token_type_to_string(TokenType type) {
+    switch (type) {
+        case TOKEN_PLUS: return "TOKEN_PLUS";
+        case TOKEN_MINUS: return "TOKEN_MINUS";
+        case TOKEN_STAR: return "TOKEN_STAR";
+        case TOKEN_SLASH: return "TOKEN_SLASH";
+        case TOKEN_PERCENT: return "TOKEN_PERCENT";
+        case TOKEN_EQUAL: return "TOKEN_EQUAL";
+        case TOKEN_BANG: return "TOKEN_BANG";
+        case TOKEN_BANG_EQUAL: return "TOKEN_BANG_EQUAL";
+        case TOKEN_EQUAL_EQUAL: return "TOKEN_EQUAL_EQUAL";
+        case TOKEN_GREATER: return "TOKEN_GREATER";
+        case TOKEN_GREATER_EQUAL: return "TOKEN_GREATER_EQUAL";
+        case TOKEN_LESS: return "TOKEN_LESS";
+        case TOKEN_LESS_EQUAL: return "TOKEN_LESS_EQUAL";
+        case TOKEN_PLUS_PLUS: return "TOKEN_PLUS_PLUS";
+        case TOKEN_MINUS_MINUS: return "TOKEN_MINUS_MINUS";
+        case TOKEN_PLUS_EQUAL: return "TOKEN_PLUS_EQUAL";
+        case TOKEN_MINUS_EQUAL: return "TOKEN_MINUS_EQUAL";
+        case TOKEN_STAR_EQUAL: return "TOKEN_STAR_EQUAL";
+        case TOKEN_SLASH_EQUAL: return "TOKEN_SLASH_EQUAL";
+        case TOKEN_LEFT_PAREN: return "TOKEN_LEFT_PAREN";
+        case TOKEN_RIGHT_PAREN: return "TOKEN_RIGHT_PAREN";
+        case TOKEN_LEFT_BRACE: return "TOKEN_LEFT_BRACE";
+        case TOKEN_RIGHT_BRACE: return "TOKEN_RIGHT_BRACE";
+        case TOKEN_LEFT_BRACKET: return "TOKEN_LEFT_BRACKET";
+        case TOKEN_RIGHT_BRACKET: return "TOKEN_RIGHT_BRACKET";
+        case TOKEN_SEMICOLON: return "TOKEN_SEMICOLON";
+        case TOKEN_COMMA: return "TOKEN_COMMA";
+        case TOKEN_DOT: return "TOKEN_DOT";
+        case TOKEN_COLON: return "TOKEN_COLON";
+        case TOKEN_AT: return "TOKEN_AT";
+        case TOKEN_PRINT: return "TOKEN_PRINT";
+        case TOKEN_IF: return "TOKEN_IF";
+        case TOKEN_ELSE: return "TOKEN_ELSE";
+        case TOKEN_TRUE: return "TOKEN_TRUE";
+        case TOKEN_FALSE: return "TOKEN_FALSE";
+        case TOKEN_NIL: return "TOKEN_NIL";
+        case TOKEN_AND: return "TOKEN_AND";
+        case TOKEN_OR: return "TOKEN_OR";
+        case TOKEN_WHILE: return "TOKEN_WHILE";
+        case TOKEN_FOR: return "TOKEN_FOR";
+        case TOKEN_IN: return "TOKEN_IN";
+        case TOKEN_OF: return "TOKEN_OF";
+        case TOKEN_FOREACH: return "TOKEN_FOREACH";
+        case TOKEN_FUNCTION: return "TOKEN_FUNCTION";
+        case TOKEN_RETURN: return "TOKEN_RETURN";
+        case TOKEN_IMPORT: return "TOKEN_IMPORT";
+        case TOKEN_BREAK: return "TOKEN_BREAK";
+        case TOKEN_CONTINUE: return "TOKEN_CONTINUE";
+        case TOKEN_SWITCH: return "TOKEN_SWITCH";
+        case TOKEN_CASE: return "TOKEN_CASE";
+        case TOKEN_DEFAULT: return "TOKEN_DEFAULT";
+        case TOKEN_FINALLY: return "TOKEN_FINALLY";
+        case TOKEN_EXTENDS: return "TOKEN_EXTENDS";
+        case TOKEN_SUPER: return "TOKEN_SUPER";
+        case TOKEN_ASYNC: return "TOKEN_ASYNC";
+        case TOKEN_AWAIT: return "TOKEN_AWAIT";
+        case TOKEN_SPAWN: return "TOKEN_SPAWN";
+        case TOKEN_NEW: return "TOKEN_NEW";
+        case TOKEN_INT: return "TOKEN_INT";
+        case TOKEN_BOOL: return "TOKEN_BOOL";
+        case TOKEN_STRING: return "TOKEN_STRING";
+        case TOKEN_DOUBLE: return "TOKEN_DOUBLE";
+        case TOKEN_FLOAT: return "TOKEN_FLOAT";
+        case TOKEN_VOID: return "TOKEN_VOID";
+        case TOKEN_CLASS: return "TOKEN_CLASS";
+        case TOKEN_THIS: return "TOKEN_THIS";
+        case TOKEN_CONST: return "TOKEN_CONST";
+        case TOKEN_VAR: return "TOKEN_VAR";
+        case TOKEN_ENUM: return "TOKEN_ENUM";
+        case TOKEN_BITWISE_AND: return "TOKEN_BITWISE_AND";
+        case TOKEN_BITWISE_OR: return "TOKEN_BITWISE_OR";
+        case TOKEN_BITWISE_XOR: return "TOKEN_BITWISE_XOR";
+        case TOKEN_BITWISE_NOT: return "TOKEN_BITWISE_NOT";
+        case TOKEN_LEFT_SHIFT: return "TOKEN_LEFT_SHIFT";
+        case TOKEN_RIGHT_SHIFT: return "TOKEN_RIGHT_SHIFT";
+        case TOKEN_QUESTION: return "TOKEN_QUESTION";
+        case TOKEN_TRY: return "TOKEN_TRY";
+        case TOKEN_CATCH: return "TOKEN_CATCH";
+        case TOKEN_THROW: return "TOKEN_THROW";
+        case TOKEN_ARROW: return "TOKEN_ARROW";
+        case TOKEN_QUESTION_DOT: return "TOKEN_QUESTION_DOT";
+        case TOKEN_QUESTION_QUESTION: return "TOKEN_QUESTION_QUESTION";
+        case TOKEN_DOT_DOT_DOT: return "TOKEN_DOT_DOT_DOT";
+        case TOKEN_FADE: return "TOKEN_FADE";
+        case TOKEN_WITHIN: return "TOKEN_WITHIN";
+        case TOKEN_EVERY: return "TOKEN_EVERY";
+        case TOKEN_UNDO: return "TOKEN_UNDO";
+        case TOKEN_LINEAR: return "TOKEN_LINEAR";
+        case TOKEN_EXPONENTIAL: return "TOKEN_EXPONENTIAL";
+        case TOKEN_FALLBACK: return "TOKEN_FALLBACK";
+        case TOKEN_NUMBER: return "TOKEN_NUMBER";
+        case TOKEN_STRING_LITERAL: return "TOKEN_STRING_LITERAL";
+        case TOKEN_IDENTIFIER: return "TOKEN_IDENTIFIER";
+        case TOKEN_END_OF_FILE: return "TOKEN_END_OF_FILE";
+        case TOKEN_ILLEGAL: return "TOKEN_ILLEGAL";
+        default: return "UNKNOWN";
+    }
+}
 
 // Função auxiliar movida para fora, pois não precisa ser membro
 static bool types_are_compatible(TokenType variable_type, TokenType value_type) {
@@ -40,24 +143,17 @@ Parser::Parser(Lexer& lexer, Compiler* compiler, VM* vm)
     : lexer(lexer), current_compiler(compiler), vm(vm) {
     had_error = false;
     panic_mode = false;
+    error_handler = new ErrorHandler(true, true);
     advance();
     advance();
     initialize_rules();
 }
 
 // Funções de erro
-void Parser::error_at(const Token& token, const std::string& message) {
+void Parser::error_at(const Token& token, const std::string& message, const std::string& code) {
     if (panic_mode) return;
     panic_mode = true;
     had_error = true;
-
-    std::cerr << "\n" << tc_red() << "[Line " << token.line << ":" << token.column << "] Error";
-    if (token.type == TokenType::TOKEN_END_OF_FILE) {
-        std::cerr << " at end";
-    } else {
-        std::cerr << " at '" << token.literal << "'";
-    }
-    std::cerr << ":" << tc_reset() << " " << message << "\n\n";
 
     // Extract the exact line from source
     const std::string& source = lexer.get_source();
@@ -77,26 +173,67 @@ void Parser::error_at(const Token& token, const std::string& message) {
         }
     }
 
+    std::string source_line = "";
     if (line_end >= line_start) {
-        std::string line_text = source.substr(line_start, line_end - line_start);
-        
+        source_line = source.substr(line_start, line_end - line_start);
         // Replace tabs with spaces for consistent column alignment
-        for (char& c : line_text) { if (c == '\t') c = ' '; }
-
-        std::cerr << " " << std::setw(4) << token.line << " | " << line_text << "\n";
-        std::cerr << "      | ";
-        
-        int pad = std::max(0, token.column - 1);
-        for (int i = 0; i < pad; i++) std::cerr << " ";
-        
-        std::cerr << tc_red() << "^";
-        int len = std::max(1, token.length);
-        for (int i = 1; i < len; i++) std::cerr << "~";
-        std::cerr << tc_reset() << "\n\n";
+        for (char& c : source_line) { if (c == '\t') c = ' '; }
     }
+
+    // Determine error code
+    std::string error_code = code;
+    if (error_code.empty()) {
+        if (message.find("Expected") != std::string::npos) {
+            error_code = ErrorCodes::SYN_EXPECTED_EXPRESSION;
+        } else if (message.find("Unexpected") != std::string::npos) {
+            error_code = ErrorCodes::SYN_UNEXPECTED_TOKEN;
+        } else {
+            error_code = "SYN_000";
+        }
+    }
+
+    // Create rich error
+    SourceLocation loc;
+    loc.line = token.line;
+    loc.column = token.column;
+    loc.length = token.length;
+    loc.source_line = source_line;
+
+    auto error = std::make_shared<SapphireError>(
+        ErrorType::SYNTAX_ERROR,
+        error_code,
+        message,
+        message,
+        loc,
+        ErrorSeverity::ERR
+    );
+
+    // Add context
+    error->add_context("Token type", token_type_to_string(token.type));
+    error->add_context("Token literal", token.literal);
+    
+    if (previous.type != TokenType::TOKEN_ILLEGAL) {
+        error->add_context("Previous token", token_type_to_string(previous.type));
+    }
+    if (next.type != TokenType::TOKEN_ILLEGAL) {
+        error->add_context("Next token", token_type_to_string(next.type));
+    }
+
+    // Add suggestions based on error type
+    if (message.find("Expected") != std::string::npos) {
+        error->add_suggestion("Check the syntax before this line", "", 5);
+    }
+
+    error_handler->report_error(error);
 }
-void Parser::error(const std::string& message) { error_at(previous, message); }
-void Parser::error_at_current(const std::string& message) { error_at(current, message); }
+
+void Parser::error(const std::string& message, const std::string& code) { 
+    error_at(previous, message, code); 
+}
+
+void Parser::error_at_current(const std::string& message, const std::string& code) { 
+    error_at(current, message, code); 
+}
 
 // Funções de controle de tokens
 void Parser::advance() {
@@ -653,6 +790,13 @@ void Parser::try_statement() {
     }
     
     patch_jump(skip_catch);
+
+    // Handle finally clause
+    if (match(TokenType::TOKEN_FINALLY)) {
+        consume(TokenType::TOKEN_LEFT_BRACE, "Expect '{' before finally block.");
+        // emit_byte(OP_FINALLY); // TODO: Add OP_FINALLY opcode when implemented
+        block();
+    }
 }
 
 void Parser::throw_statement() {

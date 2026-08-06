@@ -7,13 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- [Error Handling] Implementação completa de sistema de erros rico com hierarquia de classes de erro (SyntaxError, RuntimeError, TypeError, ReferenceError, RangeError, NetworkError, DatabaseError, UIError, InternalError).
+- [Error Handling] Sistema de códigos de erro documentados (SYN_*, RUN_*, TYP_*, REF_*, RNG_*) para melhor identificação e documentação de erros.
+- [Error Handling] Contexto rico em erros com informações sobre tokens, valores, tipos e estado do sistema.
+- [Error Handling] Sistema de sugestões de correção automática baseado no tipo de erro.
+- [Error Handling] Captura de estado de variáveis no momento do erro (variáveis locais, globais, stack size, memory usage).
+- [Error Handling] Suporte a contexto aninhado para erros em callbacks e chamadas assíncronas.
+- [Parser] Implementação do bloco `finally` em declarações try/catch/finally.
+- [VM] Adicionado opcode `OP_FINALLY` para suporte ao bloco finally (suporte básico).
+
 ### Changed
 - [Topaz] Reduzida drasticamente a verbosidade do output do gerenciador de pacotes Topaz.
 - [Topaz] A saída padrão durante a instalação foi refatorada para ser mais organizada e concisa.
 - [Topaz] Adicionada a flag `--verbose` (`-v`) para habilitar os logs detalhados quando necessário.
+- [Error Handling] Mensagens de erro agora incluem contexto, sugestões e stack trace formatado.
 
 ### Fixed
 - [Topaz] Corrigido problema de escopo que causava impressão indevida de versões disponíveis e melhorada gramática nos logs de instalação.
+- [Parser] Corrigido erro confuso "Expected expression" ao usar palavra-chave `finally` não implementada - agora o parser aceita e processa blocos finally corretamente.
 
 ## [1.0.9] - 2026-07-27
 

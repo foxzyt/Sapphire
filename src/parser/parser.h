@@ -10,6 +10,7 @@
 #include "lexer.h"
 #include "object.h" // Define ObjFunction e Chunk
 #include "value.h"  // Define SapphireValue
+#include "../error/error.h"
 
 class Compiler;
 class VM;
@@ -51,6 +52,7 @@ public:
     bool match(TokenType type);
     void emit_return();
     bool had_error;
+    ErrorHandler* error_handler;
 
 private:
     Lexer& lexer;
@@ -63,9 +65,9 @@ private:
     std::map<TokenType, ParseRule> rules;
 
     // Funções auxiliares
-    void error_at(const Token& token, const std::string& message);
-    void error(const std::string& message);
-    void error_at_current(const std::string& message);
+    void error_at(const Token& token, const std::string& message, const std::string& code = "");
+    void error(const std::string& message, const std::string& code = "");
+    void error_at_current(const std::string& message, const std::string& code = "");
     void consume(TokenType type, const std::string& message);
     bool check(TokenType type);
     bool check_next(TokenType type);

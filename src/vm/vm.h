@@ -7,6 +7,7 @@
 #include "tokens.h"
 #include "utils.h"
 #include "value.h"
+#include "../error/error.h"
 #include <SFML/Graphics.hpp>
 #include <chrono>
 #include <map>
@@ -164,6 +165,17 @@ struct CatchBlock {
   uint8_t* catch_ip;
 };
 
+struct ErrorSnapshot {
+    std::unordered_map<std::string, SapphireValue> local_variables;
+    std::unordered_map<std::string, SapphireValue> global_variables;
+    std::vector<std::string> call_stack;
+    std::vector<std::pair<std::string, int>> call_stack_with_lines; // function name, line number
+    size_t memory_usage;
+    int stack_size;
+    int frame_count_snapshot;
+    int nesting_depth;
+};
+
 enum class PromiseState { PENDING, FULFILLED, REJECTED };
 
 struct ObjPromise : Obj {
@@ -216,6 +228,7 @@ public:
   SapphireValue stack[STACK_MAX];
   Obj *objects = nullptr;
   SapphireValue *stack_top;
+  ErrorHandler* error_handler;
   
   ObjPromise* current_promise = nullptr;
   std::vector<ObjPromise*> event_loop_queue;
@@ -266,6 +279,11 @@ private:
 public:
   void define_native(const std::string &name, NativeFn function);
   ObjClass* ui_component_class = nullptr;
+  
+  // Error handling
+  ErrorSnapshot capture_error_snapshot();
+  std::string format_call_stack();
+  void report_runtime_error(const std::string& message, const std::string& code = "");
 };
 
 extern thread_local VM *g_current_vm;
