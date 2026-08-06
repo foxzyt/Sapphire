@@ -8,8 +8,15 @@ static bool g_colors_enabled = false;
 
 void init_terminal() {
 #ifdef _WIN32
-    // Simplificado - apenas habilita cores sem tentar modificar o console mode
-    // que pode travar em certos ambientes
+    SetConsoleOutputCP(CP_UTF8);
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hOut != INVALID_HANDLE_VALUE) {
+        DWORD dwMode = 0;
+        if (GetConsoleMode(hOut, &dwMode)) {
+            dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+            SetConsoleMode(hOut, dwMode);
+        }
+    }
     g_colors_enabled = true;
 #else
     // No Linux/Mac as cores quase sempre funcionam por padrão

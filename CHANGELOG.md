@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Error Handling] Mensagens de erro simplificadas - sem códigos de erro, sem cores, sem contexto excessivo. Apenas erro básico com localização.
 
 ### Fixed
+- [Terminal] Configurada a página de código UTF-8 (`SetConsoleOutputCP(CP_UTF8)`) e o modo de processamento virtual no Windows (`init_terminal`) para garantir que emojis (como 💡 nas sugestões de erro) e caracteres especiais sejam exibidos corretamente no Prompt de Comando/PowerShell sem garabato (*mojibake*).
 - [Topaz] Corrigido problema de escopo que causava impressão indevida de versões disponíveis e melhorada gramática nos logs de instalação.
 - [Parser] Corrigido erro confuso "Expected expression" ao usar palavra-chave `finally` não implementada - agora o parser aceita e processa blocos finally corretamente.
 
