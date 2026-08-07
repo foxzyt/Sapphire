@@ -64,6 +64,16 @@ static std::vector<RuleDef> g_rules = {
     {"SEC38", Category::SECURITY, WarningLevel::ERR, "verify_ssl\\s*=\\s*false", "SSL Verification disabled.", "Allows Man-In-The-Middle attacks.", "Set verify_ssl=true"},
     {"SEC39", Category::SECURITY, WarningLevel::ERR, "\\binnerHTML\\s*=", "Assignment to innerHTML.", "Potential DOM-based XSS vulnerability.", "Use textContent or innerText"},
     {"SEC40", Category::SECURITY, WarningLevel::ERR, "\\bdocument\\.write\\s*\\(", "Use of document.write().", "Can overwrite the entire page or inject XSS.", "Use DOM manipulation APIs"},
+    {"SEC41", Category::SECURITY, WarningLevel::ERR, "eyJ[a-zA-Z0-9_-]+\\.[a-zA-Z0-9_-]+\\.[a-zA-Z0-9_-]+", "Hardcoded JWT Token detected.", "JWT tokens expose sensitive user sessions and credentials.", "Use environment variables"},
+    {"SEC42", Category::SECURITY, WarningLevel::ERR, "SSL_CTX_set_verify\\s*\\(.*SSL_VERIFY_NONE", "OpenSSL Certificate Verification disabled.", "Disabling SSL verification permits MITM attacks.", "Use SSL_VERIFY_PEER"},
+    {"SEC43", Category::SECURITY, WarningLevel::ERR, "popen\\s*\\(", "Use of popen() detected.", "popen executes via shell and is vulnerable to injection.", "Use pipe and fork/exec APIs"},
+    {"SEC44", Category::SECURITY, WarningLevel::ERR, "import\\s+[\"'].*\\.\\./\\.\\.", "Path traversal in import path.", "Importing files from parent directories can breach sandbox.", "Keep imports inside project root"},
+    {"SEC45", Category::SECURITY, WarningLevel::ERR, "[0-9]{9}:[a-zA-Z0-9_-]{35}", "Telegram Bot Token detected.", "Telegram bot tokens allow unauthorized bot control.", "Use environment variables"},
+    {"SEC46", Category::SECURITY, WarningLevel::ERR, "https://discord(?:app)?\\.com/api/webhooks/[0-9]+/[a-zA-Z0-9_-]+", "Discord Webhook URL detected.", "Exposes Discord channel messaging to attackers.", "Use environment variables"},
+    {"SEC47", Category::SECURITY, WarningLevel::WARNING, "\\bsrand\\s*\\(\\s*time\\s*\\(", "Insecure Pseudo-Random Seed.", "srand(time(NULL)) is predictable and non-cryptographic.", "Use std::random_device or crypto RNG"},
+    {"SEC48", Category::SECURITY, WarningLevel::ERR, "\\btmpnam\\s*\\(", "Use of unsafe tmpnam().", "tmpnam is vulnerable to symlink and race condition attacks.", "Use mkstemp() or secure temp directory"},
+    {"SEC49", Category::SECURITY, WarningLevel::ERR, "mongodb(?:\\+srv)?://[a-zA-Z0-9_]+:[^@]+@", "Hardcoded MongoDB Credentials.", "Hardcoding database credentials in connection strings is unsafe.", "Use environment variables"},
+    {"SEC50", Category::SECURITY, WarningLevel::ERR, "cors\\s*\\(\\s*\\{\\s*origin\\s*:\\s*true", "Reflective CORS origin policy.", "Reflecting request origin trusts any requesting site.", "Explicitly whitelist domain origins"},
 
     // -----------------------------------------
     // CATEGORY 2: PERFORMANCE (40 Rules)
@@ -108,6 +118,16 @@ static std::vector<RuleDef> g_rules = {
     {"PERF38", Category::PERFORMANCE, WarningLevel::WARNING, "\\bdelete\\s+[a-zA-Z0-9_]+\\[", "Using delete on array indices.", "Leaves holes (undefined) in arrays and de-optimizes V8 arrays.", "Use splice() or null assignments"},
     {"PERF39", Category::PERFORMANCE, WarningLevel::INFO, "\\barguments\\b", "Using the 'arguments' object.", "Prevents certain V8 engine optimizations.", "Use rest parameters (...args)"},
     {"PERF40", Category::PERFORMANCE, WarningLevel::INFO, "\\bwith\\s*\\(", "Using 'with' statement.", "De-optimizes variable lookups.", "Avoid 'with' entirely"},
+    {"PERF41", Category::PERFORMANCE, WarningLevel::INFO, "for\\s*\\(var\\s+[a-zA-Z0-9_]+\\s+in\\s+[a-zA-Z0-9_]+\\)", "For-in loop over Array/Map.", "For-in has reflection overhead.", "Use for-of loop or indexed loop"},
+    {"PERF42", Category::PERFORMANCE, WarningLevel::WARNING, "\\.push\\s*\\(.*\\.push\\s*\\(", "Nested inline array pushes.", "Multiple array resizes in nested calls.", "Use bulk insertion or push_back_all"},
+    {"PERF43", Category::PERFORMANCE, WarningLevel::INFO, "std::recursive_mutex", "Use of std::recursive_mutex.", "Recursive mutex adds lock tracking overhead.", "Redesign locking logic to use std::mutex"},
+    {"PERF44", Category::PERFORMANCE, WarningLevel::WARNING, "std::to_string\\s*\\(.*\\)\\s*\\+\\s*std::to_string", "Multiple std::to_string allocations.", "Creates multiple heap strings.", "Use std::ostringstream or std::format"},
+    {"PERF45", Category::PERFORMANCE, WarningLevel::INFO, "\\bvector<.*>::operator\\[\\]", "Unchecked vector index in loop.", "Repeated unchecked indexing.", "Use data() pointer or iterators"},
+    {"PERF46", Category::PERFORMANCE, WarningLevel::WARNING, "std::make_shared<.*>\\[\\]", "Shared pointer to array.", "Custom deleter and allocation overhead.", "Use std::vector or unique_ptr array"},
+    {"PERF47", Category::PERFORMANCE, WarningLevel::INFO, "\\bstd::atomic<std::string>", "Heavy atomic wrapper type.", "Atomics on non-trivially copyable types are slow.", "Use std::mutex for complex types"},
+    {"PERF48", Category::PERFORMANCE, WarningLevel::WARNING, "while\\s*\\(true\\)\\s*\\{\\s*\\}", "Empty busy-wait loop.", "Consumes 100% CPU core.", "Add sleep/yield or condition variable"},
+    {"PERF49", Category::PERFORMANCE, WarningLevel::INFO, "std::async\\s*\\(\\s*std::launch::async", "Unbounded std::async task creation.", "Creates a new OS thread per invocation.", "Use a dedicated ThreadPool"},
+    {"PERF50", Category::PERFORMANCE, WarningLevel::WARNING, "\\bIO\\.read_file_sync\\b", "Synchronous I/O in main thread.", "Blocks event loop or UI render thread.", "Use async file I/O operations"},
 
     // -----------------------------------------
     // CATEGORY 3: STYLE (40 Rules)
@@ -152,6 +172,16 @@ static std::vector<RuleDef> g_rules = {
     {"STY38", Category::STYLE, WarningLevel::PEDANTIC, "\\bclass\\s+[a-zA-Z0-9_]+\\s*\\\\n\\s*\\{", "Brace on new line for class.", "K&R style recommends brace on same line.", "class MyClass {"},
     {"STY39", Category::STYLE, WarningLevel::PEDANTIC, "\\bstruct\\s+[a-zA-Z0-9_]+\\s*\\\\n\\s*\\{", "Brace on new line for struct.", "Use brace on same line.", "struct MyStruct {"},
     {"STY40", Category::STYLE, WarningLevel::INFO, "\\breturn\\s+\\([^)]+\\)\\s*;", "Returning expression in parentheses.", "Redundant parentheses.", "Remove parentheses"},
+    {"STY41", Category::STYLE, WarningLevel::INFO, "const\\s+[a-z][a-zA-Z0-9_]*\\s*=", "Constant not in UPPER_CASE.", "Convention dictates constants use ALL_CAPS or PascalCase.", "Use UPPER_CASE for constants"},
+    {"STY42", Category::STYLE, WarningLevel::INFO, "var\\s+[a-zA-Z0-9_]+\\s*,\\s*[a-zA-Z0-9_]+", "Multiple variable declarations on single line.", "Harder to read and maintain.", "Declare each variable on its own line"},
+    {"STY43", Category::STYLE, WarningLevel::INFO, "function\\s+[a-zA-Z0-9_]+\\s*\\([^)]*\\)\\s*\\{[^}]*return\\s*;\\s*\\}", "Redundant return at end of function.", "Function ends naturally without return;", "Remove trailing return;"},
+    {"STY44", Category::STYLE, WarningLevel::INFO, "function\\s+[a-z0-9_]+[A-Z][a-zA-Z0-9_]*", "Mixed camelCase in function name.", "Sapphire style guide prefers snake_case for functions.", "Use snake_case for function names"},
+    {"STY45", Category::STYLE, WarningLevel::INFO, "if\\s*\\([^)]+\\)\\s*\\{\\s*\\}", "Empty if statement block.", "Empty block serves no purpose.", "Remove empty if block or add comment"},
+    {"STY46", Category::STYLE, WarningLevel::INFO, "function\\s+[a-zA-Z0-9_]+\\s*\\([^,)]*,[^,)]*,[^,)]*,[^,)]*,[^,)]*,[^,)]*", "Function with more than 5 parameters.", "Too many parameters impair readability.", "Group parameters into a Map or Class"},
+    {"STY47", Category::STYLE, WarningLevel::INFO, "if.*\\{\\s*if.*\\{\\s*if.*\\{\\s*if", "Deeply nested if blocks (4+ levels).", "Increases cognitive complexity.", "Use early returns or guard clauses"},
+    {"STY48", Category::STYLE, WarningLevel::INFO, "function\\s+[a-zA-Z0-9_]+\\s*\\([^)]*\\)\\s*\\{[^}]*\\};", "Semicolon after function declaration.", "Semicolons are unnecessary after function blocks.", "Remove trailing semicolon"},
+    {"STY49", Category::STYLE, WarningLevel::PEDANTIC, "\\ttab\\b", "Tab character used for indentation.", "Style guide specifies 4 spaces.", "Use 4 spaces instead of tabs"},
+    {"STY50", Category::STYLE, WarningLevel::INFO, "class\\s+[a-z]", "Class name starts with lowercase.", "Class names should use PascalCase.", "Use PascalCase for class names"},
 
     // -----------------------------------------
     // CATEGORY 4: SYNTAX (40 Rules)
@@ -196,9 +226,19 @@ static std::vector<RuleDef> g_rules = {
     {"SYN38", Category::SYNTAX, WarningLevel::WARNING, "\\bregister\\b", "Use of register keyword.", "Deprecated in C++11, removed in C++17.", "Remove keyword"},
     {"SYN39", Category::SYNTAX, WarningLevel::WARNING, "\\b__declspec\\(dllexport\\)", "Raw __declspec.", "Not cross-platform.", "Use a macro like API_EXPORT"},
     {"SYN40", Category::SYNTAX, WarningLevel::ERR, "return\\s+[a-zA-Z0-9_]+\\s*=\\s*[a-zA-Z0-9_]+;", "Returning an assignment.", "Confusing and prone to logic errors.", "Separate the assignment and return"},
+    {"SYN41", Category::SYNTAX, WarningLevel::WARNING, "return\\s*.*;\\s*[^}]", "Unreachable code after return.", "Statements after return will never execute.", "Remove dead code"},
+    {"SYN42", Category::SYNTAX, WarningLevel::INFO, "==\\s*true|==\\s*false", "Explicit boolean comparison.", "Redundant comparison with boolean literal.", "Use 'if (condition)' directly"},
+    {"SYN43", Category::SYNTAX, WarningLevel::ERR, "for\\s*\\([^;]*;[^;]*=[^;]*;", "Assignment in for-loop condition.", "Usually a typo for comparison operator ==", "Use =="},
+    {"SYN44", Category::SYNTAX, WarningLevel::ERR, "class\\s+[a-zA-Z0-9_]+\\s*<\\s*\\1", "Class inherits from itself.", "Circular inheritance syntax error.", "Fix base class name"},
+    {"SYN45", Category::SYNTAX, WarningLevel::ERR, "function\\s+([a-zA-Z0-9_]+).*", "Duplicate function declaration in scope.", "Redefining function name in same scope.", "Rename duplicate function"},
+    {"SYN46", Category::SYNTAX, WarningLevel::WARNING, "([a-zA-Z0-9_]+)\\s*=\\s*\\1\\s*;", "Self-assignment detected.", "Assigning variable to itself has no effect.", "Remove self-assignment"},
+    {"SYN47", Category::SYNTAX, WarningLevel::WARNING, "switch\\s*\\([^)]+\\)\\s*\\{(?![^}]*default:)", "Switch statement missing default case.", "Unhandled cases will be silently ignored.", "Add default case"},
+    {"SYN48", Category::SYNTAX, WarningLevel::ERR, "constructor\\s*\\([^)]*\\)\\s*\\{[^}]*return\\s+[^;]+;", "Constructor returning value.", "Class constructors cannot return explicit values.", "Remove return value"},
+    {"SYN49", Category::SYNTAX, WarningLevel::ERR, "this\\.[a-zA-Z0-9_]+\\s*=", "Using 'this' outside class method context.", "Global scope has no 'this' object binding.", "Move code inside class method"},
+    {"SYN50", Category::SYNTAX, WarningLevel::WARNING, "break\\s*;\\s*break\\s*;", "Duplicate break statements.", "Second break is unreachable.", "Remove second break"},
 
     // -----------------------------------------
-    // CATEGORY 5: ARCHITECTURE (40 Rules)
+    // CATEGORY 5: ARCHITECTURE (50 Rules)
     // -----------------------------------------
     {"ARCH01", Category::ARCHITECTURE, WarningLevel::INFO, "\\bglobal_[a-zA-Z0-9_]+", "Use of global variable.", "Globals break encapsulation.", "Pass by reference/injection"},
     {"ARCH02", Category::ARCHITECTURE, WarningLevel::INFO, "\\bgetInstance\\(\\)", "Singleton pattern detected.", "Singletons act as global state.", "Use Dependency Injection"},
@@ -239,22 +279,17 @@ static std::vector<RuleDef> g_rules = {
     {"ARCH37", Category::ARCHITECTURE, WarningLevel::INFO, "new\\s+[a-zA-Z0-9_]+\\s*\\[.*\\]", "Raw array allocation.", "Manual memory management.", "Use std::vector"},
     {"ARCH38", Category::ARCHITECTURE, WarningLevel::INFO, "\\bint\\b\\s+[a-zA-Z0-9_]+\\s*\\[.*\\]", "C-style arrays.", "Lacks bounds checking.", "Use std::array"},
     {"ARCH39", Category::ARCHITECTURE, WarningLevel::WARNING, "\\\\#pragma\\s+once.*\\\\#ifndef", "Mixing #pragma once and include guards.", "Redundant.", "Use one or the other"},
-    {"ARCH40", Category::ARCHITECTURE, WarningLevel::INFO, "inline\\s+namespace", "Inline namespace.", "Can confuse ABI versions.", "Use carefully for versioning only"}
-};
-
-static std::string level_to_string(WarningLevel level) {
-    switch (level) {
-        case WarningLevel::INFO: return "INFO";
-        case WarningLevel::PEDANTIC: return "PEDANTIC";
-        case WarningLevel::WARNING: return "WARNING";
-        case WarningLevel::ERR: return "ERROR";
-    }
-    return "UNKNOWN";
-}
-
-static std::string cat_to_string(Category cat) {
-    switch (cat) {
-        case Category::SYNTAX: return "SYNTAX";
+    {"ARCH40", Category::ARCHITECTURE, WarningLevel::INFO, "inline\\s+namespace", "Inline namespace.", "Can confuse ABI versions.", "Use carefully for versioning only"},
+    {"ARCH41", Category::ARCHITECTURE, WarningLevel::ERR, "define_native\\(.*new\\b", "Raw allocation in native function binding.", "Can cause memory leaks if unmanaged.", "Use VM managed object allocation"},
+    {"ARCH42", Category::ARCHITECTURE, WarningLevel::WARNING, "import\\s+[\"'].*[\"'].*import\\s+[\"'].*[\"']", "Multiple imports in module.", "Check for potential circular dependencies.", "Verify import graph cleanliness"},
+    {"ARCH43", Category::ARCHITECTURE, WarningLevel::ERR, "stack\\[top\\s*-\\s*[0-9]+\\]", "Unchecked VM stack indexing.", "Out-of-bounds stack access can corrupt memory.", "Verify stack depth before indexing"},
+    {"ARCH44", Category::ARCHITECTURE, WarningLevel::WARNING, "register_object\\(.*null", "Registering null object in GC.", "Will cause null pointer dereference during GC sweep.", "Ensure non-null before registering"},
+    {"ARCH45", Category::ARCHITECTURE, WarningLevel::ERR, "globals\\[.*\\].*std::thread", "Concurrent access to VM globals.", "VM globals map is not thread-safe.", "Use mutex locks for multi-threaded VM access"},
+    {"ARCH46", Category::ARCHITECTURE, WarningLevel::ERR, "throw\\s+std::", "Throwing std exception across native FFI.", "C++ exceptions cannot safely cross C ABI boundary.", "Catch exceptions and return error status"},
+    {"ARCH47", Category::ARCHITECTURE, WarningLevel::WARNING, "[\"'][C-Z]:\\\\\\\\", "Hardcoded absolute Windows path.", "Paths break on other machines or operating systems.", "Use relative paths or env paths"},
+    {"ARCH48", Category::ARCHITECTURE, WarningLevel::WARNING, "new_promise\\(.*\\)(?![^;]*catch)", "Promise created without rejection handler.", "Unhandled promise rejections can crash engine.", "Attach .catch() or rejection callback"},
+    {"ARCH49", Category::ARCHITECTURE, WarningLevel::WARNING, "http_get\\s*\\(.*main", "Blocking HTTP call in main event loop.", "Freezes UI and event queue processing.", "Execute HTTP calls asynchronously"},
+    {"ARCH50", Category::ARCHITECTURE, WarningLevel::ERR, "frame->ip\\s*\\+=", "Direct manipulation of VM instruction pointer.", "Risks jumping to invalid bytecode offset.", "Use structured jump opcodes"}
         case Category::STYLE: return "STYLE";
         case Category::PERFORMANCE: return "PERFORMANCE";
         case Category::SECURITY: return "SECURITY";
@@ -314,23 +349,22 @@ bool is_suppressed(const std::vector<std::string>& lines, int line_idx, const st
 
 std::string get_category_icon(Category cat) {
     switch (cat) {
-        case Category::SECURITY:     return "\x1b[31m🛡️  SECURITY    \x1b[0m";
-        case Category::PERFORMANCE:  return "\x1b[33m⚡  PERFORMANCE \x1b[0m";
-        case Category::STYLE:        return "\x1b[35m🎨  STYLE       \x1b[0m";
-        case Category::SYNTAX:       return "\x1b[36m⚙️  SYNTAX      \x1b[0m";
-        case Category::ARCHITECTURE: return "\x1b[34m🏛️  ARCHITECTURE\x1b[0m";
+        case Category::SECURITY:     return "[SECURITY]";
+        case Category::PERFORMANCE:  return "[PERFORMANCE]";
+        case Category::STYLE:        return "[STYLE]";
+        case Category::SYNTAX:       return "[SYNTAX]";
+        case Category::ARCHITECTURE: return "[ARCHITECTURE]";
     }
-    return "❓  UNKNOWN";
+    return "[UNKNOWN]";
 }
 
 void print_ascii_header() {
-    std::cout << "\x1b[36m";
     std::cout << "   ______  _  __         _               \n";
     std::cout << "  / ____/ (_)/ /_ _____ (_)____   ___    \n";
     std::cout << " / /     / // __// ___// // __ \\ / _ \\   \n";
     std::cout << "/ /___  / // /_ / /   / // / / //  __/   \n";
     std::cout << "\\____/ /_/ \\__//_/   /_//_/ /_/ \\___/    \n";
-    std::cout << "\x1b[35m=========================================\x1b[0m\n";
+    std::cout << "=========================================\n";
 }
 
 void run_lint(const std::string& filepath, LintMode mode, const FilterConfig& config) {
@@ -439,10 +473,10 @@ void run_lint(const std::string& filepath, LintMode mode, const FilterConfig& co
     }
 
     print_ascii_header();
-    std::cout << "\x1b[1mAnalyzing: \x1b[32m" << filepath << "\x1b[0m\n\n";
+    std::cout << "Analyzing: " << filepath << "\n\n";
 
     if (found_issues.empty()) {
-        std::cout << "✨ \x1b[32m\x1b[1mNo issues found! Your codebase is pristine.\x1b[0m\n\n";
+        std::cout << "No issues found! Your codebase is pristine.\n\n";
         return;
     }
 
@@ -456,26 +490,27 @@ void run_lint(const std::string& filepath, LintMode mode, const FilterConfig& co
             }
         }
 
-        std::cout << "\x1b[36m[Line " << issue.line << "]\x1b[0m ";
+        std::cout << "[Line " << issue.line << "] ";
         std::cout << get_category_icon(issue.category) << " ";
         
-        if (issue.level == WarningLevel::ERR) std::cout << "\x1b[31m[ERROR]\x1b[0m ";
-        else if (issue.level == WarningLevel::WARNING) std::cout << "\x1b[33m[WARNING]\x1b[0m ";
-        else if (issue.level == WarningLevel::INFO) std::cout << "\x1b[36m[INFO]\x1b[0m ";
-        else std::cout << "\x1b[35m[PEDANTIC]\x1b[0m ";
+        if (issue.level == WarningLevel::ERR) std::cout << "[ERROR] ";
+        else if (issue.level == WarningLevel::WARNING) std::cout << "[WARNING] ";
+        else if (issue.level == WarningLevel::INFO) std::cout << "[INFO] ";
+        else std::cout << "[PEDANTIC] ";
 
-        std::cout << "\x1b[1m" << issue.message << "\x1b[0m\n";
+        std::cout << issue.message << "\n";
 
         if (mode == MODE_EXPLAIN) {
-            std::cout << "    \x1b[34m=> Explanation:\x1b[0m " << issue.explanation << "\n";
+            std::cout << "    => Explanation: " << issue.explanation << "\n";
             if (!issue.correction.empty()) {
-                std::cout << "    \x1b[32m=> Suggestion:\x1b[0m " << issue.correction << "\n";
+                std::cout << "    => Suggestion: " << issue.correction << "\n";
             }
+            std::cout << "\n";
         } else if (mode == MODE_FIX) {
             std::string repl = get_replacement(issue.correction);
             if (repl != "__NOT_FIXABLE__") {
-                std::cout << "    \x1b[34m=> Explanation:\x1b[0m " << issue.explanation << "\n";
-                std::cout << "    \x1b[33m[Before]:\x1b[0m " << lines[issue.line - 1] << "\n";
+                std::cout << "    => Explanation: " << issue.explanation << "\n";
+                std::cout << "    [Before]: " << lines[issue.line - 1] << "\n";
                 
                 std::string actual_pattern;
                 for (const auto& r : g_rules) {
@@ -488,7 +523,7 @@ void run_lint(const std::string& filepath, LintMode mode, const FilterConfig& co
                     try {
                         std::regex actual_re(actual_pattern);
                         std::string proposed = std::regex_replace(lines[issue.line - 1], actual_re, repl);
-                        std::cout << "    \x1b[32m[After]: \x1b[0m " << proposed << "\n";
+                        std::cout << "    [After]: " << proposed << "\n";
                         
                         std::cout << "  ? Apply this fix? (y/n): ";
                         std::string confirm;
@@ -496,7 +531,7 @@ void run_lint(const std::string& filepath, LintMode mode, const FilterConfig& co
                         if (confirm == "y") {
                             modified_lines[issue.line - 1] = proposed;
                             has_modifications = true;
-                            std::cout << "    \x1b[32m[Fixed]\x1b[0m\n";
+                            std::cout << "    [Fixed]\n";
                         }
                     } catch (...) {}
                 }
@@ -522,7 +557,7 @@ void run_lint(const std::string& filepath, LintMode mode, const FilterConfig& co
             out << modified_lines[i] << (i == modified_lines.size() - 1 ? "" : "\n");
         }
         out.close();
-        std::cout << "\n\x1b[32mApplied corrections saved to " << filepath << "\x1b[0m\n";
+        std::cout << "\nApplied corrections saved to " << filepath << "\n";
     }
 
     // Render Health Score Summary Card
@@ -530,35 +565,35 @@ void run_lint(const std::string& filepath, LintMode mode, const FilterConfig& co
     if (health_score < 0) health_score = 0;
 
     std::string grade = "F";
-    std::string grade_color = "\x1b[31m"; // Red
-    if (health_score >= 95) { grade = "A+"; grade_color = "\x1b[32m"; }
-    else if (health_score >= 90) { grade = "A"; grade_color = "\x1b[32m"; }
-    else if (health_score >= 80) { grade = "B"; grade_color = "\x1b[33m"; }
-    else if (health_score >= 70) { grade = "C"; grade_color = "\x1b[33m"; }
-    else if (health_score >= 60) { grade = "D"; grade_color = "\x1b[35m"; }
+    std::string grade_color = "";
+    if (health_score >= 95) { grade = "A+"; }
+    else if (health_score >= 90) { grade = "A"; }
+    else if (health_score >= 80) { grade = "B"; }
+    else if (health_score >= 70) { grade = "C"; }
+    else if (health_score >= 60) { grade = "D"; }
 
-    std::cout << "\n\x1b[35m====================================================\x1b[0m\n";
-    std::cout << "              \x1b[1mCODEBASE HEALTH REPORT\x1b[0m\n";
-    std::cout << "\x1b[35m====================================================\x1b[0m\n";
+    std::cout << "\n====================================================\n";
+    std::cout << "              CODEBASE HEALTH REPORT\n";
+    std::cout << "====================================================\n";
     
     auto render_bar = [](int count, const std::string& color) {
         int blocks = count;
         if (blocks > 15) blocks = 15;
         std::string bar = "";
-        for (int b = 0; b < blocks; ++b) bar += "█";
-        for (int b = blocks; b < 15; ++b) bar += "░";
-        return color + bar + "\x1b[0m";
+        for (int b = 0; b < blocks; ++b) bar += "=*";
+        for (int b = blocks; b < 15; ++b) bar += "=-";
+        return bar;
     };
 
-    std::cout << get_category_icon(Category::SECURITY)     << " : [" << count_sec    << "] " << render_bar(count_sec, "\x1b[31m") << "\n";
-    std::cout << get_category_icon(Category::PERFORMANCE)  << " : [" << count_perf   << "] " << render_bar(count_perf, "\x1b[33m") << "\n";
-    std::cout << get_category_icon(Category::STYLE)        << " : [" << count_style  << "] " << render_bar(count_style, "\x1b[35m") << "\n";
-    std::cout << get_category_icon(Category::SYNTAX)       << " : [" << count_syntax << "] " << render_bar(count_syntax, "\x1b[36m") << "\n";
-    std::cout << get_category_icon(Category::ARCHITECTURE) << " : [" << count_arch   << "] " << render_bar(count_arch, "\x1b[34m") << "\n";
+    std::cout << get_category_icon(Category::SECURITY)     << " : [" << count_sec    << "] " << render_bar(count_sec, "") << "\n";
+    std::cout << get_category_icon(Category::PERFORMANCE)  << " : [" << count_perf   << "] " << render_bar(count_perf, "") << "\n";
+    std::cout << get_category_icon(Category::STYLE)        << " : [" << count_style  << "] " << render_bar(count_style, "") << "\n";
+    std::cout << get_category_icon(Category::SYNTAX)       << " : [" << count_syntax << "] " << render_bar(count_syntax, "") << "\n";
+    std::cout << get_category_icon(Category::ARCHITECTURE) << " : [" << count_arch   << "] " << render_bar(count_arch, "") << "\n";
     
-    std::cout << "\x1b[35m----------------------------------------------------\x1b[0m\n";
-    std::cout << "\x1b[1mCode Health Score :\x1b[0m " << grade_color << health_score << "%\x1b[0m (Grade: " << grade_color << grade << "\x1b[0m)\n";
-    std::cout << "\x1b[35m====================================================\x1b[0m\n\n";
+    std::cout << "----------------------------------------------------\n";
+    std::cout << "Code Health Score : " << health_score << "% (Grade: " << grade << ")\n";
+    std::cout << "====================================================\n\n";
 }
 
 } // namespace citrine

@@ -107,6 +107,12 @@ inline int cmd_uninstall(const std::string& plugin_name, bool local_only = false
         }
     }
     
+    if (local_only && !has_local && has_global) {
+        std::cerr << termcolor::yellow << "[!] Plugin '" << plugin_name << "' is installed globally, but not locally in this project." << termcolor::reset << std::endl;
+        std::cerr << termcolor::yellow << "    Use 'topaz uninstall " << plugin_name << " --global' to remove the global installation." << termcolor::reset << std::endl;
+        return 1;
+    }
+    
     int removed_count = 0;
     
     // Remove local installation

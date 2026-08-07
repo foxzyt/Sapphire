@@ -425,9 +425,10 @@ inline int cmd_install(const std::string& plugin_name,
         if (topaz::g_verbose) std::cout << termcolor::yellow << "[*] Target: global scope (AppData)" << termcolor::reset << std::endl;
     }
     
-    if (!topaz::g_verbose) std::cout << "Downloading " << plugin_name << "..." << std::endl;
+    if (!topaz::g_verbose) std::cout << "Downloading '" << plugin_name << "'..." << std::endl;
     
-    // Check if already installed
+    bool main_plugin_already_installed = false;
+    
     if (local_scope ? is_plugin_installed_local(plugin_name) : is_plugin_installed(plugin_name)) {
         fs::path plugin_path = (local_scope ? get_local_plugin_dir() : get_plugin_dir()) / plugin_name / "PLUGIN.txt";
         auto meta = parse_plugin_txt(plugin_path);
@@ -457,6 +458,7 @@ inline int cmd_install(const std::string& plugin_name,
                 }
             } else {
                 if (topaz::g_verbose) std::cout << termcolor::green << "[*] Target version v" << clean_resolved << " is already the active version. Processing dependencies..." << termcolor::reset << std::endl;
+                main_plugin_already_installed = true;
             }
         }
     }
@@ -477,8 +479,6 @@ inline int cmd_install(const std::string& plugin_name,
     resolver.set_no_save(no_save);
     resolver.set_frozen_lockfile(frozen_lockfile);
     resolver.resolve_and_install(plugin_name, resolved_version);
-    
-    if (!topaz::g_verbose) std::cout << "Calculating checksums..." << std::endl;
     
     resolver.write_lockfiles();
     
@@ -561,11 +561,33 @@ inline int cmd_install(const std::string& plugin_name,
     success = fs::exists(version_dir_v) || fs::exists(version_dir_clean);
     
     if (success) {
-        std::cout << termcolor::green << "[OK] Installed '" << plugin_name << "'" << termcolor::reset;
-        if (resolver.get_total_installed() > 0) {
-            std::cout << " and " << resolver.get_total_installed() << " dependencies";
+        if (!topaz::g_verbose) {
+            std::cout << "Installation summary:" << std::endl;
+            int package_count = 0;
+            if (!main_plugin_already_installed) {
+                std::cout << "  - " << plugin_name << " (v" << clean_version << ")" << std::endl;
+                package_count = 1;
+            }
+            
+            for (const auto& [name, ver] : resolver.get_newly_installed_plugins()) {
+                if (name != plugin_name) {
+                    std::cout << "  - " << name << " (v" << ver << ")" << std::endl;
+                    package_count++;
+                }
+            }
+            
+            if (package_count > 0) {
+                std::cout << termcolor::green << "[OK] Successfully installed " << package_count << " packages." << termcolor::reset << std::endl;
+            } else {
+                std::cout << termcolor::green << "[OK] All required packages are already installed." << termcolor::reset << std::endl;
+            }
+        } else {
+            std::cout << termcolor::green << "[OK] Installed '" << plugin_name << "'" << termcolor::reset;
+            if (resolver.get_total_installed() > 0) {
+                std::cout << " and " << resolver.get_total_installed() << " dependencies";
+            }
+            std::cout << std::endl;
         }
-        std::cout << std::endl;
         return 0;
     } else {
         std::cerr << termcolor::red << "[!] Installation failed" << termcolor::reset << std::endl;

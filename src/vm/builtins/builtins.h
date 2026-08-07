@@ -7,6 +7,7 @@ SapphireValue native_lru_has(int arg_count, SapphireValue* args);
 SapphireValue native_lru_get(int arg_count, SapphireValue* args);
 SapphireValue native_lru_put(int arg_count, SapphireValue* args);
 SapphireValue native_value_to_string(int arg_count, SapphireValue* args);
+SapphireValue native_array_push(int arg_count, SapphireValue* args);
 SapphireValue native_len(int arg_count, SapphireValue* args);
 SapphireValue native_evaluate(int arg_count, SapphireValue* args);
 SapphireValue native_debug_print_stack(int arg_count, SapphireValue* args);
@@ -50,6 +51,7 @@ SapphireValue native_io_get_parent_dir(int arg_count, SapphireValue* args);
 SapphireValue native_io_get_extension(int arg_count, SapphireValue* args);
 SapphireValue native_io_get_basename(int arg_count, SapphireValue* args);
 SapphireValue native_io_is_file(int arg_count, SapphireValue* args);
+SapphireValue native_io_read_csv(int arg_count, SapphireValue* args);
 // NEW in v1.0.9 — Crypto module
 SapphireValue native_crypto_sha256(int arg_count, SapphireValue* args);
 SapphireValue native_crypto_sha1(int arg_count, SapphireValue* args);

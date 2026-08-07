@@ -230,7 +230,7 @@ void VM::step_gc() {
                 // Accurate size accounting for all types
                 size_t size = 0;
                 switch (unreached->type) {
-                    case OBJ_STRING:        size = sizeof(ObjString); break;
+                    case OBJ_STRING:        size = sizeof(ObjString) + static_cast<ObjString*>(unreached)->chars.capacity(); break;
                     case OBJ_FUNCTION:      size = sizeof(ObjFunction); break;
                     case OBJ_NATIVE:        size = sizeof(ObjNative); break;
                     case OBJ_CLOSURE:       size = sizeof(ObjClosure); break;

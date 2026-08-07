@@ -1,7 +1,9 @@
 #include "error.h"
 #include <iostream>
 #include <sstream>
+#include <algorithm>
 #include <iomanip>
+#include <filesystem>
 
 std::string SapphireError::format() const {
     std::ostringstream oss;
@@ -20,7 +22,16 @@ std::string SapphireError::format() const {
         case ErrorType::INTERNAL_ERROR: type_str = "InternalError"; break;
     }
     
-    oss << "[Line " << location.line << ":" << location.column << "] " << type_str << "\n";
+    std::string file_display = "";
+    if (!location.file.empty()) {
+        try {
+            file_display = std::filesystem::path(location.file).filename().string() + ":";
+        } catch (...) {
+            file_display = location.file + ":";
+        }
+    }
+
+    oss << "[" << file_display << "Line " << location.line << ":" << location.column << "] " << type_str << "\n";
     oss << "  " << message << "\n";
     
     // Show source line if available
@@ -38,14 +49,52 @@ std::string SapphireError::format() const {
 }
 
 std::string SapphireError::format_with_context() const {
-    return format();
+    std::string result = format();
+    
+    // Show context
+    if (!context.empty()) {
+        result += "\n\nRelevant context:\n";
+        for (const auto& ctx : context) {
+            result += "- " + ctx.description;
+            if (!ctx.value.empty()) {
+                result += ": " + ctx.value;
+            }
+            if (!ctx.type.empty()) {
+                result += " (" + ctx.type + ")";
+            }
+            result += "\n";
+        }
+    }
+    
+    // Show suggestions
+    if (!suggestions.empty()) {
+        result += "\n";
+        for (const auto& sug : suggestions) {
+            result += sug.description + "\n";
+            if (!sug.code_snippet.empty()) {
+                result += "  " + sug.code_snippet + "\n";
+            }
+        }
+    }
+    
+    // Show stack trace if available
+    if (!stack_trace.empty()) {
+        result += "\n\nStack trace:\n";
+        result += stack_trace;
+    }
+    
+    return result;
 }
 
 void ErrorHandler::report_error(std::shared_ptr<SapphireError> error) {
     errors.push_back(error);
     
     if (verbose) {
-        std::cerr << error->format() << "\n";
+        if (show_suggestions) {
+            std::cerr << error->format_with_context() << "\n";
+        } else {
+            std::cerr << error->format() << "\n";
+        }
     }
 }
 
@@ -53,7 +102,11 @@ void ErrorHandler::report_warning(std::shared_ptr<SapphireError> error) {
     errors.push_back(error);
     
     if (verbose) {
-        std::cout << error->format() << "\n";
+        if (show_suggestions) {
+            std::cout << error->format_with_context() << "\n";
+        } else {
+            std::cout << error->format() << "\n";
+        }
     }
 }
 

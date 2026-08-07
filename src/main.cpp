@@ -2301,6 +2301,7 @@ void run_file_mode(const std::string &script_content,
                    const std::string &script_path) {
   VM vm;
   g_current_vm = &vm;
+  vm.current_file_path = script_path;
   vm.soft_mode = check_for_soft_mode(script_content);
   vm.add_module_search_path(
       std::filesystem::path(script_path).parent_path().string());
@@ -2779,8 +2780,10 @@ int main(int argc, char *argv[]) {
       run_bytecode_mode(path, config, is_ui);
     } else if (ext == ".sp") {
       std::string content = load_source_script(path);
-      if (content.empty())
+      if (content.empty()) {
+        std::cerr << "Error: Could not read file '" << path << "'\n";
         return 1;
+      }
       if (script_uses_ui(content))
         run_ui_mode(content, config, path);
       else

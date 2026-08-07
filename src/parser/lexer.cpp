@@ -42,6 +42,7 @@ static std::map<std::string, TokenType> keywords = {
     {"of",       TokenType::TOKEN_OF},
     {"foreach",  TokenType::TOKEN_FOREACH},
     {"class",    TokenType::TOKEN_CLASS},
+    {"new",      TokenType::TOKEN_NEW},
     {"within",   TokenType::TOKEN_WITHIN},
     {"fallback", TokenType::TOKEN_FALLBACK},
     {"every",    TokenType::TOKEN_EVERY},
@@ -101,6 +102,16 @@ Token Lexer::number_token() {
     if (peek() == '.' && isdigit(static_cast<unsigned char>(peek_next()))) {
         advance();
         while (isdigit(static_cast<unsigned char>(peek()))) advance();
+    }
+    // Scientific notation support
+    if (peek() == 'e' || peek() == 'E') {
+        char next = peek_next();
+        if (isdigit(static_cast<unsigned char>(next)) || 
+           ((next == '+' || next == '-') && current + 2 < source.length() && isdigit(static_cast<unsigned char>(source[current + 2])))) {
+            advance(); // consume 'e' or 'E'
+            if (peek() == '+' || peek() == '-') advance(); // consume sign
+            while (isdigit(static_cast<unsigned char>(peek()))) advance();
+        }
     }
     return make_token(TokenType::TOKEN_NUMBER);
 }

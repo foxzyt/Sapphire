@@ -27,6 +27,7 @@ private:
     
     // Track all installed plugins with their versions for lockfile
     std::vector<std::pair<std::string, std::string>> installed_plugins_;
+    std::vector<std::pair<std::string, std::string>> newly_installed_plugins_;
     
     // Track version conflicts: plugin_name -> set of required versions
     std::unordered_map<std::string, std::set<std::string>> version_conflicts_;
@@ -206,7 +207,6 @@ public:
         
         visited_.insert(plugin_name);
         
-        // Check if plugin is already installed
         if (is_plugin_installed(plugin_name)) {
             if (!topaz::g_verbose && plugin_name != project_name_) {
                 std::cout << "  Dependency '" << plugin_name << "' already exists." << std::endl;
@@ -271,7 +271,7 @@ public:
             }
             
             if (!topaz::g_verbose && plugin_name != project_name_) {
-                std::cout << "  Downloading " << plugin_name << " (dependency)..." << std::endl;
+                std::cout << "  Downloading '" << plugin_name << "' (dependency)..." << std::endl;
             }
             
             // Download main branch (latest)
@@ -299,6 +299,7 @@ public:
             
             // Track for lockfile
             installed_plugins_.push_back({plugin_name, actual_version});
+            newly_installed_plugins_.push_back({plugin_name, actual_version});
             
             // Get all available versions
             auto versions = get_available_versions(plugin_name);
@@ -326,7 +327,7 @@ public:
             }
             
             if (!topaz::g_verbose && plugin_name != project_name_) {
-                std::cout << "  Downloading " << plugin_name << " (dependency)..." << std::endl;
+                std::cout << "  Downloading '" << plugin_name << "' (dependency)..." << std::endl;
             }
             
             // Try downloading specific version if not already installed
@@ -341,6 +342,7 @@ public:
                 auto versions = get_available_versions(plugin_name);
                 for (const auto& ver : versions) {
                     installed_plugins_.push_back({plugin_name, ver});
+                    newly_installed_plugins_.push_back({plugin_name, ver});
                 }
             }
             
@@ -369,6 +371,10 @@ public:
     
     const std::vector<std::pair<std::string, std::string>>& get_installed_plugins() const {
         return installed_plugins_;
+    }
+    
+    const std::vector<std::pair<std::string, std::string>>& get_newly_installed_plugins() const {
+        return newly_installed_plugins_;
     }
     
     void reset() {

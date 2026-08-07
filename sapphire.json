@@ -1,6 +1,8 @@
 {
   "dependencies": {
-    "sapphire-grad": "^1.0.1"
+    "newton": "^1.0.0",
+    "sapphire-grad": "^1.0.1",
+    "vividry": "^1.0.0"
   },
   "name": "Sapphire",
   "version": "1.0.0"

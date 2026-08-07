@@ -59,6 +59,24 @@ SapphireValue native_value_to_string(int arg_count, SapphireValue* args) {
     return new_string(g_current_vm, valueToStringC(args[0]));
 }
 
+SapphireValue native_array_push(int arg_count, SapphireValue* args) {
+    if (arg_count != 2) {
+        if (!g_current_vm->soft_mode) {
+            std::cerr << "Runtime Error: push() expects 2 arguments." << std::endl;
+        }
+        return {};
+    }
+    if (is_obj_type(args[0], OBJ_ARRAY)) {
+        auto array_obj = static_cast<ObjArray*>(args[0].as.obj);
+        array_obj->elements.push_back(args[1]);
+        return args[0];
+    }
+    if (!g_current_vm->soft_mode) {
+        std::cerr << "Runtime Error: First argument to push() must be an array." << std::endl;
+    }
+    return {};
+}
+
 SapphireValue native_len(int arg_count, SapphireValue* args) {
     if (arg_count != 1) {
         if (!g_current_vm->soft_mode) {

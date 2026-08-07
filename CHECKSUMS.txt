@@ -3,6 +3,3 @@
 
 unknown  files/main.sp
 unknown  files/main.sp
-unknown  files/main.sp
-unknown  files/main.sp
-unknown  files/main.sp

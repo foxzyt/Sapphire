@@ -222,6 +222,7 @@ public:
   sf::Font sapphire_font;
   UIState ui_state;
   ScriptConfig config;
+  std::string current_file_path;
   bool soft_mode = false;
   bool rubellite_debug = false;
   bool jit_enabled = true; // set to false to force bytecode interpreter

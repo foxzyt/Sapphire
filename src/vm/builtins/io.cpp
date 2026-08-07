@@ -317,13 +317,18 @@ SapphireValue native_io_read_lines(int arg_count, SapphireValue* args) {
     std::string path = get_string_arg(args, 0);
 
     ObjArray* arr = new_array(g_current_vm);
+    g_current_vm->push(SapphireValue(arr)); // Root the array so GC doesn't delete it!
     std::ifstream file(path);
-    if (!file.is_open()) return arr;
+    if (!file.is_open()) {
+        g_current_vm->pop();
+        return arr;
+    }
 
     std::string line;
     while (std::getline(file, line)) {
         arr->elements.push_back(SapphireValue(new_string(g_current_vm, line)));
     }
+    g_current_vm->pop();
     return arr;
 }
 
@@ -384,3 +389,88 @@ SapphireValue native_io_is_file(int arg_count, SapphireValue* args) {
         return fs::is_regular_file(path);
     } catch (...) { return false; }
 }
+
+SapphireValue native_io_read_csv(int arg_count, SapphireValue* args) {
+    if (arg_count < 2 || !is_obj_type(args[0], OBJ_STRING) || !is_obj_type(args[1], OBJ_STRING))
+        return new_map(g_current_vm);
+
+    std::string path = get_string_arg(args, 0);
+    std::string delimiter = get_string_arg(args, 1);
+    bool has_header = true;
+    if (arg_count > 2 && args[2].type == ValType::VAL_BOOL) {
+        has_header = args[2].as.boolean;
+    }
+
+    ObjMap* map_obj = new_map(g_current_vm);
+    g_current_vm->push(SapphireValue(map_obj));
+
+    std::ifstream file(path);
+    if (!file.is_open()) {
+        g_current_vm->pop();
+        return map_obj;
+    }
+
+    std::string line;
+    std::vector<std::string> headers;
+    std::vector<ObjArray*> col_arrays;
+
+    auto split_line = [&delimiter](const std::string& s) {
+        std::vector<std::string> tokens;
+        size_t start = 0, end = 0;
+        while ((end = s.find(delimiter, start)) != std::string::npos) {
+            tokens.push_back(s.substr(start, end - start));
+            start = end + delimiter.length();
+        }
+        tokens.push_back(s.substr(start));
+        if (!tokens.empty() && !tokens.back().empty() && tokens.back().back() == '\r') {
+            tokens.back().pop_back();
+        }
+        return tokens;
+    };
+
+    if (std::getline(file, line)) {
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        std::vector<std::string> first_line = split_line(line);
+        if (has_header) {
+            headers = first_line;
+        } else {
+            for (size_t i = 0; i < first_line.size(); ++i) {
+                headers.push_back("col_" + std::to_string(i));
+            }
+        }
+
+        for (size_t i = 0; i < headers.size(); ++i) {
+            ObjArray* arr = new_array(g_current_vm);
+            col_arrays.push_back(arr);
+            map_obj->items[headers[i]] = SapphireValue(arr);
+            // Root each array to protect it from GC while populating
+            g_current_vm->push(SapphireValue(arr));
+        }
+
+        if (!has_header) {
+            for (size_t i = 0; i < first_line.size(); ++i) {
+                if (i < col_arrays.size()) {
+                    col_arrays[i]->elements.push_back(SapphireValue(new_string(g_current_vm, first_line[i])));
+                }
+            }
+        }
+    }
+
+    while (std::getline(file, line)) {
+        if (line.empty()) continue;
+        if (line.back() == '\r') line.pop_back();
+        std::vector<std::string> tokens = split_line(line);
+        for (size_t i = 0; i < headers.size(); ++i) {
+            std::string val = (i < tokens.size()) ? tokens[i] : "";
+            col_arrays[i]->elements.push_back(SapphireValue(new_string(g_current_vm, val)));
+        }
+    }
+
+    for (size_t i = 0; i < headers.size(); ++i) {
+        g_current_vm->pop();
+    }
+    g_current_vm->pop();
+    
+    return map_obj;
+}
+

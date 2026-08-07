@@ -180,6 +180,9 @@ ObjInstance* new_instance(VM* vm, ObjClass* klass) {
 ObjFunction* new_function(VM* vm) {
     auto* function = new ObjFunction();
     function->type = OBJ_FUNCTION;
+    if (vm != nullptr) {
+        function->script_path = vm->current_file_path;
+    }
     register_object(vm, function);
     return function;
 }

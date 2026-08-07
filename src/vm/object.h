@@ -76,6 +76,7 @@ struct ObjFunction : Obj {
     ObjString* name = nullptr;
     ObjClass* owner_class = nullptr; // The class that owns this method (if any)
     bool is_async = false;
+    std::string script_path;
 };
 
 struct ObjBoundMethod : Obj {
