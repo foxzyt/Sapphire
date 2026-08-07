@@ -13,6 +13,7 @@
 #include <stdexcept>
 
 using enum TokenType;
+#include "../error/error_hints.h"
 
 // Helper function to convert token type to string
 static std::string token_type_to_string(TokenType type) {
@@ -194,6 +195,8 @@ void Parser::error_at(const Token& token, const std::string& message) {
         loc,
         ErrorSeverity::ERR
     );
+
+    inject_syntax_hints(message, error);
 
     error_handler->report_error(error);
 }

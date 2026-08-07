@@ -11,6 +11,8 @@
 #include "debug.h"
 #include "value.h"
 #include "config.h"
+#include "../error/error_hints.h"
+#include "../utils/termcolor.h"
 #include "termcolor.h"
 #include "sapphire_api.h"
 #include "opencl_api.h"
@@ -2028,11 +2030,19 @@ std::string VM::format_call_stack() {
 }
 
 void VM::report_runtime_error(const std::string& message) {
-    // Create simple error location
+    // Create error location with current file path
     SourceLocation loc;
     loc.line = 0;
     loc.column = 0;
     loc.length = 0;
+    loc.file = this->current_file_path;
+
+    if (frame_count > 0) {
+        CallFrame* frame = &frames[frame_count - 1];
+        if (frame->function != nullptr && !frame->function->script_path.empty()) {
+            loc.file = frame->function->script_path;
+        }
+    }
     
     auto error = std::make_shared<SapphireError>(
         ErrorType::RUNTIME_ERROR,
@@ -2041,6 +2051,8 @@ void VM::report_runtime_error(const std::string& message) {
         loc,
         ErrorSeverity::ERR
     );
+    
+    inject_runtime_hints(message, error, this);
     
     error_handler->report_error(error);
 }
@@ -2061,7 +2073,7 @@ void VM::push(const SapphireValue& value) {
 }
 SapphireValue VM::pop() {
     if (stack_top == stack) {
-        std::cerr << "Runtime Error: Stack underflow." << std::endl;
+        if (!this->soft_mode) report_runtime_error("Stack underflow.");
         exit(70);
     }
     stack_top--;
@@ -2096,7 +2108,7 @@ bool VM::call(ObjFunction* function, int arg_count) {
     }
 
     if (frame_count == FRAMES_MAX) {
-        if (!this->soft_mode) std::cerr << "Runtime Error: Stack overflow." << std::endl;
+        if (!this->soft_mode) report_runtime_error("Stack overflow.");
         return false;
     }
 
@@ -2866,7 +2878,12 @@ TARGET(OP_IMPORT) {
     
     loaded_modules.insert(resolved_path_tmp);
     
-    func_tmp = compile(this, src_tmp);
+    {
+        std::string old_file_path = this->current_file_path;
+        this->current_file_path = resolved_path_tmp;
+        func_tmp = compile(this, src_tmp);
+        this->current_file_path = old_file_path;
+    }
     if (!func_tmp) return false;
     PUSH(new_closure(this, func_tmp));
     call_value(top[-1], 0);

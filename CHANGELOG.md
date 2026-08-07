@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- [Error Handling] Implementado sistema de "Error Intelligence" (Dicas estilo Rust). Adicionado mais de 40 mensagens didáticas, pedagógicas e focadas no usuário para erros de sintaxe (via `error_hints.cpp`).
+- [Error Handling] Inteligência de Runtime: A Máquina Virtual agora intercepta *Stack Overflows* e *Underflows* graciosamente. O motor inspeciona a memória para encontrar a função culpada pelo loop infinito e avisa o usuário (ex: *The function 'recursive' was running when it crashed*).
 - [Parser] Implementação do bloco `finally` em declarações try/catch/finally.
 - [VM] Adicionado opcode `OP_FINALLY` para suporte ao bloco finally (suporte básico).
 - [Error Handling] Sistema de erros com tipos específicos (SyntaxError, RuntimeError, TypeError, ReferenceError, RangeError, NetworkError, DatabaseError, UIError, InternalError).

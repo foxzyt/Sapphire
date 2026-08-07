@@ -217,6 +217,7 @@ add_library(sapphire_core STATIC
     src/utils/utils.cpp
     src/utils/termcolor.cpp
     src/error/error.cpp
+    src/error/error_hints.cpp
     src/graphics/engine.cpp
     src/graphics/vec2d.cpp
     src/graphics/vec3d.cpp
