@@ -4,24 +4,23 @@
 [![Latest Release](https://img.shields.io/github/v/release/foxzyt/Sapphire?color=blue&label=release)](https://github.com/foxzyt/Sapphire/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-**[Website](https://foxzyt.github.io/Sapphire)** . **[Documentation](https://foxzyt.github.io/Sapphire/site/docs_intro.html)** . **[Avaliable Plugins](https://github.com/foxzyt/sapphire-mine)**
+**[Website](https://foxzyt.github.io/Sapphire)** • **[Documentation](https://foxzyt.github.io/Sapphire/site/docs_intro.html)** • **[Available Plugins](https://github.com/foxzyt/sapphire-mine)**
 
-
-Sapphire is a hybrid, multi-paradigm and general purpose, **time-aware** programming language designed for performance and clarity. It combines the speed of compiled languages and its low-level tools with the syntax of high-level scripting, making it suitable for tools, UI-driven applications, scripts, and system-level tasks. 
+Sapphire is a hybrid, multi-paradigm, and general-purpose **time-aware** programming language designed for speed, clarity, and developer ergonomics. It bridges the performance and low-level control of compiled languages with the clean syntax of high-level scripting, making it well-suited for desktop tools, UI-driven applications, system scripts, and embedded tasks.
 
 <details>
-<summary><b>TL;DR: Some more info about Sapphire (Click to expand)</b></summary>
+<summary><b>TL;DR: Fast Facts About Sapphire (Click to expand)</b></summary>
 
-* Sapphire runs on top of the **Corundum virtual machine**, custom-made and built from the ground up by me with NO technical assistance from AI whatsoever.
-* I am building a JIT-based virtual machine with no LLVM, just raw Assembly, called **Rubellite**, and it will be released in version 1.0.9.
-* Did you know? Sapphire's entire toolchain names are based on **gems and minerals**, such as Beryl, Topaz, Quartz, etc.
-* Did you know that Sapphire has an **Incremental Mark-and-Sweep** garbage collector that minimizes the "stop-the-world" effects while taking the burden of memory management off the user.
-* FYI: **Generative AI** was used when expanding Sapphire's standard library and some parts of the toolchain.
-* Did you know that Sapphire was initially supposed to be called **Mint**?
-* Multiplatform support IS being added to Sapphire and I hope I can make it fully work in other OSes by the time I release 1.1.0 (hopefully 1.0.9, but I'll try).
+* **Custom VM:** Sapphire runs on the **Corundum virtual machine**, a custom bytecode runtime designed and implemented completely from scratch.
+* **Native JIT:** Includes **Rubellite**, an experimental JIT compilation engine generating direct x86-64 machine code (no LLVM dependencies).
+* **Gemstone Toolchain:** Every tool in the ecosystem is named after minerals and gems (Beryl, Topaz, Quartz, Citrine, Garnet, Amethyst).
+* **Incremental GC:** Features an **Incremental Mark-and-Sweep** garbage collector that minimizes stop-the-world pauses while ensuring automatic memory management.
+* **Origins:** Sapphire was originally conceived under the working title **Mint**.
+* **Ecosystem Expansion:** Standard library modules and developer utilities are actively curated and continuously expanding.
+* **Cross-Platform Roadmap:** Multi-platform support for Linux and macOS is under active development, targeting the upcoming **v1.1.0 LTS** release.
 </details>
 
-> **Note:** Sapphire currently only supports **Windows**.
+> **Platform Support:** Sapphire currently runs officially on **Windows**. Cross-platform support for Linux and macOS is actively being stabilized for the v1.1.0 LTS milestone.
 
 ## Build and Installation
 
@@ -197,29 +196,32 @@ print(config["theme"])
 config["debug"] = false
 ```
 
-## Carat
-Carat is the official name for the Sapphire language full toolchain, which includes (as of version 1.0.9 (being developed)):
+## Carat Toolchain
 
-* **Sapphire**: The official runtime, which includes the Corundum and Rubellite virtual machines.
-* **Beryl**: The official bundler for the language (transforms .sp scripts into .exe files).
-* **Topaz**: The package manager and version manager (such as npm and nvm).
-* **Citrine**: An advanced linter with 200+ hand-written lint rules. It can: fix your code, explain the errors and undo changes (if Citrine fails in correcting your code).
-* **Garnet**: Simple, yet powerful test runner for Sapphire.
-* **Amethyst**: A code formatter that automatically formats your code (obviously) and checks it if you want to apply the correnctions yourself.
-* **Quartz**: The official benchmarker for the language, with 50 default benchmarks to measure exactly the performance of the entire language. It can compare two benchmarks, and it shows you how many Ops/Sec, latency (in microseconds), StdDev (in %) and how many bytes were allocated by the GC.
+**Carat** is the unified name for the full suite of developer tools accompanying the Sapphire ecosystem:
 
-All of them **simple** to use, and very **fast**. 
+* **Sapphire**: The primary runtime, housing both the stable **Corundum** bytecode VM and the experimental **Rubellite** JIT compiler.
+* **Beryl**: The standalone executable bundler (compiles and packages `.sp` scripts into native standalone binaries).
+* **Topaz**: The official package manager and runtime version manager (inspired by modern workflows like `npm` and `nvm`).
+* **Citrine**: An advanced static linter featuring 200+ built-in rules, automated code fixes, and rollback support.
+* **Garnet**: A lightweight, fast unit-testing runner and assertion framework for Sapphire test suites.
+* **Amethyst**: An automated code formatter that keeps codebase style uniform and clean.
+* **Quartz**: The official benchmarking tool with 50+ built-in suites measuring ops/sec, latency (μs), standard deviation, and GC memory allocation.
 
-> **Note:** Some errors with CMD formatting might appear, and some errors in Topaz might ALSO appear (like being unable to uninstall plugins and etc), but don't worry, I will fix it, as they are being developed and are early-stage implementations.
+> **Development Note:** The Carat toolchain is under active development. Terminal formatting adjustments and package management refinements (such as plugin uninstallation in Topaz) are being actively stabilized ahead of the LTS release.
 
 ## License
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+This project is licensed under the [MIT License](LICENSE).
 
-## Note
+---
 
-Sapphire is **not** affiliated in anyway with SapphireFoxx or the Sapphire Language by Nithinbekal.
-Sapphire is also **not** completely stable and I would advise you not to use it in serious projects, just to study about interpreters and VM implementations/prepare yourself for established languages (Sapphire is a pretty good spot to start, as it has pretty simple syntax that remembers C++, but with high-level keywords!). But it is pretty close to being finished though, as I have a deadline to release the first LTS version in 1.1.0. It is also not completely broken, just some small bugs that I have to fix (such as in Carat), although the runtime is stable!
-And I have to admit some things: When I started this project, I had NO idea of what was SemVer (that's why I started at 1.0.0, but in reality I should have started at 0.1) and NO idea how to use Git. That's why I lost code, and that's why the versioning is confusing. Since 1.0.8, I've been using Git MUCH more actively and using it **right** for the first time. About the versioning- yes, I know it's crap, that's why in the first LTS version I will fix the versioning once and for all and start using the SemVer standard. I am saying this because I am not going to deceive any collaborators or anyone, really, and I want to be honest about the current shape of Sapphire.
+## Project Status & Development Journey
 
-Please steal my code, :D!
+Sapphire is an independent, passionate open-source project created to explore language design, interpreter internals, and virtual machine engineering.
+
+* **Affiliation:** Sapphire is **not** affiliated in any way with SapphireFoxx or the Sapphire Language by Nithin Bekal.
+* **Maturity:** While the runtime is fast, capable, and great for studying compiler/VM architectures, it is actively evolving toward production readiness. Minor edge cases in the toolchain are being resolved as we head toward the first **Long-Term Support (LTS)** milestone in **v1.1.0**.
+* **Versioning & History:** When this project began, I was learning Git and Semantic Versioning on the go. Early versions did not strictly adhere to SemVer, which led to unconventional release numbering in early iterations. Since version 1.0.8, Git workflows and release practices have been completely overhauled and standardized. Starting with v1.1.0, Sapphire will strictly follow the [SemVer 2.0.0](https://semver.org/) specification.
+
+Feel free to study the source code, fork the repository, experiment with the grammar, and build something exciting with Sapphire!
