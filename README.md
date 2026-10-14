@@ -1,136 +1,14 @@
-# Sapphire Programming Language (v1.0.8)
+Sapphire Language - End of Updates
 
-[![CI Build](https://github.com/foxzyt/Sapphire/actions/workflows/ci.yml/badge.svg)](https://github.com/foxzyt/Sapphire/actions/workflows/ci.yml)
-[![Latest Release](https://img.shields.io/github/v/release/foxzyt/Sapphire?color=blue&label=release)](https://github.com/foxzyt/Sapphire/releases/latest)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+After much consideration, I've decided to officially stop updating the Sapphire language and archive the project.
 
-Sapphire is a hybrid programming language designed for performance and clarity. It combines the speed of compiled languages with the syntax of high-level scripting, making it suitable for tools, UI-driven applications, and system-level tasks.
+This wasn't an easy decision to make. Sapphire has been a meaningful part of my work, and I'm grateful for everyone who used it, contributed to it, or offered feedback along the way. However, maintaining a language takes a significant amount of time and energy, and I've come to realize that I can no longer give it the attention it deserves.
 
-> **Note:** Sapphire currently only supports **Windows**.
+I also want to be honest: due to a lack of time, some of the implementations I made were shallow and didn't actually work as intended, and I even resorted to stubs in places. I apologize for that. Looking back, I wish I had done things better from the start; the versioning, for example, is horrible, among other things. It wasn't the quality I wanted to deliver, and I take responsibility for it.
 
-## Build and Installation
+Moving forward, I'll be focusing on other projects that I'm passionate about. The repository will remain available for anyone who wants to use or reference it, but no further updates, bug fixes, or new features should be expected.
 
-### Prerequisites
-* MSVC (Microsoft Visual C++) or MinGW-w64
-* CMake 3.10+
+Thank you for your understanding and support.
 
-### Compilation
-To compile Sapphire from source:
-```bash
-mkdir build
-cd build
-cmake ..
-cmake --build . --config Release
-```
+- Foxz
 
-### Installation
-Add the `build/Release` directory to your system **PATH**.
-
-## Running Tests
-
-Sapphire includes a test suite located in the `tests/` directory. These tests are automatically executed via GitHub Actions on every push (`.github/workflows/ci.yml`).
-
-To run the tests manually:
-```bash
-sapphire tests/test_syntax.sp
-sapphire tests/test_loop.sp
-sapphire tests/test_list.sp
-sapphire tests/test_math.sp
-sapphire tests/test_types.sp
-sapphire tests/test_map.sp
-```
-
-## Language Guide
-
-### Variables and Data Types
-Variables can be declared implicitly or explicitly using `var`.
-
-```javascript
-// Implicit declaration
-name = "Sapphire"
-version = 1.0
-is_active = true
-
-// Explicit declaration
-var counter = 0
-const pi = 3.1415
-```
-
-### Functions
-Functions are declared using the `function` keyword and require a return type.
-
-```javascript
-function greet(name) string {
-    return "Hello, " + name
-}
-
-function print_message() void {
-    print("This function returns nothing.")
-}
-```
-
-### Control Flow
-Sapphire supports standard control flow structures such as `if`, `else`, `while`, and `for`.
-
-```javascript
-var limit = 10
-var current = 0
-
-while (current < limit) {
-    if (current % 2 == 0) {
-        print(current + " is even")
-    } else {
-        print(current + " is odd")
-    }
-    current = current + 1
-}
-```
-
-### Arrays
-Arrays can be created using the `[]` literal syntax and accessed via indices.
-
-```javascript
-var numbers = [1, 2, 3, 4, 5]
-numbers[0] = 10
-print(numbers[0]) // Outputs 10
-```
-
-### Enums
-Enums can be defined using the `enum` keyword. Their values start at `0` and increment automatically.
-
-```javascript
-enum Color {
-    RED,
-    GREEN,
-    BLUE
-}
-
-var my_color = Color.GREEN
-print(my_color) // Outputs 1
-```
-
-
-### HashMaps (Dictionaries)
-HashMaps store key-value pairs. Keys must be strings.
-
-```javascript
-var config = {
-    "theme": "dark",
-    "version": 1.0,
-    "debug": true
-}
-
-// Accessing values
-print(config["theme"])
-
-// Modifying values
-config["debug"] = false
-```
-
-## License
-
-This project is licensed under the MIT License. See the `LICENSE` file for details.
-
-## Note
-
-Sapphire is not affiliated in anyway with SapphireFoxx or the Sapphire Language by Nithinbekal.
